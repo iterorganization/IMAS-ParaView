@@ -205,7 +205,7 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, ugrid)
             output.SetPartition(subset_idx, 0, ugrid)
 
-            label = ''.join([text.capitalize() for text in subset.identifier.name.split()])
+            label = subset.identifier.name
             child = assembly.AddNode(label, 0)
             assembly.AddDataSetIndex(child, subset_idx)
             output.GetMetaData(subset_idx).Set(vtkCompositeDataSet.NAME(), label)
