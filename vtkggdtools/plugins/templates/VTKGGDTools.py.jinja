@@ -3,7 +3,7 @@ The IMAS GGD interface for ParaView.
 This plugin targets the data dictionary version: {{ dd_ver }} and the UAL version: {{ ual_ver }}
 Generated on {{ now() }}.
 
-WARNING: Please refrain from editing this file.
+{{ warning_msg }}
 """
 
 import datetime
@@ -179,7 +179,7 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
                 tip = struct
 
         paraview.logger.info(f'tip: {type(tip)}')
-        if tip is not ids_obj:
+        if tip is not ids_obj and tip is not None:
             grid_ggd = tip
             paraview.logger.info(f'grid_ggd: {type(grid_ggd)}')
         else:
@@ -419,7 +419,7 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
                 aos = getattr(tip, node_name)
                 aos_idx_val = self.__AosIndexValues[aos_idx_var]
 
-                if aos_idx_val <= len(aos):
+                if aos_idx_val >= len(aos):
                     aos.resize(aos_idx_val + 1, keep=True)
 
                 tip = aos[aos_idx_val]
@@ -428,7 +428,7 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
                 tip = struct
 
         paraview.logger.info(f'tip: {type(tip)}')
-        if tip is not ids_obj:
+        if tip is not ids_obj and tip is not None:
             grid_ggd = tip
             paraview.logger.info(f'grid_ggd: {type(grid_ggd)}')
         else:
@@ -453,7 +453,7 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
         paraview.logger.info(f"Populating basic grid_subsets")
         grid_ggd_rep = write_geom.fill_grid_ggd_basic_geometry(input0, space_idx, grid_ggd)
         output.ShallowCopy(grid_ggd_rep.ugrid)
-        subset_rep = GridSubsetRepresentable(num_subsets=num_subsets)
+        subset_rep = GridSubsetRepresentable(ugrid=grid_ggd_rep.ugrid, num_subsets=num_subsets)
 
         # 2. Populate the grid_subset AoS
         # Every partitioned dataset goes into its own grid_subset.
