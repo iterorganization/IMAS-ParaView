@@ -22,7 +22,7 @@ Tasks
 |---|---|---|---|---|
 |distribution_sources|done|done|done|n/a
 |distributions | done |done|done|n/a
-|equilibrium| done |done|done|n/a
+|equilibrium| done |done|done|done
 |edge_profiles| done  |done|incomplete|n/a
 |edge_sources| done  |done|incomplete|n/a
 |edge_transport| done  |done|n/a|n/a
