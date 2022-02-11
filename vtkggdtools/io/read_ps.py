@@ -5,7 +5,7 @@ from vtkmodules.vtkCommonDataModel import vtkPointData, vtkCellData, vtkUnstruct
 
 
 def read_plasma_state(ids_name: str, ids_obj, aos_index_values: dict,
-                      subset_idx: int, grid_ggd, ugrid: vtkUnstructuredGrid) -> None:
+                      subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
     """
     Reads plasma state data arrays from the ggd node. These arrays are added as point data or cell data to the
     unstructured grid.
@@ -13,7 +13,6 @@ def read_plasma_state(ids_name: str, ids_obj, aos_index_values: dict,
     :param ids_obj: an ids_obj of type ids_name
     :param aos_index_values: the values that shall be used to navigate the AoS and reach the scalar arrays.
     :param subset_idx: an index into grid_ggd/grid_subset AoS
-    :param grid_ggd: the grid_ggd (unused)
     :param ugrid: the unstructured grid instance.
     :return: None
     """
@@ -38,6 +37,7 @@ def read_plasma_state(ids_name: str, ids_obj, aos_index_values: dict,
         except IndexError:
             return
 
+        # - expansion(i2)
         num_expansions = len(ggd.expansion)
         expansion_components = []
 
@@ -63,28 +63,28 @@ def read_plasma_state(ids_name: str, ids_obj, aos_index_values: dict,
             return
 
         # electrons
-        #  - temperature
+        #  - temperature(i1)
         name = 'Electron Temperature (eV)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.temperature, subset_idx, name, ugrid)
-        #  - density
+        #  - density(i1)
         name = 'Electron Density (m^-3)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.density, subset_idx, name, ugrid)
-        #  - density_fast
+        #  - density_fast(i1)
         name = 'Electron Density Fast (m^-3)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.density_fast, subset_idx, name, ugrid)
-        #  - pressure
+        #  - pressure(i1)
         name = 'Electron Pressure (Pa)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.pressure, subset_idx, name, ugrid)
-        #  - pressure_fast_perpendicular
+        #  - pressure_fast_perpendicular(i1)
         name = 'Electron Pressure Fast Perpendicular (Pa)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.pressure_fast_perpendicular, subset_idx, name, ugrid)
-        #  - pressure_fast_parallel
+        #  - pressure_fast_parallel(i1)
         name = 'Electron Pressure Fast Parallel (Pa)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.pressure_fast_parallel, subset_idx, name, ugrid)
-        #  - velocity
+        #  - velocity(i1)
         name = 'Electron Velocity (m.s^-1)'
         _add_aos_vector_array_to_vtk_field_data(ggd.electrons.velocity, subset_idx, name, ugrid)
-        #  - distribution_function
+        #  - distribution_function(i1)
         name = 'Electron Distribution Function'
         _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.distribution_function, subset_idx, name, ugrid)
 
@@ -99,10 +99,10 @@ def read_plasma_state(ids_name: str, ids_obj, aos_index_values: dict,
             return
 
         # electrons
-        #  - particles
+        #  - particles(i1)
         name = 'Electron Particle Density (m^-3.s^-1)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.particles, subset_idx, name, ugrid)
-        #  - density
+        #  - density(i1)
         name = 'Electron Energy (W.m^-3)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.energy, subset_idx, name, ugrid)
 
@@ -128,49 +128,106 @@ def read_plasma_state(ids_name: str, ids_obj, aos_index_values: dict,
         except IndexError:
             return
 
-        # - r
+        # - r(i1)
         name = 'Major Radius (m)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.r, subset_idx, name, ugrid)
-        # - z
+        # - z(i1)
         name = 'Height (m)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.z, subset_idx, name, ugrid)
-        # - psi
+        # - psi(i1)
         name = 'Poloidal Flux (Wb)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.psi, subset_idx, name, ugrid)
-        # - phi
+        # - phi(i1)
         name = 'Toroidal Flux (Wb)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.phi, subset_idx, name, ugrid)
-        # - theta
+        # - theta(i1)
         name = 'Poloidal Angle (rad)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.theta, subset_idx, name, ugrid)
-        # - j_tor
+        # - j_tor(i1)
         name = 'Toroidal Plasma Current Density (A.m^-2)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.j_tor, subset_idx, name, ugrid)
-        # - j_parallel
+        # - j_parallel(i1)
         name = 'Parallel Plasma Current Density (A.m^-2)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.j_parallel, subset_idx, name, ugrid)
-        # - b_field_r
+        # - b_field_r(i1)
         name = 'Magnetic Field Br (T)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.b_field_r, subset_idx, name, ugrid)
-        # - b_field_z
+        # - b_field_z(i1)
         name = 'Magnetic Field Bz (T)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.b_field_z, subset_idx, name, ugrid)
-        # - b_field_tor
+        # - b_field_tor(i1)
         name = 'Magnetic Field Btor (T)'
         _add_aos_scalar_array_to_vtk_field_data(ggd.b_field_tor, subset_idx, name, ugrid)
 
     elif ids_name == 'mhd':
+        # ggd is at /mhd/ggd(itime)
+        time_idx = aos_index_values.get('TimeIdx')
+        try:
+            ggd = ids_obj.ggd[time_idx]
+        except IndexError:
+            return
+
         # TODO: all arrays
-        pass
+
     elif ids_name == 'radiation':
+        # ggd is at /radiation/process(i1)/ggd(itime)
+        # TODO: ProcessIdx is not detected by generator.py and hence it is not present.
+        process_idx = aos_index_values.get('ProcessIdx') or 0
+        time_idx = aos_index_values.get('TimeIdx')
+        try:
+            ggd = ids_obj.process[process_idx].ggd[time_idx]
+        except IndexError:
+            return
+
         # TODO: all arrays
-        pass
+
     elif ids_name == 'tf':
-        # TODO: all arrays
-        pass
+        # A 'ggd' node is absent,
+        # but there are scalar arrays.
+        # /tf/field_map(itime)/
+        #  - b_field_r(i1)
+        #  - b_field_z(i1)
+        #  - b_field_tor(i1)
+        #  - a_field_r(i1)
+        #  - a_field_z(i1)
+        #  - a_field_tor(i1)
+        time_idx = aos_index_values.get('TimeIdx')
+        for attr_name in ['b_field_r', 'b_field_z', 'b_field_tor', 'a_field_r', 'a_field_z', 'a_field_tor']:
+            try:
+                aos_scalar_node = getattr(ids_obj.field_map[time_idx], attr_name)
+            except IndexError:
+                continue
+            component_name = attr_name.split('_')[-1]
+            name = f'Magnetic Field B{component_name} (T)'
+            _add_aos_scalar_array_to_vtk_field_data(aos_scalar_node, subset_idx, name, ugrid)
+
     elif ids_name == 'transport_solver_numerics':
-        # TODO: all arrays
-        pass
+        # ggd is at /transport_solver_numerics/boundary_conditions_ggd(itime)
+        time_idx = aos_index_values.get('TimeIdx')
+        try:
+            ggd = ids_obj.boundary_conditions_ggd[time_idx]
+        except IndexError:
+            return
+
+        # - current(i1)
+        name = f'Current Boundary Condition - {ggd.current.identifier.name.capitalize()}'
+        _add_aos_scalar_array_to_vtk_field_data(ggd.current, subset_idx, name, ugrid)
+        # - electrons/particles(i1)
+        try:
+            name = f'Electron Density Boundary Condition - {ggd.electrons.particles[subset_idx].identifier.name} (m^-3.s^-1)'
+            _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.particles, subset_idx, name, ugrid)
+        except IndexError:
+            # can raise from name = "...", when subset_idx >= ggd.electrons.particles
+            pass
+        # - electrons/energy(i1)
+        try:
+            name = f'Electron Energy Boundary Condition - {ggd.electrons.energy[subset_idx].identifier.name} (W.m^-3)'
+            _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.energy, subset_idx, name, ugrid)
+        except IndexError:
+            # can raise from name = "...", when subset_idx >= ggd.electrons.energy
+            pass
+
+        # TODO: ion arrays
 
     elif ids_name == 'wall':
         # ggd is at /wall/description_ggd(i1)/ggd(itime)
@@ -189,8 +246,57 @@ def read_plasma_state(ids_name: str, ids_obj, aos_index_values: dict,
         _add_aos_scalar_array_to_vtk_field_data(ggd.temperature, subset_idx, name, ugrid)
 
     elif ids_name == 'waves':
-        # TODO: all arrays
-        pass
+        # A 'ggd' node is absent,
+        # but there are scalar and vector arrays.
+        # /waves/coherent_wave(i1)/full_wave(itime)/
+        #  - e_field/plus(i2)
+        #  - e_field/minus(i2)
+        #  - e_field/parallel(i2)
+        #  - e_field/normal(i2)
+        #  - e_field/bi_normal(i2)
+        #  - b_field/plus(i2)
+        #  - b_field/minus(i2)
+        #  - b_field/parallel(i2)
+        #  - b_field/normal(i2)
+        #  - b_field/bi_normal(i2)
+        #  - k_perpendicular(i2)
+        coherent_wave_idx = aos_index_values.get('CoherentWaveIdx')
+        time_idx = aos_index_values.get('TimeIdx')
+
+        try:
+            e_field = ids_obj.coherent_wave[coherent_wave_idx].full_wave[time_idx].e_field
+            name = 'Electric Field - LH polarized (V.m^-1)'
+            _add_aos_scalar_array_to_vtk_field_data(e_field.plus, subset_idx, name, ugrid)
+            name = 'Electric Field - RH polarized (V.m^-1)'
+            _add_aos_scalar_array_to_vtk_field_data(e_field.minus, subset_idx, name, ugrid)
+            name = 'Electric Field - Parallel to B (V.m^-1)'
+            _add_aos_scalar_array_to_vtk_field_data(e_field.parallel, subset_idx, name, ugrid)
+            name = 'Electric Field - Normal to flux surface (V.m^-1)'
+            _add_aos_scalar_array_to_vtk_field_data(e_field.normal, subset_idx, name, ugrid)
+            name = 'Electric Field - Tangential to flux surface (V.m^-1)'
+            _add_aos_scalar_array_to_vtk_field_data(e_field.bi_normal, subset_idx, name, ugrid)
+        except IndexError:
+            pass
+
+        try:
+            # WARNING: Are these units correct?
+            b_field = ids_obj.coherent_wave[coherent_wave_idx].full_wave[time_idx].b_field
+            name = 'Magnetic Field - Parallel to B (V.m^-1)'
+            _add_aos_scalar_array_to_vtk_field_data(b_field.parallel, subset_idx, name, ugrid)
+            name = 'Magnetic Field - Normal to flux surface (V.m^-1)'
+            _add_aos_scalar_array_to_vtk_field_data(b_field.normal, subset_idx, name, ugrid)
+            name = 'Magnetic Field - Tangential to flux surface (V.m^-1)'
+            _add_aos_scalar_array_to_vtk_field_data(b_field.bi_normal, subset_idx, name, ugrid)
+        except IndexError:
+            pass
+
+        try:
+            # WARNING: Are these units correct?
+            name = 'Perpendicular Wave Vector (V.m^-1)'
+            _add_aos_scalar_array_to_vtk_field_data(
+                ids_obj.coherent_wave[coherent_wave_idx].full_wave[time_idx].k_perpendicular, subset_idx, name, ugrid)
+        except IndexError:
+            pass
 
 
 def _add_scalar_array_to_vtk_field_data(array: np.ndarray, name: str, ugrid: vtkUnstructuredGrid) -> None:

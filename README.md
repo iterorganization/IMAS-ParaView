@@ -28,10 +28,10 @@ Tasks
 |edge_transport| done  |done|n/a|n/a
 |mhd| done  |done|n/a|n/a
 |radiation| done  |done|n/a|n/a
-|tf| done  |done|n/a|n/a
-|transport_solver_numerics| done  |done|n/a|n/a
+|tf| done  |done|done|n/a
+|transport_solver_numerics| done  |done|incomplete|n/a
 |wall| done  |done|done|n/a
-|waves| done  |done|n/a|n/a
+|waves| done  |done|done|n/a
 
 *Note*: The ReadUALEdge plugin uses `vtkMultiBlockDataSet`: a deprecated VTK data structure and is limited to
 the `edge_profiles` and a few edge related IDSs. This project uses `vtkPartitionedDataSetCollection` and hopes to cover

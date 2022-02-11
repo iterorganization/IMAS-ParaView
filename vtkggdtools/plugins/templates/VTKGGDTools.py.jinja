@@ -20,7 +20,8 @@ from vtkmodules.vtkCommonCore import vtkDataArray, vtkPoints
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkCompositeDataSet, vtkDataAssembly, vtkDataObject, \
     vtkPartitionedDataSetCollection, vtkPointSet, vtkUnstructuredGrid
 from vtkggdtools.errors import InvalidIDSIOError, InvalidIDSParametersError
-from vtkggdtools.io import read_geom, write_geom, read_ps
+from vtkggdtools.io import read_geom, write_geom, read_ps, write_ps
+from vtkggdtools.io.representables import GridSubsetRepresentable
 from vtkggdtools.imashelper import imas_env_call
 from vtkggdtools._version import __version__ as vtkggdtools_ver
 
@@ -201,7 +202,7 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             paraview.logger.info(f"           name {subset.identifier.name}")
             paraview.logger.info(f"           description {subset.identifier.description}")
             ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, subset_idx, points)
-            read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, grid_ggd, ugrid)
+            read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, ugrid)
             output.SetPartition(subset_idx, 0, ugrid)
 
             label = ''.join([text.capitalize() for text in subset.identifier.name.split()])
@@ -450,17 +451,19 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
         # Fill up space with 0,1,2,3 d geometry from the first partition.
         # It is assumed all other partitions share same points.
         paraview.logger.info(f"Populating basic grid_subsets")
-        representable = write_geom.fill_grid_ggd_basic_geometry(input0, space_idx, grid_ggd)
-        output.ShallowCopy(representable.ugrid)
+        grid_ggd_rep = write_geom.fill_grid_ggd_basic_geometry(input0, space_idx, grid_ggd)
+        output.ShallowCopy(grid_ggd_rep.ugrid)
+        subset_rep = GridSubsetRepresentable(num_subsets=num_subsets)
 
         # 2. Populate the grid_subset AoS
         # Every partitioned dataset goes into its own grid_subset.
         for subset_idx in range(4, num_subsets):
             data_array: vtkDataArray = cell_data.GetArray(subset_idx - 4)
             subset_name = data_array.GetName()
-            write_geom.convert_vtk_dataset_to_grid_subset_geometry(representable, space_idx, subset_idx,
+            write_geom.convert_vtk_dataset_to_grid_subset_geometry(grid_ggd_rep, subset_rep, space_idx, subset_idx,
                                                                    subset_name, grid_ggd)
-
+        write_ps.write_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, space_idx,
+                                    grid_ggd_rep, subset_rep, grid_ggd)
         ids_obj.put(self.__Occurrence)
         ids_hdl.close()
 
