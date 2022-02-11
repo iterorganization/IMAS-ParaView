@@ -36,3 +36,19 @@ Tasks
 *Note*: The ReadUALEdge plugin uses `vtkMultiBlockDataSet`: a deprecated VTK data structure and is limited to
 the `edge_profiles` and a few edge related IDSs. This project uses `vtkPartitionedDataSetCollection` and hopes to cover
 base all IDSs.
+
+Developer instructions
+----------------------
+Load the pre-requisite modules, create and activate a virtual environment and install
+the project files.
+  ```bash
+  $ module load IMAS/3.34.0-4.9.3-2020b
+  $ module load ParaView/5.10.0-intel-2020b-mpi
+  $ python -m venv --system-site-packages --clear --prompt vtkggddev .venv 
+  $ source .venv/bin/activate
+  $ source install.sh .venv
+  # Either launch paraview and test the plugins
+  $ paraview
+  # Or open up your IDE/code editor and begin development.
+  ```
+Upon modifying the source, run `source install.sh .venv` again.
