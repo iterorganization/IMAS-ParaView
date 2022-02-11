@@ -122,7 +122,7 @@ def read_plasma_state(ids_name: str, ids_obj, aos_index_values: dict,
     elif ids_name == 'equilibrium':
         # ggd is at /equilibrium/time_slice(itime)/ggd(i1)
         time_idx = aos_index_values.get('TimeIdx')
-        ggd_idx = aos_index_values.get('GridGGDIdx')
+        ggd_idx = aos_index_values.get('GridIdx')
         try:
             ggd = ids_obj.time_slice[time_idx].ggd[ggd_idx]
         except IndexError:
@@ -313,6 +313,7 @@ def _add_scalar_array_to_vtk_field_data(array: np.ndarray, name: str, ugrid: vtk
     num_cells = ugrid.GetNumberOfCells()
 
     vtk_arr = dsa.numpyTovtkDataArray(array, name)
+    print(vtk_arr, array)
     if len(array) == num_points:
         point_data.AddArray(vtk_arr)
     if len(array) == num_cells:
