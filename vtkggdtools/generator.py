@@ -172,7 +172,8 @@ def generate(input_dir: str, output_dir: str):
         ids_blueprints=blueprints,
         default=IMASDefaults(),
         dd_ver=dd_version,
-        ual_ver=ual_version)
+        ual_ver=ual_version,
+        warning_msg="WARNING: Please refrain from editing this file.")
 
     with open(os.path.join(output_dir, 'VTKGGDTools.py'), 'w+') as f:
         f.write(output)
