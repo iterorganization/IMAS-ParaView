@@ -106,9 +106,9 @@ def convert_vtk_dataset_to_grid_subset_geometry(representable: GridGGDRepresenta
         element = grid_ggd.grid_subset[subset_idx].element.getAoSElement()
 
         if dim == 0:
+          	element_list.append(pts)
             for j in range(num_pts):
                 element.object.resize(1)
-                element_list.append(pts[j])
                 element.object[0].index = pts[j]
                 element.object[0].space = space_idx + 1
                 element.object[0].dimension = dim + 1
