@@ -114,12 +114,10 @@ def write_plasma_state(ids_name: str, ids_obj, aos_index_values: dict, space_idx
         if ggd_idx >= len(ids_obj.time_slice[time_idx].ggd):
             ids_obj.time_slice[time_idx].ggd.resize(ggd_idx + 1, keep=True)
         ggd = ids_obj.time_slice[time_idx].ggd[ggd_idx]
-        print(ggd)
 
         # - r(i1)
         name = 'Major Radius (m)'
         _write_aos_scalar_node_from_vtk_field_data(name, subset_rep, rep, space_idx, ggd.r, grid_ggd)
-        print(ggd.r[0].values)
         # - z(i1)
         name = 'Height (m)'
         _write_aos_scalar_node_from_vtk_field_data(name, subset_rep, rep, space_idx, ggd.z, grid_ggd)
@@ -302,6 +300,7 @@ def _write_aos_scalar_node_from_vtk_field_data(name: str, subset_rep: GridSubset
     cell_data: vtkCellData = subset_rep.ugrid.GetCellData()
 
     if point_data.HasArray(name):
+        print(f'Writing plasma state {name} for {4 + subset_rep.num_subsets} subsets ..')
         subset_idx = 0
         # deal with array from point data
         # write array from point data for 'nodes'
@@ -356,3 +355,5 @@ def _write_aos_scalar_node_from_vtk_field_data(name: str, subset_rep: GridSubset
         # interpolate array from cells to volumes.
         # write array from cell data for 'volumes'
         # write array from cell data for other subsets interpolating when necessary
+
+    print('Finished')  
