@@ -342,6 +342,7 @@ def _write_aos_scalar_node_from_vtk_field_data(name: str, subset_rep: GridSubset
             arr = _interpolate_point_data_to_cell_data(name, subset_rep.ugrid, subset_rep.element_list.get(subset_idx),
                                                        subset_rep.subset_cell_types.get(subset_idx))
             _write_scalar_array_from_vtk_field_data(arr, subset_idx, aos_scalar_node)
+        print('Finished')
 
     if cell_data.HasArray(name):
         pass
@@ -356,4 +357,3 @@ def _write_aos_scalar_node_from_vtk_field_data(name: str, subset_rep: GridSubset
         # write array from cell data for 'volumes'
         # write array from cell data for other subsets interpolating when necessary
 
-    print('Finished')  
