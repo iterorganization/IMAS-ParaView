@@ -21,14 +21,17 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="vtkggdtools",
+    setuptools_git_versioning={
+        "enabled": True,
+    },
     setup_requires=[
         "setuptools-git-versioning"
     ],
-    version_config={
-        "version_callback": __version__,
-        "template": "{tag}",
-        "dirty_template": "{tag}.{ccount}.{sha}",
-    },
+    # version_config={
+    #     #"version_callback": __version__,
+    #     "template": "{tag}",
+    #     "dirty_template": "{tag}.{ccount}.{sha}",
+    # },
     author="Panchumarti Jaswant EXT",
     author_email="jaswant.panchumarti@iter.org",
     description="Tools to expose GGD readers/writers as ParaView plugins.",
@@ -48,3 +51,4 @@ setuptools.setup(
         "vtk >= 9.1.0"
     ],
 )
+
