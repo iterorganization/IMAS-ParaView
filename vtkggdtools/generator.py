@@ -31,10 +31,10 @@ class IDSTemplate:
 class IMASDefaults:
     backend: int = 12
     imas_backends: dict = field(default_factory=dict)
-    shot: int = 1
-    run: int = 0
-    username: str = 'panchuj'
-    tokamak: str = 'ggdtest'
+    shot: int = 134174
+    run: int = 117
+    username: str = 'public'
+    tokamak: str = 'iter'
     major_ver: str = '3'
     occurrence: int = 0
     delimiter: str = '/'
