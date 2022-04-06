@@ -23,11 +23,11 @@ Tasks
 |distribution_sources|done|done|done|n/a
 |distributions | done |done|done|n/a
 |equilibrium| done |done|done|done
-|edge_profiles| done  |done|incomplete|n/a
-|edge_sources| done  |done|incomplete|n/a
-|edge_transport| done  |done|n/a|n/a
-|mhd| done  |done|n/a|n/a
-|radiation| done  |done|n/a|n/a
+|edge_profiles| done  |done|done|n/a
+|edge_sources| done  |done|done|n/a
+|edge_transport| done  |done|done|n/a
+|mhd| done  |done|done|n/a
+|radiation| done  |done|done|n/a
 |tf| done  |done|done|n/a
 |transport_solver_numerics| done  |done|incomplete|n/a
 |wall| done  |done|done|n/a

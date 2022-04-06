@@ -114,49 +114,66 @@ def read_edge_profiles(ids_obj, aos_index_values: dict,
         return
 
     # electrons
+    scalars = {}
     e = ggd.electrons # shortcut
-    e_description = {
+    scalars = {
         'Electron Temperature (eV)': e.temperature,
         'Electron Density (m^-3)': e.density,
-        'Electron Density Fast (m^-3)': e.density_fast,
+        'Electron Density (fast) (m^-3)': e.density_fast,
         'Electron Pressure (Pa)': e.pressure,
-        'Electron Pressure Fast Perpendicular (Pa)': e.pressure_fast_perpendicular,
-        'Electron Pressure Fast Parallel (Pa)': e.pressure_fast_parallel,
+        'Electron Pressure (fast perpendicular) (Pa)': e.pressure_fast_perpendicular,
+        'Electron Pressure (fast parallel) (Pa)': e.pressure_fast_parallel,
         'Electron Distribution Function': e.distribution_function
     }
-    _multi_add_aos_scalar_to_vtk(e_description, subset_idx, ugrid)
+    _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
     name = 'Electron Velocity (m.s^-1)'
     _add_aos_vector_array_to_vtk_field_data(e.velocity, subset_idx, name, ugrid)
 
-    # ions
-    for i in ggd.ion:
-        i_description = {}
-        i_description[i.label+' Temperature (eV)'] = i.temperature 
-        i_description[i.label+' Density (m^-3)'] = i.density 
-        i_description[i.label+' Density Fast (m^-3)'] = i.density_fast 
-        i_description[i.label+' Pressure (Pa)'] = i.pressure 
-        i_description[i.label+' Pressure Fast Perpendicular (Pa)'] = i.pressure_fast_perpendicular 
-        i_description[i.label+' Pressure Fast Parallel (Pa)'] = i.pressure_fast_parallel 
-        i_description[i.label+' Kinetic Energy Density'] = i.energy_density_kinetic 
-        _multi_add_aos_scalar_to_vtk(i_description, subset_idx, ugrid)
-        name = i.label+' Velocity (m.s^-1)'
-        _add_aos_vector_array_to_vtk_field_data(i.velocity, subset_idx, name, ugrid)
+    # ions, neutrals = heavy particles = hp
+    for hp in [*ggd.ion, *ggd.neutral]:
+        scalars = {}
+        scalars[hp.label+' Temperature (eV)'] = hp.temperature 
+        scalars[hp.label+' Density (m^-3)'] = hp.density 
+        scalars[hp.label+' Density (fast) (m^-3)'] = hp.density_fast 
+        scalars[hp.label+' Pressure (Pa)'] = hp.pressure 
+        scalars[hp.label+' Pressure (fast perpendicular) (Pa)'] = hp.pressure_fast_perpendicular 
+        scalars[hp.label+' Pressure (fast parallel) (Pa)'] = hp.pressure_fast_parallel 
+        scalars[hp.label+' Kinetic Energy Density'] = hp.energy_density_kinetic 
+        _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
+        name = hp.label+' Velocity (m.s^-1)'
+        _add_aos_vector_array_to_vtk_field_data(hp.velocity, subset_idx, name, ugrid)
 
-    # neutrals
-    for n in ggd.neutral:
-        n_description = {}
-        n_description[n.label+' Temperature (eV)'] = n.temperature 
-        n_description[n.label+' Density (m^-3)'] = n.density 
-        n_description[n.label+' Density Fast (m^-3)'] = n.density_fast 
-        n_description[n.label+' Pressure (Pa)'] = n.pressure 
-        n_description[n.label+' Pressure Fast Perpendicular (Pa)'] = n.pressure_fast_perpendicular 
-        n_description[n.label+' Pressure Fast Parallel (Pa)'] = n.pressure_fast_parallel 
-        n_description[n.label+' Kinetic Energy Density'] = n.energy_density_kinetic 
-        _multi_add_aos_scalar_to_vtk(n_description, subset_idx, ugrid)
-        name = n.label+' Velocity (m.s^-1)'
-        _add_aos_vector_array_to_vtk_field_data(n.velocity, subset_idx, name, ugrid)
+    # other scalar quantities
+    scalars = {}
+    scalars = {
+        'Average t_i (eV)': ggd.t_i_average,
+        'Total n_i over n_e': ggd.n_i_total_over_n_e,
+        'Zeff': ggd.zeff,
+        'Pressure (thermal) (Pa)': ggd.pressure_thermal,
+        'Pressure (perpendicular) (Pa)': ggd.pressure_perpendicular,
+        'Pressure (parallel) (Pa)': ggd.pressure_parallel,
+        'Current (parallel) (A.m^-2)':ggd.j_parallel,
+        'Potential Phi (V)': ggd.phi_potential
+        }
+    _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
 
-    # TODO: the remaining arrays. ion(). neutral(), ..
+    # other vector quantities
+    vectors = {}
+    vectors = {
+        'Current (total) (A.m^-2)': ggd.j_total,
+        'Current (anomalous) (A.m^-2)': ggd.j_anomalous,
+        'Current (inertial) (A.m^-2)': ggd.j_inertial,
+        'Current (ion+neutral friction) (A.m^-2)': ggd.j_ion_neutral_friction,
+        'Current (parallel viscosity) (A.m^-2)': ggd.j_parallel_viscosity,
+        'Current (perpendicular viscosity) (A.m^-2)': ggd.j_perpendicular_viscosity,
+        'Current (heat viscosity) (A.m^-2)': ggd.j_heat_viscosity,
+        'Current (Pfirsch-Schlueter effects) (A.m^-2)': ggd.j_pfirsch_schlueter,
+        'Current (diamagnetic) (A.m^-2)': ggd.j_diamagnetic,
+        'E (V.M^-1)': ggd.e_field
+        }
+    _multi_add_aos_vector_to_vtk(vectors, subset_idx, ugrid)
+        
+    # TODO: ggd_fast...
 
 
 def read_edge_sources(ids_obj, aos_index_values: dict,
@@ -164,33 +181,166 @@ def read_edge_sources(ids_obj, aos_index_values: dict,
     
     # ggd is at /edge_sources/ggd(itime)
     time_idx = aos_index_values.get('TimeIdx')
-    try:
-        ggd = ids_obj.ggd[time_idx]
-    except IndexError:
-        return
+    model_idx = aos_index_values.get('ModelIdx')
+    for source in ids_obj.source:
+        try:
+            ggd = source.ggd[time_idx]
+        except IndexError:
+            return
+        s_name = source.identifier.name
+        
+        # electrons
+        name = 'Electron Density ('+s_name+') (m^-3.s^-1)'
+        _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.particles, subset_idx, name, ugrid)
+        name = 'Electron Energy ('+s_name+') (W.m^-3)'
+        _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.energy, subset_idx, name, ugrid)
 
-    # electrons
-    #  - particles(i1)
-    name = 'Electron Particle Density (m^-3.s^-1)'
-    _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.particles, subset_idx, name, ugrid)
-    #  - density(i1)
-    name = 'Electron Energy (W.m^-3)'
-    _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.energy, subset_idx, name, ugrid)
+        # ions, neutrals = heavy particles = hp
+        for hp in [*ggd.ion, *ggd.neutral]:
+            scalars = {}
+            scalars[hp.label+' Density ('+s_name+') (s^-1.m^-3)'] = hp.particles,
+            scalars[hp.label+' Energy ('+s_name+') (W.m^-3)'] = hp.energy
+            _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
+            name = hp.label+' Momentum ('+s_name+') (kg.m^-1.s^-2)'
+            _add_aos_vector_array_to_vtk_field_data(hp.momentum, subset_idx, name, ugrid)
 
-    # TODO: the remaining arrays. ion(). neutral(), ..
+        # total_ion_energy
+        name = 'Total E_i ('+s_name+') (W.m^-3)'
+        _add_aos_scalar_array_to_vtk_field_data(ggd.total_ion_energy, subset_idx, name, ugrid)
+
+        # momentum
+        name = 'Momentum ('+s_name+') (kg.m^-1.s^-2)'
+        _add_aos_vector_array_to_vtk_field_data(ggd.momentum, subset_idx, name, ugrid)
+
+        # current
+        name = 'Current ('+s_name+') (A.m^-2)'
+        _add_aos_scalar_array_to_vtk_field_data(ggd.current, subset_idx, name, ugrid)
+
+        # TODO: ggd_fast
 
 def read_edge_transport(ids_obj, aos_index_values: dict,
                         subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
 
     # ggd is at /edge_transport/model(i1)/ggd(itime)
-    model_idx = aos_index_values.get('ModelIdx')
-    time_idx = aos_index_values.get('TimeIdx')
-    try:
-        ggd = ids_obj.model[model_idx].model.ggd[time_idx]
-    except IndexError:
-        return
+    # TODO: ModelIdx is not detected by generator.py and hence it is not present.
+    # model_idx = aos_index_values.get('ModelIdx') or 0
+    # time_idx = aos_index_values.get('TimeIdx')
+    # try:
+    #     ggd = ids_obj.model[model_idx].ggd[time_idx]
+    # except IndexError:
+    #     return
 
-    # TODO: all arrays
+    time_idx = aos_index_values.get('TimeIdx')
+    for model in ids_obj.model:
+        try:
+            ggd = model.ggd[time_idx]
+        except IndexError:
+            continue
+        m_name = model.identifier.name
+
+        # conductivity
+        name = 'Conductivity (' + m_name + ') (ohm^-1.m^-1)' 
+        _add_aos_vector_array_to_vtk_field_data(ggd.conductivity, subset_idx, name, ugrid)
+
+        # electrons
+        electrons = ggd.electrons
+        scalars = {}
+        quantity_names = ['particles', 'energy']
+        for q in quantity_names:
+            quantity = getattr(electrons, q)
+            name = 'Electron Diffusivity (' + q + ') (' + m_name + ') (m^2.s^-1)'
+            scalars[name] = quantity.d
+            name = 'Electron Convection (' + q + ') (' + m_name + ') (m.s^-1)'
+            scalars[name] = quantity.v
+            name = 'Electron Flux (' + q + ') (' + m_name + ') (m^-2.s^-1)'
+            scalars[name] = quantity.flux
+            name = 'Electron Flux Limiter Coefficient (' + q + ') (' + m_name + ')'
+            scalars[name] = quantity.flux_limiter
+        _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
+    
+        # total_ion_energy
+        quantity = ggd.total_ion_energy
+        scalars = {}
+        name = 'Total Ion Energy Diffusivity (' + m_name + ') (m^2.s^-1)'
+        scalars[name] = quantity.d
+        name = 'Total Ion Energy Convection (' + m_name + ') (m.s^-1)'
+        scalars[name] = quantity.v
+        name = 'Total Ion Energy Flux (' + m_name + ') (m^-2.s^-1)'
+        scalars[name] = quantity.flux
+        name = 'Total Ion Energy Flux Limiter Coefficient' + m_name + ')'
+        scalars[name] = quantity.flux_limiter
+        _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
+
+        # momentum
+        quantity = ggd.momentum
+        vectors = {}
+        name = 'Momentum Diffusivity (' + m_name + ') (m^2.s^-1)'
+        vectors[name] = quantity.d
+        name = 'Momentum Convection (' + m_name + ') (m.s^-1)'
+        vectors[name] = quantity.v
+        name = 'Momentum Flux (' + m_name + ') (m^-2.s^-1)'
+        vectors[name] = quantity.flux
+        name = 'Momentum Flux Limiter Coefficient' + m_name + ')'
+        vectors[name] = quantity.flux_limiter
+        _multi_add_aos_vector_to_vtk(vectors, subset_idx, ugrid)
+
+        # ions, neutrals = heavy particles = hp
+        for hp in [*ggd.ion, *ggd.neutral]:
+            # heavy particles: particles, energy
+            scalars = {}
+            quantity_names = ['particles', 'energy']
+            for q in quantity_names:
+                quantity = getattr(hp, q)
+                name = hp.label + ' Diffusivity (' + q + ') (' + m_name + ') (m^2.s^-1)'
+                scalars[name] = quantity.d
+                name = hp.label + ' Convection (' + q + ') (' + m_name + ') (m.s^-1)'
+                scalars[name] = quantity.v
+                name = hp.label + ' Flux (' + q + ') (' + m_name + ') (m^-2.s^-1)'
+                scalars[name] = quantity.flux
+                name = hp.label + ' Flux Limiter Coefficient (' + q + ') (' + m_name + ')'
+                scalars[name] = quantity.flux_limiter
+            _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
+            # heavy particles: momentum
+            quantity = hp.momentum
+            vectors = {}
+            name = hp.label + ' Diffusivity (momentum) (' + m_name + ') (m^2.s^-1)'
+            vectors[name] = quantity.d
+            name = hp.label + ' Convection (momentum) (' + m_name + ') (m.s^-1)'
+            vectors[name] = quantity.v
+            name = hp.label + ' Flux (momentum) (' + m_name + ') (m^-2.s^-1)'
+            vectors[name] = quantity.flux
+            name = hp.label + ' Flux Limiter Coefficient (momentum) (' + m_name + ')'
+            vectors[name] = quantity.flux_limiter
+            _multi_add_aos_vector_to_vtk(vectors, subset_idx, ugrid)
+            # heavy particles: state
+            for state in hp.state:
+                label = hp.label + ' ' + state.label
+                scalars = {}
+                quantity_names = ['particles', 'energy']
+                for q in quantity_names:
+                    quantity = getattr(state, q)
+                    name = state.label+' Diffusivity ('+q+') ('+m_name+') (m^2.s^-1)'
+                    scalars[name] = quantity.d
+                    name = state.label+' Convection ('+q+') ('+m_name+') (m.s^-1)'
+                    scalars[name] = quantity.v
+                    name = state.label+' Flux ('+q+') ('+m_name+') (m^-2.s^-1)'
+                    scalars[name] = quantity.flux
+                    name = state.label+' Flux Limiter Coefficient ('+q+') ('+m_name+')'
+                    scalars[name] = quantity.flux_limiter
+                _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
+                quantity = state.momentum
+                vectors = {}
+                name = state.label + ' Diffusivity (momentum) (' + m_name + ') (m^2.s^-1)'
+                vectors[name] = quantity.d
+                name = state.label + ' Convection (momentum) (' + m_name + ') (m.s^-1)'
+                vectors[name] = quantity.v
+                name = state.label + ' Flux (momentum) (' + m_name + ') (m^-2.s^-1)'
+                vectors[name] = quantity.flux
+                name = state.label + ' Flux Limiter Coefficient (momentum) (' + m_name + ')'
+                vectors[name] = quantity.flux_limiter
+                _multi_add_aos_vector_to_vtk(vectors, subset_idx, ugrid)
+                
+    # TODO: ggd_fast
     
 def read_equilibrium(ids_obj, aos_index_values: dict,
                      subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
@@ -245,22 +395,111 @@ def read_mhd(ids_obj, aos_index_values: dict,
     except IndexError:
         return
 
-    # TODO: all arrays
+    # - electrons.temperature
+    name = 'Electron Temperature (eV)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.electron.temperature, subset_idx, name, ugrid)
+    # - t_i_average
+    name = 'Ion Temperature (average) (eV)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.t_i_average, subset_idx, name, ugrid)
+    # - n_i_total
+    name = 'Ion Density (total) (m^-3)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.n_i_total, subset_idx, name, ugrid)
+    # - zeff
+    name = 'Z effective'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.zeff, subset_idx, name, ugrid)
+    # - b_field_r
+    name = 'Magnetic Field Br (T)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.b_field_r, subset_idx, name, ugrid)
+    # - b_field_z
+    name = 'Magnetic Field Bz (T)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.b_field_z, subset_idx, name, ugrid)
+    # - b_field_tor
+    name = 'Magnetic Field Btor (T)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.b_field_tor, subset_idx, name, ugrid)
+    # - a_field_r
+    name = 'Magnetic Potential Ar (T.m)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.a_field_r, subset_idx, name, ugrid)
+    # - a_field_z
+    name = 'Magnetic Potential Az (T.m)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.a_field_z, subset_idx, name, ugrid)
+    # - a_field_tor
+    name = 'Magnetic Potential Ator (T.m)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.a_field_tor, subset_idx, name, ugrid)
+    # - PSI
+    name = 'Poloidal Flux (Wb)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.psi, subset_idx, name, ugrid)
+    # - velocity_r
+    name = 'Plasma Velocity Vr (T.m)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.velocity_r, subset_idx, name, ugrid)
+    # - velocity_z
+    name = 'Plasma Velocity Vz (T.m)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.velocity_z, subset_idx, name, ugrid)
+    # - velocity_tor
+    name = 'Plasma Velocity Vtor (T.m)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.velocity_tor, subset_idx, name, ugrid)
+    # - velocity_parallel
+    name = 'Plasma Velocity Vparallel (T.m)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.velocity_parallel, subset_idx, name, ugrid)
+    # - phi_potential
+    name = 'Electric Potential (V)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.phi_potential, subset_idx, name, ugrid)
+    # - vorticity
+    name = 'Vorticity (s^-1)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.vorticity, subset_idx, name, ugrid)
+    # - J_r
+    name = 'Current Density Jr (A.m^-2)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.j_r, subset_idx, name, ugrid)
+    # - J_z
+    name = 'Current Density Jz (A.m^-2)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.j_z, subset_idx, name, ugrid)
+    # - J_phi
+    name = 'Current Density Jtor (A.m^-2)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.j_tor, subset_idx, name, ugrid)
+    # - mass_density
+    name = 'Mass Density (kg.m^-3)'
+    _add_aos_scalar_array_to_vtk_field_data(ggd.mass_density, subset_idx, name, ugrid)
 
+    # NOT TESTED! Can't find a data entry to test.
 
 def read_radiation(ids_obj, aos_index_values: dict,
                    subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
     
     # ggd is at /radiation/process(i1)/ggd(itime)
     # TODO: ProcessIdx is not detected by generator.py and hence it is not present.
-    process_idx = aos_index_values.get('ProcessIdx') or 0
-    time_idx = aos_index_values.get('TimeIdx')
-    try:
-        ggd = ids_obj.process[process_idx].ggd[time_idx]
-    except IndexError:
-        return
+    # process_idx = aos_index_values.get('ProcessIdx') or 0
+    # time_idx = aos_index_values.get('TimeIdx')
+    # try:
+    #     ggd = ids_obj.process[process_idx].ggd[time_idx]
+    # except IndexError:
+    #     return
 
-    # TODO: all arrays
+    time_idx = aos_index_values.get('TimeIdx')
+    for process in ids_obj.process:
+        try:
+            ggd = process.ggd[time_idx]
+        except IndexError:
+            continue
+        p_name = process.identifier.name
+
+        # electrons.emissivity
+        quantity = ggd.electrons.emissivity
+        name = 'Electron Emissivity (' + p_name + ') (W.m^-3)'
+        _add_aos_scalar_array_to_vtk_field_data(quantity, subset_idx, name, ugrid)
+        
+        # ions, neutrals = heavy particles = hp
+        for hp in [*ggd.ion, *ggd.neutral]:
+
+            # heavy particles: emissivity
+            quantity = hp.emissivity
+            name = hp.label + ' Emissivity (' + p_name + ') (W.m^-3)'
+            _add_aos_scalar_array_to_vtk_field_data(quantity, subset_idx, name, ugrid)
+            
+            # heavy particles: state
+            for state in hp.state:
+                quantity = state.emissivity
+                # name = hp.label+' Emissivity ('+state.label+') ('+p_name+') (W.m^-3)'
+                name = state.label+' Emissivity ('+p_name+') (W.m^-3)'
+                _add_aos_scalar_array_to_vtk_field_data(quantity, subset_idx, name, ugrid)
 
 
 def read_tf(ids_obj, aos_index_values: dict,
@@ -445,7 +684,7 @@ def _add_aos_vector_array_to_vtk_field_data(aos_vector_node, subset_idx: int, na
     """
     Add the array under the aos_vector_node to the unstructured grid.
     :param aos_vector_node: A node with component vectors for each grid subset.
-    :param subset_idx: an index into aos_scalar_node
+    :param subset_idx: an index into aos_vector_node
     :param name: this becomes the array name in VTK
     :param ugrid: an unstructured grid instance
     :return: None
@@ -481,3 +720,16 @@ def _add_aos_vector_array_to_vtk_field_data(aos_vector_node, subset_idx: int, na
     if num_tuples == num_cells:
         cell_data.AddArray(vtk_arr)
 
+def _multi_add_aos_vector_to_vtk(vector_description: dict, subset_idx: int, ugrid: vtkUnstructuredGrid):
+    """
+    Add the dict of names and arrays in vector_description to the unstructured grid.
+    :param vector_description: A dictionary of {'name, aos_vector_node} 
+    Each aos_vector_node is a node with an array of vector values for each grid subset.
+    Each name becomes the respective array name in VTK.
+    :param subset_idx: an index into aos_vector_node
+    :param ugrid: an unstructured grid instance
+    :return: None
+    """
+    for name, node in vector_description.items():
+        _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+    
