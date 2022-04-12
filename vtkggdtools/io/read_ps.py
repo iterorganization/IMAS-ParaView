@@ -271,39 +271,42 @@ def read_edge_transport(ids_obj, aos_index_values: dict,
         _add_aos_vector_array_to_vtk_field_data(quantity.d, subset_idx, name, ugrid)
         name = f'{q_name} Convection ({m_name}) (m.s^-1)'
         _add_aos_vector_array_to_vtk_field_data(quantity.v, subset_idx, name, ugrid)
-        name = '{q_name} Flux ({m_name}) (m^-2.s^-1)'
+        name = f'{q_name} Flux ({m_name}) (m^-2.s^-1)'
         _add_aos_vector_array_to_vtk_field_data(quantity.flux, subset_idx, name, ugrid)
-        name = '{q_name} Flux Limiter Coefficient ({m_name})'
-        _add_aos_vector_array_to_vtk_field_data(quantity.flu_limiter, subset_idx, name, ugrid)
+        name = f'{q_name} Flux Limiter Coefficient ({m_name})'
+        _add_aos_vector_array_to_vtk_field_data(quantity.flux_limiter, subset_idx, name, ugrid)
 
         # ions, neutrals = heavy particles = hp
-        for hp in [*ggd.ion, *ggd.neutral]:
+        # Add ' (all ions)' to the ion name to distinguish from state below:
+        ion_names = [' (all ions)']*len(ggd.ion) + ['']*len(ggd.neutral)
+        for hp, i_name in list(zip([*ggd.ion, *ggd.neutral], ion_names)):
+            hp_name = hp.label + i_name # ' (all ions)' to ions or '' to neutrals
             # heavy particles: particles, energy
             for q_name in ['particles', 'energy']:
-                quantity = getattr(hp, q)
-                name = f'{hp.label} Diffusivity ({q_name}) ({m_name}) (m^2.s^-1)'
+                quantity = getattr(hp, q_name)
+                name = f'{hp_name} Diffusivity ({q_name}) ({m_name}) (m^2.s^-1)'
                 _add_aos_scalar_array_to_vtk_field_data(quantity.d, subset_idx, name, ugrid)
-                name = f'{hp.label} Convection ({q_name}) ({m_name}) (m.s^-1)'
+                name = f'{hp_name} Convection ({q_name}) ({m_name}) (m.s^-1)'
                 _add_aos_scalar_array_to_vtk_field_data(quantity.v, subset_idx, name, ugrid)
-                name = f'{hp.label} Flux ({q_name}) ({m_name}) (m^-2.s^-1)'
+                name = f'{hp_name} Flux ({q_name}) ({m_name}) (m^-2.s^-1)'
                 _add_aos_scalar_array_to_vtk_field_data(quantity.flux, subset_idx, name, ugrid)
-                name = f'{hp.label} Flux Limiter Coefficient ({q_name}) ({m_name})'
-                _add_aos_scalar_array_to_vtk_field_data(quantity.flu_limiter, subset_idx, name, ugrid)
+                name = f'{hp_name} Flux Limiter Coefficient ({q_name}) ({m_name})'
+                _add_aos_scalar_array_to_vtk_field_data(quantity.flux_limiter, subset_idx, name, ugrid)
             # heavy particles: momentum
             quantity =hp.momentum
             q_name = 'Momentum'
-            name = f'{hp.label} Diffusivity ({q_name}) ({m_name}) (m^2.s^-1)'
+            name = f'{hp_name} Diffusivity ({q_name}) ({m_name}) (m^2.s^-1)'
             _add_aos_vector_array_to_vtk_field_data(quantity.d, subset_idx, name, ugrid)
-            name = f'{hp.label} Convection ({q_name}) ({m_name}) (m.s^-1)'
+            name = f'{hp_name} Convection ({q_name}) ({m_name}) (m.s^-1)'
             _add_aos_vector_array_to_vtk_field_data(quantity.v, subset_idx, name, ugrid)
-            name = '{hp.label} Flux ({q_name}) ({m_name}) (m^-2.s^-1)'
+            name = f'{hp_name} Flux ({q_name}) ({m_name}) (m^-2.s^-1)'
             _add_aos_vector_array_to_vtk_field_data(quantity.flux, subset_idx, name, ugrid)
-            name = '{hp.label} Flux Limiter Coefficient ({q_name}) ({m_name})'
-            _add_aos_vector_array_to_vtk_field_data(quantity.flu_limiter, subset_idx, name, ugrid)
+            name = f'{hp_name} Flux Limiter Coefficient ({q_name}) ({m_name})'
+            _add_aos_vector_array_to_vtk_field_data(quantity.flux_limiter, subset_idx, name, ugrid)
             # heavy particles: state
             for state in hp.state:
                 for q_name in ['particles', 'energy']:
-                    quantity = getattr(state, q)
+                    quantity = getattr(state, q_name)
                     name = f'{state.label} Diffusivity ({q_name}) ({m_name}) (m^2.s^-1)'
                     _add_aos_scalar_array_to_vtk_field_data(quantity.d, subset_idx, name, ugrid)
                     name = f'{state.label} Convection ({q_name}) ({m_name}) (m.s^-1)'
@@ -311,17 +314,17 @@ def read_edge_transport(ids_obj, aos_index_values: dict,
                     name = f'{state.label} Flux ({q_name}) ({m_name}) (m^-2.s^-1)'
                     _add_aos_scalar_array_to_vtk_field_data(quantity.flux, subset_idx, name, ugrid)
                     name = f'{state.label} Flux Limiter Coefficient ({q_name}) ({m_name})'
-                    _add_aos_scalar_array_to_vtk_field_data(quantity.flu_limiter, subset_idx, name, ugrid)
+                    _add_aos_scalar_array_to_vtk_field_data(quantity.flux_limiter, subset_idx, name, ugrid)
                 quantity = state.momentum
                 q_name = 'momentum'
                 name = f'{state.label} Diffusivity ({q_name}) ({m_name}) (m^2.s^-1)'
                 _add_aos_vector_array_to_vtk_field_data(quantity.d, subset_idx, name, ugrid)
                 name = f'{state.label} Convection ({q_name}) ({m_name}) (m.s^-1)'
                 _add_aos_vector_array_to_vtk_field_data(quantity.v, subset_idx, name, ugrid)
-                name = '{state.label} Flux ({q_name}) ({m_name}) (m^-2.s^-1)'
+                name = f'{state.label} Flux ({q_name}) ({m_name}) (m^-2.s^-1)'
                 _add_aos_vector_array_to_vtk_field_data(quantity.flux, subset_idx, name, ugrid)
-                name = '{state.label} Flux Limiter Coefficient ({q_name}) ({m_name})'
-                _add_aos_vector_array_to_vtk_field_data(quantity.flu_limiter, subset_idx, name, ugrid)
+                name = f'{state.label} Flux Limiter Coefficient ({q_name}) ({m_name})'
+                _add_aos_vector_array_to_vtk_field_data(quantity.flux_limiter, subset_idx, name, ugrid)
                 
     # TODO: ggd_fast
     
