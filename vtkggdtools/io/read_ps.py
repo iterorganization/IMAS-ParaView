@@ -129,18 +129,45 @@ def read_edge_profiles(ids_obj, aos_index_values: dict,
     _add_aos_vector_array_to_vtk_field_data(e.velocity, subset_idx, name, ugrid)
 
     # ions, neutrals = heavy particles = hp
-    for hp in [*ggd.ion, *ggd.neutral]:
-        scalars = {}
-        scalars[f'{hp.label} Temperature (eV)'] = hp.temperature 
-        scalars[f'{hp.label} Density (m^-3)'] = hp.density 
-        scalars[f'{hp.label} Density (fast) (m^-3)'] = hp.density_fast 
-        scalars[f'{hp.label} Pressure (Pa)'] = hp.pressure 
-        scalars[f'{hp.label} Pressure (fast perpendicular) (Pa)'] = hp.pressure_fast_perpendicular 
-        scalars[f'{hp.label} Pressure (fast parallel) (Pa)'] = hp.pressure_fast_parallel 
-        scalars[f'{hp.label} Kinetic Energy Density'] = hp.energy_density_kinetic 
+    # Add ' (all ions)' to the ion name to distinguish from state below:
+    ion_names = [' (all ions)']*len(ggd.ion) + ['']*len(ggd.neutral)
+    for hp, i_name in list(zip([*ggd.ion, *ggd.neutral], ion_names)):
+        hp_name = hp.label + i_name # ' add (all ions)' to ions or '' to neutrals
+        scalars = {
+            f'{hp_name} Temperature (eV)': hp.temperature,
+            f'{hp_name} Density (m^-3)': hp.density,
+            f'{hp_name} Density (fast) (m^-3)': hp.density_fast,
+            f'{hp_name} Pressure (Pa)': hp.pressure,
+            f'{hp_name} Pressure (fast perpendicular) (Pa)': hp.pressure_fast_perpendicular,
+            f'{hp_name} Pressure (fast parallel) (Pa)': hp.pressure_fast_parallel,
+            f'{hp_name} Kinetic Energy Density': hp.energy_density_kinetic
+        }
         _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
-        name = f'{hp.label} Velocity (m.s^-1)'
+        name = f'{hp_name} Velocity (m.s^-1)'
         _add_aos_vector_array_to_vtk_field_data(hp.velocity, subset_idx, name, ugrid)
+        # heavy particles: state
+        for state in hp.state:
+            scalars = {
+                #f'{state.label} <Z>': state.z_average,
+                #f'{state.label} <Z^2>': state.z_square_average,
+                #f'{state.label} Ionisation Potential': state.ionisation_potential,
+                f'{state.label} Temperature (eV)': state.temperature,
+                f'{state.label} Density (m^-3)': state.density,
+                f'{state.label} Density (fast) (m^-3)': state.density_fast,
+                f'{state.label} Pressure (Pa)': state.pressure,
+                f'{state.label} Pressure (fast perpendicular) (Pa)': state.pressure_fast_perpendicular,
+                f'{state.label} Pressure (fast parallel) (Pa)': state.pressure_fast_parallel,
+                f'{state.label} Kinetic Energy Density': state.energy_density_kinetic,
+                f'{state.label} Distribution Function': state.distribution_function
+            }
+            _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
+            vectors = {
+                f'{state.label} Velocity (m.s^-1)': state.velocity,
+                f'{state.label} Velocity (diamagnetic) (m.s^-1)': state.velocity_diamagnetic,
+                f'{state.label} Velocity (ExB) (m.s^-1)': state.velocity_exb,
+            }
+            _multi_add_aos_vector_to_vtk(vectors, subset_idx, ugrid)
+
 
     # other scalar quantities
     scalars = {
@@ -193,13 +220,28 @@ def read_edge_sources(ids_obj, aos_index_values: dict,
         _add_aos_scalar_array_to_vtk_field_data(ggd.electrons.energy, subset_idx, name, ugrid)
 
         # ions, neutrals = heavy particles = hp
-        for hp in [*ggd.ion, *ggd.neutral]:
-            name = f'{hp.label} Density ({s_name}) (s^-1.m^-3)'
+        # Add ' (all ions)' to the ion name to distinguish from state below:
+        ion_names = [' (all ions)']*len(ggd.ion) + ['']*len(ggd.neutral)
+        for hp, i_name in list(zip([*ggd.ion, *ggd.neutral], ion_names)):
+            hp_name = hp.label + i_name # add ' (all ions)' to ions or '' to neutrals
+            name = f'{hp_name} Density ({s_name}) (s^-1.m^-3)'
             _add_aos_scalar_array_to_vtk_field_data(hp.particles, subset_idx, name, ugrid)
-            name = f'{hp.label} Energy ({s_name}) (W.m^-3)'
+            name = f'{hp_name} Energy ({s_name}) (W.m^-3)'
             _add_aos_scalar_array_to_vtk_field_data(hp.energy, subset_idx, name, ugrid)
-            name = f'{hp.label} Momentum ({s_name}) (kg.m^-1.s^-2)'
+            name = f'{hp_name} Momentum ({s_name}) (kg.m^-1.s^-2)'
             _add_aos_vector_array_to_vtk_field_data(hp.momentum, subset_idx, name, ugrid)
+            # heavy particles: state
+            for state in hp.state:
+                # FIX ME: state.label is not filled for D2+ and causes a SIGSEGV in Paraview
+                st_name = state.label
+                if ord(st_name[0]) == 0:
+                    st_name = hp_name
+                name = f'{st_name} Density ({s_name}) (s^-1.m^-3)'
+                _add_aos_scalar_array_to_vtk_field_data(state.particles, subset_idx, name, ugrid)
+                name = f'{st_name} Energy ({s_name}) (W.m^-3)'
+                _add_aos_scalar_array_to_vtk_field_data(state.energy, subset_idx, name, ugrid)
+                name = f'{st_name} Momentum ({s_name}) (kg.m^-1.s^-2)'
+                _add_aos_vector_array_to_vtk_field_data(state.momentum, subset_idx, name, ugrid)
 
         # total_ion_energy
         name = f'Total Ion Energy ({s_name}) (W.m^-3)'
@@ -280,7 +322,7 @@ def read_edge_transport(ids_obj, aos_index_values: dict,
         # Add ' (all ions)' to the ion name to distinguish from state below:
         ion_names = [' (all ions)']*len(ggd.ion) + ['']*len(ggd.neutral)
         for hp, i_name in list(zip([*ggd.ion, *ggd.neutral], ion_names)):
-            hp_name = hp.label + i_name # ' (all ions)' to ions or '' to neutrals
+            hp_name = hp.label + i_name # add ' (all ions)' to ions or '' to neutrals
             # heavy particles: particles, energy
             for q_name in ['particles', 'energy']:
                 quantity = getattr(hp, q_name)
