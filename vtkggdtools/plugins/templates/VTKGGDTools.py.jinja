@@ -59,6 +59,10 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
         self.__AosIndices.update({"{{ key }}": "{{ value }}"})
         self.__AosIndexValues.update({"{{ value }}": 0})
         {% endfor %}
+        # {% if ids.name == "edge_transport" %}
+        # self.__AosIndices.update({"model": "ModelIdx"})
+        # self.__AosIndexValues.update({"ModelIdx": "to be parsed"})
+        # {% endif %}
 
     @smproperty.xml("""
         <IntVectorProperty command="SetBackend" 
@@ -120,7 +124,14 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             self.__AosIndexValues["{{ value }}"] = val
             self.Modified()
 {% endfor %}
-
+# {% if ids.name == "edge_transport" %}
+#     @smproperty.intvector(name="ModelIdx", default_values="to be parsed")
+#     def SetModelIdx(self, val):
+#         if val != self.__AosIndexValues["ModelIdx"]:
+#             self.__AosIndexValues["ModelIdx"] = val
+#             self.Modified()
+# {% endif %}
+        
     def FillOutputPortInformation(self, port, info):
         info.Set(vtkDataObject.DATA_TYPE_NAME(), "vtkPartitionedDataSetCollection")
         return 1
@@ -193,28 +204,50 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
         output.SetDataAssembly(assembly)
         points = vtkPoints()
         space_idx = 0
-        read_geom.fill_vtk_points(grid_ggd, space_idx, points)
 
-        for subset_idx in range(num_subsets):
-            subset = grid_ggd.grid_subset[subset_idx]
-            paraview.logger.info(f"Processing subset {subset_idx}")
-            paraview.logger.info(f"           index {subset.identifier.index}")
-            paraview.logger.info(f"           name {subset.identifier.name}")
-            paraview.logger.info(f"           description {subset.identifier.description}")
-            ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, subset_idx, points)
-            read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, ugrid)
-            output.SetPartition(subset_idx, 0, ugrid)
+        # Check if we have anything to read:
+        if num_subsets < 1 and len(grid_ggd.space) < 1:
+            paraview.logger.info('No points to read from grid_ggd')
+            return 0
 
-            label = subset.identifier.name
-            child = assembly.AddNode(label, 0)
-            assembly.AddDataSetIndex(child, subset_idx)
-            output.GetMetaData(subset_idx).Set(vtkCompositeDataSet.NAME(), label)
+        # Process grid_ggd.space:
+        if len(grid_ggd.space) < 1:
+            paraview.logger.info('No points to read from grid_ggd.space')
+        else:
+            read_geom.fill_vtk_points(grid_ggd, space_idx, points)
 
+        # Process grid_ggd.subsets:
+        if num_subsets < 1:
+                paraview.logger.info('No subsets to read from grid_ggd')
+        else:
+            for subset_idx in range(num_subsets):
+                subset = grid_ggd.grid_subset[subset_idx]
+                paraview.logger.info(f"Processing subset {subset_idx}")
+                paraview.logger.info(f"           index {subset.identifier.index}")
+                paraview.logger.info(f"           name {subset.identifier.name}")
+                paraview.logger.info(f"           description {subset.identifier.description}")
+                ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, subset_idx, points)
+                read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, ugrid)
+                output.SetPartition(subset_idx, 0, ugrid)
+
+                label = subset.identifier.name
+                child = assembly.AddNode(label, 0)
+                assembly.AddDataSetIndex(child, subset_idx)
+                output.GetMetaData(subset_idx).Set(vtkCompositeDataSet.NAME(), label)
+
+        # {% if ids.name == "edge_transport" %}
+        # # models = dict()
+        # # for idx in range(len(ids_obj.model)):
+        # #     m = ids_obj.model[idx]
+        # #     models[str(m.identifier.name)] = idx
+        # # SetModelIdx(models)
+        # {% endif %}
+                
         return 1
 {% endfor %}
+
+
 {% for name, ids in ids_blueprints | dictsort %}
-
-
 @smproxy.filter(label="{{ ids.label }} GGDWriter")
 @smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
 @smproperty.input(name="Input", port_index=0)
@@ -248,6 +281,10 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
         self.__AosIndices.update({"{{ key }}": "{{ value }}"})
         self.__AosIndexValues.update({"{{ value }}": 0})
         {% endfor %}
+        # {% if ids.name == "edge_transport" %}
+        # self.__AosIndices.update({"model": "ModelIdx"})
+        # self.__AosIndexValues.update({"ModelIdx": "to be parsed"})
+        # {% endif %}
 
     @smproperty.xml("""
         <IntVectorProperty command="SetBackend" 
@@ -343,6 +380,13 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
             self.__AosIndexValues["{{ value }}"] = val
             self.Modified()
 {% endfor %}
+# {% if ids.name == "edge_transport" %}
+#     @smproperty.intvector(name="ModelIdx", default_values="to be parsed")
+#     def SetModelIdx(self, val):
+#         if val != self.__AosIndexValues["ModelIdx"]:
+#             self.__AosIndexValues["ModelIdx"] = val
+#             self.Modified()
+# {% endif %}
 
     @smproperty.stringvector(name="SourceString", default_values="Written by VTKGGDTools")
     def SetSourceString(self, val):
