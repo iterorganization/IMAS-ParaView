@@ -148,9 +148,6 @@ def read_edge_profiles(ids_obj, aos_index_values: dict,
         # heavy particles: state
         for state in hp.state:
             scalars = {
-                #f'{state.label} <Z>': state.z_average,
-                #f'{state.label} <Z^2>': state.z_square_average,
-                #f'{state.label} Ionisation Potential': state.ionisation_potential,
                 f'{state.label} Temperature (eV)': state.temperature,
                 f'{state.label} Density (m^-3)': state.density,
                 f'{state.label} Density (fast) (m^-3)': state.density_fast,
@@ -160,6 +157,11 @@ def read_edge_profiles(ids_obj, aos_index_values: dict,
                 f'{state.label} Kinetic Energy Density': state.energy_density_kinetic,
                 f'{state.label} Distribution Function': state.distribution_function
             }
+            if i_name: # only for ions
+                scalars[f'{state.label} <Z>'] = state.z_average
+                scalars[f'{state.label} <Z^2>'] = state.z_square_average
+                scalars[f'{state.label} Ionisation Potential'] = state.ionisation_potential
+
             _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
             vectors = {
                 f'{state.label} Velocity (m.s^-1)': state.velocity,
@@ -235,7 +237,7 @@ def read_edge_sources(ids_obj, aos_index_values: dict,
                 # FIX ME: state.label is not filled for D2+ and causes a SIGSEGV in Paraview
                 st_name = state.label
                 if ord(st_name[0]) == 0:
-                    st_name = hp_name
+                    st_name = '? ' + hp_name
                 name = f'{st_name} Density ({s_name}) (s^-1.m^-3)'
                 _add_aos_scalar_array_to_vtk_field_data(state.particles, subset_idx, name, ugrid)
                 name = f'{st_name} Energy ({s_name}) (W.m^-3)'
@@ -616,7 +618,7 @@ def read_wall(ids_obj, aos_index_values: dict,
     name = 'Power Density (W.m^-2)'
     _add_aos_scalar_array_to_vtk_field_data(ggd.power_density, subset_idx, name, ugrid)
     # - temperature
-    name = 'Temperature  (K)'
+    name = 'Temperature (K)'
     _add_aos_scalar_array_to_vtk_field_data(ggd.temperature, subset_idx, name, ugrid)
 
     # TO DO: not tested! Could not find an IDS with ggd data.
