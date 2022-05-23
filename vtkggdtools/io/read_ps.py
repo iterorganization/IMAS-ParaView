@@ -694,7 +694,6 @@ def _add_scalar_array_to_vtk_field_data(array: np.ndarray, name: str, ugrid: vtk
     num_cells = ugrid.GetNumberOfCells()
 
     vtk_arr = dsa.numpyTovtkDataArray(array, name)
-    print(vtk_arr, array)
     if len(array) == num_points:
         point_data.AddArray(vtk_arr)
     if len(array) == num_cells:

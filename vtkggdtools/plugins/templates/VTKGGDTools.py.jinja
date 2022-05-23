@@ -20,7 +20,7 @@ from vtkmodules.vtkCommonCore import vtkDataArray, vtkPoints
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkCompositeDataSet, vtkDataAssembly, vtkDataObject, \
     vtkPartitionedDataSetCollection, vtkPointSet, vtkUnstructuredGrid
 from vtkggdtools.errors import InvalidIDSIOError, InvalidIDSParametersError
-from vtkggdtools.io import read_geom, write_geom, read_ps, write_ps
+from vtkggdtools.io import read_geom, read_bezier, write_geom, read_ps, write_ps
 from vtkggdtools.io.representables import GridSubsetRepresentable
 from vtkggdtools.imashelper import imas_env_call
 from vtkggdtools._version import __version__ as vtkggdtools_ver
@@ -52,6 +52,10 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
         self.__ImasMajorVer = "{{ default.major_ver }}"
         self.__Occurrence = {{ default.occurrence }}
         self.__GridGgdPath = {{ ids.grid_ggd_path }}
+        self.__n_plane = {{ default.n_plane }}
+        self.__phi_start = {{ default.phi_start }}
+        self.__phi_end = {{ default.phi_end }}
+
 
         self.__AosIndices = {}
         self.__AosIndexValues = {}
@@ -124,14 +128,24 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             self.__AosIndexValues["{{ value }}"] = val
             self.Modified()
 {% endfor %}
-# {% if ids.name == "edge_transport" %}
-#     @smproperty.intvector(name="ModelIdx", default_values="to be parsed")
-#     def SetModelIdx(self, val):
-#         if val != self.__AosIndexValues["ModelIdx"]:
-#             self.__AosIndexValues["ModelIdx"] = val
-#             self.Modified()
-# {% endif %}
-        
+    
+    @smproperty.intvector(name="N plane", default_values={{ default.n_plane }})
+    def SetNPlane(self, val):
+        if val != self.__n_plane:
+            self.__n_plane = val
+            self.Modified()
+
+    @smproperty.doublevector(name="Phi Range", default_values=[{{ default.phi_start }}, {{ default.phi_end }}])
+    @smdomain.doublerange(min=0, max=360.0)
+    def SetPhiRange(self, val, val2):
+        if val != self.__phi_start:
+            self.__phi_start = val
+            self.Modified()
+        if val2 != self.__phi_end:
+            self.__phi_end = val2
+            self.Modified()
+
+
     def FillOutputPortInformation(self, port, info):
         info.Set(vtkDataObject.DATA_TYPE_NAME(), "vtkPartitionedDataSetCollection")
         return 1
@@ -204,6 +218,36 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
         output.SetDataAssembly(assembly)
         points = vtkPoints()
         space_idx = 0
+        read_geom.fill_vtk_points(grid_ggd, space_idx, points)
+    
+        for subset_idx in range(num_subsets):
+            subset = grid_ggd.grid_subset[subset_idx]
+            paraview.logger.info(f"Processing subset {subset_idx}")
+            paraview.logger.info(f"           index {subset.identifier.index}")
+            paraview.logger.info(f"           name {subset.identifier.name}")
+            paraview.logger.info(f"           description {subset.identifier.description}")
+            if self.__n_plane == 0 or subset_idx == 0: # Regular grid processing
+                ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, subset_idx, points)
+                read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, ugrid)
+            else: # Possibly Bezier
+                number_of_spaces = len(grid_ggd.space)
+                if number_of_spaces > 1 and len(grid_ggd.space[0].coordinates_type) == 2:
+                    n_period = grid_ggd.space[1].geometry_type.index
+                    # print(f'Number of spaces: {number_of_spaces}, Periodicity {n_period}')
+                    if n_period > 0: # Fourier space with periodicity (JOREK)
+                        paraview.logger.info(f'Reading Bezier mesh with Fourier periodiciy {n_period}')
+                        ugrid = read_bezier.convert_grid_subset_to_unstructured_grid(grid_ggd, subset_idx, '{{ ids.name }}', ids_obj, self.__AosIndexValues, self.__n_plane, self.__phi_start, self.__phi_end)
+                    else:
+                        paraview.logger.error(f'Number of planes {self.__n_plane} invalid for this {number_of_spaces} number of spaces')
+                else:
+                    paraview.logger.error(f'Number of planes {self.__n_plane} invalid for this IDS type. Try using N = 0')
+
+            output.SetPartition(subset_idx, 0, ugrid)
+
+            label = subset.identifier.name
+            child = assembly.AddNode(label, 0)
+            assembly.AddDataSetIndex(child, subset_idx)
+            output.GetMetaData(subset_idx).Set(vtkCompositeDataSet.NAME(), label)
 
         # Check if we have anything to read:
         if num_subsets < 1 and len(grid_ggd.space) < 1:
@@ -271,7 +315,6 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
         self.__ImasMajorVer = "{{ default.major_ver }}"
         self.__Occurrence = {{ default.occurrence }}
         self.__GridGgdPath = {{ ids.grid_ggd_path }}
-        self.__SourceString = 'Written by VTKGGDTools'
         self.__GridGGDType = {{ default.ggd_type }}
         self.__GridGGDSpaceType = {{ default.ggd_space_type }}
 
@@ -388,12 +431,6 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
 #             self.Modified()
 # {% endif %}
 
-    @smproperty.stringvector(name="SourceString", default_values="Written by VTKGGDTools")
-    def SetSourceString(self, val):
-        if val != self.__SourceString:
-            self.__SourceString = val
-            self.Modified()
-
     def FillInputPortInformation(self, port, info):
         info.Set(vtkDataObject.DATA_TYPE_NAME(), "vtkPointSet")
         return 1
@@ -437,7 +474,6 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
 
         if ids_obj.ids_properties.homogeneous_time < 0:
             ids_obj.ids_properties.homogeneous_time = 1
-            ids_obj.ids_properties.source = self.__SourceString
             ids_obj.ids_properties.provider = getpass.getuser()
             ids_obj.ids_properties.creation_date = str(datetime.datetime.today())
             ids_obj.ids_properties.version_put.data_dictionary = os.getenv('IMAS_VERSION')
