@@ -42,8 +42,7 @@ Developer instructions
 Load the pre-requisite modules, create and activate a virtual environment and install
 the project files.
   ```bash
-  $ module load IMAS/3.35.0-4.10.0-2020b
-  $ module load ParaView/5.10.0-intel-2020b-mpi
+  $ module load IMAS ParaView
   $ python -m venv --system-site-packages --clear --prompt vtkggddev .venv 
   $ source .venv/bin/activate
   $ source install.sh .venv
