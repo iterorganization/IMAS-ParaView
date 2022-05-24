@@ -129,7 +129,7 @@ def convert_vtk_dataset_to_grid_subset_geometry(representable: GridGGDRepresenta
 
         elif dim == 2:
             element.object.resize(1)
-            face_tup = pts
+            face_tup = tuple(pts)
             if face_tup not in representable.faces and tuple(reversed(face_tup)) in representable.faces:
                 face_tup = tuple(reversed(face_tup))
             if face_tup in representable.faces:

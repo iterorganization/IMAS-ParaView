@@ -271,7 +271,6 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
         self.__ImasMajorVer = "{{ default.major_ver }}"
         self.__Occurrence = {{ default.occurrence }}
         self.__GridGgdPath = {{ ids.grid_ggd_path }}
-        self.__SourceString = 'Written by VTKGGDTools'
         self.__GridGGDType = {{ default.ggd_type }}
         self.__GridGGDSpaceType = {{ default.ggd_space_type }}
 
@@ -388,12 +387,6 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
 #             self.Modified()
 # {% endif %}
 
-    @smproperty.stringvector(name="SourceString", default_values="Written by VTKGGDTools")
-    def SetSourceString(self, val):
-        if val != self.__SourceString:
-            self.__SourceString = val
-            self.Modified()
-
     def FillInputPortInformation(self, port, info):
         info.Set(vtkDataObject.DATA_TYPE_NAME(), "vtkPointSet")
         return 1
@@ -437,7 +430,6 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
 
         if ids_obj.ids_properties.homogeneous_time < 0:
             ids_obj.ids_properties.homogeneous_time = 1
-            ids_obj.ids_properties.source = self.__SourceString
             ids_obj.ids_properties.provider = getpass.getuser()
             ids_obj.ids_properties.creation_date = str(datetime.datetime.today())
             ids_obj.ids_properties.version_put.data_dictionary = os.getenv('IMAS_VERSION')
