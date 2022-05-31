@@ -76,7 +76,7 @@ def convert_grid_subset_to_unstructured_grid(grid_ggd, subset_idx: int,
 
 
 
-    #vertex
+    # vertex
     ien0 = np.array(grid_ggd.space.array[0].objects_per_dimension.array[2].object.array)
     ver = np.empty((np.shape(ien0)[0], np.shape(ien0[0].nodes)[0]))
     for i in range(np.shape(ien0)[0]):
@@ -84,8 +84,8 @@ def convert_grid_subset_to_unstructured_grid(grid_ggd, subset_idx: int,
     ver = ver.astype(int)
     vertex = np.swapaxes(ver, 1, 0)
 
-    "everything we need to visualise data is now excavated from IDS file"
-    #vrite vtk
+    # everything we need to visualise data is now excavated from IDS file
+    # write vtk
     n_plane = 1 + (n_plane - 1) * 2
     n_sub = 4
     phi = [phi_start, phi_end]
