@@ -12,11 +12,12 @@ from vtkmodules.util.vtkConstants import VTK_FLOAT, VTK_ID_TYPE
 from vtkmodules.util import numpy_support as npvtk
 
 import numpy as np
+import vtk
+
 prec = np.float32
 vtk_prec = VTK_FLOAT
 
-def convert_grid_subset_to_unstructured_grid(grid_ggd, subset_idx: int,
-        ids_name: str, ids_obj, aos_index_values: dict, n_plane: int, phi_start, phi_end: float) -> vtkUnstructuredGrid:
+def convert_grid_subset_to_unstructured_grid(ids_name: str, ids, aos_index_values: dict, n_plane: int, phi_start, phi_end: float) -> vtkUnstructuredGrid:
     """
     Copy the elements found in given grid_ggd/grid_subset IDS node into a vtkUnstructuredGrid instance.
     This method uses the supplied point coordinates in the form of a vtkPoints instance.
@@ -28,22 +29,23 @@ def convert_grid_subset_to_unstructured_grid(grid_ggd, subset_idx: int,
     :param vtk_grid_points: the point coordinates corresponding to 1d objects in the subset elements.
     :return:
     """
-
-
     output = vtkUnstructuredGrid()
 
     time_idx = aos_index_values.get('TimeIdx')
     try:
-        ggd = ids_obj.ggd[time_idx]
+        if ids_name == 'mhd':
+            ggd = ids.ggd[time_idx]
+        else:
+            ggd = ids.grid_ggd[time_idx]
     except IndexError:
         return output
 
-
-    gr2d = grid_ggd.space[0]
+    phi = [phi_start, phi_end]
+    gr2d = ids.grid_ggd[0].space[0]
     xyz0 = gr2d.objects_per_dimension[0].object.array
     ien0 = np.array(gr2d.objects_per_dimension[2].object.array)
 
-    n_period = grid_ggd.space[1].geometry_type.index
+    n_period = ids.grid_ggd[0].space[1].geometry_type.index
 
     x = np.zeros((2, 4, len(xyz0)))
     for j in range(np.shape(x)[2]):
@@ -55,43 +57,74 @@ def convert_grid_subset_to_unstructured_grid(grid_ggd, subset_idx: int,
         size[:, :, i] = gr2d.objects_per_dimension.array[2].object.array[i].geometry_2d
 
     #values
-    val_tor = ggd.electrons.temperature.array[0].coefficients
-    a = np.shape(val_tor)
-    n_tor = a[0]
-    temp = np.reshape(val_tor, (n_tor, 4, len(xyz0)))
-    temp = np.swapaxes(temp, 0, 1)
-    values = np.array([temp])
+    try:
+        ids_r = ids
+        data_r = ids_r.process[0].ggd.array[time_idx]
+        radiation = True
+    except:
+        radiation = False
+        pass
 
-    val_tor1 = np.array([ggd.psi.array[0].coefficients,
-                         ggd.phi_potential.array[0].coefficients,
-                         ggd.j_tor.array[0].coefficients,
-                         ggd.vorticity.array[0].coefficients,
-                         ggd.mass_density.array[0].coefficients,
-                         ggd.electrons.temperature.array[0].coefficients,
-                         ggd.velocity_parallel.array[0].coefficients])
+    nam_all = {"psi": 'psi',
+                "u": 'phi_potential',
+                "j0": 'j_tor',
+                "j": 'j_tor_r',
+                "w": 'vorticity_over_r',
+                "w0": 'vorticity',
+                "rho": 'mass_density',
+                "T": 'electrons.temperature',
+                "v_par": 'velocity_parallel_over_b_field',
+                "v_par0": 'velocity_parallel'}
+
+    val_tor1 = np.array([])
+    nam = list()
+
+    try:
+        data = ids.ggd.array[time_idx]
+        mhdval = True
+    except:
+        mhdval = False
+
+    if mhdval:
+        for key in nam_all:
+            val_tor1, nam = value_in_IDS(data, nam_all, key, val_tor1, nam)
+
+    if radiation:
+        try:
+            if np.size(val_tor1) == 0:
+                val_tor1 = np.array([data_r.ion[0].emissivity[0].coefficients])
+                nam.append("Radiation (W/m^3)")
+            else:
+                val_tor1 = np.concatenate((val_tor1,
+                    np.array([data_r.ion[0].emissivity[0].coefficients])), axis=0)
+                nam.append("Radiation (W/m^3)")
+        except:
+            print('No radiation values')
+
+    if not(radiation or mhdval):
+        print('No mhd or radiation values found')
+        return output
+
+    n_val = len(nam)
     a = np.shape(val_tor1)
     n_tor = a[1]
-    valu = np.reshape(val_tor1, (7, n_tor, 4, len(xyz0)))
+    valu = np.reshape(val_tor1, (n_val, n_tor, 4, len(xyz0)))
     values = np.swapaxes(valu, 1, 2)
 
-
-
-    # vertex
-    ien0 = np.array(grid_ggd.space.array[0].objects_per_dimension.array[2].object.array)
+            #vertex
+    ien0 = np.array(ids.grid_ggd.array[0].space.array[0].objects_per_dimension.array[2].object.array)
     ver = np.empty((np.shape(ien0)[0], np.shape(ien0[0].nodes)[0]))
     for i in range(np.shape(ien0)[0]):
         ver[i, :] = np.array(ien0[i].nodes)
     ver = ver.astype(int)
     vertex = np.swapaxes(ver, 1, 0)
 
-    # everything we need to visualise data is now excavated from IDS file
-    # write vtk
+    # Everything we need to visualise data is now excavated from IDS file
     n_plane = 1 + (n_plane - 1) * 2
     n_sub = 4
-    phi = [phi_start, phi_end]
     without_n0_mode = False
     periodic = False
-    
+            
     if (n_plane == 1):
         phis = np.asarray([phi[0]])
     else:
@@ -99,7 +132,6 @@ def convert_grid_subset_to_unstructured_grid(grid_ggd, subset_idx: int,
         phis = np.linspace(phi[0], phi[1], num=n_plane, endpoint=not periodic)
 
     phis = phis * np.pi / 180
-    # output = vtk.vtkUnstructuredGrid()
     ien = None
 
     tmp = np.zeros((x.shape[0], x.shape[1], vertex.shape[0], vertex.shape[1]))
@@ -135,8 +167,8 @@ def convert_grid_subset_to_unstructured_grid(grid_ggd, subset_idx: int,
         for i in range(1, np.shape(xyz)[0] // 16):
             ien2 = np.concatenate((ien2, np.array([index + i * step])), axis=0)
         ien = np.insert(ien2, 0, 16, axis=1)
-        etype = VTK_BEZIER_QUADRILATERAL
-        
+        etype = vtk.VTK_BEZIER_QUADRILATERAL
+                
     else:
         alpha = (phi[1] - phi[0]) / (n_plane - 1)
         s = np.shape(xyz)[0] // n_plane
@@ -155,7 +187,7 @@ def convert_grid_subset_to_unstructured_grid(grid_ggd, subset_idx: int,
             xyz[s + i * 2 * s: 2 * s + i * 2 * s, 2] = 1 / w * xyz[s + i * 2 * s: 2 * s + i * 2 * s, 2]
             step = np.array([16 for i in range(48)])
             ien2 = np.zeros((np.shape(xyz)[0] // n_plane // 16, 48))
-            for j in range(1, np.shape(xyz)[0] // n_plane // 16):
+            for j in range(0, np.shape(xyz)[0] // n_plane // 16):
                 ien2[j, :] = np.array([index2 + j * step])
 
             if (np.any(ien)):
@@ -164,43 +196,46 @@ def convert_grid_subset_to_unstructured_grid(grid_ggd, subset_idx: int,
                 ien = ien2
 
         ien = np.insert(ien, 0, 48, axis=1)
-        etype = VTK_BEZIER_HEXAHEDRON
+        etype = vtk.VTK_BEZIER_HEXAHEDRON
 
         weights = npvtk.numpy_to_vtk(w1, deep=True, array_type=vtk_prec)
         weights.SetName("RationalWeights")
         output.GetPointData().SetRationalWeights(weights)
         n_c = int(np.shape(xyz)[0] / n_plane / 16 * (n_plane - 1) / 2)
         degrees = npvtk.numpy_to_vtk(np.array([[3, 3, 2] for k in range(n_c)]), deep=True,
-                                     array_type=VTK_ID_TYPE)
+                                     array_type=vtk.VTK_ID_TYPE)
         degrees.SetName("HigherOrderDegrees")
 
         output.GetCellData().SetHigherOrderDegrees(degrees)
 
     pcoords = npvtk.numpy_to_vtk(xyz, deep=True, array_type=vtk_prec)
-    points = vtkPoints()
+    points = vtk.vtkPoints()
     points.SetData(pcoords)
 
-    cells = vtkCellArray()
-    cells.SetCells(ien.shape[0], npvtk.numpy_to_vtk(ien, deep=True, array_type=VTK_ID_TYPE))
+    cells = vtk.vtkCellArray()
+    cells.SetCells(ien.shape[0], npvtk.numpy_to_vtk(ien, deep=True, array_type=vtk.VTK_ID_TYPE))
 
     output.SetPoints(points)
     output.SetCells(etype, cells)
-    
+            
     HZ = toroidal_basis(n_tor, n_period, phis, without_n0_mode)
 
-    val = interp_scalars_3D(values, vertex, size, n_sub, HZ).reshape((7, -1))
+    val = interp_scalars_3D(values, vertex, size, n_sub, HZ).reshape((n_val, -1))
 
     a = np.shape(val)
     val = val.reshape((a[0], a[1] // 16, 16))
     val[:, :, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]] = val[:, :, [0, 12, 15, 3, 4, 8, 11, 7, 1,
-                                                                                   13, 14, 2, 5, 9, 10, 6]]
+                                                                                           13, 14, 2, 5, 9, 10, 6]]
     val = val.reshape((a[0], a[1]))
-    
-    nam = ["psi", "u", "j", "w", "rho", "T", "v_par"]
-    for i in range(7):
+
+    for i in range(len(nam)):
         tmp = npvtk.numpy_to_vtk(val[i, :], deep=True, array_type=vtk_prec)
         tmp.SetName(nam[i])
         output.GetPointData().AddArray(tmp)
+    time2 = ids.time[time_idx]
+    stime = npvtk.numpy_to_vtk(np.array([time2]), deep=True, array_type=vtk_prec)
+    stime.SetName("TimeValue")
+    output.GetFieldData().AddArray(stime)
 
     return output
 
@@ -336,3 +371,25 @@ def bf_t(n_sub):
     s  = np.tensordot(lin, [1]*n_sub, axes=0)
     t  = s.transpose()
     return basis_functions_t(s, t)
+
+def value_in_IDS(ids_data, valuepaths:dict, name:str, valu:np.ndarray, names:list):
+    """
+    Check if IDS contains chosen value and add it to array of all values
+    """
+    try:
+        new_val = getattr(ids_data, valuepaths[name]).array[0].coefficients
+        if not(names):
+            names = list()
+            names.append(name)
+        else:
+            names.append(name)
+    
+        if np.size(valu) == 0:
+            valu = np.array([new_val])
+            return valu, names
+
+        valu = np.concatenate((valu, np.array([new_val])), axis=0)
+        return valu, names
+
+    except:
+        return valu, names

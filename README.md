@@ -1,17 +1,30 @@
 # VTKGGDTools
 
-This project contains a ParaView plugin that exposes GGD readers and GGD Writers for use in the ParaView pipeline.
+This project contains a ParaView plugin that exposes GGD readers and
+GGD Writers for use in the ParaView pipeline.
 
 ## How to use
 
-After installation, export the installation path of vtkggdtools/plugins to PV_PLUGIN_PATH and launch ParaView. You can also follow the "Developer instructions" below to have this automatically done for you.
+After installation, export the installation path of
+vtkggdtools/plugins to PV_PLUGIN_PATH and launch ParaView. You can
+also follow the "Developer instructions" below to have this
+automatically done for you.
 
 ### View GGD (Grid and Plasma State) in ParaView
 
-In ParaView, go to Sources->VTKGGDTools and choose the input plug-in you want to use. Then fill the fields in the "Properties" panel with the correct details of the IDS and press "Apply" (if the panel is not visible, select it in the "View" menu). After a few seconds you should see the grid-ggd colored by type of grid. You can now press the "vtkBlockColors" button under the "Coloring" section and select the plasma state quantity you want to view.
+In ParaView, go to Sources->VTKGGDTools and choose the input plug-in
+you want to use. Then fill the fields in the "Properties" panel with
+the correct details of the IDS and press "Apply" (if the panel is not
+visible, select it in the "View" menu). After a few seconds you should
+see the grid-ggd colored by type of grid. You can now press the
+"vtkBlockColors" button under the "Coloring" section and select the
+plasma state quantity you want to view.
 
 #### Example of IDSs to try:
-You might find the list below useful to test. The reference order is Pulse/Run/Tokamak/User.
+
+You might find the list below useful to test. The reference order is
+Pulse/Run/Tokamak/User.
+
 - **134174/117/ITER/public**<br>
   Use TimeIdx 4
   - edge_profiles OK
@@ -68,21 +81,23 @@ To be fully implemented.
 |wall| done  |done|incomplete|n/a
 |waves| done  |done|done|n/a
 
-*Note*: The ReadUALEdge plugin uses `vtkMultiBlockDataSet`: a deprecated VTK data structure and is limited to
-the `edge_profiles` and a few edge related IDSs. This project uses `vtkPartitionedDataSetCollection` and hopes to cover
-base all IDSs.
+*Note*: The ReadUALEdge plugin uses `vtkMultiBlockDataSet`: a
+deprecated VTK data structure and is limited to the `edge_profiles`
+and a few edge related IDSs. This project uses
+`vtkPartitionedDataSetCollection` and hopes to cover base all IDSs.
 
 ## Developer instructions
 
 Load the pre-requisite modules, create and activate a virtual environment and install
 the project files.
-  ```bash
-  $ module load IMAS ParaView
+
+```bash
+  $ module load IMAS ParaView # IMAS/3.37.0-4.11.0-2020b ParaView/5.10.0-intel-2020b-mpi
   $ python -m venv --system-site-packages --clear --prompt vtkggddev .venv
   $ source .venv/bin/activate
   $ source install.sh .venv
   # Either launch paraview and test the plugins
   $ paraview
   # Or open up your IDE/code editor and begin development.
-  ```
+```
 Upon modifying the source, run `source install.sh .venv` again.

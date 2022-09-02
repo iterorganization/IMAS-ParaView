@@ -31,10 +31,10 @@ class IDSTemplate:
 class IMASDefaults:
     backend: int = 12
     imas_backends: dict = field(default_factory=dict)
-    shot: int = 130012
-    run: int = 10
+    shot: int = 122408
+    run: int = 3
     username: str = 'public'
-    tokamak: str = 'TEST'
+    tokamak: str = 'iter'
     major_ver: str = '3'
     occurrence: int = 0
     delimiter: str = '/'
@@ -42,7 +42,7 @@ class IMASDefaults:
     ggd_types: dict = field(default_factory=dict)
     ggd_space_type: int = 1
     ggd_space_types: dict = field(default_factory=dict)
-    n_plane: int = 2          # number of planes for 3D interpolation
+    n_plane: int = 0          # number of planes for 3D interpolation
     phi_start: float = 0.0    # start phi coordinate in degrees
     phi_end: float = 90.0     # end phi coordinate in degrees
 

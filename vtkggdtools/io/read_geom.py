@@ -35,7 +35,7 @@ def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints) -> None:
     :return: None
     """
     num_objects0d = len(grid_ggd.space[space_idx].objects_per_dimension[0].object)
-    print(f'Reading {num_objects0d} point (s) from grid_ggd/space[{space_idx}]')
+    print(f'Reading {num_objects0d} points from grid_ggd/space[{space_idx}]')
 
     points.Allocate(num_objects0d, 0)
     coordinate_type = grid_ggd.space[space_idx].coordinates_type
@@ -49,8 +49,6 @@ def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints) -> None:
     for obj in grid_ggd.space[space_idx].objects_per_dimension[0].object:
         points.InsertNextPoint((obj.geometry[0], obj.geometry[1], third_dim(obj)))
 
-    print('Finished')
-
 
 def _fill_vtk_cell_array_from_gs(grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
     """
@@ -62,9 +60,13 @@ def _fill_vtk_cell_array_from_gs(grid_ggd, subset_idx: int, ugrid: vtkUnstructur
     """
     grid_subset = grid_ggd.grid_subset[subset_idx]
     num_gs_el = len(grid_subset.element)
-    print(f'Reading {num_gs_el} element (s) from grid_ggd/grid_subset[{subset_idx}]')
-    ugrid.AllocateEstimate(num_gs_el, 10)
 
+    if hasattr(grid_subset, 'identifier'):
+        print(f'Reading {num_gs_el} elements from {grid_subset.identifier.name}')
+    else:
+        print(f'Reading {num_gs_el} elements from grid_ggd/grid_subset[{subset_idx}]')
+
+    ugrid.AllocateEstimate(num_gs_el, 10)
     object_3d_pt_ids = vtkIdList()
 
     for element in grid_subset.element:
@@ -101,8 +103,6 @@ def _fill_vtk_cell_array_from_gs(grid_ggd, subset_idx: int, ugrid: vtkUnstructur
 
                 # the other overload (int, int, (int,...)) raises TypeError, so use the one with vtkIdList
                 ugrid.InsertNextCell(cell_type, object_3d_pt_ids)
-
-    print('Finished')
 
 
 def _get_vtk_cell_type(dimension: int, npts: int) -> int:
