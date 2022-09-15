@@ -3,11 +3,13 @@ from typing import Sequence, Union
 from vtkmodules.vtkCommonCore import vtkDataArray, vtkIdList
 from vtkmodules.vtkCommonDataModel import vtkUnstructuredGrid, VTK_LINE, VTK_POLYGON, VTK_POLYHEDRON, vtkPointData, \
     vtkCellData
+from vtkmodules.vtkCommonDataModel import vtkUnstructuredGrid, VTK_EMPTY_CELL, VTK_VERTEX, VTK_LINE, VTK_TRIANGLE, \
+    VTK_QUAD, VTK_POLYGON, VTK_POLY_LINE, VTK_POLYHEDRON
 from vtkmodules.vtkFiltersCore import vtkPointDataToCellData
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 
 from vtkggdtools.io.representables import GridSubsetRepresentable, GridGGDRepresentable
-
+import numpy as np
 
 def write_plasma_state(ids_name: str, ids_obj, aos_index_values: dict, space_idx: int,
                        rep: GridGGDRepresentable, subset_rep: GridSubsetRepresentable, grid_ggd) -> None:
@@ -202,18 +204,36 @@ def write_plasma_state(ids_name: str, ids_obj, aos_index_values: dict, space_idx
         # TODO: ion arrays
 
     elif ids_name == 'wall':
+        print('Writing wall plasma states.')
         # ggd is at /wall/description_ggd(i1)/ggd(itime)
-        description_ggd_idx = aos_index_values.get('DescriptionGGDIdx')
+        description_ggd_idx = aos_index_values.get('DescriptionGgdIdx')
         time_idx = aos_index_values.get('TimeIdx')
+
+        if not len(ids_obj.description_ggd[description_ggd_idx].ggd):
+            ids_obj.description_ggd[description_ggd_idx].ggd.resize(1)
         try:
             ggd = ids_obj.description_ggd[description_ggd_idx].ggd[time_idx]
         except IndexError:
+            print('Could not make ggd.')
             return
 
-        # - power_density
-        name = 'Power Density (W.m^-2)'
-        # - temperature
-        name = 'Temperature  (K)'
+        # - Power_density and temperature
+        data = subset_rep.ugrid.GetPointData()
+        n = data.GetNumberOfArrays()
+        if n == 0:
+            # If data is written on cells
+            data = subset_rep.ugrid.GetCellData()
+            n = data.GetNumberOfArrays()
+            if n == 0:
+                print('No plasma state data found.')
+
+        for i in range(n):
+            name = data.GetArrayName(i)
+            if name == 'Q':
+                _write_aos_scalar_node_from_vtk_field_data(name, subset_rep, rep, space_idx, ggd.power_density, grid_ggd)
+            elif name == 'Temperature':
+                _write_aos_scalar_node_from_vtk_field_data(name, subset_rep, rep, space_idx, ggd.temperature, grid_ggd)
+        print('Finnished')
 
     elif ids_name == 'waves':
         # A 'ggd' node is absent,
@@ -264,8 +284,7 @@ def _write_scalar_array_from_vtk_field_data(vtk_array: vtkDataArray, subset_idx:
         return
     as_np = dsa.vtkDataArrayToVTKArray(vtk_array)
     aos_scalar_node[subset_idx].values.resize(len(as_np))
-    for i in range(len(as_np)):
-        aos_scalar_node[subset_idx].values[i] = as_np[i]
+    aos_scalar_node[subset_idx].values[:] = as_np[:]
 
 
 def _interpolate_point_data_to_cell_data(name: str, ugrid: vtkUnstructuredGrid, cells: Sequence,
@@ -300,7 +319,7 @@ def _write_aos_scalar_node_from_vtk_field_data(name: str, subset_rep: GridSubset
     cell_data: vtkCellData = subset_rep.ugrid.GetCellData()
 
     if point_data.HasArray(name):
-        print(f'Writing plasma state {name} for {4 + subset_rep.num_subsets} subsets ..')
+        print(f'Writing plasma state {name} for {subset_rep.num_subsets} subsets ..')
         subset_idx = 0
         # deal with array from point data
         # write array from point data for 'nodes'
@@ -316,44 +335,90 @@ def _write_aos_scalar_node_from_vtk_field_data(name: str, subset_rep: GridSubset
         # write array from point data for 'edges'
         _write_scalar_array_from_vtk_field_data(arr, subset_idx, aos_scalar_node)
         aos_scalar_node[subset_idx].grid_index = grid_ggd.space[space_idx].identifier.index
-        aos_scalar_node[subset_idx].grid_subset_index = grid_ggd.grid_subset[subset_idx].identifier.index
 
         # interpolate array from points to faces.
         subset_idx += 1
-        cell_types = [VTK_POLYGON] * len(rep.faces)
-        arr = _interpolate_point_data_to_cell_data(name, subset_rep.ugrid, list(rep.faces.keys()), cell_types)
+
+        cell_types = [_get_vtk_cell_type(2, len(cell)) for cell in rep.faces]
+        #arr = _interpolate_point_data_to_cell_data(name, subset_rep.ugrid, list(rep.faces.keys()), cell_types)
         # write array from point data for 'faces'
+        arr = subset_rep.ugrid.GetPointData().GetArray(name)
+        #if actual cell data is required, it is writen in next if sentence.
         _write_scalar_array_from_vtk_field_data(arr, subset_idx, aos_scalar_node)
         aos_scalar_node[subset_idx].grid_index = grid_ggd.space[space_idx].identifier.index
         aos_scalar_node[subset_idx].grid_subset_index = grid_ggd.grid_subset[subset_idx].identifier.index
 
         # interpolate array from points to volumes.
         subset_idx += 1
+        '''
         cell_types = [VTK_POLYHEDRON] * len(rep.volumes)
         arr = _interpolate_point_data_to_cell_data(name, subset_rep.ugrid, list(rep.volumes.keys()), cell_types)
         # write array from point data for 'volumes'
         _write_scalar_array_from_vtk_field_data(arr, subset_idx, aos_scalar_node)
         aos_scalar_node[subset_idx].grid_index = grid_ggd.space[space_idx].identifier.index
         aos_scalar_node[subset_idx].grid_subset_index = grid_ggd.grid_subset[subset_idx].identifier.index
-
+        '''
         # write array from point data for other subsets interpolating when necessary
-        for subset_idx in range(subset_idx + 1, subset_rep.num_subsets):
+        for subsetidx in range(subset_idx + 1, subset_rep.num_subsets):
             # interpolate array from points to elements
-            arr = _interpolate_point_data_to_cell_data(name, subset_rep.ugrid, subset_rep.element_list.get(subset_idx),
-                                                       subset_rep.subset_cell_types.get(subset_idx))
-            _write_scalar_array_from_vtk_field_data(arr, subset_idx, aos_scalar_node)
-        print('Finished')
+            cell_types = []
+            cells = []
+            for i in range(len(subset_rep.element_list.get(subsetidx))):
+                cell = subset_rep.element_list.get(subsetidx)[i]
+                # Uses everything except nodes.
+                if type(cell) != np.int64:
+                    cells.append(cell)
+                    cell_types.append(subset_rep.subset_cell_types.get(subsetidx)[i])
+
+
+            #arr = _interpolate_point_data_to_cell_data(name, subset_rep.ugrid, subset_rep.element_list.get(subsetidx),
+            #                                           subset_rep.subset_cell_types.get(subsetidx))
+            arr = _interpolate_point_data_to_cell_data(name, subset_rep.ugrid, cells, cell_types)
+            _write_scalar_array_from_vtk_field_data(arr, subsetidx, aos_scalar_node)
 
     if cell_data.HasArray(name):
-        pass
+        # if data on cells is provided it is writen to IDS.
+        print(f'Writing plasma state {name} for cells')
+        arr = subset_rep.ugrid.GetCellData().GetArray(name)
+        _write_scalar_array_from_vtk_field_data(arr, 2, aos_scalar_node)
+        aos_scalar_node[2].grid_index = grid_ggd.space[space_idx].identifier.index
+        aos_scalar_node[2].grid_subset_index = grid_ggd.grid_subset[2].identifier.index
         # deal with array from cell data
         # interpolate array from cells to nodes.
         # write array from cell data for 'nodes'
         # interpolate array from cells to edges.
         # write array from cell data for 'edges'
-        # interpolate array from cells to faces.
-        # write array from cell data for 'faces'
         # interpolate array from cells to volumes.
         # write array from cell data for 'volumes'
         # write array from cell data for other subsets interpolating when necessary
+
+def _get_vtk_cell_type(dimension: int, npts: int) -> int:
+    """
+    Determines a suitable VTK cell type from given cell dimensionality and number of points for that cell.
+    :param dimension: the number of dimensions for a cell.
+    :param npts: the number of points for a cell.
+    :return: VTK Cell Type
+    """
+    if dimension == 0:
+        return VTK_VERTEX
+
+    elif dimension == 1:
+        if npts == 2:
+            return VTK_LINE
+        else:
+            return VTK_POLY_LINE
+
+    elif dimension == 2:
+        if npts == 3:
+            return VTK_TRIANGLE
+        elif npts == 4:
+            return VTK_QUAD
+        else:
+            return VTK_POLYGON
+
+    elif dimension == 3:
+        return VTK_POLYHEDRON
+
+    else:
+        return VTK_EMPTY_CELL
 

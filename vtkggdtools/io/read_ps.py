@@ -682,21 +682,33 @@ def read_wall(ids_obj, aos_index_values: dict,
               subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
     
     # ggd is at /wall/description_ggd(i1)/ggd(itime)
-    description_ggd_idx = aos_index_values.get('DescriptionGGDIdx')
+    description_ggd_idx = aos_index_values.get('DescriptionGgdIdx')
     time_idx = aos_index_values.get('TimeIdx')
+
     try:
-        ggd = ids_obj.description_ggd[description_ggd_idx].ggd[time_idx]
+        if description_ggd_idx != None:
+            ggd = ids_obj.description_ggd[description_ggd_idx].ggd[time_idx]
+        else:
+            ggd = ids_obj.description_ggd[0].ggd[time_idx]
     except IndexError:
         return
 
+    # Power density and temperature read if data is provided.
     # - power_density
     name = 'Power Density [$W m^{-2}$]'
-    _add_aos_scalar_array_to_vtk_field_data(ggd.power_density, subset_idx, name, ugrid)
+    try:
+        _add_aos_scalar_array_to_vtk_field_data(ggd.power_density, subset_idx, name, ugrid)
+    except:
+        print('No power density in IDS')
+        pass
+
     # - temperature
     name = 'Temperature [$K$]'
-    _add_aos_scalar_array_to_vtk_field_data(ggd.temperature, subset_idx, name, ugrid)
-
-    # TO DO: not tested! Could not find an IDS with ggd data.
+    try:
+        _add_aos_scalar_array_to_vtk_field_data(ggd.temperature, subset_idx, name, ugrid)
+    except:
+        print('No temperature in IDS.')
+        pass
 
     
 def read_waves(ids_obj, aos_index_values: dict,
@@ -768,6 +780,7 @@ def _add_scalar_array_to_vtk_field_data(array: np.ndarray, name: str, ugrid: vtk
     cell_data: vtkCellData = ugrid.GetCellData()
     num_cells = ugrid.GetNumberOfCells()
 
+    # To see interpolation of point data on cells, just point data is necessary.
     vtk_arr = dsa.numpyTovtkDataArray(array, name)
     if len(array) == num_points:
         point_data.AddArray(vtk_arr)
@@ -786,8 +799,15 @@ def _add_aos_scalar_array_to_vtk_field_data(aos_scalar_node, subset_idx: int, na
     """
     if subset_idx >= len(aos_scalar_node):
         return
-    if hasattr(aos_scalar_node[subset_idx], 'values') and len(aos_scalar_node[subset_idx].values):
-        _add_scalar_array_to_vtk_field_data(aos_scalar_node[subset_idx].values, name, ugrid)
+
+    # For wall IDS nodes, edges, cells, volumes in one partition.
+    if subset_idx == -1:
+        for i in range(4):
+            if hasattr(aos_scalar_node[i], 'values') and len(aos_scalar_node[i].values):
+                _add_scalar_array_to_vtk_field_data(aos_scalar_node[i].values, name, ugrid)
+    else:
+        if hasattr(aos_scalar_node[subset_idx], 'values') and len(aos_scalar_node[subset_idx].values):
+            _add_scalar_array_to_vtk_field_data(aos_scalar_node[subset_idx].values, name, ugrid)
 
 
 def _multi_add_aos_scalar_to_vtk(scalar_description: dict, subset_idx: int, ugrid: vtkUnstructuredGrid):

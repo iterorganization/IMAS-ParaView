@@ -4,6 +4,7 @@ These methods copy contents from the grid_ggd/space and grid_ggd/grid_subset
 children into distinct vtkUnstructuredGrid objects.
 """
 from typing import Callable, Any
+import numpy as np
 
 from vtkmodules.vtkCommonCore import vtkPoints, vtkIdList
 from vtkmodules.vtkCommonDataModel import vtkUnstructuredGrid, VTK_EMPTY_CELL, VTK_VERTEX, VTK_LINE, VTK_TRIANGLE, \
@@ -22,11 +23,14 @@ def convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, subset_idx: int,
     """
     grid = vtkUnstructuredGrid()
     grid.SetPoints(vtk_grid_points)
-    _fill_vtk_cell_array_from_gs(grid_ggd, subset_idx, grid)
+    if subset_idx >= 0:
+        _fill_vtk_cell_array_from_gs(grid_ggd, subset_idx, grid)
+    else:
+        _fill_vtk_cell_array_from_gs2(grid_ggd, subset_idx, grid)
     return grid
 
 
-def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints) -> None:
+def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints, ids_name: str) -> None:
     """
     Populate the vtkPoints data structure with coordinates from the grid_ggd/space IDS node.
     :param grid_ggd: a grid_ggd ids node.
@@ -36,6 +40,10 @@ def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints) -> None:
     """
     num_objects0d = len(grid_ggd.space[space_idx].objects_per_dimension[0].object)
     print(f'Reading {num_objects0d} points from grid_ggd/space[{space_idx}]')
+
+    s = 1 #scale objects from mm to m
+    if grid_ggd.space[space_idx].objects_per_dimension[0].object[0].geometry[0] > 100:
+        s = 0.001
 
     points.Allocate(num_objects0d, 0)
     coordinate_type = grid_ggd.space[space_idx].coordinates_type
@@ -47,8 +55,38 @@ def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints) -> None:
         third_dim: Callable[[Any], int] = lambda e: 0
 
     for obj in grid_ggd.space[space_idx].objects_per_dimension[0].object:
-        points.InsertNextPoint((obj.geometry[0], obj.geometry[1], third_dim(obj)))
+        if ids_name == 'wall':
+            points.InsertNextPoint((obj.geometry[0] * s, obj.geometry[1] * s, third_dim(obj) * s))
+        else:
+            points.InsertNextPoint((obj.geometry[0] * s, third_dim(obj) * s, obj.geometry[1] * s))
+            #Use for changing orientation in paraview.
 
+def _fill_vtk_cell_array_from_gs2(grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
+    """
+    _fill_vtk_cell_array_from_gs() for wall IDS.
+    :param grid_ggd: a grid_ggd ids node.
+    :param subset_idx: -1
+    :param ugrid: the vtk unstructured grid instance.
+    :return: None
+    """
+    grid = grid_ggd.space[0].objects_per_dimension
+    num_cell = len(grid[2].object[:]) #4- 0D, 1D, 2D, 3D objects
+    ugrid.AllocateEstimate(num_cell, 10)
+
+    #Uses only 2d cells.
+    for j in range(len(grid[2].object[:])):
+        obj = grid[2].object[j]
+        obj_nodes = obj.nodes
+        obj_dimension = 2
+        try:
+            obj_boundary = obj.boundary
+        except:
+            obj_boundary = []
+
+        pt_ids = list(map(lambda val: val - 1, obj_nodes))
+        npts = len(pt_ids)
+        cell_type = _get_vtk_cell_type(obj_dimension, npts)
+        ugrid.InsertNextCell(cell_type, npts, pt_ids)
 
 def _fill_vtk_cell_array_from_gs(grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
     """

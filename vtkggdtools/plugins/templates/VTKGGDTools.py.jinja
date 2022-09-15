@@ -215,10 +215,11 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             return 0
 
         # We now have the grid_ggd
+        {% if ids.name == 'wall'%}
+        #grid_ggd = grid_ggd.grid_ggd[0]
+        #For mesh IDS from smiter
+        {% endif %}
         num_subsets = len(grid_ggd.grid_subset)
-        assembly = vtkDataAssembly()
-        output.SetNumberOfPartitionedDataSets(num_subsets)
-        output.SetDataAssembly(assembly)
         points = vtkPoints()
         space_idx = 0
 
@@ -228,6 +229,10 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             return 0
 
         {% if ids.name in ['mhd', 'radiation']%}
+        assembly = vtkDataAssembly()
+        output.SetNumberOfPartitionedDataSets(num_subsets)
+        output.SetDataAssembly(assembly)
+
         if self.__n_plane != 0:
             number_of_spaces = len(grid_ggd.space)
             if number_of_spaces > 1 and len(grid_ggd.space[0].coordinates_type) == 2:
@@ -248,7 +253,7 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             if len(grid_ggd.space) < 1:
                 paraview.logger.info('No points to read from grid_ggd.space')
             else:
-                read_geom.fill_vtk_points(grid_ggd, space_idx, points)
+                read_geom.fill_vtk_points(grid_ggd, space_idx, points, '{{ ids.name }}')
             if num_subsets < 1:
                     paraview.logger.info('No subsets to read from grid_ggd')
             else:
@@ -266,12 +271,64 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
                     child = assembly.AddNode(label.replace(' ', '_'), 0)
                     assembly.AddDataSetIndex(child, subset_idx)
                     output.GetMetaData(subset_idx).Set(vtkCompositeDataSet.NAME(), label)
-        {% else %}
-        read_geom.fill_vtk_points(grid_ggd, space_idx, points)
+        {% elif ids.name == 'wall' %}
+        read_geom.fill_vtk_points(grid_ggd, space_idx, points, '{{ ids.name }}')
         # Process grid_ggd.subsets:
-        if num_subsets < 1:
-                paraview.logger.info('No subsets to read from grid_ggd')
+        if num_subsets <= 1:
+            paraview.logger.info('No subsets to read from grid_ggd')
+            assembly = vtkDataAssembly()
+            output.SetNumberOfPartitionedDataSets(1)
+            output.SetDataAssembly(assembly)
+            ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, -1, points)
+            read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, -1, ugrid)
+            output.SetPartition(0, 0, ugrid)
+            label = '{{ ids.name }}'
+            child = assembly.AddNode(label, 0)
+            assembly.AddDataSetIndex(child, 0)
+            output.GetMetaData(0).Set(vtkCompositeDataSet.NAME(), label)
         else:
+            assembly = vtkDataAssembly()
+            output.SetNumberOfPartitionedDataSets(num_subsets - 3)
+            output.SetDataAssembly(assembly)
+            ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, -1, points)
+            read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, -1, ugrid)
+            output.SetPartition(0, 0, ugrid)
+            label = '{{ ids.name }}'
+            child = assembly.AddNode(label, 0)
+            assembly.AddDataSetIndex(child, 0)
+            output.GetMetaData(0).Set(vtkCompositeDataSet.NAME(), label)
+            for subset_idx in range(4, num_subsets):
+                subset = grid_ggd.grid_subset[subset_idx]
+                paraview.logger.info(f"Processing subset {subset_idx}")
+                paraview.logger.info(f"           index {subset.identifier.index}")
+                paraview.logger.info(f"           name {subset.identifier.name}")
+                paraview.logger.info(f"           description {subset.identifier.description}")
+                ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, subset_idx, points)
+                read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, ugrid)
+                output.SetPartition(subset_idx - 3, 0, ugrid)
+                label = subset.identifier.name
+                child = assembly.AddNode(label.replace(' ', '_'), 0)
+                assembly.AddDataSetIndex(child, subset_idx - 3)
+                output.GetMetaData(subset_idx - 3).Set(vtkCompositeDataSet.NAME(), label)
+        {% else %}
+        read_geom.fill_vtk_points(grid_ggd, space_idx, points, '{{ ids.name }}')
+        # Process grid_ggd.subsets:
+        if num_subsets <= 1:
+            paraview.logger.info('No subsets to read from grid_ggd')
+            assembly = vtkDataAssembly()
+            output.SetNumberOfPartitionedDataSets(1)
+            output.SetDataAssembly(assembly)
+            ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, -1, points)
+            read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, -1, ugrid)
+            output.SetPartition(0, 0, ugrid)
+            label = '{{ ids.name }}'
+            child = assembly.AddNode(label, 0)
+            assembly.AddDataSetIndex(child, 0)
+            output.GetMetaData(0).Set(vtkCompositeDataSet.NAME(), label)
+        else:
+            assembly = vtkDataAssembly()
+            output.SetNumberOfPartitionedDataSets(num_subsets)
+            output.SetDataAssembly(assembly)
             for subset_idx in range(num_subsets):
                 subset = grid_ggd.grid_subset[subset_idx]
                 paraview.logger.info(f"Processing subset {subset_idx}")

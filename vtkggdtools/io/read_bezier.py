@@ -208,6 +208,12 @@ def convert_grid_subset_to_unstructured_grid(ids_name: str, ids, aos_index_value
 
         output.GetCellData().SetHigherOrderDegrees(degrees)
 
+    #Use for changing grid orientation in paraview
+    z = np.copy(xyz[:,1])
+    y = np.copy(xyz[:,2])
+    xyz[:,1] = y
+    xyz[:,2] = z
+
     pcoords = npvtk.numpy_to_vtk(xyz, deep=True, array_type=vtk_prec)
     points = vtk.vtkPoints()
     points.SetData(pcoords)

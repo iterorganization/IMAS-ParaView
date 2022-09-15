@@ -25,24 +25,57 @@ plasma state quantity you want to view.
 You might find the list below useful to test. The reference order is
 Pulse/Run/Tokamak/User.
 
-- **134174/117/ITER/public**<br>
+- **134174/117/ITER/public** 
+  
   Use TimeIdx 4
   - edge_profiles OK
   - edge_sources OK
   - edge_transport OK
-- **135011/7/ggdtest/panchuj**<br>
+
+- **135011/7/ggdtest/panchuj**
+
   TimeIdx 399, use for equilibrium
   - equilibrium OK
-- **123217/1/ITER/public**<br>
+
+- **123217/1/ITER/public**
   - edge_profiles OK
   - edge_sources OK
   - edge_transport OK
   - radiation OK
-- **122408/3/ITER/public**<br>
+
+- **122408/3/ITER/public**
   - edge_profiles OK
   - edge_sources OK
   - edge_transport OK
   - radiation OK
+
+- **135913/1/smiter/kosl**
+
+  `~simicg/MESH_DIRECTORY/FULL_BLANKET_MESH/FullTokamak.med` (1.7 M triangles)
+  - wall (geometry only) MDSPLUS
+
+- **135913/2/smiter/kosl**
+
+  `~simicg/MESH_DIRECTORY/DIVERTOR/Divertor.med` (0.6 M triangles) 
+  - wall (geometry only) MDSPLUS
+
+- **135913/3/smiter/kosl**
+
+  `~kosl/public/mesh/FirstWall.med` (9.1 M triangles)
+  - wall (geometry only) MDSPLUS (0.3 GB) and HDF5 (11 GB)
+  It takes about 20 min for Paraview to open this IDS.
+
+- **135913/4/smiter/kosl**
+
+  Cliped right side of target from `~kosl/public/elmer-compute/Powcal_powx_Temperatures.vtk`
+  - wall target (geometry, temperature and power density) MDSPLUS
+
+- **135913/5/smiter/kosl**
+
+  `~kosl/public/elmer-compute/Powcal_powx.vtk`
+  - wall target (geometry and power density) MDSPLUS
+
+
 
 ### Export GGD (Grid and Plasma State) to VTK
 
