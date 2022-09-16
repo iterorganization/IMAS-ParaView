@@ -67,23 +67,57 @@ Pulse/Run/Tokamak/User.
 
 - **135913/4/smiter/kosl**
 
-  Cliped right side of target from `~kosl/public/elmer-compute/Powcal_powx_Temperatures.vtk`
+  Cliped right side of target from `~kosl/public/mesh/Powcal_powx_Temperatures.vtk`
   - wall target (geometry, temperature and power density) MDSPLUS
 
 - **135913/5/smiter/kosl**
 
-  `~kosl/public/elmer-compute/Powcal_powx.vtk`
+  `~kosl/public/mesh/Powcal_powx.vtk`
   - wall target (geometry and power density) MDSPLUS
 
+- **135913/6/smiter/kosl**
+
+  `~kosl/public/mesh/fingerleft8.vtk.vtk`
+  - wall finger from target (geometry , temperature and power density) MDSPLUS
+
+- **1/10/jorek/kosl**
+
+  Bezier FEM ggd from jorek.
+  - MHD
+
+- **111114/1/test/artolaj**
+
+  Bezier FEM ggd from jorek (K-Star).
+  - MHD
+  - radiation
 
 
-### Export GGD (Grid and Plasma State) to VTK
+### GGD (Grid and Plasma State) to VTK
 
-To be written.
+Incomplete for transport_solver_numerics IDS.
 
-### Export VTK to GGD (Grid and Plasma State)
+Wall IDS grid (nodes, edges, faces, volumes) is read into one
+ParaView's "partition dataset". This enables us to show values that are written
+on cells (one value per cell) or show directly interpolated values from points
+(to cells). If nodes and cells are not in same partition, just values specified
+on cells can be shown on cells. Other subsets have it's own "partition dataset". 
+This "feature" is not implemented for other IDS-es.
 
-To be written.
+For MHD and radiation IDS reading 2D and 3D grids is enabled. For reading 3D
+cases chosen number of planes must be more than zero.
+
+### VTK to GGD (Grid and Plasma State)
+
+Works for wall and (synthetic) equilibrium IDS.
+
+WallGgdWriter writes temperature and power density from 'Temperature' and 'Q'
+fields only (on nodes or cells). Names must be the same as mentioned in other
+case just grid is written to IDS.
+
+When writting grid for bigger meshes not including nodes, edges, faces and
+volumes to subsets should be considered. This reduces IDS writting time and
+it's size plus there is 'no need to replicate the grid elements in the
+grid_subset structure' as said in data dictionary.
 
 To be fully implemented.
 
@@ -111,7 +145,7 @@ To be fully implemented.
 |radiation| done  |done|done|n/a
 |tf| done  |done|done|n/a
 |transport_solver_numerics| done  |done|incomplete|n/a
-|wall| done  |done|incomplete|n/a
+|wall| done  |done|done|done
 |waves| done  |done|done|n/a
 
 *Note*: The ReadUALEdge plugin uses `vtkMultiBlockDataSet`: a
