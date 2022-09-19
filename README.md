@@ -114,7 +114,7 @@ WallGgdWriter writes temperature and power density from 'Temperature' and 'Q'
 fields only (on nodes or cells). Names must be the same as mentioned in other
 case just grid is written to IDS.
 
-When writting grid for bigger meshes not including nodes, edges, faces and
+When writing grid for bigger meshes not including nodes, edges, faces and
 volumes to subsets should be considered. This reduces IDS writting time and
 it's size plus there is 'no need to replicate the grid elements in the
 grid_subset structure' as said in data dictionary.
