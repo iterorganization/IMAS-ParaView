@@ -100,7 +100,7 @@ Wall IDS grid (nodes, edges, faces, volumes) is read into one
 ParaView's "partition dataset". This enables us to show values that are written
 on cells (one value per cell) or show directly interpolated values from points
 (to cells). If nodes and cells are not in same partition, just values specified
-on cells can be shown on cells. Other subsets have it's own "partition dataset". 
+on cells can be shown on cells. Other subsets have their own "partition dataset". 
 This "feature" is not implemented for other IDSs.
 
 For MHD and radiation IDS reading 2D and 3D grids is enabled. For reading 3D
