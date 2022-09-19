@@ -67,7 +67,7 @@ Pulse/Run/Tokamak/User.
 
 - **135913/4/smiter/kosl**
 
-  Cliped right side of target from `~kosl/public/mesh/Powcal_powx_Temperatures.vtk`
+  Clipped right side of target from `~kosl/public/mesh/Powcal_powx_Temperatures.vtk`
   - wall target (geometry, temperature and power density) MDSPLUS
 
 - **135913/5/smiter/kosl**
