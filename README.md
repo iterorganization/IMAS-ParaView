@@ -49,20 +49,20 @@ Pulse/Run/Tokamak/User.
   - edge_transport OK
   - radiation OK
 
-- **135913/1/smiter/kosl**
+- **116100/1001/smiter/kosl**
 
   `~simicg/MESH_DIRECTORY/FULL_BLANKET_MESH/FullTokamak.med` (1.7 M triangles)
-  - wall (geometry only) MDSPLUS
+  - wall (geometry only) MDSPLUS - first wall - low resolution
 
-- **135913/2/smiter/kosl**
+- **116100/2001/smiter/kosl**
 
   `~simicg/MESH_DIRECTORY/DIVERTOR/Divertor.med` (0.6 M triangles) 
-  - wall (geometry only) MDSPLUS
+  - wall (geometry only) MDSPLUS - divertor
 
-- **135913/3/smiter/kosl**
+- **116100/3001/smiter/kosl**
 
   `~kosl/public/mesh/FirstWall.med` (9.1 M triangles)
-  - wall (geometry only) MDSPLUS (0.3 GB) and HDF5 (11 GB)
+  - wall (geometry only) MDSPLUS (0.3 GB) - first wall - high resolution
   It takes about 20 min for Paraview to open this IDS.
 
 - **135913/4/smiter/kosl**
