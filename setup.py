@@ -3,6 +3,7 @@
 
 import setuptools
 import os
+import versioneer
 
 from setuptools import setup
 from setuptools.command.develop import develop
@@ -12,8 +13,8 @@ from vtkggdtools._version import __version__
 from vtkggdtools.generator import generate
 
 base_dir = os.path.dirname(__file__)
-input_dir = os.path.join(os.path.join(base_dir, 'vtkggdtools'), 'plugins/templates')
-output_dir = os.path.join(os.path.join(base_dir, 'vtkggdtools'), 'plugins')
+input_dir = os.path.join(os.path.join(base_dir, "vtkggdtools"), "plugins/templates")
+output_dir = os.path.join(os.path.join(base_dir, "vtkggdtools"), "plugins")
 generate(input_dir, output_dir)
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -21,12 +22,14 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="vtkggdtools",
-    setuptools_git_versioning={
-        "enabled": True,
-    },
-    setup_requires=[
-        "setuptools-git-versioning"
-    ],
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
+    # setuptools_git_versioning={
+    #     "enabled": True,
+    # },
+    # setup_requires=[
+    #     "setuptools-git-versioning"
+    # ],
     # version_config={
     #     #"version_callback": __version__,
     #     "template": "{tag}",
@@ -42,13 +45,9 @@ setuptools.setup(
         # "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    keywords="VTK-GGD, VTK, Tools",
     package_dir={"": "."},
     packages=setuptools.find_packages(where="."),
     python_requires=">=3.8",
-    install_requires=[
-        "jinja2 >= 3.0.3",
-        "numpy >= 1.19.4",
-        "vtk >= 9.1.0"
-    ],
+    install_requires=["jinja2 >= 3.0.3", "numpy >= 1.19.4", "vtk >= 9.1.0"],
 )
-

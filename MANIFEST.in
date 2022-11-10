@@ -1,0 +1,5 @@
+include README.md
+include LICENSE.md
+recursive-exclude * *.py[co]
+include versioneer.py
+include vtkggdtools/_version.py
