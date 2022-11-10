@@ -9,7 +9,7 @@ from setuptools import setup
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 
-from vtkggdtools._version import __version__
+# from vtkggdtools._version import __version__
 from vtkggdtools.generator import generate
 
 base_dir = os.path.dirname(__file__)
