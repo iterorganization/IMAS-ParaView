@@ -1143,10 +1143,31 @@ def git_get_keywords(versionfile_abs):
     try:
         with open(versionfile_abs, "r") as fobj:
             for line in fobj:
+                mo_tag_in_git_refnames = None
                 if line.strip().startswith("git_refnames ="):
                     mo = re.search(r'=\s*"(.*)"', line)
+                    mo_tag_in_git_refnames = re.search(r"(\d+\.)(\d+\.)(\d+)", line)
                     if mo:
                         keywords["refnames"] = mo.group(1)
+                if line.strip().startswith("git_describe_output ="):
+                    if not mo_tag_in_git_refnames:
+                        # print("Tag version not found, Getting from git describe method")
+                        mo_tag_in_git_describe = re.search(r"(\d+\.)(\d+\.)(\d+)", line)
+                        if mo_tag_in_git_describe:
+                            # print('Version found :', mo_tag_in_git_describe.group(0))
+                            words = line.split("=")
+                            version_string = ""
+                            if len(words) == 2:
+                                version_string = words[1].replace('"', "").strip()
+                            # print('Version found :', version_string)
+                            mo_describe = (
+                                "(, tag: "
+                                + version_string
+                                + ",,"
+                                + keywords["refnames"]
+                                + ")"
+                            )
+                            keywords["refnames"] = mo_describe
                 if line.strip().startswith("git_full ="):
                     mo = re.search(r'=\s*"(.*)"', line)
                     if mo:

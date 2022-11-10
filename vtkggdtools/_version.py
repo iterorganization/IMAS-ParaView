@@ -27,8 +27,15 @@ def get_keywords():
     # each be defined on a line of their own. _version.py will just call
     # get_keywords().
     git_refnames = "$Format:%d$"
+    git_describe_output = "$Format:%(describe)$"
     git_full = "$Format:%H$"
     git_date = "$Format:%ci$"
+    mo_tag_in_git_refnames = re.search(r'(\d+\.)(\d+\.)(\d+)', git_refnames)
+    if not mo_tag_in_git_refnames:
+        mo_tag_in_git_describe = re.search(r'(\d+\.)(\d+\.)(\d+)', git_describe_output)
+        if mo_tag_in_git_describe:
+            mo_describe = '(, tag: '+ git_describe_output +',,'+ git_refnames + ')'
+            git_refnames = mo_describe
     keywords = {"refnames": git_refnames, "full": git_full, "date": git_date}
     return keywords
 
