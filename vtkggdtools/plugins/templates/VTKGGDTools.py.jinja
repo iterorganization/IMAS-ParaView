@@ -541,9 +541,6 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
             ids_obj.ids_properties.homogeneous_time = 1
             ids_obj.ids_properties.provider = getpass.getuser()
             ids_obj.ids_properties.creation_date = str(datetime.datetime.today())
-            ids_obj.ids_properties.version_put.data_dictionary = os.getenv('IMAS_VERSION')
-            ids_obj.ids_properties.version_put.access_layer = os.getenv('UAL_VERSION')
-            ids_obj.ids_properties.version_put.access_layer_language = python_version
 
             ids_obj.code.name = 'VTKGGDTools'
             ids_obj.code.version = get_versions()['version']
