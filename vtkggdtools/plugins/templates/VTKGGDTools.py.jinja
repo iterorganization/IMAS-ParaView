@@ -23,7 +23,7 @@ from vtkggdtools.errors import InvalidIDSIOError, InvalidIDSParametersError
 from vtkggdtools.io import read_geom, read_bezier, write_geom, read_ps, write_ps
 from vtkggdtools.io.representables import GridSubsetRepresentable
 from vtkggdtools.imashelper import imas_env_call
-from vtkggdtools import __version__ as vtkggdtools_ver
+from vtkggdtools._version import get_versions
 
 from identifiers.ggd_space_identifier import ggd_space_identifier
 
@@ -546,7 +546,8 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
             ids_obj.ids_properties.version_put.access_layer_language = python_version
 
             ids_obj.code.name = 'VTKGGDTools'
-            ids_obj.code.version = vtkggdtools_ver
+            ids_obj.code.version = get_versions()['version']
+            ids_obj.code.commit = get_versions()['full-revisionid']
             ids_obj.code.repository = "https://git.iter.org/scm/imex/ggd-vtk.git"
             ids_obj.code.output_flag = np.array([0])
 
