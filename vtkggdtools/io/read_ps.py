@@ -115,91 +115,136 @@ def read_edge_profiles(ids_obj, aos_index_values: dict,
     except IndexError:
         return
 
+    # for finding units:
+    ids_name = 'edge_profiles'
+    ggd_path = 'ggd'
+    
     # electrons
-    e = ggd.electrons # shortcut
-    scalars = {
-        'Electron Temperature [$eV$]': e.temperature,
-        'Electron Density [$m^{-3}$]': e.density,
-        'Electron Density (fast) [$m^{-3}$]': e.density_fast,
-        'Electron Pressure [$Pa$]': e.pressure,
-        'Electron Pressure (fast perpendicular) [$Pa$]': e.pressure_fast_perpendicular,
-        'Electron Pressure (fast parallel) [$Pa$]': e.pressure_fast_parallel,
-        'Electron Distribution Function': e.distribution_function
+    units_path = ggd_path + '/electrons'
+    # scalar arrays:
+    quantities = {
+        'temperature': 'Electron Temperature',
+        'density': 'Electron Density',
+        'density_fast': 'Electron Density (fast)',
+        'pressure': 'Electron Pressure',
+        'pressure_fast_perpendicular': 'Electron Pressure (fast perpendicular)',
+        'pressure_fast_parallel': 'Electron Pressure (fast parallel)',
+        'distribution_function': 'Electron Distribution Function'
     }
-    _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
-    name = 'Electron Velocity [$m/s1$]'
-    _add_aos_vector_array_to_vtk_field_data(e.velocity, subset_idx, name, ugrid)
+    for q_name in quantities:
+        units = dd_units.get_units(ids_name, f'{units_path}/{q_name}')
+        _add_aos_scalar_array_to_vtk_field_data(getattr(ggd.electrons, q_name),
+                                                subset_idx,
+                                                f'{quantities[q_name]} [${units}$]',
+                                                ugrid)
+    # vector array:
+    units = dd_units.get_units(ids_name, units_path+'/velocity')
+    name = f'Electron Velocity [${units}$]'
+    _add_aos_vector_array_to_vtk_field_data(ggd.electrons.velocity, subset_idx, name, ugrid)
 
     # ions, neutrals = heavy particles = hp
     # Add ' (all ions)' to the ion name to distinguish from state below:
     ion_names = [' (all ions)']*len(ggd.ion) + ['']*len(ggd.neutral)
     for hp, i_name in list(zip([*ggd.ion, *ggd.neutral], ion_names)):
         hp_name = hp.label + i_name # ' add (all ions)' to ions or '' to neutrals
-        scalars = {
-            f'{hp_name} Temperature [$eV$]': hp.temperature,
-            f'{hp_name} Density ' + '[$m^{-3}$]': hp.density,
-            f'{hp_name} Density (fast) ' + '[$m^{-3}$]': hp.density_fast,
-            f'{hp_name} Pressure [$Pa$]': hp.pressure,
-            f'{hp_name} Pressure (fast perpendicular) [$Pa$]': hp.pressure_fast_perpendicular,
-            f'{hp_name} Pressure (fast parallel) [$Pa$]': hp.pressure_fast_parallel,
-            f'{hp_name} Kinetic Energy Density': hp.energy_density_kinetic
+        if i_name == '': units_hp_path = ggd_path+'/neutral'
+        else: units_hp_path = ggd_path+'/ion'
+        # scalar arrays:
+        quantities = {
+            'temperature': f'{hp_name} Temperature',
+            'density': f'{hp_name} Density',
+            'density_fast': f'{hp_name} Density (fast)',
+            'pressure': f'{hp_name} Pressure',
+            'pressure_fast_perpendicular': f'{hp_name} Pressure (fast perpendicular)',
+            'pressure_fast_parallel': f'{hp_name} Pressure (fast parallel)',
+            'energy_density_kinetic': f'{hp_name} Kinetic Energy Density'
         }
-        _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
-        name = f'{hp_name} Velocity [$m/s$]'
+        for q_name in quantities:
+            units = dd_units.get_units(ids_name, f'{units_hp_path}/{q_name}')
+            _add_aos_scalar_array_to_vtk_field_data(getattr(hp, q_name),
+                                                    subset_idx,
+                                                    f'{quantities[q_name]} [${units}$]',
+                                                    ugrid)            
+        # vector array:
+        units = dd_units.get_units(ids_name, units_hp_path+'/velocity')
+        name = f'{hp_name} Velocity [${units}$]'
         _add_aos_vector_array_to_vtk_field_data(hp.velocity, subset_idx, name, ugrid)
         # heavy particles: state
+        units_hp_path += '/state'
         for state in hp.state:
-            scalars = {
-                f'{state.label} Temperature [$eV$]': state.temperature,
-                f'{state.label} Density ' + '[$m^{-3}$]': state.density,
-                f'{state.label} Density (fast) ' + '[$m^{-3}$]': state.density_fast,
-                f'{state.label} Pressure [$Pa$]': state.pressure,
-                f'{state.label} Pressure (fast perpendicular) [$Pa$]': state.pressure_fast_perpendicular,
-                f'{state.label} Pressure (fast parallel) [$Pa$]': state.pressure_fast_parallel,
-                f'{state.label} Kinetic Energy Density': state.energy_density_kinetic,
-                f'{state.label} Distribution Function': state.distribution_function
+            # scalars:
+            quantities = {
+                'temperature': f'{state.label} Temperature',
+                'density': f'{state.label} Density',
+                'density_fast': f'{state.label} Density (fast)',
+                'pressure': f'{state.label} Pressure',
+                'pressure_fast_perpendicular': f'{state.label} Pressure (fast perpendicular)',
+                'pressure_fast_parallel': f'{state.label} Pressure (fast parallel)',
+                'energy_density_kinetic': f'{state.label} Kinetic Energy Density',
+                'distribution_function': f'{state.label} Distribution Function'
             }
             if i_name: # only for ions
-                scalars[f'{state.label} <$Z$>'] = state.z_average
-                scalars[f'{state.label} <$Z^2$>'] = state.z_square_average
-                scalars[f'{state.label} Ionisation Potential'] = state.ionisation_potential
-
-            _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
-            vectors = {
-                f'{state.label} Velocity [$m/s$]': state.velocity,
-                f'{state.label} Velocity (diamagnetic) [$m/s$]': state.velocity_diamagnetic,
-                f'{state.label} Velocity (ExB) [$m/s$]': state.velocity_exb,
+                quantities['z_average'] = f'{state.label} $<Z>$'
+                quantities['z_square_average'] = f'{state.label} $<Z^2>$'
+                quantities['ionisation_potential'] = f'{state.label} Ionisation Potential'
+            for q_name in quantities:
+                units = dd_units.get_units(ids_name, f'{units_hp_path}/{q_name}')
+                _add_aos_scalar_array_to_vtk_field_data(getattr(state, q_name),
+                                                        subset_idx,
+                                                        f'{quantities[q_name]} [${units}$]',
+                                                        ugrid)
+            # vectors:
+            quantities = {
+                'velocity': f'{state.label} Velocity',
+                'velocity_diamagnetic': f'{state.label} Velocity (diamagnetic)',
+                'velocity_exb': f'{state.label} Velocity (ExB)'
             }
-            _multi_add_aos_vector_to_vtk(vectors, subset_idx, ugrid)
+            for q_name in quantities:
+                units = dd_units.get_units(ids_name, f'{units_hp_path}/{q_name}')
+                _add_aos_vector_array_to_vtk_field_data(getattr(state, q_name),
+                                                        subset_idx,
+                                                        f'{quantities[q_name]} [${units}$]',
+                                                        ugrid)
 
-
-    # other scalar quantities
-    scalars = {
-        'Average t_i [$eV$]': ggd.t_i_average,
-        'Total n_i over n_e': ggd.n_i_total_over_n_e,
-        'Zeff': ggd.zeff,
-        'Pressure (thermal) [$Pa$]': ggd.pressure_thermal,
-        'Pressure (perpendicular) [$Pa$]': ggd.pressure_perpendicular,
-        'Pressure (parallel) [$Pa$]': ggd.pressure_parallel,
-        'Current (parallel) [$A m^{-2}$]':ggd.j_parallel,
-        'Potential Phi [$V$]': ggd.phi_potential
-        }
-    _multi_add_aos_scalar_to_vtk(scalars, subset_idx, ugrid)
+    # Other quantities;
+    # The tuple has ('text description', scalar?, units?)
+    units_path = ggd_path
+    quantities = {
+        't_i_average': 'Average t_i',
+        'n_i_total_over_n_e': 'Total n_i over n_e',
+        'zeff': 'Zeff',
+        'pressure_thermal': 'Pressure (thermal)',
+        'pressure_perpendicular': 'Pressure (perpendicular)',
+        'pressure_parallel': 'Pressure (parallel)',
+        'j_parallel': 'Current (parallel)',
+        'phi_potential': 'Potential Phi'
+    }
+    for q_name in quantities:
+        units = dd_units.get_units(ids_name, f'{units_path}/{q_name}')
+        _add_aos_scalar_array_to_vtk_field_data(getattr(ggd, q_name),
+                                                subset_idx,
+                                                f'{quantities[q_name]} [${units}$]',
+                                                ugrid)
 
     # other vector quantities
-    vectors = {
-        'Current (total) [$A m^{-2}$]': ggd.j_total,
-        'Current (anomalous) [$A m^{-2}$]': ggd.j_anomalous,
-        'Current (inertial) [$A m^{-2}$]': ggd.j_inertial,
-        'Current (ion+neutral friction) [$A m^{-2}$]': ggd.j_ion_neutral_friction,
-        'Current (parallel viscosity) [$A m^{-2}$]': ggd.j_parallel_viscosity,
-        'Current (perpendicular viscosity) [$A m^{-2}$]': ggd.j_perpendicular_viscosity,
-        'Current (heat viscosity) [$A m^{-2}$]': ggd.j_heat_viscosity,
-        'Current (Pfirsch-Schlueter effects) [$A m^{-2}$]': ggd.j_pfirsch_schlueter,
-        'Current (diamagnetic) [$A m^{-2}$]': ggd.j_diamagnetic,
-        'E [$V/M$]': ggd.e_field
-        }
-    _multi_add_aos_vector_to_vtk(vectors, subset_idx, ugrid)
+    quantities = {
+        'j_total': 'Current (total)',
+        'j_anomalous': 'Current (anomalous)',
+        'j_inertial': 'Current (inertial)',
+        'j_ion_neutral_friction': 'Current (ion+neutral friction)',
+        'j_parallel_viscosity': 'Current (parallel viscosity)',
+        'j_perpendicular_viscosity': 'Current (perpendicular viscosity)',
+        'j_heat_viscosity': 'Current (heat viscosity)',
+        'j_pfirsch_schlueter': 'Current (Pfirsch-Schlueter effects)',
+        'j_diamagnetic': 'Current (diamagnetic)',
+        'e_field': 'E'
+    }
+    for q_name in quantities:
+        units = dd_units.get_units(ids_name, f'{units_path}/{q_name}')
+        _add_aos_vector_array_to_vtk_field_data(getattr(ggd, q_name),
+                                                subset_idx,
+                                                f'{quantities[q_name]} [${units}$]',
+                                                ugrid)
         
     # TODO: ggd_fast...
 
