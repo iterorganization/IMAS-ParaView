@@ -121,21 +121,25 @@ def read_edge_profiles(ids_obj, aos_index_values: dict,
     
     # electrons
     units_path = ggd_path + '/electrons'
-    # scalar arrays:
+    # scalar quantities, each value is a tuple with ('description', units?):
     quantities = {
-        'temperature': 'Electron Temperature',
-        'density': 'Electron Density',
-        'density_fast': 'Electron Density (fast)',
-        'pressure': 'Electron Pressure',
-        'pressure_fast_perpendicular': 'Electron Pressure (fast perpendicular)',
-        'pressure_fast_parallel': 'Electron Pressure (fast parallel)',
-        'distribution_function': 'Electron Distribution Function'
+        # scalars
+        'temperature': ('Electron Temperature', True),
+        'density': ('Electron Density', True),
+        'density_fast': ('Electron Density (fast)', True),
+        'pressure': ('Electron Pressure', True),
+        'pressure_fast_perpendicular': ('Electron Pressure (fast perpendicular)', True),
+        'pressure_fast_parallel': ('Electron Pressure (fast parallel)', True),
+        'distribution_function': ('Electron Distribution Function', False) # no units
     }
     for q_name in quantities:
-        units = dd_units.get_units(ids_name, f'{units_path}/{q_name}')
+        (name, use_units) = quantities[q_name]
+        if use_units:
+            units = dd_units.get_units(ids_name, f'{units_path}/{q_name}')
+            name += f' [${units}$]'
         _add_aos_scalar_array_to_vtk_field_data(getattr(ggd.electrons, q_name),
                                                 subset_idx,
-                                                f'{quantities[q_name]} [${units}$]',
+                                                name,
                                                 ugrid)
     # vector array:
     units = dd_units.get_units(ids_name, units_path+'/velocity')
@@ -172,26 +176,29 @@ def read_edge_profiles(ids_obj, aos_index_values: dict,
         # heavy particles: state
         units_hp_path += '/state'
         for state in hp.state:
-            # scalars:
+            # scalars, each value is a tuple with ('description', units?):
             quantities = {
-                'temperature': f'{state.label} Temperature',
-                'density': f'{state.label} Density',
-                'density_fast': f'{state.label} Density (fast)',
-                'pressure': f'{state.label} Pressure',
-                'pressure_fast_perpendicular': f'{state.label} Pressure (fast perpendicular)',
-                'pressure_fast_parallel': f'{state.label} Pressure (fast parallel)',
-                'energy_density_kinetic': f'{state.label} Kinetic Energy Density',
-                'distribution_function': f'{state.label} Distribution Function'
+                'temperature': (f'{state.label} Temperature', True),
+                'density': (f'{state.label} Density', True),
+                'density_fast': (f'{state.label} Density (fast)', True),
+                'pressure': (f'{state.label} Pressure', True),
+                'pressure_fast_perpendicular': (f'{state.label} Pressure (fast perpendicular)', True),
+                'pressure_fast_parallel': (f'{state.label} Pressure (fast parallel)', True),
+                'energy_density_kinetic': (f'{state.label} Kinetic Energy Density', True),
+                'distribution_function': (f'{state.label} Distribution Function', False) # no units
             }
             if i_name: # only for ions
-                quantities['z_average'] = f'{state.label} $<Z>$'
-                quantities['z_square_average'] = f'{state.label} $<Z^2>$'
-                quantities['ionisation_potential'] = f'{state.label} Ionisation Potential'
+                quantities['z_average'] = (f'{state.label} $<Z>$', False)
+                quantities['z_square_average'] = (f'{state.label} $<Z^2>$', False)
+                quantities['ionisation_potential'] = (f'{state.label} Ionisation Potential', False)
             for q_name in quantities:
-                units = dd_units.get_units(ids_name, f'{units_hp_path}/{q_name}')
+                (name, use_units) = quantities[q_name]
+                if use_units:
+                    units = dd_units.get_units(ids_name, f'{units_hp_path}/{q_name}')
+                    name += f' [${units}$]'
                 _add_aos_scalar_array_to_vtk_field_data(getattr(state, q_name),
                                                         subset_idx,
-                                                        f'{quantities[q_name]} [${units}$]',
+                                                        name,
                                                         ugrid)
             # vectors:
             quantities = {
@@ -206,24 +213,26 @@ def read_edge_profiles(ids_obj, aos_index_values: dict,
                                                         f'{quantities[q_name]} [${units}$]',
                                                         ugrid)
 
-    # Other quantities;
-    # The tuple has ('text description', scalar?, units?)
+    # Other scalar quantities; each value is a tuple with ('description', units?):
     units_path = ggd_path
     quantities = {
-        't_i_average': 'Average t_i',
-        'n_i_total_over_n_e': 'Total n_i over n_e',
-        'zeff': 'Zeff',
-        'pressure_thermal': 'Pressure (thermal)',
-        'pressure_perpendicular': 'Pressure (perpendicular)',
-        'pressure_parallel': 'Pressure (parallel)',
-        'j_parallel': 'Current (parallel)',
-        'phi_potential': 'Potential Phi'
+        't_i_average': ('Average t_i', True),
+        'n_i_total_over_n_e': ('Total n_i over n_e', True),
+        'zeff': ('Zeff', False), # no units
+        'pressure_thermal': ('Pressure (thermal)', True),
+        'pressure_perpendicular': ('Pressure (perpendicular)', True),
+        'pressure_parallel': ('Pressure (parallel)', True),
+        'j_parallel': ('Current (parallel)', True),
+        'phi_potential': ('Potential Phi', True)
     }
     for q_name in quantities:
-        units = dd_units.get_units(ids_name, f'{units_path}/{q_name}')
+        (name, use_units) = quantities[q_name]
+        if use_units:
+            units = dd_units.get_units(ids_name, f'{units_path}/{q_name}')
+            name += f' [${units}$]'
         _add_aos_scalar_array_to_vtk_field_data(getattr(ggd, q_name),
                                                 subset_idx,
-                                                f'{quantities[q_name]} [${units}$]',
+                                                name,
                                                 ugrid)
 
     # other vector quantities
@@ -269,7 +278,6 @@ def read_edge_profiles_lecad(ids_obj, aos_index_values: dict,
             'Pressure Fast Parallel [Pa]' : ('pressure_fast_parallel', True),
             'Velocity [$m/s$]' : ('velocity', False),
         }
-
         for i in quantityDict:
             (path, scalar) = quantityDict[i]
             # electrons
