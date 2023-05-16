@@ -271,6 +271,7 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
                     child = assembly.AddNode(label.replace(' ', '_'), 0)
                     assembly.AddDataSetIndex(child, subset_idx)
                     output.GetMetaData(subset_idx).Set(vtkCompositeDataSet.NAME(), label)
+                    self.UpdateProgress(self.GetProgress()+1/num_subsets)
         {% elif ids.name == 'wall' %}
         read_geom.fill_vtk_points(grid_ggd, space_idx, points, '{{ ids.name }}')
         # Process grid_ggd.subsets:
@@ -310,6 +311,8 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
                 child = assembly.AddNode(label.replace(' ', '_'), 0)
                 assembly.AddDataSetIndex(child, subset_idx - 3)
                 output.GetMetaData(subset_idx - 3).Set(vtkCompositeDataSet.NAME(), label)
+                self.UpdateProgress(self.GetProgress()+1/num_subsets)
+
         {% else %}
         read_geom.fill_vtk_points(grid_ggd, space_idx, points, '{{ ids.name }}')
         # Process grid_ggd.subsets:
@@ -342,6 +345,7 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
                 child = assembly.AddNode(label.replace(' ', '_'), 0)
                 assembly.AddDataSetIndex(child, subset_idx)
                 output.GetMetaData(subset_idx).Set(vtkCompositeDataSet.NAME(), label)
+                self.UpdateProgress(self.GetProgress()+1/num_subsets)
         {% endif %}
 
         # {% if ids.name == "edge_transport" %}
