@@ -7,8 +7,8 @@ import paraview
 def get_units(ids_name:str, path:str) -> str:
     from imas import dd_units
     # pre- and post- formatting:
-    u_pre = ''
-    u_post = ''
+    u_pre = '['
+    u_post = ']'
     # For MathML:
     #u_pre = '[$' # start MathText
     #u_post = '$]' # end MathText
@@ -16,7 +16,7 @@ def get_units(ids_name:str, path:str) -> str:
         units = str(dd_units.DataDictionaryUnits().get_units(ids_name, path))
     except:
         paraview.logger.warn(f'Can\'t read units for {ids_name}/{path}.')
-        units = ''
+        units = u_pre = u_post = ''
     return u_pre + units + u_post
 
 
@@ -934,6 +934,7 @@ def _add_scalar_array_to_vtk_field_data(array: np.ndarray, name: str, ugrid: vtk
     :param ugrid: an instance of vtkUnstructuredGrid
     :return: None
     """
+    paraview.logger.info(f'           {name}...')
     point_data: vtkPointData = ugrid.GetPointData()
     num_points = ugrid.GetNumberOfPoints()
     cell_data: vtkCellData = ugrid.GetCellData()
@@ -977,6 +978,7 @@ def _add_aos_vector_array_to_vtk_field_data(aos_vector_node, subset_idx: int, na
     :param ugrid: an unstructured grid instance
     :return: None
     """
+    paraview.logger.info(f'           {name}...')
     if subset_idx >= len(aos_vector_node):
         return
 
