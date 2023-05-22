@@ -1,11 +1,15 @@
 import numpy as np
 from vtkmodules.numpy_interface import dataset_adapter as dsa
+from functools import lru_cache
+
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkPointData, vtkCellData, vtkUnstructuredGrid
 import paraview
 
+from imas import dd_units
+dd_units = dd_units.DataDictionaryUnits()
+@lru_cache
 def get_units(ids_name:str, path:str) -> str:
-    from imas import dd_units
     # pre- and post- formatting:
     u_pre = '['
     u_post = ']'
@@ -13,12 +17,11 @@ def get_units(ids_name:str, path:str) -> str:
     #u_pre = '[$' # start MathText
     #u_post = '$]' # end MathText
     try:
-        units = str(dd_units.DataDictionaryUnits().get_units(ids_name, path))
+        units = u_pre + str(dd_units.get_units(ids_name, path)) + u_post
     except:
         paraview.logger.warn(f'Can\'t read units for {ids_name}/{path}.')
-        units = u_pre = u_post = ''
-    return u_pre + units + u_post
-
+        units = ''
+    return units
 
 def read_plasma_state(ids_name: str, ids_obj, aos_index_values: dict,
                       subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
