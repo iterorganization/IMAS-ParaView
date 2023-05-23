@@ -185,10 +185,10 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
 
         tip = ids_obj
 
-        paraview.logger.info(f"AosIndices: {self.__AosIndices}")
-        paraview.logger.info(f"AosIndexValues: {self.__AosIndexValues}")
+        paraview.logger.debug(f"AosIndices: {self.__AosIndices}")
+        paraview.logger.debug(f"AosIndexValues: {self.__AosIndexValues}")
         ids_obj.get()
-        paraview.logger.info('get call finished')
+        paraview.logger.debug('get call finished')
 
         for i, node_name in enumerate(self.__GridGgdPath):
             aos_idx_var = self.__AosIndices.get(node_name)
@@ -206,10 +206,10 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
                 struct = getattr(tip, node_name)
                 tip = struct
 
-        paraview.logger.info(f'tip: {type(tip)}')
+        paraview.logger.debug(f'tip: {type(tip)}')
         if tip is not ids_obj and tip is not None:
             grid_ggd = tip
-            paraview.logger.info(f'grid_ggd: {type(grid_ggd)}')
+            paraview.logger.debug(f'grid_ggd: {type(grid_ggd)}')
         else:
             paraview.logger.error('Failed to find a grid_ggd node.')
             return 0
@@ -237,7 +237,6 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             number_of_spaces = len(grid_ggd.space)
             if number_of_spaces > 1 and len(grid_ggd.space[0].coordinates_type) == 2:
                 n_period = grid_ggd.space[1].geometry_type.index
-                # print(f'Number of spaces: {number_of_spaces}, Periodicity {n_period}')
                 if n_period > 0: # Fourier space with periodicity (JOREK)
                     paraview.logger.info(f'Reading Bezier mesh with Fourier periodiciy {n_period}')
                     ugrid = read_bezier.convert_grid_subset_to_unstructured_grid('{{ ids.name }}', ids_obj, self.__AosIndexValues, self.__n_plane, self.__phi_start, self.__phi_end)
@@ -537,9 +536,9 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
 
         ids_obj = ids_hdl.{{ ids.name }}
         ids_obj.get(self.__Occurrence)
-        paraview.logger.info(self.__AosIndices)
-        paraview.logger.info(self.__AosIndexValues)
-        paraview.logger.info('get call done')
+        paraview.logger.debug(self.__AosIndices)
+        paraview.logger.debug(self.__AosIndexValues)
+        paraview.logger.debug('get call done')
 
         if ids_obj.ids_properties.homogeneous_time < 0:
             ids_obj.ids_properties.homogeneous_time = 1
@@ -574,10 +573,10 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
                 struct = getattr(tip, node_name)
                 tip = struct
 
-        paraview.logger.info(f'tip: {type(tip)}')
+        paraview.logger.debug(f'tip: {type(tip)}')
         if tip is not ids_obj and tip is not None:
             grid_ggd = tip
-            paraview.logger.info(f'grid_ggd: {type(grid_ggd)}')
+            paraview.logger.debug(f'grid_ggd: {type(grid_ggd)}')
         else:
             paraview.logger.error('Failed to find a grid_ggd node.')
             return 0
