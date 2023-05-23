@@ -473,7 +473,7 @@ def read_edge_transport(ids_obj, aos_index_values: dict,
             name = f'Electron Convection ({q_name}) {units} {m_name}'
             _add_aos_scalar_array_to_vtk_field_data(quantity.v, subset_idx, name, ugrid)
             units = get_units(ids_name, units_path+'/flux')
-            name = f'Electron Flux ({q_name}) [{units}] {m_name}' 
+            name = f'Electron Flux ({q_name}) {units} {m_name}' 
             _add_aos_scalar_array_to_vtk_field_data(quantity.flux, subset_idx, name, ugrid)
             name = f'Electron Flux Limiter Coefficient ({q_name}) {m_name}'
             _add_aos_scalar_array_to_vtk_field_data(quantity.flux_limiter, subset_idx, name, ugrid)
