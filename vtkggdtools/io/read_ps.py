@@ -8,14 +8,14 @@ import paraview
 
 from imas import dd_units
 dd_units = dd_units.DataDictionaryUnits()
+# Units pre- and post- formatting:
+u_pre = '['
+u_post = ']'
+# For MathML:
+#u_pre = '[$' # start MathText
+#u_post = '$]' # end MathText
 @lru_cache
 def get_units(ids_name:str, path:str) -> str:
-    # pre- and post- formatting:
-    u_pre = '['
-    u_post = ']'
-    # For MathML:
-    #u_pre = '[$' # start MathText
-    #u_post = '$]' # end MathText
     try:
         units = u_pre + str(dd_units.get_units(ids_name, path)) + u_post
     except:
@@ -204,9 +204,9 @@ def read_edge_profiles(ids_obj, aos_index_values: dict,
                 'distribution_function': (f'{state.label} Distribution Function', False) # no units
             }
             if i_name: # only for ions, units manually written here as 'e' (e- unit charge)
-                quantities['z_average'] = (f'{state.label} $<Z>$ [$e$]', False)
-                quantities['z_square_average'] = (f'{state.label} $<Z^2>$ [$e$]', False)
-                quantities['ionisation_potential'] = (f'{state.label} Ionisation Potential [$e$]', False)
+                quantities['z_average'] = (f'{state.label} <Z> {u_pre}e{u_post}', False)
+                quantities['z_square_average'] = (f'{state.label} <Z^2> {u_pre}e{u_post}', False)
+                quantities['ionisation_potential'] = (f'{state.label} Ionisation Potential {u_pre}e{u_post}', False)
             for q_name in quantities:
                 (name, use_units) = quantities[q_name]
                 if use_units:
@@ -937,7 +937,7 @@ def _add_scalar_array_to_vtk_field_data(array: np.ndarray, name: str, ugrid: vtk
     :param ugrid: an instance of vtkUnstructuredGrid
     :return: None
     """
-    paraview.logger.info(f'           {name}...')
+    paraview.logger.debug(f'           {name}...')
     point_data: vtkPointData = ugrid.GetPointData()
     num_points = ugrid.GetNumberOfPoints()
     cell_data: vtkCellData = ugrid.GetCellData()
@@ -981,7 +981,7 @@ def _add_aos_vector_array_to_vtk_field_data(aos_vector_node, subset_idx: int, na
     :param ugrid: an unstructured grid instance
     :return: None
     """
-    paraview.logger.info(f'           {name}...')
+    paraview.logger.debug(f'           {name}...')
     if subset_idx >= len(aos_vector_node):
         return
 
@@ -990,23 +990,30 @@ def _add_aos_vector_array_to_vtk_field_data(aos_vector_node, subset_idx: int, na
     cell_data: vtkCellData = ugrid.GetCellData()
     num_cells = ugrid.GetNumberOfCells()
 
+    # Only add the components that have data:
+    components = dict() # name and values
+    for component_name in ['radial', 'diamagnetic', 'parallel', 'poloidal', 'toroidal', 'r', 'z']:
+        try:
+            values = getattr(aos_vector_node[subset_idx], component_name)
+        except:
+            continue
+        if len(values):
+            components[component_name] = values
+        
     vtk_arr = vtkDoubleArray()
     vtk_arr.SetName(name)
-    vtk_arr.SetNumberOfComponents(5)
+    vtk_arr.SetNumberOfComponents(len(components))
     num_tuples = 0
 
-    for i, component_name in enumerate(['radial', 'diamagnetic', 'parallel', 'poloidal', 'toroidal']):
-        values = getattr(aos_vector_node[subset_idx], component_name)
+    for i, component_name in enumerate(components):
         vtk_arr.SetComponentName(i, component_name.capitalize())
-
-        if len(values):
-            scalar_arr = dsa.numpyTovtkDataArray(values, name + '-' + component_name.capitalize())
-
-            if num_tuples == 0:
-                num_tuples = scalar_arr.GetNumberOfTuples()
-                vtk_arr.SetNumberOfTuples(num_tuples)
-
-            vtk_arr.CopyComponent(i, scalar_arr, 0)
+        scalar_arr = dsa.numpyTovtkDataArray(components[component_name],
+                                             name + '-' + component_name.capitalize())
+        if num_tuples == 0:
+            num_tuples = scalar_arr.GetNumberOfTuples()
+            vtk_arr.SetNumberOfTuples(num_tuples)
+            
+        vtk_arr.CopyComponent(i, scalar_arr, 0)
 
     if num_tuples == num_points:
         point_data.AddArray(vtk_arr)
