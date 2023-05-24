@@ -4,6 +4,10 @@ This plugin targets the data dictionary version: {{ dd_ver }} and the UAL versio
 Generated on {{ now() }}.
 
 {{ warning_msg }}
+
+Note: to see debug messages, launch paraview with 
+paraview -l file.log,TRACE
+and check file.log
 """
 
 import datetime
@@ -187,8 +191,9 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
 
         paraview.logger.debug(f"AosIndices: {self.__AosIndices}")
         paraview.logger.debug(f"AosIndexValues: {self.__AosIndexValues}")
+        paraview.logger.info(f"Reading IDS data...")
         ids_obj.get()
-        paraview.logger.debug('get call finished')
+        paraview.logger.info("Reading done.")
 
         for i, node_name in enumerate(self.__GridGgdPath):
             aos_idx_var = self.__AosIndices.get(node_name)
@@ -258,10 +263,10 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             else:
                 for subset_idx in range(num_subsets):
                     subset = grid_ggd.grid_subset[subset_idx]
-                    paraview.logger.info(f"Processing subset {subset_idx}")
-                    paraview.logger.info(f"           index {subset.identifier.index}")
-                    paraview.logger.info(f"           name {subset.identifier.name}")
-                    paraview.logger.info(f"           description {subset.identifier.description}")          
+                    paraview.logger.debug(f"Processing subset {subset_idx}")
+                    paraview.logger.debug(f"           index {subset.identifier.index}")
+                    paraview.logger.debug(f"           name {subset.identifier.name}")
+                    paraview.logger.debug(f"           description {subset.identifier.description}")          
                     if self.__n_plane == 0 or subset_idx == 0: # Regular grid processing
                         ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, subset_idx, points)
                         read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, ugrid)
@@ -299,10 +304,10 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             output.GetMetaData(0).Set(vtkCompositeDataSet.NAME(), label)
             for subset_idx in range(4, num_subsets):
                 subset = grid_ggd.grid_subset[subset_idx]
-                paraview.logger.info(f"Processing subset {subset_idx}")
-                paraview.logger.info(f"           index {subset.identifier.index}")
-                paraview.logger.info(f"           name {subset.identifier.name}")
-                paraview.logger.info(f"           description {subset.identifier.description}")
+                paraview.logger.debug(f"Processing subset {subset_idx}")
+                paraview.logger.debug(f"           index {subset.identifier.index}")
+                paraview.logger.debug(f"           name {subset.identifier.name}")
+                paraview.logger.debug(f"           description {subset.identifier.description}")
                 ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, subset_idx, points)
                 read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, ugrid)
                 output.SetPartition(subset_idx - 3, 0, ugrid)
@@ -333,10 +338,10 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             output.SetDataAssembly(assembly)
             for subset_idx in range(num_subsets):
                 subset = grid_ggd.grid_subset[subset_idx]
-                paraview.logger.info(f"Processing subset {subset_idx}")
-                paraview.logger.info(f"           index {subset.identifier.index}")
-                paraview.logger.info(f"           name {subset.identifier.name}")
-                paraview.logger.info(f"           description {subset.identifier.description}")
+                paraview.logger.debug(f"Processing subset {subset_idx}")
+                paraview.logger.debug(f"           index {subset.identifier.index}")
+                paraview.logger.debug(f"           name {subset.identifier.name}")
+                paraview.logger.debug(f"           description {subset.identifier.description}")
                 ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, subset_idx, points)
                 read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, ugrid)
                 output.SetPartition(subset_idx, 0, ugrid)
@@ -538,7 +543,7 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
         ids_obj.get(self.__Occurrence)
         paraview.logger.debug(self.__AosIndices)
         paraview.logger.debug(self.__AosIndexValues)
-        paraview.logger.debug('get call done')
+        paraview.logger.info('get call done')
 
         if ids_obj.ids_properties.homogeneous_time < 0:
             ids_obj.ids_properties.homogeneous_time = 1
@@ -578,7 +583,7 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
             grid_ggd = tip
             paraview.logger.debug(f'grid_ggd: {type(grid_ggd)}')
         else:
-            paraview.logger.error('Failed to find a grid_ggd node.')
+            paraview.logger.info('Failed to find a grid_ggd node.')
             return 0
 
         # We now have the grid_ggd
