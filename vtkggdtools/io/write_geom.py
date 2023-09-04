@@ -65,7 +65,6 @@ def convert_vtk_dataset_to_grid_subset_geometry(representable: GridGGDRepresenta
     :param grid_ggd: the grid_ggd IDS node.
     :return: None
     """
-    print(f'Writing subset: {name} into grid_ggd/grid_subset[{subset_idx}]')
 
     is_custom_subset = ggd_subset_identifier.get(name) is None
     if not is_custom_subset:
@@ -88,10 +87,10 @@ def convert_vtk_dataset_to_grid_subset_geometry(representable: GridGGDRepresenta
 
     num_elements = len(subset_cell_ids)
     subset_cell_types = cell_types[subset_cell_ids]
-    grid_ggd.grid_subset[subset_idx].element.resize(num_elements)
     gen_cell = vtkGenericCell()
     max_ndims = 0
     element_list = []
+    print(f'Writing subset: {name} into grid_ggd/grid_subset[{subset_idx}] with {num_elements} elements')
 
     for i, cell_id, cell_type in zip(range(num_elements), subset_cell_ids, subset_cell_types):
         gen_cell.SetCellType(cell_type)
