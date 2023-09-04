@@ -68,12 +68,12 @@ def get_ancestor_with_tag(node: Element, lut: dict, tag: str = ''):
 
     while parent.tag != tag:
         child = parent
-        parent = lut[child]
+        parent = lut[child]    
     return parent
 
 
 def get_ids_ancestor(node: Element, lut: dict):
-    return get_ancestor_with_tag(node, lut, 'IDS')
+        return get_ancestor_with_tag(node, lut, 'IDS')
 
 
 def get_ancestors_upto(node: Element, target: Element, lut: dict):
@@ -120,9 +120,12 @@ def prepare_blueprints(tree: ET):
         delete_obsoleted(nodes)
 
         for node in nodes:
-
-            ids_ancestor = get_ids_ancestor(node, parent_map)
-            other_ancestors = get_ancestors_upto(node, ids_ancestor, parent_map)
+            try:
+                ids_ancestor = get_ids_ancestor(node, parent_map)
+                other_ancestors = get_ancestors_upto(node, ids_ancestor, parent_map)
+            except KeyError:
+                print(f"Warning: can't find ancestor of {node.attrib['path']}. Continuing.")
+                continue
             ids_name = ids_ancestor.attrib['name']
 
             bp = blueprints.get(ids_name)
