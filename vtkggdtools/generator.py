@@ -73,7 +73,7 @@ def get_ancestor_with_tag(node: Element, lut: dict, tag: str = ''):
 
 
 def get_ids_ancestor(node: Element, lut: dict):
-        return get_ancestor_with_tag(node, lut, 'IDS')
+    return get_ancestor_with_tag(node, lut, 'IDS')
 
 
 def get_ancestors_upto(node: Element, target: Element, lut: dict):
