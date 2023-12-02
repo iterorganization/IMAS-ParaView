@@ -107,9 +107,10 @@ def convert_grid_subset_to_unstructured_grid(ids_name: str, ids, aos_index_value
 
     n_val = len(nam)
     a = np.shape(val_tor1)
-    n_tor = a[1]
-    valu = np.reshape(val_tor1, (n_val, n_tor, 4, len(xyz0)))
-    values = np.swapaxes(valu, 1, 2)
+    n_tor = int(a[1]/len(xyz0))
+    valu = np.reshape(val_tor1, (n_val, n_tor, len(xyz0), 4))
+    values = np.swapaxes(valu, 2, 3)
+    values = np.swapaxes(values, 1, 2)
 
             #vertex
     ien0 = np.array(ids.grid_ggd.array[0].space.array[0].objects_per_dimension.array[2].object.array)
