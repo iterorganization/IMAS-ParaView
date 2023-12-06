@@ -17,7 +17,7 @@ import numpy as np
 import os
 import platform
 
-import paraview
+from paraview import logger as pvlog
 from paraview.util.vtkAlgorithm import smproxy, smproperty, smdomain, smhint
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonCore import vtkDataArray, vtkPoints
@@ -172,7 +172,7 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             imas_env_call(ids_hdl.open_env_backend, self.__UserName, self.__Tokamak,
                           self.__ImasMajorVer, self.__Backend)
         except InvalidIDSIOError as e:
-            paraview.logger.exception(e)
+            pvlog.exception(e)
             return 0
 
         ids_obj = ids_hdl.{{ ids.name }}
@@ -184,16 +184,16 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             e = InvalidIDSParametersError(shot=self.__Shot, run=self.__Run, user=self.__UserName,
                                           tokamak=self.__Tokamak, imas_major_ver=self.__ImasMajorVer,
                                           occurrence=self.__Occurrence)
-            paraview.logger.exception(e)
+            pvlog.exception(e)
             return 0
 
         tip = ids_obj
 
-        paraview.logger.debug(f"AosIndices: {self.__AosIndices}")
-        paraview.logger.debug(f"AosIndexValues: {self.__AosIndexValues}")
-        paraview.logger.info(f"Reading IDS data...")
+        pvlog.debug(f"AosIndices: {self.__AosIndices}")
+        pvlog.debug(f"AosIndexValues: {self.__AosIndexValues}")
+        pvlog.info(f"Reading IDS data...")
         ids_obj.get()
-        paraview.logger.info("Reading done.")
+        pvlog.info("Reading done.")
 
         for i, node_name in enumerate(self.__GridGgdPath):
             aos_idx_var = self.__AosIndices.get(node_name)
@@ -211,12 +211,12 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
                 struct = getattr(tip, node_name)
                 tip = struct
 
-        paraview.logger.debug(f'tip: {type(tip)}')
+        pvlog.debug(f'tip: {type(tip)}')
         if tip is not ids_obj and tip is not None:
             grid_ggd = tip
-            paraview.logger.debug(f'grid_ggd: {type(grid_ggd)}')
+            pvlog.debug(f'grid_ggd: {type(grid_ggd)}')
         else:
-            paraview.logger.error('Failed to find a grid_ggd node.')
+            pvlog.error('Failed to find a grid_ggd node.')
             return 0
 
         # We now have the grid_ggd
@@ -230,7 +230,7 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
 
         # Check if we have anything to read:
         if num_subsets < 1 and len(grid_ggd.space) < 1:
-            paraview.logger.info('No points to read from grid_ggd')
+            pvlog.info('No points to read from grid_ggd')
             return 0
 
         {% if ids.name in ['mhd', 'radiation']%}
@@ -243,30 +243,30 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             if number_of_spaces > 1 and len(grid_ggd.space[0].coordinates_type) == 2:
                 n_period = grid_ggd.space[1].geometry_type.index
                 if n_period > 0: # Fourier space with periodicity (JOREK)
-                    paraview.logger.info(f'Reading Bezier mesh with Fourier periodiciy {n_period}')
+                    pvlog.info(f'Reading Bezier mesh with Fourier periodiciy {n_period}')
                     ugrid = read_bezier.convert_grid_subset_to_unstructured_grid('{{ ids.name }}', ids_obj, self.__AosIndexValues, self.__n_plane, self.__phi_start, self.__phi_end)
                     output.SetPartition(0, 0, ugrid)
                     child = assembly.AddNode('{{ ids.name }}', 0)
                     assembly.AddDataSetIndex(child, 0)
                     output.GetMetaData(0).Set(vtkCompositeDataSet.NAME(), '{{ ids.name }}')
                 else:
-                    paraview.logger.error(f'Number of planes {self.__n_plane} invalid for this {number_of_spaces} number of spaces')
+                    pvlog.error(f'Number of planes {self.__n_plane} invalid for this {number_of_spaces} number of spaces')
             else:
-                paraview.logger.error(f'Number of planes {self.__n_plane} invalid for this IDS type. Try using N = 0')
+                pvlog.error(f'Number of planes {self.__n_plane} invalid for this IDS type. Try using N = 0')
         else:
             if len(grid_ggd.space) < 1:
-                paraview.logger.info('No points to read from grid_ggd.space')
+                pvlog.info('No points to read from grid_ggd.space')
             else:
                 read_geom.fill_vtk_points(grid_ggd, space_idx, points, '{{ ids.name }}')
             if num_subsets < 1:
-                    paraview.logger.info('No subsets to read from grid_ggd')
+                    pvlog.info('No subsets to read from grid_ggd')
             else:
                 for subset_idx in range(num_subsets):
                     subset = grid_ggd.grid_subset[subset_idx]
-                    paraview.logger.debug(f"Processing subset {subset_idx}")
-                    paraview.logger.debug(f"           index {subset.identifier.index}")
-                    paraview.logger.debug(f"           name {subset.identifier.name}")
-                    paraview.logger.debug(f"           description {subset.identifier.description}")          
+                    pvlog.debug(f"Processing subset {subset_idx}")
+                    pvlog.debug(f"           index {subset.identifier.index}")
+                    pvlog.debug(f"           name {subset.identifier.name}")
+                    pvlog.debug(f"           description {subset.identifier.description}")          
                     if self.__n_plane == 0 or subset_idx == 0: # Regular grid processing
                         ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, subset_idx, points)
                         read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, ugrid)
@@ -280,7 +280,7 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
         read_geom.fill_vtk_points(grid_ggd, space_idx, points, '{{ ids.name }}')
         # Process grid_ggd.subsets:
         if num_subsets <= 1:
-            paraview.logger.info('No subsets to read from grid_ggd')
+            pvlog.info('No subsets to read from grid_ggd')
             assembly = vtkDataAssembly()
             output.SetNumberOfPartitionedDataSets(1)
             output.SetDataAssembly(assembly)
@@ -304,10 +304,10 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             output.GetMetaData(0).Set(vtkCompositeDataSet.NAME(), label)
             for subset_idx in range(4, num_subsets):
                 subset = grid_ggd.grid_subset[subset_idx]
-                paraview.logger.debug(f"Processing subset {subset_idx}")
-                paraview.logger.debug(f"           index {subset.identifier.index}")
-                paraview.logger.debug(f"           name {subset.identifier.name}")
-                paraview.logger.debug(f"           description {subset.identifier.description}")
+                pvlog.debug(f"Processing subset {subset_idx}")
+                pvlog.debug(f"           index {subset.identifier.index}")
+                pvlog.debug(f"           name {subset.identifier.name}")
+                pvlog.debug(f"           description {subset.identifier.description}")
                 ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, subset_idx, points)
                 read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, ugrid)
                 output.SetPartition(subset_idx - 3, 0, ugrid)
@@ -321,7 +321,7 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
         read_geom.fill_vtk_points(grid_ggd, space_idx, points, '{{ ids.name }}')
         # Process grid_ggd.subsets:
         if num_subsets <= 1:
-            paraview.logger.info('No subsets to read from grid_ggd')
+            pvlog.info('No subsets to read from grid_ggd')
             assembly = vtkDataAssembly()
             output.SetNumberOfPartitionedDataSets(1)
             output.SetDataAssembly(assembly)
@@ -338,10 +338,10 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             output.SetDataAssembly(assembly)
             for subset_idx in range(num_subsets):
                 subset = grid_ggd.grid_subset[subset_idx]
-                paraview.logger.debug(f"Processing subset {subset_idx}")
-                paraview.logger.debug(f"           index {subset.identifier.index}")
-                paraview.logger.debug(f"           name {subset.identifier.name}")
-                paraview.logger.debug(f"           description {subset.identifier.description}")
+                pvlog.debug(f"Processing subset {subset_idx}")
+                pvlog.debug(f"           index {subset.identifier.index}")
+                pvlog.debug(f"           name {subset.identifier.name}")
+                pvlog.debug(f"           description {subset.identifier.description}")
                 ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(grid_ggd, subset_idx, points)
                 read_ps.read_plasma_state('{{ ids.name }}', ids_obj, self.__AosIndexValues, subset_idx, ugrid)
                 output.SetPartition(subset_idx, 0, ugrid)
@@ -533,17 +533,17 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
             try:
                 imas_env_call(ids_hdl.create_env_backend, self.__UserName, self.__Tokamak,
                               self.__ImasMajorVer, self.__Backend)
-                paraview.logger.info(f"Created a new IDS ({self.__Shot}, {self.__Run}) User: {self.__UserName}, "
+                pvlog.info(f"Created a new IDS ({self.__Shot}, {self.__Run}) User: {self.__UserName}, "
                                      f"Tokamak: {self.__Tokamak}")
             except Exception as e:
-                paraview.logger.exception(e)
+                pvlog.exception(e)
                 return 0
 
         ids_obj = ids_hdl.{{ ids.name }}
         ids_obj.get(self.__Occurrence)
-        paraview.logger.debug(self.__AosIndices)
-        paraview.logger.debug(self.__AosIndexValues)
-        paraview.logger.info('get call done')
+        pvlog.debug(self.__AosIndices)
+        pvlog.debug(self.__AosIndexValues)
+        pvlog.info('get call done')
 
         if ids_obj.ids_properties.homogeneous_time < 0:
             ids_obj.ids_properties.homogeneous_time = 1
@@ -578,12 +578,12 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
                 struct = getattr(tip, node_name)
                 tip = struct
 
-        paraview.logger.debug(f'tip: {type(tip)}')
+        pvlog.debug(f'tip: {type(tip)}')
         if tip is not ids_obj and tip is not None:
             grid_ggd = tip
-            paraview.logger.debug(f'grid_ggd: {type(grid_ggd)}')
+            pvlog.debug(f'grid_ggd: {type(grid_ggd)}')
         else:
-            paraview.logger.info('Failed to find a grid_ggd node.')
+            pvlog.info('Failed to find a grid_ggd node.')
             return 0
 
         # We now have the grid_ggd
@@ -592,7 +592,7 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
         grid_ggd.grid_subset.resize(num_subsets) #Implicit: nodes, edges, cells, volumes
         grid_ggd.space.resize(1)
         space_idx = 0
-        paraview.logger.info(f"Populating grid_ggd/space[{space_idx}]")
+        pvlog.info(f"Populating grid_ggd/space[{space_idx}]")
 
         space_name = list(ggd_space_identifier.keys())[self.__GridGGDSpaceType]
         grid_ggd.space[space_idx].identifier.name = space_name
@@ -601,7 +601,7 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
 
         # Fill up space with 0,1,2,3 d geometry from the first partition.
         # It is assumed all other partitions share same points.
-        paraview.logger.info(f"Populating basic grid_subsets")
+        pvlog.info(f"Populating basic grid_subsets")
         grid_ggd_rep = write_geom.fill_grid_ggd_basic_geometry(input0, space_idx, grid_ggd)
         output.ShallowCopy(grid_ggd_rep.ugrid)
         subset_rep = GridSubsetRepresentable(ugrid=grid_ggd_rep.ugrid, num_subsets=num_subsets)

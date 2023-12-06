@@ -11,9 +11,14 @@ from vtkmodules.vtkCommonDataModel import ( vtkUnstructuredGrid, vtkCellArray,
 from vtkmodules.util.vtkConstants import VTK_FLOAT, VTK_ID_TYPE
 from vtkmodules.util import numpy_support as npvtk
 
+from paraview import logger as pvlog
+
 import numpy as np
 import vtk
 import operator
+
+# For the units: 
+from vtkggdtools.imashelper import get_units
 
 prec = np.float32
 vtk_prec = VTK_FLOAT
@@ -36,8 +41,12 @@ def convert_grid_subset_to_unstructured_grid(ids_name: str, ids, aos_index_value
     try:
         if ids_name == 'mhd':
             ggd = ids.ggd[time_idx]
-        else:
+            mhdval = True
+        elif ids_name == 'radiation':
             ggd = ids.grid_ggd[time_idx]
+            radval = True
+        else:
+            raise IndexError
     except IndexError:
         return output
 
@@ -57,41 +66,43 @@ def convert_grid_subset_to_unstructured_grid(ids_name: str, ids, aos_index_value
     for i in range(np.shape(size)[2]):
         size[:, :, i] = gr2d.objects_per_dimension.array[2].object.array[i].geometry_2d
 
-    #values
-    try:
-        ids_r = ids
-        data_r = ids_r.process[0].ggd.array[time_idx]
-        radiation = True
-    except:
-        radiation = False
-        pass
-
-    nam_all = {"Psi [$Wb$]": 'psi',
-            "Phi_potential [$V$]": 'phi_potential',
-            "J_tor [$A/m^2$]": 'j_tor',
-            "J_tor R [$A/m$]": 'j_tor_r',
-            "vorticity_tor/R [$m^{-1} s^{-1}$]": 'vorticity_over_r',
-            "vorticity_tor [s^{-1}]": 'vorticity',
-            "Mass_density [$kg/m^3$]": 'mass_density',
-            "T_e [$eV$]": 'electrons.temperature',
-            "T_i [$eV$]": 't_i_average',
-            "Vel_parallel/B [$m s^{-1} T^{-1}$]": 'velocity_parallel_over_b_field',
-            "Vel_parallel [$m/s$]": 'velocity_parallel'}
-
     val_tor1 = np.array([])
     nam = list()
-
-    try:
-        data = ids.ggd.array[time_idx]
-        mhdval = True
-    except:
-        mhdval = False
-
+    
     if mhdval:
-        for key in nam_all:
-            val_tor1, nam = value_in_IDS(data, nam_all, key, val_tor1, nam)
+        data = ids.ggd.array[time_idx]
+        ggd_path = 'ggd'
 
-    if radiation:
+        quantities = {
+            't_i_average': 'Ion Temperature (average)',
+            'n_i_total': 'Ion Density (total)',
+            'zeff': 'Z effective',
+            'b_field_r': 'Magnetic Field Br',
+            'b_field_z': 'Magnetic Field Bz',
+            'b_field_tor': 'Magnetic Field Btor',
+            'a_field_r': 'Magnetic Potential Ar',
+            'a_field_z': 'Magnetic Potential Az',
+            'a_field_tor': 'Magnetic Potential Ator',
+            'psi': 'Poloidal Flux',
+            'velocity_r': 'Plasma Velocity Vr',
+            'velocity_z': 'Plasma Velocity Vz',
+            'velocity_tor': 'Plasma Velocity Vtor',
+            'velocity_parallel': 'Plasma Velocity Vparallel',
+            'phi_potential': 'Electric Potential',
+            'vorticity': 'Vorticity',
+            'j_r': 'Current Density Jr',
+            'j_z': 'Current Density Jz',
+            'j_tor': 'Current Density Jtor',
+            'mass_density': 'Mass Density'
+        }
+        for q_field, q_name in quantities.items():
+            val_tor1, nam = value_in_IDS(ids_name, ggd_path, data, q_field, q_name, val_tor1, nam)
+        
+
+    elif radval:
+        ggd_path = 'process/ggd'
+        data = ids.process[0].ggd.array[time_idx]
+        
         try:
             if np.size(val_tor1) == 0:
                 val_tor1 = np.array([data_r.ion[0].emissivity[0].coefficients])
@@ -103,7 +114,7 @@ def convert_grid_subset_to_unstructured_grid(ids_name: str, ids, aos_index_value
         except:
             print('No radiation values')
 
-    if not(radiation or mhdval):
+    else:
         print('No mhd or radiation values found')
         return output
 
@@ -381,12 +392,15 @@ def bf_t(n_sub):
     t  = s.transpose()
     return basis_functions_t(s, t)
 
-def value_in_IDS(ids_data, valuepaths:dict, name:str, valu:np.ndarray, names:list):
+def value_in_IDS(ids_name, ggd_path, ids_data, field:str, name:str, valu:np.ndarray, names:list):
     """
     Check if IDS contains chosen value and add it to array of all values
     """
     try:
-        new_val = operator.attrgetter(valuepaths[name])(ids_data).array[0].coefficients
+        new_val = operator.attrgetter(field)(ids_data).array[0].coefficients
+        #pvlog.info(f'Getting units for {ids_name}/{ggd_path}/{field}')
+        units = get_units(ids_name, f'{ggd_path}/{field}')
+        name = f"{name} {units}"
         if not(names):
             names = list()
             names.append(name)
@@ -400,5 +414,6 @@ def value_in_IDS(ids_data, valuepaths:dict, name:str, valu:np.ndarray, names:lis
         valu = np.concatenate((valu, np.array([new_val])), axis=0)
         return valu, names
 
-    except:
+    except Exception as e:
+        #pvlog.exception(e)
         return valu, names

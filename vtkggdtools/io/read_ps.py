@@ -1,27 +1,17 @@
 import numpy as np
 from vtkmodules.numpy_interface import dataset_adapter as dsa
-from functools import lru_cache
 
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkPointData, vtkCellData, vtkUnstructuredGrid
-import paraview
+from paraview import logger as pvlog
 
-from imas import dd_units
-dd_units = dd_units.DataDictionaryUnits()
-# Units pre- and post- formatting:
-u_pre = '['
-u_post = ']'
-# For MathML:
-#u_pre = '[$' # start MathText
-#u_post = '$]' # end MathText
-@lru_cache
-def get_units(ids_name:str, path:str) -> str:
-    try:
-        units = u_pre + str(dd_units.get_units(ids_name, path)) + u_post
-    except:
-        paraview.logger.warn(f'Can\'t read units for {ids_name}/{path}.')
-        units = ''
-    return units
+# For the units: 
+from vtkggdtools.imashelper import get_units
+
+# We'll need these below when we create some units manually:
+import vtkggdtools.imashelper
+u_pre = vtkggdtools.imashelper.u_pre
+u_post = vtkggdtools.imashelper.u_post
 
 def read_plasma_state(ids_name: str, ids_obj, aos_index_values: dict,
                       subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
@@ -74,7 +64,7 @@ def read_plasma_state(ids_name: str, ids_obj, aos_index_values: dict,
         read_waves(ids_obj, aos_index_values, subset_idx, ugrid)
 
     else:
-        paraview.logger.warn(f'Reading plasma state from IDS {ids_name} not implemented.')
+        pvlog.warn(f'Reading plasma state from IDS {ids_name} not implemented.')
         
 
 def read_distribution_sources(ids_obj, aos_index_values: dict,
@@ -845,7 +835,7 @@ def read_wall(ids_obj, aos_index_values: dict,
     try:
         _add_aos_scalar_array_to_vtk_field_data(ggd.power_density, subset_idx, name, ugrid)
     except:
-        paraview.logger.warn('No power density in IDS')
+        pvlog.warn('No power density in IDS')
         pass
 
     # - temperature
@@ -855,7 +845,7 @@ def read_wall(ids_obj, aos_index_values: dict,
     try:
         _add_aos_scalar_array_to_vtk_field_data(ggd.temperature, subset_idx, name, ugrid)
     except:
-        paraview.logger.warn('No temperature in IDS.')
+        pvlog.warn('No temperature in IDS.')
         pass
 
     
@@ -937,7 +927,7 @@ def _add_scalar_array_to_vtk_field_data(array: np.ndarray, name: str, ugrid: vtk
     :param ugrid: an instance of vtkUnstructuredGrid
     :return: None
     """
-    paraview.logger.debug(f'           {name}...')
+    pvlog.debug(f'           {name}...')
     point_data: vtkPointData = ugrid.GetPointData()
     num_points = ugrid.GetNumberOfPoints()
     cell_data: vtkCellData = ugrid.GetCellData()
@@ -981,7 +971,7 @@ def _add_aos_vector_array_to_vtk_field_data(aos_vector_node, subset_idx: int, na
     :param ugrid: an unstructured grid instance
     :return: None
     """
-    paraview.logger.debug(f'           {name}...')
+    pvlog.debug(f'           {name}...')
     if subset_idx >= len(aos_vector_node):
         return
 
