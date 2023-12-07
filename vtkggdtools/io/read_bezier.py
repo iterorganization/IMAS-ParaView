@@ -74,6 +74,7 @@ def convert_grid_subset_to_unstructured_grid(ids_name: str, ids, aos_index_value
         ggd_path = 'ggd'
 
         quantities = {
+            'electrons.temperature': 'Electron Temperature',
             't_i_average': 'Ion Temperature (average)',
             'n_i_total': 'Ion Density (total)',
             'zeff': 'Z effective',
@@ -395,11 +396,18 @@ def bf_t(n_sub):
 def value_in_IDS(ids_name, ggd_path, ids_data, field:str, name:str, valu:np.ndarray, names:list):
     """
     Check if IDS contains chosen value and add it to array of all values
+    param ids_name: ids name we are handling (for the units)
+    param ggd_path: path for the ggd inside the ids
+    param ids_data: data inside the ids to be processed
+    param field: path of the data inside the ggd (for the units); can use '.' or '/'
+    param name: descriptive name of the data, to be display in Paraview
+    param valu:
+    param names: list
     """
     try:
-        new_val = operator.attrgetter(field)(ids_data).array[0].coefficients
+        new_val = operator.attrgetter(field.replace('/','.'))(ids_data).array[0].coefficients
         #pvlog.info(f'Getting units for {ids_name}/{ggd_path}/{field}')
-        units = get_units(ids_name, f'{ggd_path}/{field}')
+        units = get_units(ids_name, f'{ggd_path}/{field.replace(".","/")}')
         name = f"{name} {units}"
         if not(names):
             names = list()
