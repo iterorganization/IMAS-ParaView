@@ -38,6 +38,8 @@ def convert_grid_subset_to_unstructured_grid(ids_name: str, ids, aos_index_value
     output = vtkUnstructuredGrid()
 
     time_idx = aos_index_values.get('TimeIdx')
+    mhdval = False
+    radval = False
     try:
         if ids_name == 'mhd':
             ggd = ids.ggd[time_idx]
