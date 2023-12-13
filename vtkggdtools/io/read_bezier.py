@@ -100,19 +100,18 @@ def convert_grid_subset_to_unstructured_grid(ids_name: str, ids, aos_index_value
         }
         for q_field, q_name in quantities.items():
             val_tor1, nam = value_in_IDS(ids_name, ggd_path, data, q_field, q_name, val_tor1, nam)
-        
-
+            
     elif radval:
         ggd_path = 'process/ggd'
         data = ids.process[0].ggd.array[time_idx]
         
         try:
             if np.size(val_tor1) == 0:
-                val_tor1 = np.array([data_r.ion[0].emissivity[0].coefficients])
+                val_tor1 = np.array([data.ion[0].emissivity[0].coefficients])
                 nam.append("Radiation (W/m^3)")
             else:
                 val_tor1 = np.concatenate((val_tor1,
-                    np.array([data_r.ion[0].emissivity[0].coefficients])), axis=0)
+                    np.array([data.ion[0].emissivity[0].coefficients])), axis=0)
                 nam.append("Radiation (W/m^3)")
         except:
             print('No radiation values')
