@@ -166,20 +166,17 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
     def RequestData(self, request, inInfo, outInfo):
 
         output = vtkPartitionedDataSetCollection.GetData(outInfo)
-        ids_hdl = imas.ids(self.__Shot, self.__Run)
-
+        ids_hdl = imas.DBEntry(self.__Backend, self.__Tokamak, self.__Shot, self.__Run,
+                               self.__UserName, self.__ImasMajorVer)
         try:
-            imas_env_call(ids_hdl.open_env_backend, self.__UserName, self.__Tokamak,
-                          self.__ImasMajorVer, self.__Backend)
+            imas_env_call(ids_hdl.open)
         except InvalidIDSIOError as e:
             pvlog.exception(e)
             return 0
 
-        ids_obj = ids_hdl.{{ ids.name }}
-        ids_obj.time = ids_hdl.{{ ids.name }}.partialGet("time", self.__Occurrence)
-
+        ids_time = ids_hdl.partial_get("{{ ids.name }}", "time", self.__Occurrence)
         try:
-            assert ids_obj.time is not None
+            assert ids_time is not None
         except AssertionError:
             e = InvalidIDSParametersError(shot=self.__Shot, run=self.__Run, user=self.__UserName,
                                           tokamak=self.__Tokamak, imas_major_ver=self.__ImasMajorVer,
@@ -187,12 +184,11 @@ class {{ ids.label }}GGDReader(VTKPythonAlgorithmBase):
             pvlog.exception(e)
             return 0
 
-        tip = ids_obj
-
         pvlog.debug(f"AosIndices: {self.__AosIndices}")
         pvlog.debug(f"AosIndexValues: {self.__AosIndexValues}")
         pvlog.info(f"Reading IDS data...")
-        ids_obj.get()
+        ids_obj = ids_hdl.get("{{ ids.name }}", self.__Occurrence)
+        tip = ids_obj
         pvlog.info("Reading done.")
 
         for i, node_name in enumerate(self.__GridGgdPath):
@@ -524,25 +520,22 @@ class {{ ids.label }}GGDWriter(VTKPythonAlgorithmBase):
         output = vtkUnstructuredGrid.GetData(outInfo)
         cell_data: vtkCellData = input0.GetCellData()
 
-        ids_hdl = imas.ids(self.__Shot, self.__Run)
-
+        ids_hdl = imas.DBEntry(self.__Backend, self.__Tokamak, self.__Shot, self.__Run,
+                               self.__UserName, self.__ImasMajorVer)
         try:
-            imas_env_call(ids_hdl.open_env_backend, self.__UserName, self.__Tokamak,
-                          self.__ImasMajorVer, self.__Backend)
+            imas_env_call(ids_hdl.open)
         except InvalidIDSIOError:
             try:
-                imas_env_call(ids_hdl.create_env_backend, self.__UserName, self.__Tokamak,
-                              self.__ImasMajorVer, self.__Backend)
+                imas_env_call(ids_hdl.open, mode=imas.imasdef.FORCE_OPEN_PULSE)
                 pvlog.info(f"Created a new IDS ({self.__Shot}, {self.__Run}) User: {self.__UserName}, "
                                      f"Tokamak: {self.__Tokamak}")
             except Exception as e:
                 pvlog.exception(e)
                 return 0
 
-        ids_obj = ids_hdl.{{ ids.name }}
-        ids_obj.get(self.__Occurrence)
         pvlog.debug(self.__AosIndices)
         pvlog.debug(self.__AosIndexValues)
+        ids_obj = ids_hdl.get("{{ ids.name }}", self.__Occurrence)
         pvlog.info('get call done')
 
         if ids_obj.ids_properties.homogeneous_time < 0:
