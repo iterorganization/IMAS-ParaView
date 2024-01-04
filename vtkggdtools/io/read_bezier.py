@@ -91,11 +91,14 @@ def convert_grid_subset_to_unstructured_grid(ids_name: str, ids, aos_index_value
             'velocity_z': 'Plasma Velocity Vz',
             'velocity_tor': 'Plasma Velocity Vtor',
             'velocity_parallel': 'Plasma Velocity Vparallel',
+            'velocity_parallel_over_b_field': 'Vparallel / |B|',
             'phi_potential': 'Electric Potential',
             'vorticity': 'Vorticity',
+            'vorticity_over_r': 'Vorticity / Major Radius',
             'j_r': 'Current Density Jr',
             'j_z': 'Current Density Jz',
             'j_tor': 'Current Density Jtor',
+            'j_tor_r': 'Jtor x Major Radius',
             'mass_density': 'Mass Density'
         }
         for q_field, q_name in quantities.items():
