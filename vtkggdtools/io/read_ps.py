@@ -821,6 +821,7 @@ def read_wall(ids_obj, aos_index_values: dict,
     # for finding units:
     ids_name = 'wall'
     ggd_path = 'description_ggd/ggd'
+    units_path = ggd_path
     
     try:
         if description_ggd_idx != None:
@@ -830,27 +831,44 @@ def read_wall(ids_obj, aos_index_values: dict,
     except IndexError:
         return
 
-    # Power density and temperature read if data is provided.
-    # - power_density
-    units_path = ggd_path + '/power_density'
-    units = get_units(ids_name, units_path)
-    name = 'Power Density {units}'
-    try:
-        _add_aos_scalar_array_to_vtk_field_data(ggd.power_density, subset_idx, name, ugrid)
-    except:
-        pvlog.warn('No power density in IDS')
-        pass
-
-    # - temperature
-    units_path = ggd_path + '/temperature'
-    units = get_units(ids_name, units_path)
-    name = 'Temperature {units}'
-    try:
-        _add_aos_scalar_array_to_vtk_field_data(ggd.temperature, subset_idx, name, ugrid)
-    except:
-        pvlog.warn('No temperature in IDS.')
-        pass
-
+    # Scalar quantities:
+    quantities = {
+        'power_density': 'Power Density',
+        'temperature': 'Temperature',
+        'v_biasing': 'External Electric Potencial',
+        'psi': 'Poloidal Flux',
+        'phi_potential': 'Electric Potential',
+        'resistivity': 'Resistivity',
+    }
+    for q_name in quantities:
+        try:
+            units = get_units(ids_name, f'{units_path}/{q_name}')
+            _add_aos_scalar_array_to_vtk_field_data(getattr(ggd, q_name),
+                                                    subset_idx,
+                                                    f'{quantities[q_name]} {units}',
+                                                    ugrid)
+        except AttributeError:
+            pvlog.info(f'No quantity {q_name} found, perhaps missmatched data dictionary versions?')
+        except IndexError:
+            pvlog.info(f'No subset {subset_idx} found for quantity{q_name}.')
+            
+    # Vector quantities:
+    quantities = {
+        'j_total': 'Current Density (total)',
+        'e_field': 'Electric Field',
+        'a_field': 'Magnetic Potential',
+    }
+    for q_name in quantities:
+        try:
+            units = get_units(ids_name, f'{units_path}/{q_name}')
+            _add_aos_vector_array_to_vtk_field_data(getattr(ggd, q_name),
+                                                    subset_idx,
+                                                    f'{quantities[q_name]} {units}',
+                                                    ugrid)
+        except AttributeError:
+            pvlog.info(f'No quantity {q_name} found, perhaps missmatched data dictionary versions?')
+        except IndexError:
+            pvlog.info(f'No subset {subset_idx} found for quantity{q_name}.')
     
 def read_waves(ids_obj, aos_index_values: dict,
                subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
@@ -953,14 +971,20 @@ def _add_aos_scalar_array_to_vtk_field_data(aos_scalar_node, subset_idx: int, na
     :param ugrid: an unstructured grid instance
     :return: None
     """
+    pvlog.debug(f'           {name}...')
     if subset_idx >= len(aos_scalar_node):
         return
 
     # For wall IDS nodes, edges, cells, volumes in one partition.
     if subset_idx == -1:
         for i in range(4):
-            if hasattr(aos_scalar_node[i], 'values') and len(aos_scalar_node[i].values):
-                _add_scalar_array_to_vtk_field_data(aos_scalar_node[i].values, name, ugrid)
+            try:
+                if hasattr(aos_scalar_node[i], 'values') and len(aos_scalar_node[i].values):
+                    _add_scalar_array_to_vtk_field_data(aos_scalar_node[i].values, name, ugrid)
+            except IndexError as e:
+                pvlog.info(f'           no index {i} for subset {subset_idx}...')
+            except AttributeError as e:
+                pvlog.info(f'           no index {i} for subset {subset_idx}...')
     else:
         if hasattr(aos_scalar_node[subset_idx], 'values') and len(aos_scalar_node[subset_idx].values):
             _add_scalar_array_to_vtk_field_data(aos_scalar_node[subset_idx].values, name, ugrid)
