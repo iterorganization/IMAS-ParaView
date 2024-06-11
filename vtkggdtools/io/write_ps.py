@@ -31,15 +31,20 @@ def write_plasma_state(
     grid_ggd,
 ) -> None:
     """
-    Write the plasma state attached to the vtkUnstructuredGrid in the form of vtkPointData/vtkCellData
+    Write the plasma state attached to the vtkUnstructuredGrid in the form of
+    vtkPointData/vtkCellData
     to the ggd IDS node under the given top level ids node.
 
-    :param ids_name: name of the top level IDS. (Each IDS has different set of plasma state arrays.)
+    :param ids_name: name of the top level IDS. (Each IDS has different set of plasma
+        state arrays.)
     :param ids_obj: an ids_obj of type ids_name
-    :param aos_index_values: the values that shall be used to navigate the AoS and reach the scalar arrays.
+    :param aos_index_values: the values that shall be used to navigate the AoS and reach
+        the scalar arrays.
     :param space_idx: an index into grid_ggd/space AoS
-    :param subset_rep: representation of ids_obj/grid_ggd/grid_subset node for VTK index transforms.
-    :param rep: representation of ids_obj/grid_ggd/space/objects_per_dimension for VTK index transforms.
+    :param subset_rep: representation of ids_obj/grid_ggd/grid_subset node for VTK index
+        transforms.
+    :param rep: representation of ids_obj/grid_ggd/space/objects_per_dimension for VTK
+        index transforms.
     :param grid_ggd: the accompanying grid_ggd node.
     :return: None
     """
@@ -53,7 +58,8 @@ def write_plasma_state(
             return
 
         name = "Particle Density"
-        # _write_aos_scalar_node_from_vtk_field_data(name, subset_rep, rep, space_idx, ggd.particles, grid_ggd)
+        # _write_aos_scalar_node_from_vtk_field_data(name, subset_rep, rep, space_idx,
+        # ggd.particles, grid_ggd)
 
     elif ids_name == "distributions":
         # ggd is at /distributions/distribution(i1)/ggd(itime)
@@ -65,8 +71,8 @@ def write_plasma_state(
             return
 
         # - expansion(i2)
-        num_expansions = len(ggd.expansion)
-        expansion_components = []
+        # num_expansions = len(ggd.expansion)
+        # expansion_components = []
 
     elif ids_name == "edge_profiles":
         # ggd is at /edge_profiles/ggd(itime)
@@ -227,7 +233,8 @@ def write_plasma_state(
             "a_field_tor",
         ]:
             try:
-                aos_scalar_node = getattr(ids_obj.field_map[time_idx], attr_name)
+                # aos_scalar_node =
+                getattr(ids_obj.field_map[time_idx], attr_name)
             except IndexError:
                 continue
             component_name = attr_name.split("_")[-1]
@@ -300,13 +307,14 @@ def write_plasma_state(
         #  - b_field/normal(i2)
         #  - b_field/bi_normal(i2)
         #  - k_perpendicular(i2)
-        coherent_wave_idx = aos_index_values.get("CoherentWaveIdx")
+
+        # coherent_wave_idx = aos_index_values.get("CoherentWaveIdx")
         time_idx = aos_index_values.get("TimeIdx")
 
         try:
-            e_field = (
-                ids_obj.coherent_wave[coherent_wave_idx].full_wave[time_idx].e_field
-            )
+            # e_field = (
+            #     ids_obj.coherent_wave[coherent_wave_idx].full_wave[time_idx].e_field
+            # )
             name = "Electric Field - LH polarized (V.m^-1)"
             name = "Electric Field - RH polarized (V.m^-1)"
             name = "Electric Field - Parallel to B (V.m^-1)"
@@ -317,9 +325,9 @@ def write_plasma_state(
 
         try:
             # WARNING: Are these units correct?
-            b_field = (
-                ids_obj.coherent_wave[coherent_wave_idx].full_wave[time_idx].b_field
-            )
+            # b_field = (
+            #     ids_obj.coherent_wave[coherent_wave_idx].full_wave[time_idx].b_field
+            # )
             name = "Magnetic Field - Parallel to B (V.m^-1)"
             name = "Magnetic Field - Normal to flux surface (V.m^-1)"
             name = "Magnetic Field - Tangential to flux surface (V.m^-1)"
@@ -410,7 +418,8 @@ def _write_aos_scalar_node_from_vtk_field_data(
         subset_idx += 1
 
         cell_types = [_get_vtk_cell_type(2, len(cell)) for cell in rep.faces]
-        # arr = _interpolate_point_data_to_cell_data(name, subset_rep.ugrid, list(rep.faces.keys()), cell_types)
+        # arr = _interpolate_point_data_to_cell_data(name, subset_rep.ugrid,
+        #   list(rep.faces.keys()), cell_types)
         # write array from point data for 'faces'
         arr = subset_rep.ugrid.GetPointData().GetArray(name)
         # if actual cell data is required, it is writen in next if sentence.
@@ -426,11 +435,17 @@ def _write_aos_scalar_node_from_vtk_field_data(
         subset_idx += 1
         """
         cell_types = [VTK_POLYHEDRON] * len(rep.volumes)
-        arr = _interpolate_point_data_to_cell_data(name, subset_rep.ugrid, list(rep.volumes.keys()), cell_types)
+        arr = _interpolate_point_data_to_cell_data(
+            name, subset_rep.ugrid, list(rep.volumes.keys()), cell_types
+        )
         # write array from point data for 'volumes'
         _write_scalar_array_from_vtk_field_data(arr, subset_idx, aos_scalar_node)
-        aos_scalar_node[subset_idx].grid_index = grid_ggd.space[space_idx].identifier.index
-        aos_scalar_node[subset_idx].grid_subset_index = grid_ggd.grid_subset[subset_idx].identifier.index
+        aos_scalar_node[subset_idx].grid_index = (
+            grid_ggd.space[space_idx].identifier.index
+        )
+        aos_scalar_node[subset_idx].grid_subset_index = (
+            grid_ggd.grid_subset[subset_idx].identifier.index
+        )
         """
         # write array from point data for other subsets interpolating when necessary
         for subsetidx in range(subset_idx + 1, subset_rep.num_subsets):
@@ -440,12 +455,13 @@ def _write_aos_scalar_node_from_vtk_field_data(
             for i in range(len(subset_rep.element_list.get(subsetidx))):
                 cell = subset_rep.element_list.get(subsetidx)[i]
                 # Uses everything except nodes.
-                if type(cell) != np.int64:
+                if type(cell) is not np.int64:
                     cells.append(cell)
                     cell_types.append(subset_rep.subset_cell_types.get(subsetidx)[i])
 
-            # arr = _interpolate_point_data_to_cell_data(name, subset_rep.ugrid, subset_rep.element_list.get(subsetidx),
-            #                                           subset_rep.subset_cell_types.get(subsetidx))
+            # arr = _interpolate_point_data_to_cell_data(
+            #   name, subset_rep.ugrid, subset_rep.element_list.get(subsetidx),
+            #   subset_rep.subset_cell_types.get(subsetidx))
             arr = _interpolate_point_data_to_cell_data(
                 name, subset_rep.ugrid, cells, cell_types
             )
@@ -470,7 +486,8 @@ def _write_aos_scalar_node_from_vtk_field_data(
 
 def _get_vtk_cell_type(dimension: int, npts: int) -> int:
     """
-    Determines a suitable VTK cell type from given cell dimensionality and number of points for that cell.
+    Determines a suitable VTK cell type from given cell dimensionality and number of
+    points for that cell.
     :param dimension: the number of dimensions for a cell.
     :param npts: the number of points for a cell.
     :return: VTK Cell Type

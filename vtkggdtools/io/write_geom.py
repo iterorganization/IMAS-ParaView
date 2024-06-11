@@ -31,12 +31,16 @@ def fill_grid_ggd_basic_geometry(
     dataset: vtkPointSet, space_idx: int, grid_ggd
 ) -> GridGGDRepresentable:
     """
-    Copy the basic geometry objects (0d, 1d, 2d, 3d) and space coordinates into a grid_ggd.
+    Copy the basic geometry objects (0d, 1d, 2d, 3d) and space coordinates into a
+    grid_ggd.
     The points for the dataset go into the grid_ggd/space[space_idx] AoS element.
-    :param dataset: can be any derived instance of a vtkPointSet. converted into a vtkUnstructuredGrid for convenience.
-    :param space_idx: an index into the grid_ggd/space AoS. This space will be populated with the dataset's points.
+    :param dataset: can be any derived instance of a vtkPointSet.
+        converted into a vtkUnstructuredGrid for convenience.
+    :param space_idx: an index into the grid_ggd/space AoS.
+        This space will be populated with the dataset's points.
     :param grid_ggd: the grid_ggd IDS node.
-    :return: an instance of GridGGDRepresentable that helps go from vtk point ids to indices into grid_ggd/**/object.
+    :return: an instance of GridGGDRepresentable that helps go from vtk point ids to
+        indices into grid_ggd/**/object.
     """
     # Convert input dataset into a vtkUnstructuredGrid
     append_filter = vtkAppendDataSets()
@@ -70,12 +74,14 @@ def convert_vtk_dataset_to_grid_subset_geometry(
     grid_ggd,
 ) -> None:
     """
-    Populate the grid_ggd/grid_subset IDS node with the elements which have a >0 value for the cell data 'name'd array.
+    Populate the grid_ggd/grid_subset IDS node with the elements which have a >0 value
+    for the cell data 'name'd array.
     :param representable: A GridGGDRepresentable.
     :param subset_rep: A GridSubsetRepresentable.
     :param space_idx: an index into the grid_ggd/space AoS.
     :param subset_idx: an index into the grid_ggd/grid_subset AoS.
-    :param name: the name of the cell data array. All cells with array value >0 will go into the grid_subset with name.
+    :param name: the name of the cell data array. All cells with array value >0 will
+        go into the grid_subset with name.
     :param grid_ggd: the grid_ggd IDS node.
     :return: None
     """
@@ -109,7 +115,8 @@ def convert_vtk_dataset_to_grid_subset_geometry(
     max_ndims = 0
     element_list = []
     print(
-        f"Writing subset: {name} into grid_ggd/grid_subset[{subset_idx}] with {num_elements} elements"
+        f"Writing subset: {name} into grid_ggd/grid_subset[{subset_idx}] "
+        f"with {num_elements} elements"
     )
 
     for i, cell_id, cell_type in zip(
@@ -376,7 +383,8 @@ def _fill_2d_objects(
     Fill all the 2D objects in the grid_ggd IDS node.
     :param dataset: a vtkUnstructuredGrid instance.
     :param space_idx: an index into the grid_ggd/space AoS.
-    :param edges: an edge map to go from edge point ids to the 1d object index under grid_ggd.
+    :param edges: an edge map to go from edge point ids to the 1d object index under
+        grid_ggd.
     :param grid_ggd: the grid_ggd IDS node.
     :return: face map
     """
@@ -474,7 +482,8 @@ def _fill_3d_objects(
     Fill all the 3D objects in the grid_ggd IDS node.
     :param dataset: a vtkUnstructuredGrid instance.
     :param space_idx: an index into the grid_ggd/space AoS.
-    :param faces: an face map to go from face point ids to the 2d object index under grid_ggd.
+    :param faces: an face map to go from face point ids to the 2d object index under
+        grid_ggd.
     :param grid_ggd: the grid_ggd IDS node.
     :return: volume map
     """

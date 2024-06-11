@@ -5,20 +5,12 @@ children into distinct vtkUnstructuredGrid objects for Bezier elements.
 """
 
 import operator
-from typing import Any, Callable
 
 import numpy as np
 import vtk
-from paraview import logger as pvlog
 from vtkmodules.util import numpy_support as npvtk
-from vtkmodules.util.vtkConstants import VTK_FLOAT, VTK_ID_TYPE
-from vtkmodules.vtkCommonCore import vtkIdList, vtkPoints
-from vtkmodules.vtkCommonDataModel import (
-    VTK_BEZIER_HEXAHEDRON,
-    VTK_BEZIER_QUADRILATERAL,
-    vtkCellArray,
-    vtkUnstructuredGrid,
-)
+from vtkmodules.util.vtkConstants import VTK_FLOAT
+from vtkmodules.vtkCommonDataModel import vtkUnstructuredGrid
 
 # For the units:
 from vtkggdtools.imashelper import get_units
@@ -31,14 +23,16 @@ def convert_grid_subset_to_unstructured_grid(
     ids_name: str, ids, aos_index_values: dict, n_plane: int, phi_start, phi_end: float
 ) -> vtkUnstructuredGrid:
     """
-    Copy the elements found in given grid_ggd/grid_subset IDS node into a vtkUnstructuredGrid instance.
+    Copy the elements found in given grid_ggd/grid_subset IDS node into a
+    vtkUnstructuredGrid instance.
     This method uses the supplied point coordinates in the form of a vtkPoints instance.
     :param grid_ggd: a grid_ggd ids node
     :param subset_idx: an index into grid_ggd/grid_subset
     :param n_plane: number of toroidal planes to be generated if 3D axysimetric
     :param phi_start: start phi plane
     :param phi_end: end plane at phi in degrees
-    :param vtk_grid_points: the point coordinates corresponding to 1d objects in the subset elements.
+    :param vtk_grid_points: the point coordinates corresponding to 1d objects in
+        the subset elements.
     :return:
     """
     output = vtkUnstructuredGrid()
@@ -48,10 +42,10 @@ def convert_grid_subset_to_unstructured_grid(
     radval = False
     try:
         if ids_name == "mhd":
-            ggd = ids.ggd[time_idx]
+            # ggd = ids.ggd[time_idx]
             mhdval = True
         elif ids_name == "radiation":
-            ggd = ids.grid_ggd[time_idx]
+            # ggd = ids.grid_ggd[time_idx]
             radval = True
         else:
             raise IndexError
@@ -126,7 +120,7 @@ def convert_grid_subset_to_unstructured_grid(
                     axis=0,
                 )
                 nam.append("Radiation (W/m^3)")
-        except:
+        except Exception:
             print("No radiation values")
 
     else:
@@ -542,7 +536,7 @@ def value_in_IDS(
             operator.attrgetter(field.replace("/", "."))(ids_data).array[0].coefficients
         )
         # pvlog.info(f'Getting units for {ids_name}/{ggd_path}/{field}')
-        units = get_units(ids_name, f'{ggd_path}/{field.replace(".","/")}')
+        units = get_units(ids_name, f'{ggd_path}/{field.replace(".", "/")}')
         name = f"{name} {units}"
         if not (names):
             names = list()
@@ -557,6 +551,6 @@ def value_in_IDS(
         valu = np.concatenate((valu, np.array([new_val])), axis=0)
         return valu, names
 
-    except Exception as e:
+    except Exception:
         # pvlog.exception(e)
         return valu, names

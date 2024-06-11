@@ -6,7 +6,6 @@ children into distinct vtkUnstructuredGrid objects.
 
 from typing import Any, Callable
 
-import numpy as np
 from paraview import logger as pvlog
 from vtkmodules.vtkCommonCore import vtkIdList, vtkPoints
 from vtkmodules.vtkCommonDataModel import (
@@ -26,11 +25,13 @@ def convert_grid_subset_geometry_to_unstructured_grid(
     grid_ggd, subset_idx: int, vtk_grid_points
 ) -> vtkUnstructuredGrid:
     """
-    Copy the elements found in given grid_ggd/grid_subset IDS node into a vtkUnstructuredGrid instance.
+    Copy the elements found in given grid_ggd/grid_subset IDS node into a
+    vtkUnstructuredGrid instance.
     This method uses the supplied point coordinates in the form of a vtkPoints instance.
     :param grid_ggd: a grid_ggd ids node
     :param subset_idx: an index into grid_ggd/grid_subset
-    :param vtk_grid_points: the point coordinates corresponding to 1d objects in the subset elements.
+    :param vtk_grid_points: the point coordinates corresponding to 1d objects in
+        the subset elements.
     :return:
     """
     grid = vtkUnstructuredGrid()
@@ -44,7 +45,8 @@ def convert_grid_subset_geometry_to_unstructured_grid(
 
 def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints, ids_name: str) -> None:
     """
-    Populate the vtkPoints data structure with coordinates from the grid_ggd/space IDS node.
+    Populate the vtkPoints data structure with coordinates from the grid_ggd/space IDS
+    node.
     :param grid_ggd: a grid_ggd ids node.
     :param space_idx: an index into the grid_ggd/space AoS.
     :param points: the vtk points instance.
@@ -60,7 +62,8 @@ def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints, ids_name: str) 
     points.Allocate(num_objects0d, 0)
     coordinate_type = grid_ggd.space[space_idx].coordinates_type
 
-    # When length of coordinate type is greater than 2, the third coordinate is in geometry[2], else it is 0.
+    # When length of coordinate type is greater than 2, the third coordinate is in
+    # geometry[2], else it is 0.
     if len(coordinate_type) > 2:
         third_dim: Callable[[Any], int] = lambda e: getattr(e, "geometry")[2]
     else:
@@ -97,10 +100,10 @@ def _fill_vtk_cell_array_from_gs2(
         obj = grid[2].object[j]
         obj_nodes = obj.nodes
         obj_dimension = 2
-        try:
-            obj_boundary = obj.boundary
-        except:
-            obj_boundary = []
+        # try:
+        #     obj_boundary = obj.boundary
+        # except:
+        #     obj_boundary = []
 
         pt_ids = list(map(lambda val: val - 1, obj_nodes))
         npts = len(pt_ids)
@@ -112,7 +115,8 @@ def _fill_vtk_cell_array_from_gs(
     grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid
 ) -> None:
     """
-    Populate the cells in the vtk unstructured grid instance with elements from the grid_ggd/grid_subset IDS node.
+    Populate the cells in the vtk unstructured grid instance with elements from the
+    grid_ggd/grid_subset IDS node.
     :param grid_ggd: a grid_ggd ids node.
     :param subset_idx: an index into the grid_ggd/grid_subset AoS.
     :param ugrid: the vtk unstructured grid instance.
@@ -175,19 +179,22 @@ def _fill_vtk_cell_array_from_gs(
                     )  # offset by -1
                     num_face_pts = len(object_2d_pt_ids)
 
-                    # the format for 3d cell point ids is [numFace0Pts, p0, p1, .., numFace1Pts, p0, p1, ...]
+                    # the format for 3d cell point ids is
+                    #   [numFace0Pts, p0, p1, .., numFace1Pts, p0, p1, ...]
                     object_3d_pt_ids.InsertNextId(num_face_pts)
 
                     for pt in object_2d_pt_ids:
                         object_3d_pt_ids.InsertNextId(pt)
 
-                # the other overload (int, int, (int,...)) raises TypeError, so use the one with vtkIdList
+                # the other overload (int, int, (int,...)) raises TypeError,
+                # so use the one with vtkIdList
                 ugrid.InsertNextCell(cell_type, object_3d_pt_ids)
 
 
 def _get_vtk_cell_type(dimension: int, npts: int) -> int:
     """
-    Determines a suitable VTK cell type from given cell dimensionality and number of points for that cell.
+    Determines a suitable VTK cell type from given cell dimensionality and number of
+    points for that cell.
     :param dimension: the number of dimensions for a cell.
     :param npts: the number of points for a cell.
     :return: VTK Cell Type

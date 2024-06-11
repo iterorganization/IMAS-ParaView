@@ -22,13 +22,14 @@ def read_plasma_state(
     ugrid: vtkUnstructuredGrid,
 ) -> None:
     """
-    Reads plasma state data arrays from the ggd node. These arrays are added as point data or cell data to the
-    unstructured grid.
+    Reads plasma state data arrays from the ggd node. These arrays are added as point
+    data or cell data to the unstructured grid.
     This is just a dispatching routine, the real work is done in the called
     funtions read_<IDS_name>(ids_obj, aos_index_values, subset_idx, ugrid)
     :param ids_name: name of the top level IDS.
     :param ids_obj: an ids_obj of type ids_name
-    :param aos_index_values: the values that shall be used to navigate the AoS and reach the scalar arrays.
+    :param aos_index_values: the values that shall be used to navigate the AoS and reach
+        the scalar arrays.
     :param subset_idx: an index into grid_ggd/grid_subset AoS
     :param ugrid: the unstructured grid instance.
     :return: None
@@ -374,6 +375,10 @@ def read_edge_profiles_lecad(
                         break
                     units = get_units(ids_name, f"{units_path}/{q_name}")
                     name = f"Neutral {neutralLabel} {q_name} {units}"
+
+                    # FIXME: path was undefined, but this will definitely raise an error
+                    # inside the getattr calls below!
+                    path = None
                     if scalar:
                         _add_aos_scalar_array_to_vtk_field_data(
                             getattr(ggd.neutral[j], path), subset_idx, name, ugrid
@@ -382,7 +387,7 @@ def read_edge_profiles_lecad(
                         _add_aos_vector_array_to_vtk_field_data(
                             getattr(ggd.neutral[j], path), subset_idx, name, ugrid
                         )
-            except:
+            except Exception:
                 break
 
     # TODO ggd_fast
@@ -394,7 +399,7 @@ def read_edge_sources(
 
     # ggd is at /edge_sources/source/ggd(itime)
     time_idx = aos_index_values.get("TimeIdx")
-    model_idx = aos_index_values.get("ModelIdx")
+    # model_idx = aos_index_values.get("ModelIdx")
     # For units reading:
     ids_name = "edge_sources"
     ggd_path = "source/ggd"
@@ -446,7 +451,7 @@ def read_edge_sources(
                 # sometimes state.label is not filled:
                 try:
                     st_name = state.label
-                except:
+                except Exception:
                     st_name = "? " + hp_name
                 units_path = units_hp_path + "/state"
                 units = get_units(ids_name, units_path + "/particles")
@@ -817,7 +822,8 @@ def read_radiation(
 
             # heavy particles: emissivity
             quantity = hp.emissivity
-            # for units, no need to distinguish between ions and neutrals, use ions all the time:
+            # for units, no need to distinguish between ions and neutrals, use ions all
+            # the time:
             units_path = f"{ggd_path}/ion"
             q_name = "emissivity"
             units = get_units(ids_name, f"{units_path}/{q_name}")
@@ -827,7 +833,8 @@ def read_radiation(
             # heavy particles: state
             for state in hp.state:
                 quantity = state.emissivity
-                # for units, no need to distinguish between ions and neutrals, use ions all the time:
+                # for units, no need to distinguish between ions and neutrals, use ions
+                # all the time:
                 units_path = f"{ggd_path}/ion/state"
                 q_name = "emissivity"
                 units = get_units(ids_name, f"{units_path}/{q_name}")
@@ -897,7 +904,10 @@ def read_transport_solver_numerics(
     try:
         units_path = ggd_path + "/electrons/particles"
         units = get_units(ids_name, units_path)
-        name = f"Electron Density Boundary Condition - {ggd.electrons.particles[subset_idx].identifier.name} {units}"
+        name = (
+            "Electron Density Boundary Condition - "
+            f"{ggd.electrons.particles[subset_idx].identifier.name} {units}"
+        )
         _add_aos_scalar_array_to_vtk_field_data(
             ggd.electrons.particles, subset_idx, name, ugrid
         )
@@ -908,7 +918,10 @@ def read_transport_solver_numerics(
     try:
         units_path = ggd_path + "/electrons/energy"
         units = get_units(ids_name, units_path)
-        name = f"Electron Energy Boundary Condition - {ggd.electrons.energy[subset_idx].identifier.name} {units}"
+        name = (
+            "Electron Energy Boundary Condition - "
+            f"{ggd.electrons.energy[subset_idx].identifier.name} {units}"
+        )
         _add_aos_scalar_array_to_vtk_field_data(
             ggd.electrons.energy, subset_idx, name, ugrid
         )
@@ -922,13 +935,19 @@ def read_transport_solver_numerics(
         quantity = ion.particles
         units_path = ggd_path + "/ion/particles"
         units = get_units(ids_name, units_path)
-        name = f"{ion.label} Density Boundary Condition ({quantity.identifier.name}) {units}"
+        name = (
+            f"{ion.label} Density Boundary Condition ({quantity.identifier.name})"
+            f" {units}"
+        )
         _add_aos_scalar_array_to_vtk_field_data(quantity, subset_idx, name, ugrid)
         # - ion/energy
         quantity = ion.energy
         units_path = ggd_path + "/ion/energy"
         units = get_units(ids_name, units_path)
-        name = f"{ion.label} Energy Boundary Condition ({quantity.identifier.name}) {units}"
+        name = (
+            f"{ion.label} Energy Boundary Condition ({quantity.identifier.name})"
+            f" {units}"
+        )
         _add_aos_scalar_array_to_vtk_field_data(quantity, subset_idx, name, ugrid)
 
         for state in ion.state:
@@ -936,13 +955,19 @@ def read_transport_solver_numerics(
             quantity = state.particles
             units_path = ggd_path + "/ion/state/particles"
             units = get_units(ids_name, units_path)
-            name = f"{state.label} Density Boundary Condition ({quantity.identifier.name}) {units}"
+            name = (
+                f"{state.label} Density Boundary Condition "
+                f"({quantity.identifier.name}) {units}"
+            )
             _add_aos_scalar_array_to_vtk_field_data(quantity, subset_idx, name, ugrid)
             # - ion/state/energy
             quantity = state.energy
             units_path = ggd_path + "/ion/state/energy"
             units = get_units(ids_name, units_path)
-            name = f"{state.label} Energy Boundary Condition ({quantity.identifier.name}) {units}"
+            name = (
+                f"{state.label} Energy Boundary Condition "
+                f"({quantity.identifier.name}) {units}"
+            )
             _add_aos_scalar_array_to_vtk_field_data(quantity, subset_idx, name, ugrid)
 
 
@@ -960,7 +985,7 @@ def read_wall(
     units_path = ggd_path
 
     try:
-        if description_ggd_idx != None:
+        if description_ggd_idx is not None:
             ggd = ids_obj.description_ggd[description_ggd_idx].ggd[time_idx]
         else:
             ggd = ids_obj.description_ggd[0].ggd[time_idx]
@@ -984,7 +1009,8 @@ def read_wall(
             )
         except AttributeError:
             pvlog.info(
-                f"No quantity {q_name} found, perhaps missmatched data dictionary versions?"
+                f"No quantity {q_name} found, "
+                "perhaps mismatched data dictionary versions?"
             )
         except IndexError:
             pvlog.info(f"No subset {subset_idx} found for quantity{q_name}.")
@@ -1003,7 +1029,8 @@ def read_wall(
             )
         except AttributeError:
             pvlog.info(
-                f"No quantity {q_name} found, perhaps missmatched data dictionary versions?"
+                f"No quantity {q_name} found, "
+                "perhaps missmatched data dictionary versions?"
             )
         except IndexError:
             pvlog.info(f"No subset {subset_idx} found for quantity{q_name}.")
@@ -1135,9 +1162,9 @@ def _add_aos_scalar_array_to_vtk_field_data(
                     _add_scalar_array_to_vtk_field_data(
                         aos_scalar_node[i].values, name, ugrid
                     )
-            except IndexError as e:
+            except IndexError:
                 pvlog.info(f"           no index {i} for subset {subset_idx}...")
-            except AttributeError as e:
+            except AttributeError:
                 pvlog.info(f"           no index {i} for subset {subset_idx}...")
     else:
         if hasattr(aos_scalar_node[subset_idx], "values") and len(
@@ -1181,7 +1208,7 @@ def _add_aos_vector_array_to_vtk_field_data(
     ]:
         try:
             values = getattr(aos_vector_node[subset_idx], component_name)
-        except:
+        except Exception:
             continue
         if len(values):
             components[component_name] = values

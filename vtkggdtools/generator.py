@@ -127,7 +127,8 @@ def prepare_blueprints(tree: ET):
                 other_ancestors = get_ancestors_upto(node, ids_ancestor, parent_map)
             except KeyError:
                 print(
-                    f"Warning: can't find ancestor of {node.attrib['path']}. Continuing."
+                    f"Warning: can't find ancestor of {node.attrib['path']}."
+                    " Continuing."
                 )
                 continue
             ids_name = ids_ancestor.attrib["name"]
@@ -147,7 +148,7 @@ def prepare_blueprints(tree: ET):
                 # Convert to vtk class name convention. edge_profiles <-> EdgeProfiles
                 bp.label = to_camel_case(ids_name)
 
-            full_path = ids_name + IMASDefaults.delimiter + node.attrib["path"]
+            # full_path = ids_name + IMASDefaults.delimiter + node.attrib["path"]
             full_path_doc = ids_name + IMASDefaults.delimiter + node.attrib["path_doc"]
             paths[ids_name].add(full_path_doc)
 
