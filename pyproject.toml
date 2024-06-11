@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61", "wheel", "tomli;python_version<'3.11'", "versioneer[toml]"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vtkggdtools"
+authors = [
+    {name = "vtkggdtools developers"},
+    {name = "Panchumarti Jaswant EXT", email = "jaswant.panchumarti@iter.org"},
+    {name = "Olivier Hoenen", email = "olivier.hoenen@iter.org"},
+]
+description = "Tools to expose GGD readers/writers as ParaView plugins."
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = "LICENSE.md"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dynamic = ["version"]
+requires-python = ">=3.8"
+dependencies = ["jinja2 >= 3.0.3", "numpy >= 1.19.4", "vtk >= 9.1.0"]
+
+[project.urls]
+homepage = "https://git.iter.org/projects/IMEX/repos/ggd-vtk"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--strict-markers"
+testpaths = "tests"
+
+[tool.versioneer]
+VCS = "git"
+style = "pep440"
+versionfile_source = "vtkggdtools/_version.py"
+versionfile_build = "vtkggdtools/_version.py"
+tag_prefix = ""
+parentdir_prefix = ""
+
+[tool.black]
+# Exclude versioneer-generated file
+force-exclude = "vtkggdtools/_version.py"
+
+[tool.isort]
+profile = "black"
+
