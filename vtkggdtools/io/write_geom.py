@@ -2,7 +2,8 @@
 A collection of methods to write a VTK dataset into a grid_ggd IDS node.
 These methods populate the grid_ggd/space and grid_ggd/grid_subset children.
 """
-from collections import defaultdict, OrderedDict
+
+from collections import OrderedDict, defaultdict
 from typing import Dict, List, Tuple
 
 from identifiers.coordinate_identifier import coordinate_identifier
@@ -10,15 +11,25 @@ from identifiers.ggd_geometry_content_identifier import ggd_geometry_content_ide
 from identifiers.ggd_subset_identifier import ggd_subset_identifier
 from vtkmodules.numpy_interface import algorithms as algs
 from vtkmodules.numpy_interface import dataset_adapter as dsa
-from vtkmodules.vtkCommonCore import vtkMath, vtkIdList, vtkDataArray
-from vtkmodules.vtkCommonDataModel import vtkCell, vtkCellIterator, vtkEdgeTable, vtkGenericCell, vtkPointSet, \
-    vtkUnstructuredGrid, vtkPolygon, vtkCellData
+from vtkmodules.vtkCommonCore import vtkDataArray, vtkIdList, vtkMath
+from vtkmodules.vtkCommonDataModel import (
+    vtkCell,
+    vtkCellData,
+    vtkCellIterator,
+    vtkEdgeTable,
+    vtkGenericCell,
+    vtkPointSet,
+    vtkPolygon,
+    vtkUnstructuredGrid,
+)
 from vtkmodules.vtkFiltersCore import vtkAppendDataSets
 
 from vtkggdtools.io.representables import GridGGDRepresentable, GridSubsetRepresentable
 
 
-def fill_grid_ggd_basic_geometry(dataset: vtkPointSet, space_idx: int, grid_ggd) -> GridGGDRepresentable:
+def fill_grid_ggd_basic_geometry(
+    dataset: vtkPointSet, space_idx: int, grid_ggd
+) -> GridGGDRepresentable:
     """
     Copy the basic geometry objects (0d, 1d, 2d, 3d) and space coordinates into a grid_ggd.
     The points for the dataset go into the grid_ggd/space[space_idx] AoS element.
@@ -35,26 +46,29 @@ def fill_grid_ggd_basic_geometry(dataset: vtkPointSet, space_idx: int, grid_ggd)
     output = append_filter.GetOutput()
     grid_ggd.space[space_idx].objects_per_dimension.resize(4)
 
-    print('Writing nodes..')
+    print("Writing nodes..")
     _fill_0d_objects(output, space_idx, grid_ggd)
-    print('Writing edges..')
+    print("Writing edges..")
     edges = _fill_1d_objects(output, space_idx, grid_ggd)
-    print('Writing faces..')
+    print("Writing faces..")
     faces = _fill_2d_objects(output, space_idx, edges, grid_ggd)
-    print('Writing volumes..')
+    print("Writing volumes..")
     volumes = _fill_3d_objects(output, space_idx, faces, grid_ggd)
-    print('Writing implicit subsets..')
+    print("Writing implicit subsets..")
     _fill_implicit_grid_subsets(space_idx, grid_ggd)
-    print('Finished')
+    print("Finished")
 
     return GridGGDRepresentable(output, edges, faces, volumes)
 
 
-def convert_vtk_dataset_to_grid_subset_geometry(representable: GridGGDRepresentable,
-                                                subset_rep: GridSubsetRepresentable,
-                                                space_idx: int,
-                                                subset_idx: int, name: str,
-                                                grid_ggd) -> None:
+def convert_vtk_dataset_to_grid_subset_geometry(
+    representable: GridGGDRepresentable,
+    subset_rep: GridSubsetRepresentable,
+    space_idx: int,
+    subset_idx: int,
+    name: str,
+    grid_ggd,
+) -> None:
     """
     Populate the grid_ggd/grid_subset IDS node with the elements which have a >0 value for the cell data 'name'd array.
     :param representable: A GridGGDRepresentable.
@@ -69,12 +83,16 @@ def convert_vtk_dataset_to_grid_subset_geometry(representable: GridGGDRepresenta
     is_custom_subset = ggd_subset_identifier.get(name) is None
     if not is_custom_subset:
         grid_ggd.grid_subset[subset_idx].identifier.name = name
-        grid_ggd.grid_subset[subset_idx].identifier.index = ggd_subset_identifier.get(name).get('index')
-        grid_ggd.grid_subset[subset_idx].identifier.description = ggd_subset_identifier.get(name).get('description')
+        grid_ggd.grid_subset[subset_idx].identifier.index = ggd_subset_identifier.get(
+            name
+        ).get("index")
+        grid_ggd.grid_subset[subset_idx].identifier.description = (
+            ggd_subset_identifier.get(name).get("description")
+        )
     else:
         grid_ggd.grid_subset[subset_idx].identifier.name = name
         grid_ggd.grid_subset[subset_idx].identifier.index = -subset_idx
-        grid_ggd.grid_subset[subset_idx].identifier.description = ''
+        grid_ggd.grid_subset[subset_idx].identifier.description = ""
 
     cell_data: vtkCellData = representable.ugrid.GetCellData()
     data_array: vtkDataArray = cell_data.GetArray(name)
@@ -90,9 +108,13 @@ def convert_vtk_dataset_to_grid_subset_geometry(representable: GridGGDRepresenta
     gen_cell = vtkGenericCell()
     max_ndims = 0
     element_list = []
-    print(f'Writing subset: {name} into grid_ggd/grid_subset[{subset_idx}] with {num_elements} elements')
+    print(
+        f"Writing subset: {name} into grid_ggd/grid_subset[{subset_idx}] with {num_elements} elements"
+    )
 
-    for i, cell_id, cell_type in zip(range(num_elements), subset_cell_ids, subset_cell_types):
+    for i, cell_id, cell_type in zip(
+        range(num_elements), subset_cell_ids, subset_cell_types
+    ):
         gen_cell.SetCellType(cell_type)
         dim = gen_cell.GetCellDimension()
 
@@ -117,7 +139,10 @@ def convert_vtk_dataset_to_grid_subset_geometry(representable: GridGGDRepresenta
             for p1, p2 in zip(pts[:-1], pts[1:]):
                 element.object.resize(1)
                 edge_tup = (p1, p2)
-                if edge_tup not in representable.edges and tuple(reversed(edge_tup)) in representable.edges:
+                if (
+                    edge_tup not in representable.edges
+                    and tuple(reversed(edge_tup)) in representable.edges
+                ):
                     edge_tup = (p2, p1)
                 if edge_tup in representable.edges:
                     element_list.append(edge_tup)
@@ -129,7 +154,10 @@ def convert_vtk_dataset_to_grid_subset_geometry(representable: GridGGDRepresenta
         elif dim == 2:
             element.object.resize(1)
             face_tup = tuple(pts)
-            if face_tup not in representable.faces and tuple(reversed(face_tup)) in representable.faces:
+            if (
+                face_tup not in representable.faces
+                and tuple(reversed(face_tup)) in representable.faces
+            ):
                 face_tup = tuple(reversed(face_tup))
             if face_tup in representable.faces:
                 element_list.append(face_tup)
@@ -151,10 +179,16 @@ def convert_vtk_dataset_to_grid_subset_geometry(representable: GridGGDRepresenta
     subset_rep.subset_cell_ids.update({subset_idx: subset_cell_ids})
     subset_rep.subset_cell_types.update({subset_idx: subset_cell_types})
     subset_rep.element_list.update({subset_idx: element_list})
-    print('Finished')
+    print("Finished")
 
 
-def __add_unique_edge(cell: vtkCell, etbl: vtkEdgeTable, edges: OrderedDict, pts: List[int], object1d_idx: int) -> int:
+def __add_unique_edge(
+    cell: vtkCell,
+    etbl: vtkEdgeTable,
+    edges: OrderedDict,
+    pts: List[int],
+    object1d_idx: int,
+) -> int:
     """
     A convenient function to add unique edge.
     (p1, p2) is treated the same as (p2, p1).
@@ -220,18 +254,22 @@ def _fill_0d_objects(dataset: vtkUnstructuredGrid, space_idx: int, grid_ggd) -> 
     space = grid_ggd.space[space_idx]
     space.coordinates_type.resize(geom_size)
     if geom_size == 2:
-        space.coordinates_type[0] = coordinate_identifier.get('r').get('index')
-        space.coordinates_type[1] = coordinate_identifier.get('z').get('index')
+        space.coordinates_type[0] = coordinate_identifier.get("r").get("index")
+        space.coordinates_type[1] = coordinate_identifier.get("z").get("index")
     else:
-        space.coordinates_type[0] = coordinate_identifier.get('x').get('index')
-        space.coordinates_type[1] = coordinate_identifier.get('y').get('index')
-        space.coordinates_type[2] = coordinate_identifier.get('z').get('index')
+        space.coordinates_type[0] = coordinate_identifier.get("x").get("index")
+        space.coordinates_type[1] = coordinate_identifier.get("y").get("index")
+        space.coordinates_type[2] = coordinate_identifier.get("z").get("index")
 
     objects_per_dim = space.objects_per_dimension
     geometry_content = objects_per_dim[0].geometry_content
-    geometry_content.name = 'node_coordinates'
-    geometry_content.index = ggd_geometry_content_identifier.get('node_coordinates').get('index')
-    geometry_content.description = ggd_geometry_content_identifier.get('node_coordinates').get('description')
+    geometry_content.name = "node_coordinates"
+    geometry_content.index = ggd_geometry_content_identifier.get(
+        "node_coordinates"
+    ).get("index")
+    geometry_content.description = ggd_geometry_content_identifier.get(
+        "node_coordinates"
+    ).get("description")
 
     # Fill up 0-dim objects.
     objects_0d = objects_per_dim[0].object
@@ -258,9 +296,13 @@ def _fill_1d_objects(dataset: vtkUnstructuredGrid, space_idx: int, grid_ggd):
     space = grid_ggd.space[space_idx]
     objects_per_dim = space.objects_per_dimension
     geometry_content = objects_per_dim[1].geometry_content
-    geometry_content.name = 'edge_areas'
-    geometry_content.index = ggd_geometry_content_identifier.get('edge_areas').get('index')
-    geometry_content.description = ggd_geometry_content_identifier.get('edge_areas').get('description')
+    geometry_content.name = "edge_areas"
+    geometry_content.index = ggd_geometry_content_identifier.get("edge_areas").get(
+        "index"
+    )
+    geometry_content.description = ggd_geometry_content_identifier.get(
+        "edge_areas"
+    ).get("description")
 
     coords = dsa.vtkDataArrayToVTKArray(points.GetData())
     cells_iter: vtkCellIterator = dataset.NewCellIterator()
@@ -278,12 +320,16 @@ def _fill_1d_objects(dataset: vtkUnstructuredGrid, space_idx: int, grid_ggd):
             pts = [0, 0]
             for e in range(num_edges):
                 edge = cell.GetEdge(e)
-                num_insertions = __add_unique_edge(edge, edge_table, edges, pts, num_objects_per_dim)
+                num_insertions = __add_unique_edge(
+                    edge, edge_table, edges, pts, num_objects_per_dim
+                )
                 num_objects_per_dim += num_insertions
             else:
                 if num_edges == 0:
                     # cell_type == polyline or line
-                    num_insertions = __add_unique_edge(cell, edge_table, edges, pts, num_objects_per_dim)
+                    num_insertions = __add_unique_edge(
+                        cell, edge_table, edges, pts, num_objects_per_dim
+                    )
                     num_objects_per_dim += num_insertions
         cells_iter.GoToNextCell()
 
@@ -299,7 +345,9 @@ def _fill_1d_objects(dataset: vtkUnstructuredGrid, space_idx: int, grid_ggd):
     for edge, object_1d_idx in edges.items():
         object_ = objects_1d[object_1d_idx]
         # object_.geometry.resize(1)
-        object_.measure = vtkMath.Distance2BetweenPoints(coords[edge[0]], coords[edge[1]]) ** 0.5
+        object_.measure = (
+            vtkMath.Distance2BetweenPoints(coords[edge[0]], coords[edge[1]]) ** 0.5
+        )
         object_.nodes.resize(2)
         object_.boundary.resize(2)
         neighbours = []
@@ -318,8 +366,12 @@ def _fill_1d_objects(dataset: vtkUnstructuredGrid, space_idx: int, grid_ggd):
     return edges
 
 
-def _fill_2d_objects(dataset: vtkUnstructuredGrid, space_idx: int, edges: Dict[Tuple[int, int], int],
-                     grid_ggd) -> OrderedDict:
+def _fill_2d_objects(
+    dataset: vtkUnstructuredGrid,
+    space_idx: int,
+    edges: Dict[Tuple[int, int], int],
+    grid_ggd,
+) -> OrderedDict:
     """
     Fill all the 2D objects in the grid_ggd IDS node.
     :param dataset: a vtkUnstructuredGrid instance.
@@ -332,9 +384,13 @@ def _fill_2d_objects(dataset: vtkUnstructuredGrid, space_idx: int, edges: Dict[T
     space = grid_ggd.space[space_idx]
     objects_per_dim = space.objects_per_dimension
     geometry_content = objects_per_dim[2].geometry_content
-    geometry_content.name = 'face_indices_volume'
-    geometry_content.index = ggd_geometry_content_identifier.get('face_indices_volume').get('index')
-    geometry_content.description = ggd_geometry_content_identifier.get('face_indices_volume').get('description')
+    geometry_content.name = "face_indices_volume"
+    geometry_content.index = ggd_geometry_content_identifier.get(
+        "face_indices_volume"
+    ).get("index")
+    geometry_content.description = ggd_geometry_content_identifier.get(
+        "face_indices_volume"
+    ).get("description")
 
     cells_iter: vtkCellIterator = dataset.NewCellIterator()
 
@@ -411,7 +467,9 @@ def _fill_2d_objects(dataset: vtkUnstructuredGrid, space_idx: int, edges: Dict[T
     return faces
 
 
-def _fill_3d_objects(dataset: vtkUnstructuredGrid, space_idx: int, faces: OrderedDict, grid_ggd) -> OrderedDict:
+def _fill_3d_objects(
+    dataset: vtkUnstructuredGrid, space_idx: int, faces: OrderedDict, grid_ggd
+) -> OrderedDict:
     """
     Fill all the 3D objects in the grid_ggd IDS node.
     :param dataset: a vtkUnstructuredGrid instance.
@@ -423,9 +481,13 @@ def _fill_3d_objects(dataset: vtkUnstructuredGrid, space_idx: int, faces: Ordere
     space = grid_ggd.space[space_idx]
     objects_per_dim = space.objects_per_dimension
     geometry_content = objects_per_dim[3].geometry_content
-    geometry_content.name = 'unspecified'
-    geometry_content.index = ggd_geometry_content_identifier.get('unspecified').get('index')
-    geometry_content.description = ggd_geometry_content_identifier.get('unspecified').get('description')
+    geometry_content.name = "unspecified"
+    geometry_content.index = ggd_geometry_content_identifier.get("unspecified").get(
+        "index"
+    )
+    geometry_content.description = ggd_geometry_content_identifier.get(
+        "unspecified"
+    ).get("description")
 
     cells_iter: vtkCellIterator = dataset.NewCellIterator()
 
@@ -474,7 +536,9 @@ def _fill_3d_objects(dataset: vtkUnstructuredGrid, space_idx: int, faces: Ordere
             else:
                 object_.boundary[f].index = -1
 
-            dataset.GetCellNeighbors(cell_id, face_cell.GetPointIds(), neighbours_3d_id_list)
+            dataset.GetCellNeighbors(
+                cell_id, face_cell.GetPointIds(), neighbours_3d_id_list
+            )
 
             for j in range(neighbours_3d_id_list.GetNumberOfIds()):
                 nei_cell_id = neighbours_3d_id_list.GetId(j)
@@ -500,15 +564,19 @@ def _fill_implicit_grid_subsets(space_idx: int, grid_ggd):
     :param grid_ggd: the grid_ggd IDS node.
     :return:
     """
-    grid_subset_id_name = ['nodes', 'edges', 'cells', 'volumes']
+    grid_subset_id_name = ["nodes", "edges", "cells", "volumes"]
     # Populate grid_subset and space.
     for i in range(4):
         subset_idx = i
         dim = i
         name = grid_subset_id_name[dim]
         grid_ggd.grid_subset[subset_idx].identifier.name = name
-        grid_ggd.grid_subset[subset_idx].identifier.index = ggd_subset_identifier.get(name).get('index')
-        grid_ggd.grid_subset[subset_idx].identifier.description = ggd_subset_identifier.get(name).get('description')
+        grid_ggd.grid_subset[subset_idx].identifier.index = ggd_subset_identifier.get(
+            name
+        ).get("index")
+        grid_ggd.grid_subset[subset_idx].identifier.description = (
+            ggd_subset_identifier.get(name).get("description")
+        )
         grid_ggd.grid_subset[subset_idx].dimension = dim + 1
         num_elements = len(grid_ggd.space[space_idx].objects_per_dimension[dim].object)
         grid_ggd.grid_subset[subset_idx].element.resize(num_elements)

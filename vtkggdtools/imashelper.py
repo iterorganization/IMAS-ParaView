@@ -8,16 +8,20 @@ from paraview import logger as pvlog
 Reading units from an IDS path:
 """
 from functools import lru_cache
+
 from imas import dd_units
+
 dd_units = dd_units.DataDictionaryUnits()
 # Units pre- and post- formatting:
-u_pre = '['
-u_post = ']'
+u_pre = "["
+u_post = "]"
+
+
 # For MathML:
-#u_pre = '[$' # start MathText
-#u_post = '$]' # end MathText
+# u_pre = '[$' # start MathText
+# u_post = '$]' # end MathText
 @lru_cache
-def get_units(ids_name:str, path:str, pre=u_pre, post=u_post) -> str:
+def get_units(ids_name: str, path: str, pre=u_pre, post=u_post) -> str:
     """
     Read the units from an IDS path.
     : param ids_name: name of the IDS to read the units from (eg, "equilibrium")
@@ -29,14 +33,17 @@ def get_units(ids_name:str, path:str, pre=u_pre, post=u_post) -> str:
     try:
         units = pre + str(dd_units.get_units(ids_name, path)) + post
     except:
-        pvlog.warn(f'Can\'t read units for {ids_name}/{path}.')
-        units = ''
+        pvlog.warn(f"Can't read units for {ids_name}/{path}.")
+        units = ""
     return units
+
 
 """
 Exception reinforced imas open/create
 """
 from vtkggdtools.errors import InvalidIDSIOError
+
+
 def imas_env_call(ids_func, *ids_args):
     """
     Open/Create an imas ids.

@@ -1,4 +1,4 @@
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
 from dataclasses import dataclass, field
 
 from vtkmodules.vtkCommonDataModel import vtkUnstructuredGrid
@@ -12,10 +12,17 @@ class GridGGDRepresentable:
     The indices are stored in C/python index convention (0, ... n)
     Prior to assigning these indices to a grid_ggd/**/attribute, increment by 1.
     """
+
     ugrid: vtkUnstructuredGrid = None
-    edges: OrderedDict = field(default_factory=OrderedDict)  #: Go from edge (p1,p2) to 1d grid_ggd object index.
-    faces: OrderedDict = field(default_factory=OrderedDict)  #: Go from face (p1,..) to 2d grid_ggd object index.
-    volumes: OrderedDict = field(default_factory=OrderedDict)  #: Go from a 3D cell's id to 3d grid_ggd object index.
+    edges: OrderedDict = field(
+        default_factory=OrderedDict
+    )  #: Go from edge (p1,p2) to 1d grid_ggd object index.
+    faces: OrderedDict = field(
+        default_factory=OrderedDict
+    )  #: Go from face (p1,..) to 2d grid_ggd object index.
+    volumes: OrderedDict = field(
+        default_factory=OrderedDict
+    )  #: Go from a 3D cell's id to 3d grid_ggd object index.
 
 
 @dataclass
