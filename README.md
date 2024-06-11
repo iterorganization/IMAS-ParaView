@@ -160,8 +160,8 @@ the project files.
 
 ```bash
   # Load compatible IMAS and ParaView modules, like:
-  # AL5 and ParaView 5.11 (recommended):
-  $ module load IMAS/3.39.0-5.0.0-foss-2022b ParaView/5.11.1-foss-2022b
+  # AL5 and ParaView 5.12 (recommended on RHEL9):
+  $ module load IMAS-AL-Python/5.2.1-intel-2023b-DD-3.41.0 ParaView/5.12.0-foss-2023b
   # or AL4 and ParaView 5.10 (compatibility):
   # $ module load IMAS/3.41.0-4.11.9-foss-2020b ParaView/5.10.0-foss-2020b-mpi
   $ python -m venv --system-site-packages --clear --prompt vtkggddev .venv
