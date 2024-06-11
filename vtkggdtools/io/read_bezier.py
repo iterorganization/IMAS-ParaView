@@ -9,14 +9,14 @@ import operator
 import numpy as np
 import vtk
 from vtkmodules.util import numpy_support as npvtk
-from vtkmodules.util.vtkConstants import VTK_FLOAT
+from vtkmodules.util.vtkConstants import VTK_DOUBLE
 from vtkmodules.vtkCommonDataModel import vtkUnstructuredGrid
 
 # For the units:
 from vtkggdtools.imashelper import get_units
 
-prec = np.float32
-vtk_prec = VTK_FLOAT
+prec = np.float64
+vtk_prec = VTK_DOUBLE
 
 
 def convert_grid_subset_to_unstructured_grid(
