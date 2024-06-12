@@ -55,7 +55,7 @@ def convert_grid_subset_to_unstructured_grid(
     phi = [phi_start, phi_end]
     gr2d = ids.grid_ggd[0].space[0]
     xyz0 = gr2d.objects_per_dimension[0].object
-    ien0 = np.array(gr2d.objects_per_dimension[2].object)
+    ien0 = gr2d.objects_per_dimension[2].object
 
     n_period = ids.grid_ggd[0].space[1].geometry_type.index
 
@@ -64,7 +64,7 @@ def convert_grid_subset_to_unstructured_grid(
         x[:, :, j] = gr2d.objects_per_dimension[0].object[j].geometry_2d
 
     # size 1, d_{uk}, d_{vk}, d{uv}d{vk} as in Daan Van Vugt thesis
-    size = np.empty((4, 4, np.shape(ien0)[0]))
+    size = np.empty((4, 4, len(ien0)))
     for i in range(np.shape(size)[2]):
         size[:, :, i] = gr2d.objects_per_dimension[2].object[i].geometry_2d
 
@@ -135,8 +135,8 @@ def convert_grid_subset_to_unstructured_grid(
     values = np.swapaxes(values, 1, 2)
 
     # vertex
-    ien0 = np.array(ids.grid_ggd[0].space[0].objects_per_dimension[2].object)
-    ver = np.empty((np.shape(ien0)[0], np.shape(ien0[0].nodes)[0]))
+    ien0 = ids.grid_ggd[0].space[0].objects_per_dimension[2].object
+    ver = np.empty((len(ien0), len(ien0[0].nodes)))
     for i in range(np.shape(ien0)[0]):
         ver[i, :] = np.array(ien0[i].nodes)
     ver = ver.astype(int)
