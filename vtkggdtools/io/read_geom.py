@@ -92,11 +92,11 @@ def _fill_vtk_cell_array_from_gs2(
     :return: None
     """
     grid = grid_ggd.space[0].objects_per_dimension
-    num_cell = len(grid[2].object[:])  # 4- 0D, 1D, 2D, 3D objects
+    num_cell = len(grid[2].object)  # 4- 0D, 1D, 2D, 3D objects
     ugrid.AllocateEstimate(num_cell, 10)
 
     # Uses only 2d cells.
-    for j in range(len(grid[2].object[:])):
+    for j in range(len(grid[2].object)):
         obj = grid[2].object[j]
         obj_nodes = obj.nodes
         obj_dimension = 2

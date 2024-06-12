@@ -54,25 +54,25 @@ def convert_grid_subset_to_unstructured_grid(
 
     phi = [phi_start, phi_end]
     gr2d = ids.grid_ggd[0].space[0]
-    xyz0 = gr2d.objects_per_dimension[0].object.array
-    ien0 = np.array(gr2d.objects_per_dimension[2].object.array)
+    xyz0 = gr2d.objects_per_dimension[0].object
+    ien0 = np.array(gr2d.objects_per_dimension[2].object)
 
     n_period = ids.grid_ggd[0].space[1].geometry_type.index
 
     x = np.zeros((2, 4, len(xyz0)))
     for j in range(np.shape(x)[2]):
-        x[:, :, j] = gr2d.objects_per_dimension.array[0].object.array[j].geometry_2d
+        x[:, :, j] = gr2d.objects_per_dimension[0].object[j].geometry_2d
 
     # size 1, d_{uk}, d_{vk}, d{uv}d{vk} as in Daan Van Vugt thesis
     size = np.empty((4, 4, np.shape(ien0)[0]))
     for i in range(np.shape(size)[2]):
-        size[:, :, i] = gr2d.objects_per_dimension.array[2].object.array[i].geometry_2d
+        size[:, :, i] = gr2d.objects_per_dimension[2].object[i].geometry_2d
 
     val_tor1 = np.array([])
     nam = list()
 
     if mhdval:
-        data = ids.ggd.array[time_idx]
+        data = ids.ggd[time_idx]
         ggd_path = "ggd"
 
         quantities = {
@@ -108,7 +108,7 @@ def convert_grid_subset_to_unstructured_grid(
 
     elif radval:
         ggd_path = "process/ggd"
-        data = ids.process[0].ggd.array[time_idx]
+        data = ids.process[0].ggd[time_idx]
 
         try:
             if np.size(val_tor1) == 0:
@@ -135,9 +135,7 @@ def convert_grid_subset_to_unstructured_grid(
     values = np.swapaxes(values, 1, 2)
 
     # vertex
-    ien0 = np.array(
-        ids.grid_ggd.array[0].space.array[0].objects_per_dimension.array[2].object.array
-    )
+    ien0 = np.array(ids.grid_ggd[0].space[0].objects_per_dimension[2].object)
     ver = np.empty((np.shape(ien0)[0], np.shape(ien0[0].nodes)[0]))
     for i in range(np.shape(ien0)[0]):
         ver[i, :] = np.array(ien0[i].nodes)
@@ -532,9 +530,7 @@ def value_in_IDS(
     param names: list
     """
     try:
-        new_val = (
-            operator.attrgetter(field.replace("/", "."))(ids_data).array[0].coefficients
-        )
+        new_val = operator.attrgetter(field.replace("/", "."))(ids_data)[0].coefficients
         # pvlog.info(f'Getting units for {ids_name}/{ggd_path}/{field}')
         units = get_units(ids_name, f'{ggd_path}/{field.replace(".", "/")}')
         name = f"{name} {units}"
