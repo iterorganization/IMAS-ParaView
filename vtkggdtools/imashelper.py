@@ -5,12 +5,11 @@ Set of functions to help using the Access Layer API
 # Reading units from an IDS path:
 from functools import lru_cache
 
-from imas import dd_units
+from imaspy import IDSFactory
 from paraview import logger as pvlog
 
 from vtkggdtools.errors import InvalidIDSIOError
 
-dd_units = dd_units.DataDictionaryUnits()
 # Units pre- and post- formatting:
 u_pre = "["
 u_post = "]"
@@ -31,7 +30,10 @@ def get_units(ids_name: str, path: str, pre=u_pre, post=u_post) -> str:
     : return: a string with the units, wrapped in u_pre and u_post
     """
     try:
-        units = pre + str(dd_units.get_units(ids_name, path)) + post
+        # FIXME: using default IDS Factory as temporary workaround
+        # A more permanent solution will use ``node.metadata.units`` directly instead of
+        # this method
+        units = f"{pre}{IDSFactory().new(ids_name).metadata[path].units}{post}"
     except Exception:
         pvlog.warn(f"Can't read units for {ids_name}/{path}.")
         units = ""
