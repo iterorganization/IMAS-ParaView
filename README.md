@@ -3,6 +3,37 @@
 This project contains a ParaView plugin that exposes GGD readers and
 GGD Writers for use in the ParaView pipeline.
 
+## ⚠️ IMASPy migration
+
+The code base has been migrated from the IMAS HLI to IMASPy. This has changed a
+couple of things:
+
+1. There is no code generation step anymore. All Data Dictionary metadata is
+   accessed in run-time through IMASPy. This also means that any changes made
+   while developing apply without having to re-generate the plugin.
+2. There is now only a single _IMASPy GGDReader_ plugin. You can select the IDS
+   to load in the plugin properties.
+3. Temporarily, the functionality to select time slice (_TimeIdx_) and other
+   Array of Structure indices has been disabled. This will be added back later.
+
+
+### Running on SDCC
+
+Use the following instructions to run paraview with the updated plugin:
+
+```bash
+# Load compatible IMASPy, IMAS and ParaView modules, like:
+# AL5 and ParaView 5.12 (recommended on RHEL9):
+module load IMASPy/1.0.0-intel-2023b IMAS-AL-Python/5.2.1-intel-2023b-DD-3.41.0 ParaView/5.12.0-foss-2023b
+# export environment variables, assumes the current wording directory is the root of the repository
+export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins PYTHONPATH=$PWD:$PYTHONPATH
+# Run paraview
+paraview
+# Or open up your IDE/code editor and begin development.
+```
+
+# The old readme is kept below for reference
+
 ## How to use
 
 After installation, export the installation path of
@@ -152,23 +183,3 @@ To be fully implemented.
 deprecated VTK data structure and is limited to the `edge_profiles`
 and a few edge related IDSs. This project uses
 `vtkPartitionedDataSetCollection` and hopes to cover base all IDSs.
-
-## Developer instructions
-
-Load the pre-requisite modules, create and activate a virtual environment and install
-the project files.
-
-```bash
-  # Load compatible IMAS and ParaView modules, like:
-  # AL5 and ParaView 5.12 (recommended on RHEL9):
-  $ module load IMAS-AL-Python/5.2.1-intel-2023b-DD-3.41.0 ParaView/5.12.0-foss-2023b
-  # or AL4 and ParaView 5.10 (compatibility):
-  # $ module load IMAS/3.41.0-4.11.9-foss-2020b ParaView/5.10.0-foss-2020b-mpi
-  $ python -m venv --system-site-packages --clear --prompt vtkggddev .venv
-  $ source .venv/bin/activate
-  $ source install.sh .venv
-  # Either launch paraview and test the plugins
-  $ paraview
-  # Or open up your IDE/code editor and begin development.
-```
-Upon modifying the source, run `source install.sh .venv` again.
