@@ -31,3 +31,21 @@ def get_first_grid(ids):
             pass  # apparently this was not an AoS :)
 
     return node
+
+
+def create_first_grid(ids):
+    grid_path = get_ggd_grid_path(ids.metadata)
+    if grid_path is None:
+        return None
+
+    node = ids
+    for path in grid_path.split("/"):
+        node = node[path]
+        try:
+            if len(node) == 0:
+                node.resize(1)
+                node = node[0]
+        except TypeError:
+            pass  # This was a structure and not an AoS
+
+    return node
