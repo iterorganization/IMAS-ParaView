@@ -214,11 +214,11 @@ class FauxIndexMap:
 
 
 _ggd_types_xml = "".join(
-    f'<Entry text="{key}" value="{value.get('index')}" />'
+    f'<Entry text="{key}" value="{value.get("index")}" />'
     for key, value in ggd_identifier.items()
 )
 _ggd_space_types_xml = "".join(
-    f'<Entry text="{key}" value="{value.get('index')}" />'
+    f'<Entry text="{key}" value="{value.get("index")}" />'
     for key, value in ggd_space_identifier.items()
 )
 
