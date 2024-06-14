@@ -25,8 +25,8 @@ Use the following instructions to run paraview with the updated plugin:
 # Load compatible IMASPy, IMAS and ParaView modules, like:
 # AL5 and ParaView 5.12 (recommended on RHEL9):
 module load IMASPy/1.0.0-intel-2023b IMAS-AL-Python/5.2.1-intel-2023b-DD-3.41.0 ParaView/5.12.0-foss-2023b
-# export environment variables, assumes the current wording directory is the root of the repository
-export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins PYTHONPATH=$PWD:$PYTHONPATH
+# export environment variables, assumes the current working directory is the root of the repository
+export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH PYTHONPATH=$PWD:$PYTHONPATH
 # Run paraview
 paraview
 # Or open up your IDE/code editor and begin development.
