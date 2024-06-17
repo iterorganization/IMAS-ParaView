@@ -8,6 +8,7 @@ import imaspy
 import numpy as np
 from identifiers.ggd_identifier import ggd_identifier
 from identifiers.ggd_space_identifier import ggd_space_identifier
+from imaspy.exception import UnknownDDVersion
 from paraview import logger
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
@@ -107,11 +108,16 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
             # TODO: enable lazy loading
             logger.info("Loading IDS %s/%d ...", self._idsname, self._occurrence)
-            self._ids = self._dbentry.get(
-                self._idsname,
-                self._occurrence,
-                autoconvert=False,
-            )
+            lazy = False  # TODO: Test lazy loading before enabling
+            try:
+                ids = self._dbentry.get(
+                    self._idsname, self._occurrence, autoconvert=False, lazy=lazy
+                )
+            except UnknownDDVersion:
+                # Apparently IMASPy doesn't know the DD version that this IDS was
+                # written with. Use the default DD version instead:
+                ids = self._dbentry.get(self._idsname, self._occurrence, lazy=lazy)
+            self._ids = ids
             logger.info("Done loading IDS.")
 
     def RequestData(self, request, inInfo, outInfo):
