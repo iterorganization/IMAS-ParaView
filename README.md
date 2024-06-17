@@ -28,7 +28,7 @@ module load IMASPy/1.0.0-gfbf-2023b IMAS-AL-Python/5.2.1-foss-2023b-DD-3.41.0 Pa
 # export environment variables, assumes the current working directory is the root of the repository
 export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH PYTHONPATH=$PWD:$PYTHONPATH
 # Use LD_PRELOAD to work around a VTK bug: https://gitlab.kitware.com/vtk/vtk/-/issues/19373
-export LD_PRELOAD=$HDF_DIR/lib/libhdf5.so.310
+export LD_PRELOAD=$HDF5_DIR/lib/libhdf5.so.310
 # Run paraview
 paraview
 # Or open up your IDE/code editor and begin development.
