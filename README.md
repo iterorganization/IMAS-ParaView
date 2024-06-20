@@ -166,9 +166,11 @@ the project files.
   # $ module load IMAS/3.41.0-4.11.9-foss-2020b ParaView/5.10.0-foss-2020b-mpi
   $ python -m venv --system-site-packages --clear --prompt vtkggddev .venv
   $ source .venv/bin/activate
-  $ source install.sh .venv
+  $ pip install --no-deps --no-build-isolation .
+  # replace <pythonversion> below with the correct path, eg 'python3.11'
+  $ export PV_PLUGINS_PATH=$(pwd)/.venv/lib/<pythonversion>/site-packages/vtkggdtools/plugins:$PV_PLUGINS_PATH
   # Either launch paraview and test the plugins
   $ paraview
   # Or open up your IDE/code editor and begin development.
 ```
-Upon modifying the source, run `source install.sh .venv` again.
+Upon modifying the source, run `pip install --no-deps --no-build-isolation .` again.
