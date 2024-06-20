@@ -4,8 +4,10 @@ import versioneer
 
 # Generate the plugin using jinja:
 import os
-from vtkggdtools.generator import generate
+import sys
 base_dir = os.path.dirname(__file__)
+sys.path.append(str(base_dir))
+from vtkggdtools.generator import generate
 input_dir = os.path.join(os.path.join(base_dir, "vtkggdtools"), "plugins/templates")
 output_dir = os.path.join(os.path.join(base_dir, "vtkggdtools"), "plugins")
 generate(input_dir, output_dir)
