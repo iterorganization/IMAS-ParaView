@@ -12,8 +12,7 @@ from vtkmodules.util import numpy_support as npvtk
 from vtkmodules.util.vtkConstants import VTK_DOUBLE
 from vtkmodules.vtkCommonDataModel import vtkUnstructuredGrid
 
-# For the units:
-from vtkggdtools.imashelper import get_units
+from vtkggdtools.util import format_units
 
 prec = np.float64
 vtk_prec = VTK_DOUBLE
@@ -531,9 +530,7 @@ def value_in_IDS(
     """
     try:
         new_val = operator.attrgetter(field.replace("/", "."))(ids_data)[0].coefficients
-        # pvlog.info(f'Getting units for {ids_name}/{ggd_path}/{field}')
-        units = get_units(ids_name, f'{ggd_path}/{field.replace(".", "/")}')
-        name = f"{name} {units}"
+        name = f"{name} {format_units(new_val)}"
         if not (names):
             names = list()
             names.append(name)
