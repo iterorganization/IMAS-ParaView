@@ -18,7 +18,24 @@ classifiers = [
 ]
 dynamic = ["version"]
 requires-python = ">=3.8"
-dependencies = ["jinja2 >= 3.0.3", "numpy >= 1.19.4", "vtk >= 9.1.0"]
+dependencies = [
+    "numpy >= 1.19.4",
+    "vtk >= 9.1.0",
+    # TODO: "imaspy >= 1.1.0",
+]
+
+[project.optional-dependencies]
+linting = [
+    "black>=24,<25",
+    "flake8",
+    "isort",
+]
+test = [
+    "pytest>=6",
+    "pytest-cov>=0.6",
+    "pytest-xdist",
+    "pytest-randomly",
+]
 
 [project.urls]
 homepage = "https://git.iter.org/projects/IMEX/repos/ggd-vtk"
