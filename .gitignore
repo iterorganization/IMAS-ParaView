@@ -48,6 +48,9 @@ venv.bak/
 .spyderproject
 .spyproject
 
+# VS Code settings
+.vscode
+
 # Cython debug symbols
 cython_debug/
 
