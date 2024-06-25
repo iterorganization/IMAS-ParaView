@@ -95,10 +95,10 @@ def fill_with_simple_grid(grid_ggd_input):
 
     # Set elements for face
     grid_subsets[2].element.resize(1)
-    grid_subsets[0].element[0].object.resize(1)
-    grid_subsets[0].element[0].object[0].space = 1
-    grid_subsets[0].element[0].object[0].dimension = 3
-    grid_subsets[0].element[0].object[0].index = 1
+    grid_subsets[2].element[0].object.resize(1)
+    grid_subsets[2].element[0].object[0].space = 1
+    grid_subsets[2].element[0].object[0].dimension = 3
+    grid_subsets[2].element[0].object[0].index = 1
 
 
 def fill_physical_quantities(ggd):
