@@ -5,13 +5,10 @@ from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
 
 # We'll need these below when we create some units manually:
-import vtkggdtools.imashelper
+from vtkggdtools.util import format_units
 
-# For the units:
-from vtkggdtools.imashelper import get_units
-
-u_pre = vtkggdtools.imashelper.u_pre
-u_post = vtkggdtools.imashelper.u_post
+u_pre = "["
+u_post = "]"
 
 
 def read_plasma_state(
@@ -131,12 +128,7 @@ def read_edge_profiles(
     except IndexError:
         return
 
-    # for finding units:
-    ids_name = "edge_profiles"
-    ggd_path = "ggd"
-
     # electrons
-    units_path = ggd_path + "/electrons"
     # scalar quantities, each value is a tuple with ('description', units?):
     quantities = {
         # scalars
@@ -150,15 +142,12 @@ def read_edge_profiles(
     }
     for q_name in quantities:
         (name, use_units) = quantities[q_name]
+        node = getattr(ggd.electrons, q_name)
         if use_units:
-            units = get_units(ids_name, f"{units_path}/{q_name}")
-            name += f" {units}"
-        _add_aos_scalar_array_to_vtk_field_data(
-            getattr(ggd.electrons, q_name), subset_idx, name, ugrid
-        )
+            name += f" {format_units(node)}"
+        _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
     # vector array:
-    units = get_units(ids_name, units_path + "/velocity")
-    name = f"Electron Velocity {units}"
+    name = f"Electron Velocity {format_units(ggd.electrons.velocity)}"
     _add_aos_vector_array_to_vtk_field_data(
         ggd.electrons.velocity, subset_idx, name, ugrid
     )
@@ -168,10 +157,6 @@ def read_edge_profiles(
     ion_names = [" (all ions)"] * len(ggd.ion) + [""] * len(ggd.neutral)
     for hp, i_name in list(zip([*ggd.ion, *ggd.neutral], ion_names)):
         hp_name = hp.label + i_name  # ' add (all ions)' to ions or '' to neutrals
-        if i_name == "":
-            units_hp_path = ggd_path + "/neutral"
-        else:
-            units_hp_path = ggd_path + "/ion"
         # scalar arrays:
         quantities = {
             "temperature": f"{hp_name} Temperature",
@@ -183,16 +168,13 @@ def read_edge_profiles(
             "energy_density_kinetic": f"{hp_name} Kinetic Energy Density",
         }
         for q_name in quantities:
-            units = get_units(ids_name, f"{units_hp_path}/{q_name}")
-            _add_aos_scalar_array_to_vtk_field_data(
-                getattr(hp, q_name), subset_idx, f"{quantities[q_name]} {units}", ugrid
-            )
+            node = getattr(hp, q_name)
+            name = f"{quantities[q_name]} {format_units(node)}"
+            _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
         # vector array:
-        units = get_units(ids_name, units_hp_path + "/velocity")
-        name = f"{hp_name} Velocity {units}"
+        name = f"{hp_name} Velocity {format_units(hp.velocity)}"
         _add_aos_vector_array_to_vtk_field_data(hp.velocity, subset_idx, name, ugrid)
         # heavy particles: state
-        units_hp_path += "/state"
         for state in hp.state:
             # scalars, each value is a tuple with ('description', units?):
             quantities = {
@@ -231,12 +213,10 @@ def read_edge_profiles(
                 )
             for q_name in quantities:
                 (name, use_units) = quantities[q_name]
+                node = getattr(state, q_name)
                 if use_units:
-                    units = get_units(ids_name, f"{units_hp_path}/{q_name}")
-                    name += f" {units}"
-                _add_aos_scalar_array_to_vtk_field_data(
-                    getattr(state, q_name), subset_idx, name, ugrid
-                )
+                    name += f" {format_units(node)}"
+                _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
             # vectors:
             quantities = {
                 "velocity": f"{state.label} Velocity",
@@ -244,16 +224,11 @@ def read_edge_profiles(
                 "velocity_exb": f"{state.label} Velocity (ExB)",
             }
             for q_name in quantities:
-                units = get_units(ids_name, f"{units_hp_path}/{q_name}")
-                _add_aos_vector_array_to_vtk_field_data(
-                    getattr(state, q_name),
-                    subset_idx,
-                    f"{quantities[q_name]} {units}",
-                    ugrid,
-                )
+                node = getattr(state, q_name)
+                name = f"{quantities[q_name]} {format_units(node)}"
+                _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
 
     # Other scalar quantities:
-    units_path = ggd_path
     quantities = {
         "t_i_average": "Average t_i",
         "n_i_total_over_n_e": "Total n_i over n_e",
@@ -265,10 +240,9 @@ def read_edge_profiles(
         "phi_potential": "Potential Phi",
     }
     for q_name in quantities:
-        units = get_units(ids_name, f"{units_path}/{q_name}")
-        _add_aos_scalar_array_to_vtk_field_data(
-            getattr(ggd, q_name), subset_idx, f"{quantities[q_name]} {units}", ugrid
-        )
+        node = getattr(ggd, q_name)
+        name = f"{quantities[q_name]} {format_units(node)}"
+        _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
 
     # other vector quantities
     quantities = {
@@ -284,10 +258,9 @@ def read_edge_profiles(
         "e_field": "E",
     }
     for q_name in quantities:
-        units = get_units(ids_name, f"{units_path}/{q_name}")
-        _add_aos_vector_array_to_vtk_field_data(
-            getattr(ggd, q_name), subset_idx, f"{quantities[q_name]} {units}", ugrid
-        )
+        node = getattr(ggd, q_name)
+        name = f"{quantities[q_name]} {format_units(node)}"
+        _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
 
     # TODO: ggd_fast...
 
@@ -299,9 +272,6 @@ def read_edge_sources(
     # ggd is at /edge_sources/source/ggd(itime)
     time_idx = aos_index_values.get("TimeIdx")
     # model_idx = aos_index_values.get("ModelIdx")
-    # For units reading:
-    ids_name = "edge_sources"
-    ggd_path = "source/ggd"
 
     for source in ids_obj.source:
         try:
@@ -311,14 +281,11 @@ def read_edge_sources(
         s_name = source.identifier.name
 
         # electrons
-        units_path = ggd_path + "/electrons"
-        units = get_units(ids_name, units_path + "/particles")
-        name = f"Electron Density ({s_name}) {units}"
+        name = f"Electron Density ({s_name}) {format_units(ggd.electrons.particles)}"
         _add_aos_scalar_array_to_vtk_field_data(
             ggd.electrons.particles, subset_idx, name, ugrid
         )
-        units = get_units(ids_name, units_path + "/energy")
-        name = f"Electron Energy ({s_name}) {units}"
+        name = f"Electron Energy ({s_name}) {format_units(ggd.electrons.energy)}"
         _add_aos_scalar_array_to_vtk_field_data(
             ggd.electrons.energy, subset_idx, name, ugrid
         )
@@ -328,20 +295,13 @@ def read_edge_sources(
         ion_names = [" (all ions)"] * len(ggd.ion) + [""] * len(ggd.neutral)
         for hp, i_name in list(zip([*ggd.ion, *ggd.neutral], ion_names)):
             hp_name = hp.label + i_name  # add ' (all ions)' to ions or '' to neutrals
-            if i_name == "":
-                units_hp_path = ggd_path + "/neutral"
-            else:
-                units_hp_path = ggd_path + "/ion"
-            units = get_units(ids_name, units_hp_path + "/particles")
-            name = f"{hp_name} Density ({s_name}) {units}"
+            name = f"{hp_name} Density ({s_name}) {format_units(hp.particles)}"
             _add_aos_scalar_array_to_vtk_field_data(
                 hp.particles, subset_idx, name, ugrid
             )
-            units = get_units(ids_name, units_hp_path + "/energy")
-            name = f"{hp_name} Energy ({s_name}) {units}"
+            name = f"{hp_name} Energy ({s_name}) {format_units(hp.energy)}"
             _add_aos_scalar_array_to_vtk_field_data(hp.energy, subset_idx, name, ugrid)
-            units = get_units(ids_name, units_hp_path + "/momentum")
-            name = f"{hp_name} Momentum ({s_name}) {units}"
+            name = f"{hp_name} Momentum ({s_name}) {format_units(hp.momentum)}"
             _add_aos_vector_array_to_vtk_field_data(
                 hp.momentum, subset_idx, name, ugrid
             )
@@ -352,38 +312,31 @@ def read_edge_sources(
                     st_name = state.label
                 except Exception:
                     st_name = "? " + hp_name
-                units_path = units_hp_path + "/state"
-                units = get_units(ids_name, units_path + "/particles")
-                name = f"{st_name} Density ({s_name}) {units}"
+                name = f"{st_name} Density ({s_name}) {format_units(state.particles)}"
                 _add_aos_scalar_array_to_vtk_field_data(
                     state.particles, subset_idx, name, ugrid
                 )
-                units = get_units(ids_name, units_path + "/energy")
-                name = f"{st_name} Energy ({s_name}) {units}"
+                name = f"{st_name} Energy ({s_name}) {format_units(state.energy)}"
                 _add_aos_scalar_array_to_vtk_field_data(
                     state.energy, subset_idx, name, ugrid
                 )
-                units = get_units(ids_name, units_path + "/momentum")
-                name = f"{st_name} Momentum ({s_name}) {units}"
+                name = f"{st_name} Momentum ({s_name}) {format_units(state.momentum)}"
                 _add_aos_vector_array_to_vtk_field_data(
                     state.momentum, subset_idx, name, ugrid
                 )
 
         # total_ion_energy
-        units = get_units(ids_name, ggd_path + "/total_ion_energy")
-        name = f"Total Ion Energy ({s_name}) {units}"
+        name = f"Total Ion Energy ({s_name}) {format_units(ggd.total_ion_energy)}"
         _add_aos_scalar_array_to_vtk_field_data(
             ggd.total_ion_energy, subset_idx, name, ugrid
         )
 
         # momentum
-        units = get_units(ids_name, ggd_path + "/momentum")
-        name = f"Momentum ({s_name}) {units}"
+        name = f"Momentum ({s_name}) {format_units(ggd.momentum)}"
         _add_aos_vector_array_to_vtk_field_data(ggd.momentum, subset_idx, name, ugrid)
 
         # current
-        units = get_units(ids_name, ggd_path + "/current")
-        name = f"Current ({s_name}) {units}"
+        name = f"Current ({s_name}) {format_units(ggd.current)}"
         _add_aos_scalar_array_to_vtk_field_data(ggd.current, subset_idx, name, ugrid)
 
         # TODO: ggd_fast
@@ -403,8 +356,6 @@ def read_edge_transport(
     #     return
 
     time_idx = aos_index_values.get("TimeIdx")
-    ids_name = "edge_transport"
-    ggd_path = "model/ggd"
     for model in ids_obj.model:
         try:
             ggd = model.ggd[time_idx]
@@ -418,9 +369,7 @@ def read_edge_transport(
             m_name = ""
 
         # conductivity
-        units_path = ggd_path + "/conductivity"
-        units = get_units(ids_name, units_path)
-        name = f"Conductivity {m_name} {units}"
+        name = f"Conductivity {m_name} {format_units(ggd.conductivity)}"
         _add_aos_vector_array_to_vtk_field_data(
             ggd.conductivity, subset_idx, name, ugrid
         )
@@ -428,58 +377,44 @@ def read_edge_transport(
         # electrons
         electrons = ggd.electrons
         for q_name in ["particles", "energy"]:
-            units_path = ggd_path + "/electrons/" + q_name
-            quantity = getattr(electrons, q_name)
-            units = get_units(ids_name, units_path + "/d")
-            name = f"Electron Diffusivity ({q_name}) {units} {m_name}"
-            _add_aos_scalar_array_to_vtk_field_data(quantity.d, subset_idx, name, ugrid)
-            units = get_units(ids_name, units_path + "/v")
-            name = f"Electron Convection ({q_name}) {units} {m_name}"
-            _add_aos_scalar_array_to_vtk_field_data(quantity.v, subset_idx, name, ugrid)
-            units = get_units(ids_name, units_path + "/flux")
-            name = f"Electron Flux ({q_name}) {units} {m_name}"
-            _add_aos_scalar_array_to_vtk_field_data(
-                quantity.flux, subset_idx, name, ugrid
-            )
+            node = getattr(electrons, q_name)
+            name = f"Electron Diffusivity ({q_name}) {format_units(node.d)} {m_name}"
+            _add_aos_scalar_array_to_vtk_field_data(node.d, subset_idx, name, ugrid)
+            name = f"Electron Convection ({q_name}) {format_units(node.v)} {m_name}"
+            _add_aos_scalar_array_to_vtk_field_data(node.v, subset_idx, name, ugrid)
+            name = f"Electron Flux ({q_name}) {format_units(node.flux)} {m_name}"
+            _add_aos_scalar_array_to_vtk_field_data(node.flux, subset_idx, name, ugrid)
             name = f"Electron Flux Limiter Coefficient ({q_name}) {m_name}"
             _add_aos_scalar_array_to_vtk_field_data(
-                quantity.flux_limiter, subset_idx, name, ugrid
+                node.flux_limiter, subset_idx, name, ugrid
             )
 
         # total_ion_energy
-        units_path = ggd_path + "/total_ion_energy"
-        quantity = ggd.total_ion_energy
+        node = ggd.total_ion_energy
         q_name = "Total Ion Energy"
-        units = get_units(ids_name, units_path + "/d")
-        name = f"{q_name} Diffusivity {units} {m_name}"
-        _add_aos_scalar_array_to_vtk_field_data(quantity.d, subset_idx, name, ugrid)
-        units = get_units(ids_name, units_path + "/v")
-        name = f"{q_name} Convection {units} {m_name}"
-        _add_aos_scalar_array_to_vtk_field_data(quantity.v, subset_idx, name, ugrid)
-        units = get_units(ids_name, units_path + "/flux")
-        name = f"{q_name} Flux {units} {m_name}"
-        _add_aos_scalar_array_to_vtk_field_data(quantity.flux, subset_idx, name, ugrid)
+        name = f"{q_name} Diffusivity {format_units(node.d)} {m_name}"
+        _add_aos_scalar_array_to_vtk_field_data(node.d, subset_idx, name, ugrid)
+        name = f"{q_name} Convection {format_units(node.v)} {m_name}"
+        _add_aos_scalar_array_to_vtk_field_data(node.v, subset_idx, name, ugrid)
+        name = f"{q_name} Flux {format_units(node.flux)} {m_name}"
+        _add_aos_scalar_array_to_vtk_field_data(node.flux, subset_idx, name, ugrid)
         name = f"{q_name} Flux Limiter Coefficient {m_name}"
         _add_aos_scalar_array_to_vtk_field_data(
-            quantity.flux_limiter, subset_idx, name, ugrid
+            node.flux_limiter, subset_idx, name, ugrid
         )
 
         # momentum
-        units_path = ggd_path + "/momentum"
-        quantity = ggd.momentum
+        node = ggd.momentum
         q_name = "Momentum"
-        units = get_units(ids_name, units_path + "/d")
-        name = f"{q_name} Diffusivity {units} {m_name}"
-        _add_aos_vector_array_to_vtk_field_data(quantity.d, subset_idx, name, ugrid)
-        units = get_units(ids_name, units_path + "/v")
-        name = f"{q_name} Convection {units} {m_name}"
-        _add_aos_vector_array_to_vtk_field_data(quantity.v, subset_idx, name, ugrid)
-        units = get_units(ids_name, units_path + "/flux")
-        name = f"{q_name} Flux {units} {m_name}"
-        _add_aos_vector_array_to_vtk_field_data(quantity.flux, subset_idx, name, ugrid)
+        name = f"{q_name} Diffusivity {format_units(node.d)} {m_name}"
+        _add_aos_vector_array_to_vtk_field_data(node.d, subset_idx, name, ugrid)
+        name = f"{q_name} Convection {format_units(node.v)} {m_name}"
+        _add_aos_vector_array_to_vtk_field_data(node.v, subset_idx, name, ugrid)
+        name = f"{q_name} Flux {format_units(node.flux)} {m_name}"
+        _add_aos_vector_array_to_vtk_field_data(node.flux, subset_idx, name, ugrid)
         name = f"{q_name} Flux Limiter Coefficient {m_name}"
         _add_aos_vector_array_to_vtk_field_data(
-            quantity.flux_limiter, subset_idx, name, ugrid
+            node.flux_limiter, subset_idx, name, ugrid
         )
 
         # ions, neutrals = heavy particles = hp
@@ -487,98 +422,76 @@ def read_edge_transport(
         ion_names = [" (all ions)"] * len(ggd.ion) + [""] * len(ggd.neutral)
         for hp, i_name in list(zip([*ggd.ion, *ggd.neutral], ion_names)):
             hp_name = hp.label + i_name  # add ' (all ions)' to ions or '' to neutrals
-            if i_name == "":
-                units_hp_path = ggd_path + "/neutral"
-            else:
-                units_hp_path = ggd_path + "/ion"
             # heavy particles: particles, energy
             for q_name in ["particles", "energy"]:
-                quantity = getattr(hp, q_name)
-                units_path = units_hp_path + "/" + q_name
-                units = get_units(ids_name, units_path + "/d")
+                node = getattr(hp, q_name)
+                units = format_units(node.d)
                 name = f"{hp_name} Diffusivity ({q_name}) {units} {m_name}"
-                _add_aos_scalar_array_to_vtk_field_data(
-                    quantity.d, subset_idx, name, ugrid
-                )
-                units = get_units(ids_name, units_path + "/v")
+                _add_aos_scalar_array_to_vtk_field_data(node.d, subset_idx, name, ugrid)
+                units = format_units(node.v)
                 name = f"{hp_name} Convection ({q_name}) {units} {m_name}"
+                _add_aos_scalar_array_to_vtk_field_data(node.v, subset_idx, name, ugrid)
+                name = f"{hp_name} Flux ({q_name}) {format_units(node.flux)} {m_name}"
                 _add_aos_scalar_array_to_vtk_field_data(
-                    quantity.v, subset_idx, name, ugrid
-                )
-                units = get_units(ids_name, units_path + "/flux")
-                name = f"{hp_name} Flux ({q_name}) {units} {m_name}"
-                _add_aos_scalar_array_to_vtk_field_data(
-                    quantity.flux, subset_idx, name, ugrid
+                    node.flux, subset_idx, name, ugrid
                 )
                 name = f"{hp_name} Flux Limiter Coefficient ({q_name}) {m_name}"
                 _add_aos_scalar_array_to_vtk_field_data(
-                    quantity.flux_limiter, subset_idx, name, ugrid
+                    node.flux_limiter, subset_idx, name, ugrid
                 )
             # heavy particles: momentum
-            quantity = hp.momentum
+            node = hp.momentum
             q_name = "Momentum"
-            units_path = units_hp_path + "/momentum"
-            units = get_units(ids_name, units_path + "/d")
-            name = f"{hp_name} Diffusivity ({q_name}) {units} {m_name}"
-            _add_aos_vector_array_to_vtk_field_data(quantity.d, subset_idx, name, ugrid)
-            units = get_units(ids_name, units_path + "/v")
-            name = f"{hp_name} Convection ({q_name}) {units} {m_name}"
-            _add_aos_vector_array_to_vtk_field_data(quantity.v, subset_idx, name, ugrid)
-            units = get_units(ids_name, units_path + "/flux")
-            name = f"{hp_name} Flux ({q_name}) {units} {m_name}"
-            _add_aos_vector_array_to_vtk_field_data(
-                quantity.flux, subset_idx, name, ugrid
-            )
+            name = f"{hp_name} Diffusivity ({q_name}) {format_units(node.d)} {m_name}"
+            _add_aos_vector_array_to_vtk_field_data(node.d, subset_idx, name, ugrid)
+            name = f"{hp_name} Convection ({q_name}) {format_units(node.v)} {m_name}"
+            _add_aos_vector_array_to_vtk_field_data(node.v, subset_idx, name, ugrid)
+            name = f"{hp_name} Flux ({q_name}) {format_units(node.flux)} {m_name}"
+            _add_aos_vector_array_to_vtk_field_data(node.flux, subset_idx, name, ugrid)
             name = f"{hp_name} Flux Limiter Coefficient ({q_name}) {m_name}"
             _add_aos_vector_array_to_vtk_field_data(
-                quantity.flux_limiter, subset_idx, name, ugrid
+                node.flux_limiter, subset_idx, name, ugrid
             )
             # heavy particles: state
             for state in hp.state:
                 for q_name in ["particles", "energy"]:
-                    units_path = units_hp_path + "/state/" + q_name
-                    quantity = getattr(state, q_name)
-                    units = get_units(ids_name, units_path + "/d")
+                    node = getattr(state, q_name)
+                    units = format_units(node.d)
                     name = f"{state.label} Diffusivity ({q_name}) {units} {m_name}"
                     _add_aos_scalar_array_to_vtk_field_data(
-                        quantity.d, subset_idx, name, ugrid
+                        node.d, subset_idx, name, ugrid
                     )
-                    units = get_units(ids_name, units_path + "/v")
+                    units = format_units(node.v)
                     name = f"{state.label} Convection ({q_name}) {units} {m_name}"
                     _add_aos_scalar_array_to_vtk_field_data(
-                        quantity.v, subset_idx, name, ugrid
+                        node.v, subset_idx, name, ugrid
                     )
-                    units = get_units(ids_name, units_path + "/flux")
+                    units = format_units(node.flux)
                     name = f"{state.label} Flux ({q_name}) {units} {m_name}"
                     _add_aos_scalar_array_to_vtk_field_data(
-                        quantity.flux, subset_idx, name, ugrid
+                        node.flux, subset_idx, name, ugrid
                     )
                     name = f"{state.label} Flux Limiter Coefficient ({q_name}) {m_name}"
                     _add_aos_scalar_array_to_vtk_field_data(
-                        quantity.flux_limiter, subset_idx, name, ugrid
+                        node.flux_limiter, subset_idx, name, ugrid
                     )
 
                 q_name = "momentum"
-                units_path = units_hp_path + "/state/" + q_name
-                quantity = state.momentum
-                units = get_units(ids_name, units_path + "/d")
+                node = state.momentum
+                units = format_units(node.d)
                 name = f"{state.label} Diffusivity ({q_name}) {units} {m_name}"
-                _add_aos_vector_array_to_vtk_field_data(
-                    quantity.d, subset_idx, name, ugrid
-                )
-                units = get_units(ids_name, units_path + "/v")
+                _add_aos_vector_array_to_vtk_field_data(node.d, subset_idx, name, ugrid)
+                units = format_units(node.v)
                 name = f"{state.label} Convection ({q_name}) {units} {m_name}"
-                _add_aos_vector_array_to_vtk_field_data(
-                    quantity.v, subset_idx, name, ugrid
-                )
-                units = get_units(ids_name, units_path + "/flux")
+                _add_aos_vector_array_to_vtk_field_data(node.v, subset_idx, name, ugrid)
+                units = format_units(node.flux)
                 name = f"{state.label} Flux ({q_name}) {units} {m_name}"
                 _add_aos_vector_array_to_vtk_field_data(
-                    quantity.flux, subset_idx, name, ugrid
+                    node.flux, subset_idx, name, ugrid
                 )
                 name = f"{state.label} Flux Limiter Coefficient ({q_name}) {m_name}"
                 _add_aos_vector_array_to_vtk_field_data(
-                    quantity.flux_limiter, subset_idx, name, ugrid
+                    node.flux_limiter, subset_idx, name, ugrid
                 )
     # TODO: ggd_fast
 
@@ -595,11 +508,6 @@ def read_equilibrium(
     except IndexError:
         return
 
-    # for finding units:
-    ids_name = "equilibrium"
-    ggd_path = "time_slice/ggd"
-    units_path = ggd_path
-
     quantities = {
         "r": "Major Radius",
         "z": "Height",
@@ -613,10 +521,9 @@ def read_equilibrium(
         "b_field_tor": "Magnetic Field Btor",
     }
     for q_name in quantities:
-        units = get_units(ids_name, f"{units_path}/{q_name}")
-        _add_aos_vector_array_to_vtk_field_data(
-            getattr(ggd, q_name), subset_idx, f"{quantities[q_name]} {units}", ugrid
-        )
+        node = getattr(ggd, q_name)
+        name = f"{quantities[q_name]} {format_units(node)}"
+        _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
 
 
 def read_mhd(
@@ -630,15 +537,8 @@ def read_mhd(
     except IndexError:
         return
 
-    # for finding units:
-    ids_name = "mhd"
-    ggd_path = "ggd"
-    units_path = ggd_path
-
     # - electrons.temperature
-    q_name = "electrons/temperature"
-    units = get_units(ids_name, f"{units_path}/{q_name}")
-    name = f"Electron Temperature {units}"
+    name = f"Electron Temperature {format_units(ggd.electrons.temperature)}"
     _add_aos_scalar_array_to_vtk_field_data(
         ggd.electrons.temperature, subset_idx, name, ugrid
     )
@@ -669,10 +569,9 @@ def read_mhd(
         "mass_density": "Mass Density",
     }
     for q_name in quantities:
-        units = get_units(ids_name, f"{units_path}/{q_name}")
-        _add_aos_scalar_array_to_vtk_field_data(
-            getattr(ggd, q_name), subset_idx, f"{quantities[q_name]} {units}", ugrid
-        )
+        node = getattr(ggd, q_name)
+        name = f"{quantities[q_name]} {format_units(node)}"
+        _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
 
     # NOT TESTED! Can't find a data entry to test.
 
@@ -690,11 +589,6 @@ def read_radiation(
     # except IndexError:
     #     return
 
-    # for finding units:
-    ids_name = "radiation"
-    ggd_path = "process/ggd"
-    units_path = ggd_path
-
     time_idx = aos_index_values.get("TimeIdx")
     for process in ids_obj.process:
         try:
@@ -709,9 +603,7 @@ def read_radiation(
             p_name = ""
 
         # electrons.emissivity
-        q_name = "electrons/emissivity"
-        units = get_units(ids_name, f"{units_path}/{q_name}")
-        name = f"Electron Emissivity {p_name} {units}"
+        name = f"Electron Emissivity {p_name} {format_units(ggd.electrons.emissivity)}"
         _add_aos_scalar_array_to_vtk_field_data(
             ggd.electrons.emissivity, subset_idx, name, ugrid
         )
@@ -721,23 +613,13 @@ def read_radiation(
 
             # heavy particles: emissivity
             quantity = hp.emissivity
-            # for units, no need to distinguish between ions and neutrals, use ions all
-            # the time:
-            units_path = f"{ggd_path}/ion"
-            q_name = "emissivity"
-            units = get_units(ids_name, f"{units_path}/{q_name}")
-            name = f"{hp.label} Emissivity {p_name} {units}"
+            name = f"{hp.label} Emissivity {p_name} {format_units(quantity)}"
             _add_aos_scalar_array_to_vtk_field_data(quantity, subset_idx, name, ugrid)
 
             # heavy particles: state
             for state in hp.state:
                 quantity = state.emissivity
-                # for units, no need to distinguish between ions and neutrals, use ions
-                # all the time:
-                units_path = f"{ggd_path}/ion/state"
-                q_name = "emissivity"
-                units = get_units(ids_name, f"{units_path}/{q_name}")
-                name = f"{state.label} Emissivity {p_name} {units}"
+                name = f"{state.label} Emissivity {p_name} {format_units(quantity)}"
                 _add_aos_scalar_array_to_vtk_field_data(
                     quantity, subset_idx, name, ugrid
                 )
@@ -757,10 +639,6 @@ def read_tf(
     #  - a_field_tor(i1)
     time_idx = aos_index_values.get("TimeIdx")
 
-    # for finding units:
-    ids_name = "tf"
-    units_path = "field_map"
-
     for attr_name in [
         "b_field_r",
         "b_field_z",
@@ -774,8 +652,7 @@ def read_tf(
         except IndexError:
             continue
         component_name = attr_name.split("_")[-1]
-        units = get_units(ids_name, f"{units_path}/{attr_name}")
-        name = f"Magnetic Field B{component_name} {units}"
+        name = f"Magnetic Field B{component_name} {format_units(aos_scalar_node)}"
         _add_aos_scalar_array_to_vtk_field_data(
             aos_scalar_node, subset_idx, name, ugrid
         )
@@ -792,17 +669,12 @@ def read_transport_solver_numerics(
     except IndexError:
         return
 
-    # for finding units:
-    ids_name = "transport_solver_numerics"
-    ggd_path = "boundary_conditions_ggd"
-
     # - current(i1)
     name = f"Current Boundary Condition - {ggd.current.identifier.name.capitalize()}"
     _add_aos_scalar_array_to_vtk_field_data(ggd.current, subset_idx, name, ugrid)
     # - electrons/particles(i1)
     try:
-        units_path = ggd_path + "/electrons/particles"
-        units = get_units(ids_name, units_path)
+        units = format_units(ggd.electrons.particles)
         name = (
             "Electron Density Boundary Condition - "
             f"{ggd.electrons.particles[subset_idx].identifier.name} {units}"
@@ -815,8 +687,7 @@ def read_transport_solver_numerics(
         pass
     # - electrons/energy(i1)
     try:
-        units_path = ggd_path + "/electrons/energy"
-        units = get_units(ids_name, units_path)
+        units = format_units(ggd.electrons.energy)
         name = (
             "Electron Energy Boundary Condition - "
             f"{ggd.electrons.energy[subset_idx].identifier.name} {units}"
@@ -832,40 +703,32 @@ def read_transport_solver_numerics(
     for ion in ggd.ion:
         # - ion/particles
         quantity = ion.particles
-        units_path = ggd_path + "/ion/particles"
-        units = get_units(ids_name, units_path)
         name = (
             f"{ion.label} Density Boundary Condition ({quantity.identifier.name})"
-            f" {units}"
+            f" {format_units(quantity)}"
         )
         _add_aos_scalar_array_to_vtk_field_data(quantity, subset_idx, name, ugrid)
         # - ion/energy
         quantity = ion.energy
-        units_path = ggd_path + "/ion/energy"
-        units = get_units(ids_name, units_path)
         name = (
             f"{ion.label} Energy Boundary Condition ({quantity.identifier.name})"
-            f" {units}"
+            f" {format_units(quantity)}"
         )
         _add_aos_scalar_array_to_vtk_field_data(quantity, subset_idx, name, ugrid)
 
         for state in ion.state:
             # - ion/state/particles
             quantity = state.particles
-            units_path = ggd_path + "/ion/state/particles"
-            units = get_units(ids_name, units_path)
             name = (
                 f"{state.label} Density Boundary Condition "
-                f"({quantity.identifier.name}) {units}"
+                f"({quantity.identifier.name}) {format_units(quantity)}"
             )
             _add_aos_scalar_array_to_vtk_field_data(quantity, subset_idx, name, ugrid)
             # - ion/state/energy
             quantity = state.energy
-            units_path = ggd_path + "/ion/state/energy"
-            units = get_units(ids_name, units_path)
             name = (
                 f"{state.label} Energy Boundary Condition "
-                f"({quantity.identifier.name}) {units}"
+                f"({quantity.identifier.name}) {format_units(quantity)}"
             )
             _add_aos_scalar_array_to_vtk_field_data(quantity, subset_idx, name, ugrid)
 
@@ -877,11 +740,6 @@ def read_wall(
     # ggd is at /wall/description_ggd(i1)/ggd(itime)
     description_ggd_idx = aos_index_values.get("DescriptionGgdIdx")
     time_idx = aos_index_values.get("TimeIdx")
-
-    # for finding units:
-    ids_name = "wall"
-    ggd_path = "description_ggd/ggd"
-    units_path = ggd_path
 
     try:
         if description_ggd_idx is not None:
@@ -902,10 +760,9 @@ def read_wall(
     }
     for q_name in quantities:
         try:
-            units = get_units(ids_name, f"{units_path}/{q_name}")
-            _add_aos_scalar_array_to_vtk_field_data(
-                getattr(ggd, q_name), subset_idx, f"{quantities[q_name]} {units}", ugrid
-            )
+            node = getattr(ggd, q_name)
+            name = f"{quantities[q_name]} {format_units(node)}"
+            _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
         except AttributeError:
             pvlog.info(
                 f"No quantity {q_name} found, "
@@ -922,10 +779,9 @@ def read_wall(
     }
     for q_name in quantities:
         try:
-            units = get_units(ids_name, f"{units_path}/{q_name}")
-            _add_aos_vector_array_to_vtk_field_data(
-                getattr(ggd, q_name), subset_idx, f"{quantities[q_name]} {units}", ugrid
-            )
+            node = getattr(ggd, q_name)
+            name = f"{quantities[q_name]} {format_units(node)}"
+            _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
         except AttributeError:
             pvlog.info(
                 f"No quantity {q_name} found, "
@@ -956,13 +812,8 @@ def read_waves(
     coherent_wave_idx = aos_index_values.get("CoherentWaveIdx")
     time_idx = aos_index_values.get("TimeIdx")
 
-    # for finding units:
-    ids_name = "waves"
-    ggd_path = "coherent_wave/full_wave"
-
     try:
         e_field = ids_obj.coherent_wave[coherent_wave_idx].full_wave[time_idx].e_field
-        units_path = ggd_path + "/e_field"
         quantities = {
             "plus": "Electric Field - LH polarized",
             "minus": "Electric Field - RH polarized",
@@ -971,32 +822,23 @@ def read_waves(
             "bi_normal": "Electric Field - Tangential to flux surface",
         }
         for q_name in quantities:
-            units = get_units(ids_name, f"{units_path}/{q_name}")
-            _add_aos_scalar_array_to_vtk_field_data(
-                getattr(e_field, q_name),
-                subset_idx,
-                f"{quantities[q_name]} {units}",
-                ugrid,
-            )
+            node = getattr(e_field, q_name)
+            name = f"{quantities[q_name]} {format_units(node)}"
+            _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
     except IndexError:
         pass
 
     try:
         b_field = ids_obj.coherent_wave[coherent_wave_idx].full_wave[time_idx].b_field
-        units_path = ggd_path + "/b_field"
         quantities = {
             "parallel": "Magnetic Field - Parallel to B",
             "normal": "Magnetic Field - Normal to flux surface",
             "bi_normal": "Magnetic Field - Tangential to flux surface",
         }
         for q_name in quantities:
-            units = get_units(ids_name, f"{units_path}/{q_name}")
-            _add_aos_scalar_array_to_vtk_field_data(
-                getattr(b_field, q_name),
-                subset_idx,
-                f"{quantities[q_name]} {units}",
-                ugrid,
-            )
+            node = getattr(b_field, q_name)
+            name = f"{quantities[q_name]} {format_units(node)}"
+            _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
     except IndexError:
         pass
 
@@ -1004,9 +846,7 @@ def read_waves(
         k_perp = (
             ids_obj.coherent_wave[coherent_wave_idx].full_wave[time_idx].k_perpendicular
         )
-        units_name = ggd_path + "/k_perpendicular"
-        units = get_units(ids_name, f"{units_name}")
-        name = f"Perpendicular Wave Vector {units}"
+        name = f"Perpendicular Wave Vector {format_units(k_perp)}"
         _add_aos_scalar_array_to_vtk_field_data(k_perp, subset_idx, name, ugrid)
     except IndexError:
         pass
