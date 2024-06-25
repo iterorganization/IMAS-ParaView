@@ -3,7 +3,8 @@
 import imaspy
 import IPython
 
-def fill_with_simple_grid(ids):
+
+def fill_with_simple_grid(grid_ggd_input):
     """
     Fills the grid_ggd of IDS with a simple rectangular grid containing 4 vertices,
     4 edges and a single face, arranged in the following manner:
@@ -16,85 +17,91 @@ def fill_with_simple_grid(ids):
         P0---------P1
              E0
     """
-    grid_ggd = ids.grid_ggd
 
     # Set grid
-    grid_ggd.resize(1)
-    grid_ggd[0].identifier.name = "grid_example_1"
-    grid_ggd[0].identifier.index = 1
-    grid_ggd[0].identifier.description = "Grid - example 1"
+    grid_ggd_input.resize(1)
+    grid_ggd = grid_ggd_input[0]
+    grid_ggd.identifier.name = "grid_example_1"
+    grid_ggd.identifier.index = 1
+    grid_ggd.identifier.description = "Grid - example 1"
 
     # Set space
-    space = grid_ggd[0].space
-    space.resize(1)
-    space[0].identifier.name = "space_example_1"
-    space[0].identifier.index = 1
-    space[0].identifier.description = "Space - example 1"
-    space[0].geometry_type.index = 0
-    space[0].coordinates_type = [1, 2]
-    space[0].objects_per_dimension.resize(3)
+    grid_ggd.space.resize(1)
+    space = grid_ggd.space[0]
+    space.identifier.name = "space_example_1"
+    space.identifier.index = 1
+    space.identifier.description = "Space - example 1"
+    space.geometry_type.index = 0
+    space.coordinates_type = [1, 2]
+
+    space.objects_per_dimension.resize(3)
+    vertices = space.objects_per_dimension[0].object
+    edges = space.objects_per_dimension[1].object
+    face = space.objects_per_dimension[2].object
 
     # Set Vertices
-    space[0].objects_per_dimension[0].object.resize(4)
-    space[0].objects_per_dimension[0].object[0].geometry = [0.0, 0.0]
-    space[0].objects_per_dimension[0].object[1].geometry = [1.0, 0.0]
-    space[0].objects_per_dimension[0].object[2].geometry = [1.0, 1.0]
-    space[0].objects_per_dimension[0].object[3].geometry = [0.0, 1.0]
+    vertices.resize(4)
+    vertices[0].geometry = [0.0, 0.0]
+    vertices[1].geometry = [1.0, 0.0]
+    vertices[2].geometry = [1.0, 1.0]
+    vertices[3].geometry = [0.0, 1.0]
 
     # Set edges
-    space[0].objects_per_dimension[1].object.resize(4)
-    space[0].objects_per_dimension[1].object[0].nodes = [1, 2]
-    space[0].objects_per_dimension[1].object[1].nodes = [2, 3]
-    space[0].objects_per_dimension[1].object[2].nodes = [3, 4]
-    space[0].objects_per_dimension[1].object[3].nodes = [4, 1]
+    edges.resize(4)
+    edges[0].nodes = [1, 2]
+    edges[1].nodes = [2, 3]
+    edges[2].nodes = [3, 4]
+    edges[3].nodes = [4, 1]
 
     # Set face
-    space[0].objects_per_dimension[2].object.resize(1)
-    space[0].objects_per_dimension[2].object[0].nodes = [1, 2, 3, 4]
+    face.resize(1)
+    face[0].nodes = [1, 2, 3, 4]
 
     # Set subset
-    grid_ggd[0].grid_subset.resize(3)
-    grid_ggd[0].grid_subset[0].dimension = 1
-    grid_ggd[0].grid_subset[0].identifier.name = "nodes"
-    grid_ggd[0].grid_subset[0].identifier.index = 1
-    grid_ggd[0].grid_subset[0].identifier.description = "All nodes in the domain"
+    grid_ggd.grid_subset.resize(3)
+    grid_subsets = grid_ggd.grid_subset
+    grid_subsets[0].dimension = 1
+    grid_subsets[0].identifier.name = "nodes"
+    grid_subsets[0].identifier.index = 1
+    grid_subsets[0].identifier.description = "All nodes in the domain"
 
-    grid_ggd[0].grid_subset[1].dimension = 2
-    grid_ggd[0].grid_subset[1].identifier.name = "faces"
-    grid_ggd[0].grid_subset[1].identifier.index = 2
-    grid_ggd[0].grid_subset[1].identifier.description = "All lines in the domain"
+    grid_subsets[1].dimension = 2
+    grid_subsets[1].identifier.name = "faces"
+    grid_subsets[1].identifier.index = 2
+    grid_subsets[1].identifier.description = "All lines in the domain"
 
-    grid_ggd[0].grid_subset[2].dimension = 3
-    grid_ggd[0].grid_subset[2].identifier.name = "cells"
-    grid_ggd[0].grid_subset[2].identifier.index = 5
-    grid_ggd[0].grid_subset[2].identifier.description = "All 2D cells in the domain"
+    grid_subsets[2].dimension = 3
+    grid_subsets[2].identifier.name = "cells"
+    grid_subsets[2].identifier.index = 5
+    grid_subsets[2].identifier.description = "All 2D cells in the domain"
 
-    grid_ggd[0].grid_subset[0].element.resize(4)
-    for i, element in enumerate(grid_ggd[0].grid_subset[0].element):
+    # Set elements for vertices
+    grid_subsets[0].element.resize(4)
+    for i, element in enumerate(grid_subsets[0].element):
 
         element.object.resize(1)
         element.object[0].space = 1
         element.object[0].dimension = 1
         element.object[0].index = i + 1
 
-    grid_ggd[0].grid_subset[1].element.resize(4)
-    for i, element in enumerate(grid_ggd[0].grid_subset[1].element):
-    
+    # Set elements for edges
+    grid_subsets[1].element.resize(4)
+    for i, element in enumerate(grid_subsets[1].element):
+
         element.object.resize(1)
         element.object[0].space = 1
         element.object[0].dimension = 2
         element.object[0].index = i + 1
 
-    grid_ggd[0].grid_subset[2].element.resize(1)
-    grid_ggd[0].grid_subset[0].element[0].object.resize(1)
-    grid_ggd[0].grid_subset[0].element[0].object[0].space = 1
-    grid_ggd[0].grid_subset[0].element[0].object[0].dimension = 3
-    grid_ggd[0].grid_subset[0].element[0].object[0].index = 1
+    # Set elements for face
+    grid_subsets[2].element.resize(1)
+    grid_subsets[0].element[0].object.resize(1)
+    grid_subsets[0].element[0].object[0].space = 1
+    grid_subsets[0].element[0].object[0].dimension = 3
+    grid_subsets[0].element[0].object[0].index = 1
 
 
-
-def fill_physical_quantities(ids):
-    ggd = ids.ggd
+def fill_physical_quantities(ggd):
     ggd.resize(1)
 
     # Fill time
@@ -137,8 +144,11 @@ def main():
     ep.ids_properties.homogeneous_time = imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
 
     # Create grid and fill with physical quantities
-    fill_with_simple_grid(ep)
-    fill_physical_quantities(ep)
+    grid_ggd = ep.grid_ggd
+    ggd = ep.ggd
+
+    fill_with_simple_grid(grid_ggd)
+    fill_physical_quantities(ggd)
     imaspy.util.print_tree(ep)
 
     # Write ids to disk
