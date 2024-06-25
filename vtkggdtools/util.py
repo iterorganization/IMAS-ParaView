@@ -1,6 +1,11 @@
 from typing import Optional
 
 
+def format_units(node) -> str:
+    """Return the unit of the node surrounded by square brackets."""
+    return f"[{node.metadata.units}]"
+
+
 def iter_metadata_tree(meta):
     for child in meta._children.values():
         yield child
