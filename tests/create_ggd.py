@@ -17,6 +17,10 @@ def fill_with_2_by_3_grid(grid_ggd_input):
              E0        E1
     """
 
+    num_vertices = 6
+    num_edges = 7
+    num_faces = 2
+
     # Set grid
     grid_ggd_input.resize(1)
     grid_ggd = grid_ggd_input[0]
@@ -39,7 +43,7 @@ def fill_with_2_by_3_grid(grid_ggd_input):
     face = space.objects_per_dimension[2].object
 
     # Set Vertices
-    vertices.resize(6)
+    vertices.resize(num_vertices)
     vertices[0].geometry = [0.0, 0.0]  # P0
     vertices[1].geometry = [1.0, 0.0]  # P1
     vertices[2].geometry = [2.0, 0.0]  # P2
@@ -48,7 +52,7 @@ def fill_with_2_by_3_grid(grid_ggd_input):
     vertices[5].geometry = [0.0, 1.0]  # P5
 
     # Set edges
-    edges.resize(7)
+    edges.resize(num_edges)
     edges[0].nodes = [1, 2]  # E0 (P0 -> P1)
     edges[1].nodes = [2, 3]  # E1 (P1 -> P2)
     edges[2].nodes = [3, 4]  # E2 (P2 -> P3)
@@ -58,7 +62,7 @@ def fill_with_2_by_3_grid(grid_ggd_input):
     edges[6].nodes = [2, 5]  # E6 (P1 -> P4)
 
     # Set faces
-    face.resize(2)
+    face.resize(num_faces)
     face[0].nodes = [1, 2, 5, 6]  # C0 (P0, P1, P4, P5)
     face[1].nodes = [2, 3, 4, 5]  # C1 (P1, P2, P3, P4)
 
@@ -104,6 +108,8 @@ def fill_with_2_by_3_grid(grid_ggd_input):
         element.object[0].dimension = 3
         element.object[0].index = i + 1
 
+    return num_vertices, num_edges, num_faces
+
 
 def fill_physical_quantities_2_by_3(ggd):
     ggd.resize(1)
@@ -141,6 +147,10 @@ def fill_with_simple_grid(grid_ggd_input):
         P0---------P1
              E0
     """
+
+    num_vertices = 4
+    num_edges = 4
+    num_faces = 1
 
     # Set grid
     grid_ggd_input.resize(1)
@@ -223,6 +233,8 @@ def fill_with_simple_grid(grid_ggd_input):
     grid_subsets[2].element[0].object[0].space = 1
     grid_subsets[2].element[0].object[0].dimension = 3
     grid_subsets[2].element[0].object[0].index = 1
+
+    return num_vertices, num_edges, num_faces
 
 
 def fill_physical_quantities(ggd):
