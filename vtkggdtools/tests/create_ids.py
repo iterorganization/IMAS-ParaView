@@ -1,8 +1,8 @@
-import random
-
 import imaspy
 import numpy as np
-from create_ggd import fill_with_2_by_3_grid
+
+from ..util import get_ggd_grid_path
+from .create_ggd import fill_with_2_by_3_grid
 
 
 def set_vector_quantity(quantity, num_vertices, num_edges, num_faces):
@@ -92,7 +92,10 @@ def fill_structure(quantity, num_vertices, num_edges, num_faces):
 
 
 def fill_ids(ggd, num_vertices, num_edges, num_faces):
-    """ """
+    """
+    Resizes the GGD and fills all generic grid scalar and generic grid vector components
+    with random values.
+    """
     # Create GGD for single time step
     ggd.resize(1)
     ggd = ggd[0]
