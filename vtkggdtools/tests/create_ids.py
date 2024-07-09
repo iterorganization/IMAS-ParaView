@@ -143,7 +143,7 @@ def main():
             ggd = create_first_ggd(ids)
 
             # Skip this IDS if it does not contain a GGD
-            if grid is None:
+            if ggd is None:
                 print(f"{ids} has no ggd")
                 continue
 
