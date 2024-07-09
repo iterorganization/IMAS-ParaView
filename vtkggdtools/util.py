@@ -39,7 +39,7 @@ def get_first_grid(ids):
         node = node[path]
         try:
             node = node[0]  # get first element of AoS
-        except LookupError:
+        except (LookupError, ValueError):
             pass  # apparently this was not an AoS :)
 
     return node

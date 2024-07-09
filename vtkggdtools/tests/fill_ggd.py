@@ -33,16 +33,18 @@ def fill_with_2_by_3_grid(grid_ggd):
     # Set grid
     grid_ggd.identifier.name = "random_grid"
     grid_ggd.identifier.index = 1
-    grid_ggd.identifier.description = "A simple 2x3 grid consisting of 6 vertices,\
-    7 edges and 2 faces"
+    grid_ggd.identifier.description = (
+        "A simple 2x3 grid consisting of 6 vertices, 7 edges and 2 faces"
+    )
 
     # Set space
     grid_ggd.space.resize(1)
     space = grid_ggd.space[0]
     space.identifier.name = "random_space"
     space.identifier.index = 1
-    space.identifier.description = "A simple 2x3 grid consisting of 6 vertices,\
-    7 edges and 2 faces"
+    space.identifier.description = (
+        "A simple 2x3 grid consisting of 6 vertices, 7 edges and 2 faces"
+    )
     space.geometry_type.index = 0
     space.coordinates_type = int64_to_int32([1, 2])
 
@@ -79,9 +81,9 @@ def fill_with_2_by_3_grid(grid_ggd):
     grid_ggd.grid_subset.resize(3)
     grid_subsets = grid_ggd.grid_subset
     grid_subsets[0].dimension = 1
-    grid_subsets[0].identifier.name = "nodes"
+    grid_subsets[0].identifier.name = "vertices"
     grid_subsets[0].identifier.index = 1
-    grid_subsets[0].identifier.description = "All nodes in the domain"
+    grid_subsets[0].identifier.description = "All vertices in the domain"
 
     grid_subsets[1].dimension = 2
     grid_subsets[1].identifier.name = "edges"
@@ -91,7 +93,7 @@ def fill_with_2_by_3_grid(grid_ggd):
     grid_subsets[2].dimension = 3
     grid_subsets[2].identifier.name = "faces"
     grid_subsets[2].identifier.index = 5
-    grid_subsets[2].identifier.description = "All 2D cells in the domain"
+    grid_subsets[2].identifier.description = "All faces in the domain"
 
     # Create elements for vertices
     grid_subsets[0].element.resize(num_vertices)
@@ -247,6 +249,40 @@ def fill_ggd(ggd, num_vertices, num_edges, num_faces):
     fill_structure(ggd, num_vertices, num_edges, num_faces)
 
 
+def fill_ids(ids):
+    """Fills the GGD and grid_ggd for the given IDS.
+
+    Args:
+        ids: IDS that will be filled
+    """
+
+    # Create an empty grid_ggd
+    grid_ggd = create_first_grid(ids)
+
+    # Skip filling grid_ggd if it does not exist
+    if grid_ggd is None:
+        print(f"{ids.metadata.name} has no grid_ggd")
+    else:
+        # Create time step
+        ids.time.resize(1)
+        ids.ids_properties.homogeneous_time = imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
+
+        # Fill GGD grid with a simple 2x3 grid
+        num_vertices, num_edges, num_faces = fill_with_2_by_3_grid(grid_ggd)
+        print(f"filled grid_ggd for {ids.metadata.name}")
+
+    # Create an empty GGD
+    ggd = create_first_ggd(ids)
+
+    # Skip filling GGD if it does not exist
+    if ggd is None:
+        print(f"{ids.metadata.name} has no ggd")
+    else:
+        # Fill the GGD with random values
+        fill_ggd(ggd, num_vertices, num_edges, num_faces)
+        print(f"filled ggd for {ids.metadata.name}")
+
+
 def main():
 
     factory = imaspy.IDSFactory()
@@ -254,52 +290,16 @@ def main():
     # Fetch list of all IDSs
     ids_list = factory.ids_names()
 
-    filled_ids = []
     for ids_name in ids_list:
         print(f"----- Filling {ids_name} -----")
-        grid_ggd_is_filled = False
-        ggd_is_filled = False
 
         # Retrieve IDS method name for IDS creation
         method = getattr(factory, ids_name, None)
         if method is not None:
             ids = method()
 
-            # Create time step
-            ids.time.resize(1)
-            ids.ids_properties.homogeneous_time = (
-                imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
-            )
-
-            # Create an empty grid_ggd
-            grid_ggd = create_first_grid(ids)
-
-            # Skip filling grid_ggd if it does not exist
-            if grid_ggd is None:
-                print(f"{ids.metadata.name} has no grid_ggd")
-            else:
-                # Fill GGD grid with a simple 2x3 grid
-                num_vertices, num_edges, num_faces = fill_with_2_by_3_grid(grid_ggd)
-                grid_ggd_is_filled = True
-                print(f"filled grid_ggd for {ids.metadata.name}")
-
-            # Create an empty GGD
-            ggd = create_first_ggd(ids)
-
-            # Skip filling GGD if it does not exist
-            if ggd is None:
-                print(f"{ids.metadata.name} has no ggd")
-            else:
-                # Fill the GGD with random values
-                fill_ggd(ggd, num_vertices, num_edges, num_faces)
-                ggd_is_filled = True
-                print(f"filled ggd for {ids.metadata.name}")
-
-            if ggd_is_filled or grid_ggd_is_filled:
-                # imaspy.util.print_tree(ids)
-                filled_ids.append(ids)
-
-    print(f"Succesfully filled the following IDSs:\n{filled_ids}")
+            fill_ids(ids)
+            imaspy.util.print_tree(ids)
 
 
 if __name__ == "__main__":
