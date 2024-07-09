@@ -1,9 +1,12 @@
 # Adapted from https://sharepoint.iter.org/departments/POP/CM/IMDesign/Data%20Model/sphinx/3.41/ggd_guide/examples.html # noqa
 
 import imaspy
+import numpy as np
+
+from ..util import int64_to_int32
 
 
-def fill_with_2_by_3_grid(grid_ggd_input):
+def fill_with_2_by_3_grid(grid_ggd):
     """
     Fills the grid_ggd of IDS with a simple rectangular grid containing 6 vertices,
     7 edges and 2 faces, arranged in the following manner for a 2x3 grid:
@@ -15,6 +18,8 @@ def fill_with_2_by_3_grid(grid_ggd_input):
         |          |          |
         P0---------P1---------P2
              E0        E1
+
+    Expects the grid_ggd to have a nonzero size and to be passed the first grid
     """
 
     num_vertices = 6
@@ -22,8 +27,6 @@ def fill_with_2_by_3_grid(grid_ggd_input):
     num_faces = 2
 
     # Set grid
-    grid_ggd_input.resize(1)
-    grid_ggd = grid_ggd_input[0]
     grid_ggd.identifier.name = "grid_example_2"
     grid_ggd.identifier.index = 1
     grid_ggd.identifier.description = "Grid - example 2"
@@ -35,7 +38,7 @@ def fill_with_2_by_3_grid(grid_ggd_input):
     space.identifier.index = 1
     space.identifier.description = "Space - example 2"
     space.geometry_type.index = 0
-    space.coordinates_type = [1, 2]
+    space.coordinates_type = int64_to_int32([1, 2])
 
     space.objects_per_dimension.resize(3)
     vertices = space.objects_per_dimension[0].object
@@ -53,18 +56,18 @@ def fill_with_2_by_3_grid(grid_ggd_input):
 
     # Set edges
     edges.resize(num_edges)
-    edges[0].nodes = [1, 2]  # E0 (P0 -> P1)
-    edges[1].nodes = [2, 3]  # E1 (P1 -> P2)
-    edges[2].nodes = [3, 4]  # E2 (P2 -> P3)
-    edges[3].nodes = [4, 5]  # E3 (P3 -> P4)
-    edges[4].nodes = [5, 6]  # E4 (P4 -> P5)
-    edges[5].nodes = [6, 1]  # E5 (P5 -> P0)
-    edges[6].nodes = [2, 5]  # E6 (P1 -> P4)
+    edges[0].nodes = int64_to_int32([1, 2])  # E0 (P0 -> P1)
+    edges[1].nodes = int64_to_int32([2, 3])  # E1 (P1 -> P2)
+    edges[2].nodes = int64_to_int32([3, 4])  # E2 (P2 -> P3)
+    edges[3].nodes = int64_to_int32([4, 5])  # E3 (P3 -> P4)
+    edges[4].nodes = int64_to_int32([5, 6])  # E4 (P4 -> P5)
+    edges[5].nodes = int64_to_int32([6, 1])  # E5 (P5 -> P0)
+    edges[6].nodes = int64_to_int32([2, 5])  # E6 (P1 -> P4)
 
     # Set faces
     face.resize(num_faces)
-    face[0].nodes = [1, 2, 5, 6]  # C0 (P0, P1, P4, P5)
-    face[1].nodes = [2, 3, 4, 5]  # C1 (P1, P2, P3, P4)
+    face[0].nodes = int64_to_int32([1, 2, 5, 6])  # F0 (P0, P1, P4, P5)
+    face[1].nodes = int64_to_int32([2, 3, 4, 5])  # F1 (P1, P2, P3, P4)
 
     # Set subset
     grid_ggd.grid_subset.resize(3)
@@ -112,7 +115,6 @@ def fill_with_2_by_3_grid(grid_ggd_input):
 
 
 def fill_physical_quantities_2_by_3(ggd):
-    ggd.resize(1)
 
     # Fill time
     ggd[0].time = 1.0
@@ -153,7 +155,6 @@ def fill_with_simple_grid(grid_ggd_input):
     num_faces = 1
 
     # Set grid
-    grid_ggd_input.resize(1)
     grid_ggd = grid_ggd_input[0]
     grid_ggd.identifier.name = "grid_example_1"
     grid_ggd.identifier.index = 1
@@ -238,7 +239,6 @@ def fill_with_simple_grid(grid_ggd_input):
 
 
 def fill_physical_quantities(ggd):
-    ggd.resize(1)
 
     # Fill time
     ggd[0].time = 1.0

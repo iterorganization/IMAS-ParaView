@@ -1,7 +1,7 @@
 import imaspy
 import numpy as np
 
-from ..util import get_ggd_grid_path
+from ..util import create_first_ggd, create_first_grid
 from .create_ggd import fill_with_2_by_3_grid
 
 
@@ -60,67 +60,98 @@ def fill_structure(quantity, num_vertices, num_edges, num_faces):
     """
 
     for subquantity in quantity:
-        print(f"{subquantity=}")
-
-        # STRUCT ARRAY
+        # If subquantity is a struct array
         if (
             subquantity.metadata.data_type
             == imaspy.ids_data_type.IDSDataType.STRUCT_ARRAY
         ):
-            print(f"Filling struct_array: {subquantity}")
-            # Fill scalar quantity
-            if subquantity.metadata.structure_reference == "generic_grid_scalar":
-                set_scalar_quantity(subquantity, num_vertices, num_edges, num_faces)
+            # Only fill struct array if it is empty
+            if not subquantity.has_value:
+                # Fill scalar quantity
+                if subquantity.metadata.structure_reference == "generic_grid_scalar":
+                    set_scalar_quantity(subquantity, num_vertices, num_edges, num_faces)
 
-            # Fill vector quantity
-            elif (
-                subquantity.metadata.structure_reference
-                == "generic_grid_vector_components"
-            ):
-                set_vector_quantity(subquantity, num_vertices, num_edges, num_faces)
-            # Recursively fill structure
-            else:
-                subquantity.resize(1)
-                fill_structure(subquantity[0], num_vertices, num_edges, num_faces)
+                # Fill vector quantity
+                elif (
+                    subquantity.metadata.structure_reference
+                    == "generic_grid_vector_components"
+                ):
+                    set_vector_quantity(subquantity, num_vertices, num_edges, num_faces)
+                # Recursively fill structure
+                else:
+                    subquantity.resize(1)
+                    fill_structure(subquantity[0], num_vertices, num_edges, num_faces)
 
-        # STRUCTURE
+        # If subquantity is a structure
         elif (
             subquantity.metadata.data_type == imaspy.ids_data_type.IDSDataType.STRUCTURE
         ):
-            print(f"Filling structure: {subquantity}")
-            fill_structure(subquantity, num_vertices, num_edges, num_faces)
+            # Only fill structure if it is empty
+            if not subquantity.has_value:
+                fill_structure(subquantity, num_vertices, num_edges, num_faces)
 
 
-def fill_ids(ggd, num_vertices, num_edges, num_faces):
+def fill_ggd(ggd, num_vertices, num_edges, num_faces):
     """
-    Resizes the GGD and fills all generic grid scalar and generic grid vector components
+    Fills all generic grid scalar and generic grid vector components
     with random values.
     """
-    # Create GGD for single time step
-    ggd.resize(1)
-    ggd = ggd[0]
-    ggd.time = 1.0
 
     # Fill IDS structure with random values
     fill_structure(ggd, num_vertices, num_edges, num_faces)
 
-    # Show fully filled ggd
-    imaspy.util.print_tree(ggd)
-
 
 def main():
 
-    # ids_list = ["edge_profiles", "edge_sources"]
-    ids_list = ["edge_profiles"]
     factory = imaspy.IDSFactory()
+
+    # Fetch list of all IDSs
+    # ids_list = factory.ids_names()
+    ids_list = [
+        "distribution_sources",
+        "distributions",
+        "edge_profiles",
+        "edge_sources",
+        "edge_transport",
+        "equilibrium",
+        "mhd",
+        "radiation",
+        "tf",
+        "transport_solver_numerics",
+        "wall",
+        "waves",
+    ]
     for ids_name in ids_list:
         # Retrieve IDS method name for IDS creation
         method = getattr(factory, ids_name, None)
         if method is not None:
             ids = method()
-            imaspy.util.inspect(ids)
-            num_vertices, num_edges, num_faces = fill_with_2_by_3_grid(ids.grid_ggd)
-            fill_ids(ids.ggd, num_vertices, num_edges, num_faces)
+
+            # Create an empty GGD grid
+            grid = create_first_grid(ids)
+
+            # Skip this IDS if it does not contain a GGD grid or a GGD
+            if grid is None:
+                print(f"{ids} has no grid_ggd")
+                continue
+
+            # Fill GGD grid with a simple 2x3 grid
+            num_vertices, num_edges, num_faces = fill_with_2_by_3_grid(grid)
+            print(f"filled grid_ggd for {ids}")
+
+            # Fill GGD with random values
+            ggd = create_first_ggd(ids)
+
+            # Skip this IDS if it does not contain a GGD
+            if grid is None:
+                print(f"{ids} has no ggd")
+                continue
+
+            # Fill the GGD with random values
+            fill_ggd(ggd, num_vertices, num_edges, num_faces)
+            print(f"filled ggd for {ids}")
+
+            imaspy.util.print_tree(ids)
 
 
 if __name__ == "__main__":
