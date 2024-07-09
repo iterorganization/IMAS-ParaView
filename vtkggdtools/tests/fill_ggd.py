@@ -281,26 +281,3 @@ def fill_ids(ids):
         # Fill the GGD with random values
         fill_ggd(ggd, num_vertices, num_edges, num_faces)
         print(f"filled ggd for {ids.metadata.name}")
-
-
-def main():
-
-    factory = imaspy.IDSFactory()
-
-    # Fetch list of all IDSs
-    ids_list = factory.ids_names()
-
-    for ids_name in ids_list:
-        print(f"----- Filling {ids_name} -----")
-
-        # Retrieve IDS method name for IDS creation
-        method = getattr(factory, ids_name, None)
-        if method is not None:
-            ids = method()
-
-            fill_ids(ids)
-            imaspy.util.print_tree(ids)
-
-
-if __name__ == "__main__":
-    main()

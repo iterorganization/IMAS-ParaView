@@ -29,7 +29,7 @@ where = ["."]
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--strict-markers"
-testpaths = "tests"
+testpaths = "vtkggdtools/tests"
 
 [tool.versioneer]
 VCS = "git"
