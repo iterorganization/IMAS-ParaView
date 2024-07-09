@@ -122,7 +122,7 @@ def fill_with_2_by_3_grid(grid_ggd):
 
 def fill_vector_quantity(vector_quantity, num_vertices, num_edges, num_faces):
     """Fills vector quantity with with random data for each vertex, edge and face.
-    Only the poloidal and toroidal components of the vector quantity are filled.
+    Only the radial, poloidal and toroidal components of the vector quantity are filled.
 
     Args:
         scalar_quantity: The vector quantity to be filled
@@ -136,18 +136,21 @@ def fill_vector_quantity(vector_quantity, num_vertices, num_edges, num_faces):
     # Fill values for vertices
     vector_quantity[0].grid_index = 1
     vector_quantity[0].grid_subset_index = 1
+    vector_quantity[0].radial = np.random.rand(num_vertices)
     vector_quantity[0].poloidal = np.random.rand(num_vertices)
     vector_quantity[0].toroidal = np.random.rand(num_vertices)
 
     # Fill values for edges
     vector_quantity[1].grid_index = 1
     vector_quantity[1].grid_subset_index = 2
+    vector_quantity[1].radial = np.random.rand(num_edges)
     vector_quantity[1].poloidal = np.random.rand(num_edges)
     vector_quantity[1].toroidal = np.random.rand(num_edges)
 
     # Fill values for faces
     vector_quantity[2].grid_index = 1
     vector_quantity[2].grid_subset_index = 5
+    vector_quantity[2].radial = np.random.rand(num_faces)
     vector_quantity[2].poloidal = np.random.rand(num_faces)
     vector_quantity[2].toroidal = np.random.rand(num_faces)
 
@@ -261,6 +264,12 @@ def main():
         method = getattr(factory, ids_name, None)
         if method is not None:
             ids = method()
+
+            # Create time step
+            ids.time.resize(1)
+            ids.ids_properties.homogeneous_time = (
+                imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
+            )
 
             # Create an empty grid_ggd
             grid_ggd = create_first_grid(ids)
