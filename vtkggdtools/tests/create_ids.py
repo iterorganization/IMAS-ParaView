@@ -1,23 +1,30 @@
 import imaspy
 import numpy as np
 
-from ..util import create_first_ggd, create_first_grid, int64_to_int32
+from vtkggdtools.util import create_first_ggd, create_first_grid, int64_to_int32
 
 
 def fill_with_2_by_3_grid(grid_ggd):
-    """
-    Fills the grid_ggd of an IDS with a simple rectangular grid containing 6 vertices,
+    """Fills the grid_ggd of an IDS with a simple rectangular grid containing 6 vertices,
     7 edges and 2 faces, arranged in the following manner for a 2x3 grid:
 
-             E5        E6
+            E5        E6
         P5---------P4---------P3
         |          |          |
     E4  |    F0    |    F1    |E3
         |          |          |
         P0---------P1---------P2
-             E0        E1
+            E0        E1
 
     Adapted from https://sharepoint.iter.org/departments/POP/CM/IMDesign/Data%20Model/sphinx/3.41/ggd_guide/examples.html # noqa
+
+    Args:
+        grid_ggd: The GGD grid that will be filled with the 2x3 grid.
+
+    Returns:
+        num_vertices: The number of vertices in the generated grid_ggd
+        num_edges: The number of edges in the generated grid_ggd
+        num_faces: The number of faces in the generated grid_ggd
     """
     num_vertices = 6
     num_edges = 7
@@ -113,59 +120,74 @@ def fill_with_2_by_3_grid(grid_ggd):
     return num_vertices, num_edges, num_faces
 
 
-def fill_vector_quantity(quantity, num_vertices, num_edges, num_faces):
-    """
-    Fills vector quantity with with random data for each vertex, edge and face.
-    Only sets poloidal and toroidal components.
+def fill_vector_quantity(vector_quantity, num_vertices, num_edges, num_faces):
+    """Fills vector quantity with with random data for each vertex, edge and face.
+    Only the poloidal and toroidal components of the vector quantity are filled.
+
+    Args:
+        scalar_quantity: The vector quantity to be filled
+        num_vertices: The number of vertices in the grid_ggd
+        num_edges: The number of edges in the grid_ggd
+        num_faces: The number of faces in the grid_ggd
     """
     # Allocate memory for 3 entries: vertices, edges and faces
-    quantity.resize(3)
+    vector_quantity.resize(3)
 
     # Fill values for vertices
-    quantity[0].grid_index = 1
-    quantity[0].grid_subset_index = 1
-    quantity[0].poloidal = np.random.rand(num_vertices)
-    quantity[0].toroidal = np.random.rand(num_vertices)
+    vector_quantity[0].grid_index = 1
+    vector_quantity[0].grid_subset_index = 1
+    vector_quantity[0].poloidal = np.random.rand(num_vertices)
+    vector_quantity[0].toroidal = np.random.rand(num_vertices)
 
     # Fill values for edges
-    quantity[1].grid_index = 1
-    quantity[1].grid_subset_index = 2
-    quantity[1].poloidal = np.random.rand(num_edges)
-    quantity[1].toroidal = np.random.rand(num_edges)
+    vector_quantity[1].grid_index = 1
+    vector_quantity[1].grid_subset_index = 2
+    vector_quantity[1].poloidal = np.random.rand(num_edges)
+    vector_quantity[1].toroidal = np.random.rand(num_edges)
 
     # Fill values for faces
-    quantity[2].grid_index = 1
-    quantity[2].grid_subset_index = 5
-    quantity[2].poloidal = np.random.rand(num_faces)
-    quantity[2].toroidal = np.random.rand(num_faces)
+    vector_quantity[2].grid_index = 1
+    vector_quantity[2].grid_subset_index = 5
+    vector_quantity[2].poloidal = np.random.rand(num_faces)
+    vector_quantity[2].toroidal = np.random.rand(num_faces)
 
 
-def fill_scalar_quantity(quantity, num_vertices, num_edges, num_faces):
-    """
-    Fills scalar quantity with random data for each vertex, edge and face.
+def fill_scalar_quantity(scalar_quantity, num_vertices, num_edges, num_faces):
+    """Fills scalar quantity with random data for each vertex, edge and face.
+
+    Args:
+        scalar_quantity: The scalar quantity to be filled
+        num_vertices: The number of vertices in the grid_ggd
+        num_edges: The number of edges in the grid_ggd
+        num_faces: The number of faces in the grid_ggd
     """
     # Allocate memory for 3 entries: vertices, edges and faces
-    quantity.resize(3)
+    scalar_quantity.resize(3)
 
     # Set 6 vertices
-    quantity[0].grid_index = 1
-    quantity[0].grid_subset_index = 1
-    quantity[0].values = np.random.rand(num_vertices)
+    scalar_quantity[0].grid_index = 1
+    scalar_quantity[0].grid_subset_index = 1
+    scalar_quantity[0].values = np.random.rand(num_vertices)
 
     # Set 7 edges
-    quantity[1].grid_index = 1
-    quantity[1].grid_subset_index = 2
-    quantity[1].values = np.random.rand(num_edges)
+    scalar_quantity[1].grid_index = 1
+    scalar_quantity[1].grid_subset_index = 2
+    scalar_quantity[1].values = np.random.rand(num_edges)
 
     # Set 2 faces
-    quantity[2].grid_index = 1
-    quantity[2].grid_subset_index = 5
-    quantity[2].values = np.random.rand(num_faces)
+    scalar_quantity[2].grid_index = 1
+    scalar_quantity[2].grid_subset_index = 5
+    scalar_quantity[2].values = np.random.rand(num_faces)
 
 
 def fill_structure(quantity, num_vertices, num_edges, num_faces):
-    """
-    Recursively fills an IDS structure with random values.
+    """Recursively fills an IDS structure with random values.
+
+    Args:
+        quantity: Node belonging to an IDS
+        num_vertices: The number of vertices in the grid_ggd
+        num_edges: The number of edges in the grid_ggd
+        num_faces: The number of faces in the grid_ggd
     """
 
     for subquantity in quantity:
@@ -208,9 +230,14 @@ def fill_structure(quantity, num_vertices, num_edges, num_faces):
 
 
 def fill_ggd(ggd, num_vertices, num_edges, num_faces):
-    """
-    Fills all generic grid scalar and generic grid vector components
+    """Fills all generic grid scalar and generic grid vector components of a GGD
     with random values.
+
+    Args:
+        ggd: The GGD that will be filled
+        num_vertices: The number of vertices in the grid_ggd
+        num_edges: The number of edges in the grid_ggd
+        num_faces: The number of faces in the grid_ggd
     """
 
     # Fill IDS structure with random values
@@ -240,24 +267,24 @@ def main():
 
             # Skip filling grid_ggd if it does not exist
             if grid_ggd is None:
-                print(f"{ids} has no grid_ggd")
+                print(f"{ids.metadata.name} has no grid_ggd")
             else:
                 # Fill GGD grid with a simple 2x3 grid
                 num_vertices, num_edges, num_faces = fill_with_2_by_3_grid(grid_ggd)
                 grid_ggd_is_filled = True
-                print(f"filled grid_ggd for {ids}")
+                print(f"filled grid_ggd for {ids.metadata.name}")
 
             # Create an empty GGD
             ggd = create_first_ggd(ids)
 
             # Skip filling GGD if it does not exist
             if ggd is None:
-                print(f"{ids} has no ggd")
+                print(f"{ids.metadata.name} has no ggd")
             else:
                 # Fill the GGD with random values
                 fill_ggd(ggd, num_vertices, num_edges, num_faces)
                 ggd_is_filled = True
-                print(f"filled ggd for {ids}")
+                print(f"filled ggd for {ids.metadata.name}")
 
             if ggd_is_filled or grid_ggd_is_filled:
                 # imaspy.util.print_tree(ids)
