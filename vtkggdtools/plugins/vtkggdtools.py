@@ -5,6 +5,7 @@ import datetime
 import getpass
 
 import imaspy
+import imaspy.ids_defs
 import numpy as np
 from identifiers.ggd_identifier import ggd_identifier
 from identifiers.ggd_space_identifier import ggd_space_identifier
@@ -24,9 +25,22 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from vtkggdtools._version import get_versions
+from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
 from vtkggdtools.io import read_bezier, read_geom, read_ps, write_geom, write_ps
 from vtkggdtools.io.representables import GridSubsetRepresentable
+from vtkggdtools.paraview_support.servermanager_tools import (
+    enumeration,
+    genericdecorator,
+    propertygroup,
+)
 from vtkggdtools.util import FauxIndexMap, create_first_grid, get_first_grid
+
+BACKENDS = {
+    "MDSplus": imaspy.ids_defs.MDSPLUS_BACKEND,
+    "HDF5": imaspy.ids_defs.HDF5_BACKEND,
+    "ASCII": imaspy.ids_defs.ASCII_BACKEND,
+}
+DEFAULT_BACKEND = imaspy.ids_defs.MDSPLUS_BACKEND
 
 
 @smproxy.source(label="IMASPy GGDReader")
@@ -40,54 +54,205 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             nOutputPorts=1,
             outputType="vtkPartitionedDataSetCollection",
         )
-        # Properties
-        self._uri = ""
+        # URI properties
+        self._uri_selection_mode = 1
+        self._uri_input = ""
+        self._uri_path = ""
+        self._uri_backend = imaspy.ids_defs.MDSPLUS_BACKEND
+        self._uri_pulse = 0
+        self._uri_run = 0
+        self._uri_database = "ITER"
+        self._uri_user = "public"
+        self._uri_version = "3"
+        # IDS properties
         self._idsname = ""
         self._occurrence = 0
+        # Bezier interpolation properties
         self._n_plane = 0
         self._phi_start = 0
         self._phi_end = 0
+
+        # URI is calculated from the possible inputs
+        self._uri = ""
+        self._uri_error = ""
 
         # Data caches
         self._dbentry = None
         self._ids = None
 
-    @smproperty.stringvector(name="IMAS URI", default_values="")
-    def SetURI(self, uri):
+    def _update_property(self, name, value, callback=None):
+        """Convenience method to update a property when value changed."""
+        if getattr(self, name) != value:
+            setattr(self, name, value)
+            if callback is not None:
+                callback()
+            self.Modified()
+
+    def _calculate_uri(self):
+        """Determine the IMAS URI from user input."""
+        if self._uri_selection_mode == 1:
+            # Use URI provided by user:
+            uri = self._uri_input
+        elif self._uri_selection_mode == 2:
+            # Determine URI from selected file
+            uri = uri_from_path(self._uri_path)
+        elif self._uri_selection_mode == 3:
+            uri = uri_from_pulse_run(
+                self._uri_backend,
+                self._uri_database,
+                self._uri_pulse,
+                self._uri_run,
+                self._uri_user,
+                self._uri_version,
+            )
+        else:
+            raise ValueError(f"Invalid value for {self._uri_selection_mode=}")
+
+        # Ensure uri is not None:
+        uri = uri or ""
+
         if uri != self._uri:
             self._uri = uri
             if self._dbentry is not None:
                 self._dbentry.close()
                 self._ids = self._dbentry = None
+            self._uri_error = ""
+            if self._uri:
+                # Try to open the DBEntry
+                try:
+                    self._dbentry = imaspy.DBEntry(self._uri, "r")
+                except Exception as exc:
+                    self._uri_error = str(exc)
             self.Modified()
+
+    # Note on property names:
+    # - Properties are sorted in the GUI by name of the function in paraview < 5.13
+    # - In paraview 5.13 and newer, this sorting is based on declaration order (see
+    #   https://gitlab.kitware.com/paraview/paraview/-/commit/7ea6373ff67c59a7f43b63697aaf6f1ddee51cab)
+    # - To properly sort the properties in paraview <= 5.12 we prefix each property with
+    #   "P<groupID><propertyID>", e.g. P01_SetURI
+
+    # Properties for setting the URI
+    ####################################################################################
+
+    @smproperty.intvector(name="URISelection", label="", default_values="1")
+    @enumeration("enum", {"Enter URI": 1, "Select file": 2, "Enter pulse, run, ..": 3})
+    def P00_URISelectionMode(self, mode):
+        self._update_property("_uri_selection_mode", mode, self._calculate_uri)
+
+    @smproperty.stringvector(name="Enter URI", default_values="")
+    @genericdecorator(mode="visibility", property="URISelection", value="1")
+    def P01_SetURI(self, uri):
+        self._update_property("_uri_input", uri, self._calculate_uri)
+
+    @smproperty.stringvector(name="URI from file", default_values="")
+    @smdomain.filelist()
+    @smhint.filechooser(
+        extensions=["h5", "datafile"],
+        file_description="IMAS HDF5/MDSplus backend files",
+    )
+    @genericdecorator(mode="visibility", property="URISelection", value="2")
+    def P02_SetURIFromFileName(self, file):
+        self._update_property("_uri_path", file, self._calculate_uri)
+
+    @smproperty.intvector(name="Backend", default_values=DEFAULT_BACKEND)
+    @enumeration("backend", BACKENDS)
+    @genericdecorator(mode="visibility", property="URISelection", value="3")
+    def P03_SetBackend(self, backend):
+        self._update_property("_uri_backend", backend, self._calculate_uri)
+
+    @smproperty.stringvector(name="Database", default_values="")
+    @genericdecorator(mode="visibility", property="URISelection", value="3")
+    def P04_SetDatabase(self, database):
+        self._update_property("_uri_database", database, self._calculate_uri)
+
+    @smproperty.intvector(name="Pulse", default_values="0")
+    @genericdecorator(mode="visibility", property="URISelection", value="3")
+    def P05_SetPulse(self, pulse):
+        self._update_property("_uri_pulse", pulse, self._calculate_uri)
+
+    @smproperty.intvector(name="Run", default_values="0")
+    @genericdecorator(mode="visibility", property="URISelection", value="3")
+    def P06_SetRun(self, run):
+        self._update_property("_uri_run", run, self._calculate_uri)
+
+    @smproperty.stringvector(name="User", default_values=getpass.getuser())
+    @genericdecorator(mode="visibility", property="URISelection", value="3")
+    def P07_SetUser(self, user):
+        self._update_property("_uri_user", user, self._calculate_uri)
+
+    @smproperty.stringvector(name="Version", default_values="3")
+    @genericdecorator(mode="visibility", property="URISelection", value="3")
+    def P08_SetVersion(self, version):
+        self._update_property("_uri_version", version, self._calculate_uri)
+
+    @smproperty.stringvector(
+        name="Status", information_only=1, panel_visibility="default"
+    )
+    @smhint.xml('<Widget type="one_liner_wrapped" />')
+    def P09_GetURIStatus(self):
+        if not self._uri:
+            return "No URI selected, press Apply to set URI."
+        if self._uri_error:
+            return f'Could not open URI "{self._uri}":\n{self._uri_error}'
+        return f'Successfully opened URI "{self._uri}"'
+
+    # Properties for setting the IDS name and occurrence
+    ####################################################################################
+
+    def _clear_ids(self):
+        """Helper callback to clear any loaded IDS when idsname/occurrence change."""
+        self._ids = None
 
     @smproperty.stringvector(name="IDS", default_values="")
-    def SetIDS(self, idsname):
-        if idsname != self._idsname:
-            self._idsname = idsname
-            self._ids = None
-            self.Modified()
+    def P10_SetIDS(self, idsname):
+        self._update_property("_idsname", idsname, self._clear_ids)
 
     @smproperty.intvector(name="Occurrence", default_values=0)
-    def SetOccurrence(self, occurrence):
-        if occurrence != self._occurrence:
-            self._occurrence = occurrence
-            self._ids = None
-            self.Modified()
+    def P11_SetOccurrence(self, occurrence):
+        self._update_property("_occurrence", occurrence, self._clear_ids)
+
+    # Properties for Bezier interpolation
+    ####################################################################################
 
     @smproperty.intvector(name="N plane", default_values=0)
-    def SetNPlane(self, val):
-        if val != self._n_plane:
-            self._n_plane = val
-            self.Modified()
+    def P20_SetNPlane(self, val):
+        self._update_property("_n_plane", val)
 
     @smproperty.doublevector(name="Phi range", default_values=[0, 0])
     @smdomain.doublerange(min=0, max=360.0)
-    def SetPhiRange(self, val, val2):
-        if val != self._phi_start or val2 != self._phi_end:
-            self._phi_start = val
-            self._phi_end = val2
-            self.Modified()
+    def P21_SetPhiRange(self, val, val2):
+        self._update_property("_phi_start", val)
+        self._update_property("_phi_end", val2)
+
+    # Property groups: sorted by name and must be alphabetically after the properties
+    ####################################################################################
+
+    @propertygroup(
+        "Data entry URI",
+        [
+            "URISelection",
+            "Enter URI",
+            "URI from file",
+            "Backend",
+            "Database",
+            "Pulse",
+            "Run",
+            "User",
+            "Version",
+            "Status",
+        ],
+    )
+    def PG0_DataEntryGroup(self):
+        """Dummy function to define a PropertyGroup."""
+
+    @propertygroup("Select IDS", ["IDS", "Occurrence"])
+    def PG1_IDSGroup(self):
+        """Dummy function to define a PropertyGroup."""
+
+    @propertygroup("Bezier interpolation settings", ["N plane", "Phi range"])
+    def PG2_BezierGroup(self):
+        """Dummy function to define a PropertyGroup."""
 
     def FillOutputPortInformation(self, port, info):
         info.Set(vtkDataObject.DATA_TYPE_NAME(), "vtkPartitionedDataSetCollection")
@@ -103,9 +268,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
     def _ensure_ids(self):
         if self._ids is None:
-            if self._dbentry is None:
-                self._dbentry = imaspy.DBEntry(self._uri, "r")
-
             # TODO: enable lazy loading
             logger.info("Loading IDS %s/%d ...", self._idsname, self._occurrence)
             lazy = False  # TODO: Test lazy loading before enabling
@@ -121,6 +283,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             logger.info("Done loading IDS.")
 
     def RequestData(self, request, inInfo, outInfo):
+        if self._dbentry is None or not self._idsname:
+            return 1
         self._ensure_ids()
 
         # TODO: allow selecting other grids
