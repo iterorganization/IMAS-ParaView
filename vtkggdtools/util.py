@@ -10,6 +10,14 @@ def iter_metadata_tree(meta):
 
 
 def get_ggd_grid_path(ids_metadata) -> Optional[str]:
+    """Finds the path of the GGD grid node within IDS metadata.
+
+    Args:
+        ids_metadata: The metadata of an IDS.
+
+    Returns:
+        Optional[str]: The path string of the GGD grid node, or None if not found.
+    """
     # Find the DD node defining the GGD grid:
     for node in iter_metadata_tree(ids_metadata):
         structure_reference = getattr(node, "structure_reference", None)
@@ -20,6 +28,14 @@ def get_ggd_grid_path(ids_metadata) -> Optional[str]:
 
 
 def get_ggd_path(ids_metadata) -> Optional[str]:
+    """Finds the path of the GGD node within IDS metadata.
+
+    Args:
+        ids_metadata: The metadata of an IDS.
+
+    Returns:
+        Optional[str]: The path string of the GGD node, or None if not found.
+    """
     for node in iter_metadata_tree(ids_metadata):
         metadata_name = getattr(node, "name", None)
 
@@ -30,6 +46,14 @@ def get_ggd_path(ids_metadata) -> Optional[str]:
 
 
 def get_first_grid(ids):
+    """Finds and returns the first grid_ggd within IDS.
+
+    Args:
+        ids: The IDS for which to return the first grid_gdd.
+
+    Returns:
+        The first grid_ggd node found, or None if not found.
+    """
     grid_path = get_ggd_grid_path(ids.metadata)
     if grid_path is None:
         return None
@@ -46,6 +70,14 @@ def get_first_grid(ids):
 
 
 def create_first_grid(ids):
+    """Creates and returns the first grid_ggd within IDS.
+
+    Args:
+        ids: The IDS for which to create and return the first grid_gdd.
+
+    Returns:
+        The created first grid_gdd, or None if grid_path is None.
+    """
     grid_path = get_ggd_grid_path(ids.metadata)
     if grid_path is None:
         return None
@@ -64,12 +96,20 @@ def create_first_grid(ids):
 
 
 def create_first_ggd(ids):
-    grid_path = get_ggd_path(ids.metadata)
-    if grid_path is None:
+    """Creates and returns the first GGD within IDS.
+
+    Args:
+        ids: The IDS for which to create and return the first GGD.
+
+    Returns:
+        The created first GGD, or None if ggd_path is None.
+    """
+    ggd_path = get_ggd_path(ids.metadata)
+    if ggd_path is None:
         return None
 
     node = ids
-    for path in grid_path.split("/"):
+    for path in ggd_path.split("/"):
         node = node[path]
         try:
             if len(node) == 0:
@@ -85,9 +125,14 @@ def create_first_ggd(ids):
 
 
 def int64_to_int32(int_list):
-    """
-    Converts a list of type int64 to a numpy array containing values of
+    """Converts a list of type int64 to a numpy array containing values of
     type int32.
+
+    Args:
+        int_list: List of int64s to be converted
+
+    Returns:
+        List of converted int32s
     """
     int32_array = np.array(int_list, dtype=np.int32)
     return int32_array

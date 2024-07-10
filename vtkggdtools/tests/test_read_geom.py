@@ -28,8 +28,7 @@ from vtkggdtools.util import get_first_grid
     ]
 )
 def ids_name(request):
-    """
-    Provides IDS names for testing.
+    """Provides IDS names for testing.
 
     Args:
         request (FixtureRequest): The pytest request object.
@@ -42,8 +41,7 @@ def ids_name(request):
 
 @pytest.fixture
 def create_dummy_ids(ids_name):
-    """
-    Creates a dummy IDS object with a dummy grid and random GGD values for
+    """Creates a dummy IDS object with a dummy grid and random GGD values for
     testing purposes.
 
     Args:
@@ -64,8 +62,7 @@ def create_dummy_ids(ids_name):
 
 
 def test_validate_dummy_ids(create_dummy_ids):
-    """
-    Validates the dummy IDS object created by the fixture.
+    """Validates the dummy IDS object created by the fixture.
 
     Args:
         create_dummy_ids (fixture): The fixture to create the dummy IDS.
@@ -78,8 +75,7 @@ def test_validate_dummy_ids(create_dummy_ids):
 
 
 def test_fill_vtk_points(ids_name, create_dummy_ids):
-    """
-    Tests filling VTK points from the IDS grid.
+    """Tests filling VTK points from the IDS grid.
 
     Args:
         ids_name (str): The name of the IDS.
@@ -97,8 +93,7 @@ def test_fill_vtk_points(ids_name, create_dummy_ids):
 
 
 def test_convert_grid_subset_geometry_to_unstructured_grid(ids_name, create_dummy_ids):
-    """
-    Tests grid subset geometry conversion to unstructured grid.
+    """Tests grid subset geometry conversion to unstructured grid.
 
     Args:
         ids_name (str): The name of the IDS.
