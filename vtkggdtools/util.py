@@ -3,6 +3,14 @@ from typing import Optional
 import numpy as np
 
 
+class FauxIndexMap:
+    def __getitem__(self, item):
+        return 0
+
+    def get(self, name, default=None):
+        return 0
+
+
 def iter_metadata_tree(meta):
     for child in meta._children.values():
         yield child

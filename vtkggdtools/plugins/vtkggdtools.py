@@ -26,7 +26,7 @@ from vtkmodules.vtkCommonDataModel import (
 from vtkggdtools._version import get_versions
 from vtkggdtools.io import read_bezier, read_geom, read_ps, write_geom, write_ps
 from vtkggdtools.io.representables import GridSubsetRepresentable
-from vtkggdtools.util import create_first_grid, get_first_grid
+from vtkggdtools.util import FauxIndexMap, create_first_grid, get_first_grid
 
 
 @smproxy.source(label="IMASPy GGDReader")
@@ -209,14 +209,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                 self.UpdateProgress(self.GetProgress() + 1 / num_subsets)
 
         return 1
-
-
-class FauxIndexMap:
-    def __getitem__(self, item):
-        return 0
-
-    def get(self, name, default=None):
-        return 0
 
 
 _ggd_types_xml = "".join(
