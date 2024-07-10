@@ -18,7 +18,7 @@ from vtkggdtools.tests.fill_ggd import fill_ids
         "transport_solver_numerics",
         "wall",
         "waves",
-        # "runaway_electrons",
+        "runaway_electrons",
     ]
 )
 def ids_name(request):
