@@ -1,8 +1,12 @@
+import logging
+
 import imaspy
 import numpy as np
 from imaspy.ids_data_type import IDSDataType
 
 from vtkggdtools.util import create_first_ggd, create_first_grid, int32array
+
+logger = logging.getLogger(__name__)
 
 
 def fill_with_2_by_3_grid(grid_ggd):
@@ -251,7 +255,7 @@ def fill_ids(ids):
 
     # Skip filling grid_ggd if it does not exist
     if grid_ggd is None:
-        print(f"{ids.metadata.name} has no grid_ggd")
+        logger.debug(f"{ids.metadata.name} has no grid_ggd")
     else:
         # Create time step
         ids.time.resize(1)
@@ -259,15 +263,15 @@ def fill_ids(ids):
 
         # Fill GGD grid with a simple 2x3 grid
         num_vertices, num_edges, num_faces = fill_with_2_by_3_grid(grid_ggd)
-        print(f"filled grid_ggd for {ids.metadata.name}")
+        logger.debug(f"filled grid_ggd for {ids.metadata.name}")
 
     # Create an empty GGD
     ggd = create_first_ggd(ids)
 
     # Skip filling GGD if it does not exist
     if ggd is None:
-        print(f"{ids.metadata.name} has no ggd")
+        logger.debug(f"{ids.metadata.name} has no ggd")
     else:
         # Fill the GGD with random values
         fill_ggd(ggd, num_vertices, num_edges, num_faces)
-        print(f"filled ggd for {ids.metadata.name}")
+        logger.debug(f"filled ggd for {ids.metadata.name}")
