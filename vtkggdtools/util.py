@@ -16,7 +16,7 @@ def get_ggd_grid_path(ids_metadata) -> Optional[str]:
         ids_metadata: The metadata of an IDS.
 
     Returns:
-        Optional[str]: The path string of the GGD grid node, or None if not found.
+        The path string of the GGD grid node, or None if not found.
     """
     # Find the DD node defining the GGD grid:
     for node in iter_metadata_tree(ids_metadata):
@@ -34,7 +34,7 @@ def get_ggd_path(ids_metadata) -> Optional[str]:
         ids_metadata: The metadata of an IDS.
 
     Returns:
-        Optional[str]: The path string of the GGD node, or None if not found.
+        The path string of the GGD node, or None if not found.
     """
     for node in iter_metadata_tree(ids_metadata):
         metadata_name = getattr(node, "name", None)
@@ -124,9 +124,8 @@ def create_first_ggd(ids):
     return node
 
 
-def int64_to_int32(int_list):
-    """Converts a list of type int64 to a numpy array containing values of
-    type int32.
+def int32array(int_list):
+    """Converts a list of ints to a numpy array containing values of type int32.
 
     Args:
         int_list: List of int64s to be converted
@@ -134,5 +133,4 @@ def int64_to_int32(int_list):
     Returns:
         List of converted int32s
     """
-    int32_array = np.array(int_list, dtype=np.int32)
-    return int32_array
+    return np.array(int_list, dtype=np.int32)

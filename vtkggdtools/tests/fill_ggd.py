@@ -1,7 +1,8 @@
 import imaspy
 import numpy as np
+from imaspy.ids_data_type import IDSDataType
 
-from vtkggdtools.util import create_first_ggd, create_first_grid, int64_to_int32
+from vtkggdtools.util import create_first_ggd, create_first_grid, int32array
 
 
 def fill_with_2_by_3_grid(grid_ggd):
@@ -31,7 +32,7 @@ def fill_with_2_by_3_grid(grid_ggd):
     num_faces = 2
 
     # Set grid
-    grid_ggd.identifier.name = "random_grid"
+    grid_ggd.identifier.name = "linear"
     grid_ggd.identifier.index = 1
     grid_ggd.identifier.description = (
         "A simple 2x3 grid consisting of 6 vertices, 7 edges and 2 faces"
@@ -40,13 +41,11 @@ def fill_with_2_by_3_grid(grid_ggd):
     # Set space
     grid_ggd.space.resize(1)
     space = grid_ggd.space[0]
-    space.identifier.name = "random_space"
+    space.identifier.name = "primary_standard"
     space.identifier.index = 1
-    space.identifier.description = (
-        "A simple 2x3 grid consisting of 6 vertices, 7 edges and 2 faces"
-    )
+    space.identifier.description = "Primary space defining the standard grid"
     space.geometry_type.index = 0
-    space.coordinates_type = int64_to_int32([1, 2])
+    space.coordinates_type = int32array([1, 2])
 
     space.objects_per_dimension.resize(3)
     vertices = space.objects_per_dimension[0].object
@@ -64,18 +63,18 @@ def fill_with_2_by_3_grid(grid_ggd):
 
     # Set edges
     edges.resize(num_edges)
-    edges[0].nodes = int64_to_int32([1, 2])  # E0 (P0 -> P1)
-    edges[1].nodes = int64_to_int32([2, 3])  # E1 (P1 -> P2)
-    edges[2].nodes = int64_to_int32([3, 4])  # E2 (P2 -> P3)
-    edges[3].nodes = int64_to_int32([4, 5])  # E3 (P3 -> P4)
-    edges[4].nodes = int64_to_int32([5, 6])  # E4 (P4 -> P5)
-    edges[5].nodes = int64_to_int32([6, 1])  # E5 (P5 -> P0)
-    edges[6].nodes = int64_to_int32([2, 5])  # E6 (P1 -> P4)
+    edges[0].nodes = int32array([1, 2])  # E0 (P0 -> P1)
+    edges[1].nodes = int32array([2, 3])  # E1 (P1 -> P2)
+    edges[2].nodes = int32array([3, 4])  # E2 (P2 -> P3)
+    edges[3].nodes = int32array([4, 5])  # E3 (P3 -> P4)
+    edges[4].nodes = int32array([5, 6])  # E4 (P4 -> P5)
+    edges[5].nodes = int32array([6, 1])  # E5 (P5 -> P0)
+    edges[6].nodes = int32array([2, 5])  # E6 (P1 -> P4)
 
     # Set faces
     face.resize(num_faces)
-    face[0].nodes = int64_to_int32([1, 2, 5, 6])  # F0 (P0, P1, P4, P5)
-    face[1].nodes = int64_to_int32([2, 3, 4, 5])  # F1 (P1, P2, P3, P4)
+    face[0].nodes = int32array([1, 2, 5, 6])  # F0 (P0, P1, P4, P5)
+    face[1].nodes = int32array([2, 3, 4, 5])  # F1 (P1, P2, P3, P4)
 
     # Create subset
     grid_ggd.grid_subset.resize(3)
@@ -196,42 +195,33 @@ def fill_structure(quantity, num_vertices, num_edges, num_faces):
     """
 
     for subquantity in quantity:
+        # Skip filling subquantity if it already has a value
+        if subquantity.has_value:
+            continue
+
+        metadata = subquantity.metadata
+
         # If subquantity is a struct array
-        if (
-            subquantity.metadata.data_type
-            == imaspy.ids_data_type.IDSDataType.STRUCT_ARRAY
-        ):
-            # Only fill struct array if it is empty
-            if not subquantity.has_value:
-                # Fill scalar quantity
-                if subquantity.metadata.structure_reference == "generic_grid_scalar":
-                    fill_scalar_quantity(
-                        subquantity, num_vertices, num_edges, num_faces
-                    )
+        if metadata.data_type == IDSDataType.STRUCT_ARRAY:
 
-                # Fill vector quantity
-                elif (
-                    subquantity.metadata.structure_reference
-                    == "generic_grid_vector_components"
-                ):
-                    fill_vector_quantity(
-                        subquantity, num_vertices, num_edges, num_faces
-                    )
+            # Fill scalar quantity
+            if metadata.structure_reference == "generic_grid_scalar":
+                fill_scalar_quantity(subquantity, num_vertices, num_edges, num_faces)
 
-                # Recursively fill struct array
-                else:
-                    subquantity.resize(1)
-                    fill_structure(subquantity[0], num_vertices, num_edges, num_faces)
+            # Fill vector quantity
+            elif metadata.structure_reference == "generic_grid_vector_components":
+                fill_vector_quantity(subquantity, num_vertices, num_edges, num_faces)
+
+            # Recursively fill struct array
+            else:
+                subquantity.resize(1)
+                fill_structure(subquantity[0], num_vertices, num_edges, num_faces)
 
         # If subquantity is a structure
-        elif (
-            subquantity.metadata.data_type == imaspy.ids_data_type.IDSDataType.STRUCTURE
-        ):
-            # Only fill structure if it is empty
-            if not subquantity.has_value:
+        elif metadata.data_type == IDSDataType.STRUCTURE:
 
-                # Recursively structure
-                fill_structure(subquantity, num_vertices, num_edges, num_faces)
+            # Recursively fill structure
+            fill_structure(subquantity, num_vertices, num_edges, num_faces)
 
 
 def fill_ggd(ggd, num_vertices, num_edges, num_faces):
