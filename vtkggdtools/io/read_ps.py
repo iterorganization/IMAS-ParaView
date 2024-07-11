@@ -1,11 +1,14 @@
+import logging
+
 import numpy as np
-from paraview import logger as pvlog
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
 
 # We'll need these below when we create some units manually:
 from vtkggdtools.util import format_units
+
+logger = logging.getLogger(__name__)
 
 u_pre = "["
 u_post = "]"
@@ -68,7 +71,7 @@ def read_plasma_state(
         read_waves(ids_obj, aos_index_values, subset_idx, ugrid)
 
     else:
-        pvlog.warn(f"Reading plasma state from IDS {ids_name} not implemented.")
+        logger.warn(f"Reading plasma state from IDS {ids_name} not implemented.")
 
 
 def read_distribution_sources(
@@ -764,12 +767,12 @@ def read_wall(
             name = f"{quantities[q_name]} {format_units(node)}"
             _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
         except AttributeError:
-            pvlog.info(
+            logger.info(
                 f"No quantity {q_name} found, "
                 "perhaps mismatched data dictionary versions?"
             )
         except IndexError:
-            pvlog.info(f"No subset {subset_idx} found for quantity{q_name}.")
+            logger.info(f"No subset {subset_idx} found for quantity{q_name}.")
 
     # Vector quantities:
     quantities = {
@@ -783,12 +786,12 @@ def read_wall(
             name = f"{quantities[q_name]} {format_units(node)}"
             _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
         except AttributeError:
-            pvlog.info(
+            logger.info(
                 f"No quantity {q_name} found, "
                 "perhaps missmatched data dictionary versions?"
             )
         except IndexError:
-            pvlog.info(f"No subset {subset_idx} found for quantity{q_name}.")
+            logger.info(f"No subset {subset_idx} found for quantity{q_name}.")
 
 
 def read_waves(
@@ -862,7 +865,7 @@ def _add_scalar_array_to_vtk_field_data(
     :param ugrid: an instance of vtkUnstructuredGrid
     :return: None
     """
-    pvlog.debug(f"           {name}...")
+    logger.debug(f"           {name}...")
     point_data: vtkPointData = ugrid.GetPointData()
     num_points = ugrid.GetNumberOfPoints()
     cell_data: vtkCellData = ugrid.GetCellData()
@@ -887,7 +890,7 @@ def _add_aos_scalar_array_to_vtk_field_data(
     :param ugrid: an unstructured grid instance
     :return: None
     """
-    pvlog.debug(f"           {name}...")
+    logger.debug(f"           {name}...")
     if subset_idx >= len(aos_scalar_node):
         return
 
@@ -902,9 +905,9 @@ def _add_aos_scalar_array_to_vtk_field_data(
                         aos_scalar_node[i].values, name, ugrid
                     )
             except IndexError:
-                pvlog.info(f"           no index {i} for subset {subset_idx}...")
+                logger.info(f"           no index {i} for subset {subset_idx}...")
             except AttributeError:
-                pvlog.info(f"           no index {i} for subset {subset_idx}...")
+                logger.info(f"           no index {i} for subset {subset_idx}...")
     else:
         if hasattr(aos_scalar_node[subset_idx], "values") and len(
             aos_scalar_node[subset_idx].values
@@ -925,7 +928,7 @@ def _add_aos_vector_array_to_vtk_field_data(
     :param ugrid: an unstructured grid instance
     :return: None
     """
-    pvlog.debug(f"           {name}...")
+    logger.debug(f"           {name}...")
     if subset_idx >= len(aos_vector_node):
         return
 

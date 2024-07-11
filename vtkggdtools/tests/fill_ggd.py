@@ -1,0 +1,277 @@
+import logging
+
+import imaspy
+import numpy as np
+from imaspy.ids_data_type import IDSDataType
+
+from vtkggdtools.util import create_first_ggd, create_first_grid, int32array
+
+logger = logging.getLogger(__name__)
+
+
+def fill_with_2_by_3_grid(grid_ggd):
+    """Fills the grid_ggd of an IDS with a simple rectangular grid containing 6 vertices,
+    7 edges and 2 faces, arranged in the following manner for a 2x3 grid:
+
+            E5        E6
+        P5---------P4---------P3
+        |          |          |
+    E4  |    F0    |    F1    |E3
+        |          |          |
+        P0---------P1---------P2
+            E0        E1
+
+    Adapted from https://sharepoint.iter.org/departments/POP/CM/IMDesign/Data%20Model/sphinx/3.41/ggd_guide/examples.html # noqa
+
+    Args:
+        grid_ggd: The GGD grid that will be filled with the 2x3 grid.
+
+    Returns:
+        num_vertices: The number of vertices in the generated grid_ggd
+        num_edges: The number of edges in the generated grid_ggd
+        num_faces: The number of faces in the generated grid_ggd
+    """
+    num_vertices = 6
+    num_edges = 7
+    num_faces = 2
+
+    # Set grid
+    grid_ggd.identifier.name = "linear"
+    grid_ggd.identifier.index = 1
+    grid_ggd.identifier.description = (
+        "A simple 2x3 grid consisting of 6 vertices, 7 edges and 2 faces"
+    )
+
+    # Set space
+    grid_ggd.space.resize(1)
+    space = grid_ggd.space[0]
+    space.identifier.name = "primary_standard"
+    space.identifier.index = 1
+    space.identifier.description = "Primary space defining the standard grid"
+    space.geometry_type.index = 0
+    space.coordinates_type = int32array([1, 2])
+
+    space.objects_per_dimension.resize(3)
+    vertices = space.objects_per_dimension[0].object
+    edges = space.objects_per_dimension[1].object
+    face = space.objects_per_dimension[2].object
+
+    # Set Vertices
+    vertices.resize(num_vertices)
+    vertices[0].geometry = [0.0, 0.0]  # P0
+    vertices[1].geometry = [1.0, 0.0]  # P1
+    vertices[2].geometry = [2.0, 0.0]  # P2
+    vertices[3].geometry = [2.0, 1.0]  # P3
+    vertices[4].geometry = [1.0, 1.0]  # P4
+    vertices[5].geometry = [0.0, 1.0]  # P5
+
+    # Set edges
+    edges.resize(num_edges)
+    edges[0].nodes = int32array([1, 2])  # E0 (P0 -> P1)
+    edges[1].nodes = int32array([2, 3])  # E1 (P1 -> P2)
+    edges[2].nodes = int32array([3, 4])  # E2 (P2 -> P3)
+    edges[3].nodes = int32array([4, 5])  # E3 (P3 -> P4)
+    edges[4].nodes = int32array([5, 6])  # E4 (P4 -> P5)
+    edges[5].nodes = int32array([6, 1])  # E5 (P5 -> P0)
+    edges[6].nodes = int32array([2, 5])  # E6 (P1 -> P4)
+
+    # Set faces
+    face.resize(num_faces)
+    face[0].nodes = int32array([1, 2, 5, 6])  # F0 (P0, P1, P4, P5)
+    face[1].nodes = int32array([2, 3, 4, 5])  # F1 (P1, P2, P3, P4)
+
+    # Create subset
+    grid_ggd.grid_subset.resize(3)
+    grid_subsets = grid_ggd.grid_subset
+    grid_subsets[0].dimension = 1
+    grid_subsets[0].identifier.name = "vertices"
+    grid_subsets[0].identifier.index = 1
+    grid_subsets[0].identifier.description = "All vertices in the domain"
+
+    grid_subsets[1].dimension = 2
+    grid_subsets[1].identifier.name = "edges"
+    grid_subsets[1].identifier.index = 2
+    grid_subsets[1].identifier.description = "All edges in the domain"
+
+    grid_subsets[2].dimension = 3
+    grid_subsets[2].identifier.name = "faces"
+    grid_subsets[2].identifier.index = 5
+    grid_subsets[2].identifier.description = "All faces in the domain"
+
+    # Create elements for vertices
+    grid_subsets[0].element.resize(num_vertices)
+    for i, element in enumerate(grid_subsets[0].element):
+        element.object.resize(1)
+        element.object[0].space = 1
+        element.object[0].dimension = 1
+        element.object[0].index = i + 1
+
+    # Create elements for edges
+    grid_subsets[1].element.resize(num_edges)
+    for i, element in enumerate(grid_subsets[1].element):
+        element.object.resize(1)
+        element.object[0].space = 1
+        element.object[0].dimension = 2
+        element.object[0].index = i + 1
+
+    # Create elements for faces
+    grid_subsets[2].element.resize(num_faces)
+    for i, element in enumerate(grid_subsets[2].element):
+        element.object.resize(1)
+        element.object[0].space = 1
+        element.object[0].dimension = 3
+        element.object[0].index = i + 1
+
+    return num_vertices, num_edges, num_faces
+
+
+def fill_vector_quantity(vector_quantity, num_vertices, num_edges, num_faces):
+    """Fills vector quantity with with random data for each vertex, edge and face.
+    Only the radial, poloidal and toroidal components of the vector quantity are filled.
+
+    Args:
+        scalar_quantity: The vector quantity to be filled
+        num_vertices: The number of vertices in the grid_ggd
+        num_edges: The number of edges in the grid_ggd
+        num_faces: The number of faces in the grid_ggd
+    """
+    # Allocate memory for 3 entries: vertices, edges and faces
+    vector_quantity.resize(3)
+
+    # Fill values for vertices
+    vector_quantity[0].grid_index = 1
+    vector_quantity[0].grid_subset_index = 1
+    vector_quantity[0].radial = np.random.rand(num_vertices)
+    vector_quantity[0].poloidal = np.random.rand(num_vertices)
+    vector_quantity[0].toroidal = np.random.rand(num_vertices)
+
+    # Fill values for edges
+    vector_quantity[1].grid_index = 1
+    vector_quantity[1].grid_subset_index = 2
+    vector_quantity[1].radial = np.random.rand(num_edges)
+    vector_quantity[1].poloidal = np.random.rand(num_edges)
+    vector_quantity[1].toroidal = np.random.rand(num_edges)
+
+    # Fill values for faces
+    vector_quantity[2].grid_index = 1
+    vector_quantity[2].grid_subset_index = 5
+    vector_quantity[2].radial = np.random.rand(num_faces)
+    vector_quantity[2].poloidal = np.random.rand(num_faces)
+    vector_quantity[2].toroidal = np.random.rand(num_faces)
+
+
+def fill_scalar_quantity(scalar_quantity, num_vertices, num_edges, num_faces):
+    """Fills scalar quantity with random data for each vertex, edge and face.
+
+    Args:
+        scalar_quantity: The scalar quantity to be filled
+        num_vertices: The number of vertices in the grid_ggd
+        num_edges: The number of edges in the grid_ggd
+        num_faces: The number of faces in the grid_ggd
+    """
+    # Allocate memory for 3 entries: vertices, edges and faces
+    scalar_quantity.resize(3)
+
+    # Set 6 vertices
+    scalar_quantity[0].grid_index = 1
+    scalar_quantity[0].grid_subset_index = 1
+    scalar_quantity[0].values = np.random.rand(num_vertices)
+
+    # Set 7 edges
+    scalar_quantity[1].grid_index = 1
+    scalar_quantity[1].grid_subset_index = 2
+    scalar_quantity[1].values = np.random.rand(num_edges)
+
+    # Set 2 faces
+    scalar_quantity[2].grid_index = 1
+    scalar_quantity[2].grid_subset_index = 5
+    scalar_quantity[2].values = np.random.rand(num_faces)
+
+
+def fill_structure(quantity, num_vertices, num_edges, num_faces):
+    """Recursively fills an IDS structure with random values.
+
+    Args:
+        quantity: Node belonging to an IDS
+        num_vertices: The number of vertices in the grid_ggd
+        num_edges: The number of edges in the grid_ggd
+        num_faces: The number of faces in the grid_ggd
+    """
+
+    for subquantity in quantity:
+        # Skip filling subquantity if it already has a value
+        if subquantity.has_value:
+            continue
+
+        metadata = subquantity.metadata
+
+        # If subquantity is a struct array
+        if metadata.data_type == IDSDataType.STRUCT_ARRAY:
+
+            # Fill scalar quantity
+            if metadata.structure_reference == "generic_grid_scalar":
+                fill_scalar_quantity(subquantity, num_vertices, num_edges, num_faces)
+
+            # Fill vector quantity
+            elif metadata.structure_reference == "generic_grid_vector_components":
+                fill_vector_quantity(subquantity, num_vertices, num_edges, num_faces)
+
+            # Recursively fill struct array
+            else:
+                subquantity.resize(1)
+                fill_structure(subquantity[0], num_vertices, num_edges, num_faces)
+
+        # If subquantity is a structure
+        elif metadata.data_type == IDSDataType.STRUCTURE:
+
+            # Recursively fill structure
+            fill_structure(subquantity, num_vertices, num_edges, num_faces)
+
+
+def fill_ggd(ggd, num_vertices, num_edges, num_faces):
+    """Fills all generic grid scalar and generic grid vector components of a GGD
+    with random values.
+
+    Args:
+        ggd: The GGD that will be filled
+        num_vertices: The number of vertices in the grid_ggd
+        num_edges: The number of edges in the grid_ggd
+        num_faces: The number of faces in the grid_ggd
+    """
+
+    # Fill IDS structure with random values
+    fill_structure(ggd, num_vertices, num_edges, num_faces)
+
+
+def fill_ids(ids):
+    """Fills the GGD and grid_ggd for the given IDS.
+
+    Args:
+        ids: IDS that will be filled
+    """
+
+    # Create an empty grid_ggd
+    grid_ggd = create_first_grid(ids)
+
+    # Skip filling grid_ggd if it does not exist
+    if grid_ggd is None:
+        logger.debug(f"{ids.metadata.name} has no grid_ggd")
+    else:
+        # Create time step
+        ids.time.resize(1)
+        ids.ids_properties.homogeneous_time = imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
+
+        # Fill GGD grid with a simple 2x3 grid
+        num_vertices, num_edges, num_faces = fill_with_2_by_3_grid(grid_ggd)
+        logger.debug(f"filled grid_ggd for {ids.metadata.name}")
+
+    # Create an empty GGD
+    ggd = create_first_ggd(ids)
+
+    # Skip filling GGD if it does not exist
+    if ggd is None:
+        logger.debug(f"{ids.metadata.name} has no ggd")
+    else:
+        # Fill the GGD with random values
+        fill_ggd(ggd, num_vertices, num_edges, num_faces)
+        logger.debug(f"filled ggd for {ids.metadata.name}")

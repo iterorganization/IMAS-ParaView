@@ -4,9 +4,9 @@ These methods copy contents from the grid_ggd/space and grid_ggd/grid_subset
 children into distinct vtkUnstructuredGrid objects.
 """
 
+import logging
 from typing import Any, Callable
 
-from paraview import logger as pvlog
 from vtkmodules.vtkCommonCore import vtkIdList, vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     VTK_EMPTY_CELL,
@@ -19,6 +19,8 @@ from vtkmodules.vtkCommonDataModel import (
     VTK_VERTEX,
     vtkUnstructuredGrid,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def convert_grid_subset_geometry_to_unstructured_grid(
@@ -53,7 +55,7 @@ def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints, ids_name: str) 
     :return: None
     """
     num_objects0d = len(grid_ggd.space[space_idx].objects_per_dimension[0].object)
-    pvlog.info(f"Reading {num_objects0d} points from grid_ggd/space[{space_idx}]")
+    logger.info(f"Reading {num_objects0d} points from grid_ggd/space[{space_idx}]")
 
     s = 1  # scale objects from mm to m
     if grid_ggd.space[space_idx].objects_per_dimension[0].object[0].geometry[0] > 100:
@@ -126,9 +128,9 @@ def _fill_vtk_cell_array_from_gs(
     num_gs_el = len(grid_subset.element)
 
     if hasattr(grid_subset, "identifier"):
-        pvlog.info(f"Reading {num_gs_el} elements from {grid_subset.identifier.name}")
+        logger.info(f"Reading {num_gs_el} elements from {grid_subset.identifier.name}")
     else:
-        pvlog.info(
+        logger.info(
             f"Reading {num_gs_el} elements from grid_ggd/grid_subset[{subset_idx}]"
         )
 

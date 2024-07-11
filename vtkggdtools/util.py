@@ -1,5 +1,15 @@
 from typing import Optional
 
+import numpy as np
+
+
+class FauxIndexMap:
+    def __getitem__(self, item):
+        return 0
+
+    def get(self, name, default=None):
+        return 0
+
 
 def format_units(node) -> str:
     """Return the unit of the node surrounded by square brackets."""
@@ -13,6 +23,14 @@ def iter_metadata_tree(meta):
 
 
 def get_ggd_grid_path(ids_metadata) -> Optional[str]:
+    """Finds the path of the GGD grid node within IDS metadata.
+
+    Args:
+        ids_metadata: The metadata of an IDS.
+
+    Returns:
+        The path string of the GGD grid node, or None if not found.
+    """
     # Find the DD node defining the GGD grid:
     for node in iter_metadata_tree(ids_metadata):
         structure_reference = getattr(node, "structure_reference", None)
@@ -22,7 +40,33 @@ def get_ggd_grid_path(ids_metadata) -> Optional[str]:
     return None  # There are no GGD grids inside this IDS
 
 
+def get_ggd_path(ids_metadata) -> Optional[str]:
+    """Finds the path of the GGD node within IDS metadata.
+
+    Args:
+        ids_metadata: The metadata of an IDS.
+
+    Returns:
+        The path string of the GGD node, or None if not found.
+    """
+    for node in iter_metadata_tree(ids_metadata):
+        metadata_name = getattr(node, "name", None)
+
+        # Check for ggd in name metadata
+        if metadata_name == "ggd":
+            return node.path_string
+    return None
+
+
 def get_first_grid(ids):
+    """Finds and returns the first grid_ggd within IDS.
+
+    Args:
+        ids: The IDS for which to return the first grid_gdd.
+
+    Returns:
+        The first grid_ggd node found, or None if not found.
+    """
     grid_path = get_ggd_grid_path(ids.metadata)
     if grid_path is None:
         return None
@@ -32,13 +76,21 @@ def get_first_grid(ids):
         node = node[path]
         try:
             node = node[0]  # get first element of AoS
-        except LookupError:
+        except (LookupError, ValueError):
             pass  # apparently this was not an AoS :)
 
     return node
 
 
 def create_first_grid(ids):
+    """Creates and returns the first grid_ggd within IDS.
+
+    Args:
+        ids: The IDS for which to create and return the first grid_gdd.
+
+    Returns:
+        The created first grid_gdd, or None if grid_path is None.
+    """
     grid_path = get_ggd_grid_path(ids.metadata)
     if grid_path is None:
         return None
@@ -54,3 +106,44 @@ def create_first_grid(ids):
             pass  # This was a structure and not an AoS
 
     return node
+
+
+def create_first_ggd(ids):
+    """Creates and returns the first GGD within IDS.
+
+    Args:
+        ids: The IDS for which to create and return the first GGD.
+
+    Returns:
+        The created first GGD, or None if ggd_path is None.
+    """
+    ggd_path = get_ggd_path(ids.metadata)
+    if ggd_path is None:
+        return None
+
+    node = ids
+    for path in ggd_path.split("/"):
+        node = node[path]
+        try:
+            if len(node) == 0:
+                node.resize(1)
+                node = node[0]
+            # Node was already resized
+            elif len(node) == 1:
+                node = node[0]
+        except TypeError:
+            pass  # This was a structure and not an AoS
+
+    return node
+
+
+def int32array(int_list):
+    """Converts a list of ints to a numpy array containing values of type int32.
+
+    Args:
+        int_list: List of int64s to be converted
+
+    Returns:
+        List of converted int32s
+    """
+    return np.array(int_list, dtype=np.int32)
