@@ -1,6 +1,7 @@
 """Helper functions for generating paraview ServerManager XMLs for the plugins.
 """
 
+import functools
 from typing import List
 
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty
@@ -36,3 +37,31 @@ def genericdecorator(**kwargs):
     """
     args = " ".join(f'{key}="{value}"' for key, value in kwargs.items())
     return smhint.xml(f'<PropertyWidgetDecorator type="GenericDecorator" {args}/>')
+
+
+def add_docstring(func):
+    """Convenience decorator to add a Documentation XML node filled with the docstring
+    of the property.
+    """
+    # Abuse smdomain.xml, which inserts the XML element in the correct location...
+    doc = func.__doc__
+    if doc:
+        return smdomain.xml(f"<Documentation>{doc}</Documentation>")(func)
+    return func
+
+
+def _propertywrapper(property, *args, **kwargs):
+    """Helper function to chain smproperty.<property> and add_docstring."""
+
+    def decorator(func):
+        return property(*args, **kwargs)(add_docstring(func))
+
+    return decorator
+
+
+intvector = functools.partial(_propertywrapper, smproperty.intvector)
+"""Convenience decorator that wraps `smproperty.intvector` and `add_docstring`."""
+stringvector = functools.partial(_propertywrapper, smproperty.stringvector)
+"""Convenience decorator that wraps `smproperty.stringvector` and `add_docstring`."""
+doublevector = functools.partial(_propertywrapper, smproperty.doublevector)
+"""Convenience decorator that wraps `smproperty.doublevector` and `add_docstring`."""

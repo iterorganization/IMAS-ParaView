@@ -29,9 +29,12 @@ from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
 from vtkggdtools.io import read_bezier, read_geom, read_ps, write_geom, write_ps
 from vtkggdtools.io.representables import GridSubsetRepresentable
 from vtkggdtools.paraview_support.servermanager_tools import (
+    doublevector,
     enumeration,
     genericdecorator,
+    intvector,
     propertygroup,
+    stringvector,
 )
 from vtkggdtools.util import FauxIndexMap, create_first_grid, get_first_grid
 
@@ -135,17 +138,20 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     # Properties for setting the URI
     ####################################################################################
 
-    @smproperty.intvector(name="URISelection", label="", default_values="1")
+    @intvector(name="URISelection", label="", default_values="1")
     @enumeration("enum", {"Enter URI": 1, "Select file": 2, "Enter pulse, run, ..": 3})
     def P00_URISelectionMode(self, mode):
+        """Select mode for locating the data entry: manually enter the URI, select a
+        local HDF5/MDSplus file, or enter 'legacy' parameters."""
         self._update_property("_uri_selection_mode", mode, self._calculate_uri)
 
-    @smproperty.stringvector(name="Enter URI", default_values="")
+    @stringvector(name="Enter URI", default_values="")
     @genericdecorator(mode="visibility", property="URISelection", value="1")
     def P01_SetURI(self, uri):
+        """The IMAS URI for the Data Entry to load."""
         self._update_property("_uri_input", uri, self._calculate_uri)
 
-    @smproperty.stringvector(name="URI from file", default_values="")
+    @stringvector(name="URI from file", default_values="")
     @smdomain.filelist()
     @smhint.filechooser(
         extensions=["h5", "datafile"],
@@ -153,44 +159,50 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     )
     @genericdecorator(mode="visibility", property="URISelection", value="2")
     def P02_SetURIFromFileName(self, file):
+        """Select a local file from the HDF5 or MDSplus backend."""
         self._update_property("_uri_path", file, self._calculate_uri)
 
-    @smproperty.intvector(name="Backend", default_values=DEFAULT_BACKEND)
+    @intvector(name="Backend", default_values=DEFAULT_BACKEND)
     @enumeration("backend", BACKENDS)
     @genericdecorator(mode="visibility", property="URISelection", value="3")
     def P03_SetBackend(self, backend):
+        """Select the IMAS backend that stores the data."""
         self._update_property("_uri_backend", backend, self._calculate_uri)
 
-    @smproperty.stringvector(name="Database", default_values="")
+    @stringvector(name="Database", default_values="")
     @genericdecorator(mode="visibility", property="URISelection", value="3")
     def P04_SetDatabase(self, database):
+        """Enter the Database name where the data is stored."""
         self._update_property("_uri_database", database, self._calculate_uri)
 
-    @smproperty.intvector(name="Pulse", default_values="0")
+    @intvector(name="Pulse", default_values="0")
     @genericdecorator(mode="visibility", property="URISelection", value="3")
     def P05_SetPulse(self, pulse):
+        """Pulse number."""
         self._update_property("_uri_pulse", pulse, self._calculate_uri)
 
-    @smproperty.intvector(name="Run", default_values="0")
+    @intvector(name="Run", default_values="0")
     @genericdecorator(mode="visibility", property="URISelection", value="3")
     def P06_SetRun(self, run):
+        """Run number."""
         self._update_property("_uri_run", run, self._calculate_uri)
 
-    @smproperty.stringvector(name="User", default_values=getpass.getuser())
+    @stringvector(name="User", default_values=getpass.getuser())
     @genericdecorator(mode="visibility", property="URISelection", value="3")
     def P07_SetUser(self, user):
+        """User name for the IMAS database."""
         self._update_property("_uri_user", user, self._calculate_uri)
 
-    @smproperty.stringvector(name="Version", default_values="3")
+    @stringvector(name="Version", default_values="3")
     @genericdecorator(mode="visibility", property="URISelection", value="3")
     def P08_SetVersion(self, version):
+        """Major version of the DD used to store the data."""
         self._update_property("_uri_version", version, self._calculate_uri)
 
-    @smproperty.stringvector(
-        name="Status", information_only=1, panel_visibility="default"
-    )
+    @stringvector(name="Status", information_only=1, panel_visibility="default")
     @smhint.xml('<Widget type="one_liner_wrapped" />')
     def P09_GetURIStatus(self):
+        """Status information related to the URI."""
         if not self._uri:
             return "No URI selected, press Apply to set URI."
         if self._uri_error:
@@ -204,22 +216,24 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         """Helper callback to clear any loaded IDS when idsname/occurrence change."""
         self._ids = None
 
-    @smproperty.stringvector(name="IDS", default_values="")
+    @stringvector(name="IDS", default_values="")
     def P10_SetIDS(self, idsname):
+        """IDS name to load, for example 'edge_profiles'."""
         self._update_property("_idsname", idsname, self._clear_ids)
 
-    @smproperty.intvector(name="Occurrence", default_values=0)
+    @intvector(name="Occurrence", default_values=0)
     def P11_SetOccurrence(self, occurrence):
+        """Which occurrence of the IDS to load, use '0' for the default occurrence."""
         self._update_property("_occurrence", occurrence, self._clear_ids)
 
     # Properties for Bezier interpolation
     ####################################################################################
 
-    @smproperty.intvector(name="N plane", default_values=0)
+    @intvector(name="N plane", default_values=0)
     def P20_SetNPlane(self, val):
         self._update_property("_n_plane", val)
 
-    @smproperty.doublevector(name="Phi range", default_values=[0, 0])
+    @doublevector(name="Phi range", default_values=[0, 0])
     @smdomain.doublerange(min=0, max=360.0)
     def P21_SetPhiRange(self, val, val2):
         self._update_property("_phi_start", val)
@@ -253,6 +267,9 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     @propertygroup("Bezier interpolation settings", ["N plane", "Phi range"])
     def PG2_BezierGroup(self):
         """Dummy function to define a PropertyGroup."""
+
+    # Implement VTK algorithm
+    ####################################################################################
 
     def FillOutputPortInformation(self, port, info):
         info.Set(vtkDataObject.DATA_TYPE_NAME(), "vtkPartitionedDataSetCollection")
