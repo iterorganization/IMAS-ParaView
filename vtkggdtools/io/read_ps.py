@@ -17,6 +17,22 @@ u_pre = vtkggdtools.imashelper.u_pre
 u_post = vtkggdtools.imashelper.u_post
 
 
+SUPPORTED_IDS_NAMES = [
+    "distribution_sources",
+    "distributions",
+    "edge_profiles",
+    "edge_sources",
+    "edge_transport",
+    "equilibrium",
+    "mhd",
+    "radiation",
+    "tf",
+    "transport_solver_numerics",
+    "wall",
+    "waves",
+]
+
+
 def read_plasma_state(
     ids_name: str,
     ids_obj,

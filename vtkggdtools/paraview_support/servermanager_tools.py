@@ -39,6 +39,21 @@ def genericdecorator(**kwargs):
     return smhint.xml(f'<PropertyWidgetDecorator type="GenericDecorator" {args}/>')
 
 
+def stringlistdomain(property_name, **kwargs):
+    """Convenience decorator to add a StringListDomain to a property.
+
+    Args:
+        property_name: Name of the StringList property with allowed values.
+        kwargs: Additional keyword arguments to add as xml attributes to the domain.
+    """
+    args = " ".join(f'{key}="{value}"' for key, value in kwargs.items())
+    return smdomain.xml(
+        f"<StringListDomain {args}><RequiredProperties>"
+        f'<Property name="{property_name}" function="StringInfo" />'
+        "</RequiredProperties></StringListDomain>"
+    )
+
+
 def add_docstring(func):
     """Convenience decorator to add a Documentation XML node filled with the docstring
     of the property.

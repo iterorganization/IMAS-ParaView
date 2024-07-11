@@ -34,6 +34,7 @@ from vtkggdtools.paraview_support.servermanager_tools import (
     genericdecorator,
     intvector,
     propertygroup,
+    stringlistdomain,
     stringvector,
 )
 from vtkggdtools.util import FauxIndexMap, create_first_grid, get_first_grid
@@ -68,8 +69,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         self._uri_user = "public"
         self._uri_version = "3"
         # IDS properties
-        self._idsname = ""
-        self._occurrence = 0
+        self._ids_and_occurrence = ""
         # Bezier interpolation properties
         self._n_plane = 0
         self._phi_start = 0
@@ -81,6 +81,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # Data caches
         self._dbentry = None
+        self._ids_list = []
         self._ids = None
 
     def _update_property(self, name, value, callback=None):
@@ -91,7 +92,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                 callback()
             self.Modified()
 
-    def _calculate_uri(self):
+    def _calculate_uri(self) -> None:
         """Determine the IMAS URI from user input."""
         if self._uri_selection_mode == 1:
             # Use URI provided by user:
@@ -126,7 +127,17 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                     self._dbentry = imaspy.DBEntry(self._uri, "r")
                 except Exception as exc:
                     self._uri_error = str(exc)
+            self._update_ids_list()
             self.Modified()
+
+    def _update_ids_list(self) -> None:
+        """Update the list of available IDSs in the selected Data Entry."""
+        self._ids_list = []
+        if self._dbentry is not None:
+            for ids_name in read_ps.SUPPORTED_IDS_NAMES:
+                for occurrence in self._dbentry.list_all_occurrences(ids_name):
+                    val = ids_name if occurrence == 0 else f"{ids_name}/{occurrence}"
+                    self._ids_list.append(val)
 
     # Note on property names:
     # - Properties are sorted in the GUI by name of the function in paraview < 5.13
@@ -207,7 +218,10 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             return "No URI selected, press Apply to set URI."
         if self._uri_error:
             return f'Could not open URI "{self._uri}":\n{self._uri_error}'
-        return f'Successfully opened URI "{self._uri}"'
+        return (
+            f'Successfully opened URI "{self._uri}".\n'
+            f"This Data Entry contains {len(self._ids_list)} supported IDSs."
+        )
 
     # Properties for setting the IDS name and occurrence
     ####################################################################################
@@ -216,15 +230,23 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         """Helper callback to clear any loaded IDS when idsname/occurrence change."""
         self._ids = None
 
-    @stringvector(name="IDS", default_values="")
-    def P10_SetIDS(self, idsname):
-        """IDS name to load, for example 'edge_profiles'."""
-        self._update_property("_idsname", idsname, self._clear_ids)
+    @stringvector(name="IDSAndOccurrence", label="IDS/Occurrence")
+    @stringlistdomain("IDSList", name="ids_list", none_string="&lt;Select IDS&gt;")
+    def P10_SetIDSAndOccurrence(self, value):
+        """Select the IDS/occurrence to load.
 
-    @intvector(name="Occurrence", default_values=0)
-    def P11_SetOccurrence(self, occurrence):
-        """Which occurrence of the IDS to load, use '0' for the default occurrence."""
-        self._update_property("_occurrence", occurrence, self._clear_ids)
+        The dropdown is disabled when no Data Entry has been loaded (press Apply after
+        selecting a URI to load the Data Entry), or when the loaded Data Entry contains
+        no IDSs supported by this plugin.
+        """
+        if value not in self._ids_list:
+            value = ""
+        self._update_property("_ids_and_occurrence", value, self._clear_ids)
+
+    @stringvector(name="IDSList", information_only=1)
+    def P11_GetIDSList(self):
+        """Return a list of IDSs with data inside the selected Data Entry."""
+        return self._ids_list
 
     # Properties for Bezier interpolation
     ####################################################################################
@@ -260,7 +282,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     def PG0_DataEntryGroup(self):
         """Dummy function to define a PropertyGroup."""
 
-    @propertygroup("Select IDS", ["IDS", "Occurrence"])
+    @propertygroup("Select IDS", ["IDSAndOccurrence", "IDSList"])
     def PG1_IDSGroup(self):
         """Dummy function to define a PropertyGroup."""
 
@@ -285,22 +307,24 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
     def _ensure_ids(self):
         if self._ids is None:
+            idsname, _, occurrence = self._ids_and_occurrence.partition("/")
+            occurrence = int(occurrence or 0)
             # TODO: enable lazy loading
-            logger.info("Loading IDS %s/%d ...", self._idsname, self._occurrence)
+            logger.info("Loading IDS %s/%d ...", idsname, occurrence)
             lazy = False  # TODO: Test lazy loading before enabling
             try:
                 ids = self._dbentry.get(
-                    self._idsname, self._occurrence, autoconvert=False, lazy=lazy
+                    idsname, occurrence, autoconvert=False, lazy=lazy
                 )
             except UnknownDDVersion:
                 # Apparently IMASPy doesn't know the DD version that this IDS was
                 # written with. Use the default DD version instead:
-                ids = self._dbentry.get(self._idsname, self._occurrence, lazy=lazy)
+                ids = self._dbentry.get(idsname, occurrence, lazy=lazy)
             self._ids = ids
             logger.info("Done loading IDS.")
 
     def RequestData(self, request, inInfo, outInfo):
-        if self._dbentry is None or not self._idsname:
+        if self._dbentry is None or not self._ids_and_occurrence:
             return 1
         self._ensure_ids()
 
@@ -318,8 +342,9 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         num_subsets = len(grid_ggd.grid_subset)
         points = vtkPoints()
         space_idx = 0
+        idsname = self._ids.metadata.name
 
-        read_geom.fill_vtk_points(grid_ggd, space_idx, points, self._idsname)
+        read_geom.fill_vtk_points(grid_ggd, space_idx, points, idsname)
         assembly = vtkDataAssembly()
         output.SetDataAssembly(assembly)
 
@@ -334,7 +359,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                         f"Reading Bezier mesh with Fourier periodiciy {n_period}"
                     )
                     ugrid = read_bezier.convert_grid_subset_to_unstructured_grid(
-                        self._idsname,
+                        idsname,
                         self._ids,
                         _aos_index_values,
                         self._n_plane,
@@ -342,9 +367,9 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                         self._phi_end,
                     )
                     output.SetPartition(0, 0, ugrid)
-                    child = assembly.AddNode(self._idsname, 0)
+                    child = assembly.AddNode(idsname, 0)
                     assembly.AddDataSetIndex(child, 0)
-                    output.GetMetaData(0).Set(vtkCompositeDataSet.NAME(), self._idsname)
+                    output.GetMetaData(0).Set(vtkCompositeDataSet.NAME(), idsname)
                 else:
                     logger.error(
                         f"Number of planes {self._n_plane} invalid for this "
@@ -363,10 +388,10 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                 grid_ggd, subset_idx, points
             )
             read_ps.read_plasma_state(
-                self._idsname, self._ids, _aos_index_values, subset_idx, ugrid
+                idsname, self._ids, _aos_index_values, subset_idx, ugrid
             )
             output.SetPartition(partition, 0, ugrid)
-            label = str(subset.identifier.name) if subset else self._idsname
+            label = str(subset.identifier.name) if subset else idsname
             child = assembly.AddNode(label.replace(" ", "_"), 0)
             assembly.AddDataSetIndex(child, partition)
             output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
@@ -376,7 +401,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             logger.info("No subsets to read from grid_ggd")
             output.SetNumberOfPartitionedDataSets(1)
             fill_grid_and_plasma_state(-1, 0)
-        elif self._idsname == "wall":
+        elif idsname == "wall":
             # FIXME: what if num_subsets is 2 or 3?
             output.SetNumberOfPartitionedDataSets(num_subsets - 3)
             fill_grid_and_plasma_state(-1, 0)
