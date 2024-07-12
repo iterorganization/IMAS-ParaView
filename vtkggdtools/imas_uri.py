@@ -11,6 +11,7 @@ BACKENDS = {
     imaspy.ids_defs.HDF5_BACKEND: "hdf5",
     imaspy.ids_defs.ASCII_BACKEND: "ascii",
 }
+"""Mapping of backend ID to the backend string used in the URI."""
 
 
 def uri_from_path(path: Optional[str]) -> Optional[str]:
@@ -32,6 +33,8 @@ def uri_from_path(path: Optional[str]) -> Optional[str]:
             uri = f"imas:hdf5?path={path.parent}"
         elif path.suffix in [".characteristics", ".datafile", ".tree"]:
             uri = f"imas:mdsplus?path={path.parent}"
+        elif path.suffix == ".ids":
+            uri = f"imas:ascii?path={path.parent}"
     return uri
 
 
@@ -46,7 +49,7 @@ def uri_from_pulse_run(
         pulse: Pulse number of the database entry
         run: Run number of the database entry
         user: User name of the database
-        data_version: Major version of the DD used by the the access layer
+        version: Major version of the DD used by the the access layer
 
     Returns:
         An IMAS URI pointing to the data entry, or None if no valid URI could be

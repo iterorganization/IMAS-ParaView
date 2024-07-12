@@ -23,7 +23,7 @@ def enumeration(name: str, entries: dict):
 
     Args:
         name: Name of the EnumerationDomain
-        kwargs: Key/value pairs to use as entries in the domain
+        entries: Key/value pairs to use as entries in the domain
     """
     vals = "".join(f'<Entry text="{k}" value="{v}" />' for k, v in entries.items())
     return smdomain.xml(f'<EnumerationDomain name="{name}">{vals}</EnumerationDomain>')

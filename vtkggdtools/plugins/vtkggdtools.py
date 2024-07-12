@@ -44,7 +44,9 @@ BACKENDS = {
     "HDF5": imaspy.ids_defs.HDF5_BACKEND,
     "ASCII": imaspy.ids_defs.ASCII_BACKEND,
 }
+"""Mapping of UI labels for each backend and their ID, used for the Backend dropdown."""
 DEFAULT_BACKEND = imaspy.ids_defs.MDSPLUS_BACKEND
+"""Default backend selected in the UI."""
 
 
 @smproxy.source(label="IMASPy GGDReader")
@@ -62,7 +64,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         self._uri_selection_mode = 1
         self._uri_input = ""
         self._uri_path = ""
-        self._uri_backend = imaspy.ids_defs.MDSPLUS_BACKEND
+        self._uri_backend = DEFAULT_BACKEND
         self._uri_pulse = 0
         self._uri_run = 0
         self._uri_database = "ITER"
