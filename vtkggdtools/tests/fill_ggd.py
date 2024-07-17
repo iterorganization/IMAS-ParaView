@@ -188,6 +188,48 @@ def fill_scalar_quantity(scalar_quantity, num_vertices, num_edges, num_faces):
     scalar_quantity[2].values = np.random.rand(num_faces)
 
 
+def _generate_random_complex(num_entries):
+    """Generates a list of random complex numbers.
+
+    Args:
+        num_entries: The length of the returned list
+
+    Returns:
+        a list of random complex numbers
+    """
+    return [np.random.rand() + 1j * np.random.rand() for _ in range(num_entries)]
+
+
+def fill_complex_scalar_quantity(
+    complex_scalar_quantity, num_vertices, num_edges, num_faces
+):
+    """Fills complex scalar quantity with random data for each vertex, edge and face.
+
+    Args:
+        complex_scalar_quantity: The scalar quantity to be filled
+        num_vertices: The number of vertices in the grid_ggd
+        num_edges: The number of edges in the grid_ggd
+        num_faces: The number of faces in the grid_ggd
+    """
+    # Allocate memory for 3 entries: vertices, edges and faces
+    complex_scalar_quantity.resize(3)
+
+    # Set 6 vertices
+    complex_scalar_quantity[0].grid_index = 1
+    complex_scalar_quantity[0].grid_subset_index = 1
+    complex_scalar_quantity[0].values = _generate_random_complex(num_vertices)
+
+    # Set 7 edges
+    complex_scalar_quantity[1].grid_index = 1
+    complex_scalar_quantity[1].grid_subset_index = 2
+    complex_scalar_quantity[1].values = _generate_random_complex(num_edges)
+
+    # Set 2 faces
+    complex_scalar_quantity[2].grid_index = 1
+    complex_scalar_quantity[2].grid_subset_index = 5
+    complex_scalar_quantity[2].values = _generate_random_complex(num_faces)
+
+
 def fill_structure(quantity, num_vertices, num_edges, num_faces):
     """Recursively fills an IDS structure with random values.
 
@@ -211,6 +253,11 @@ def fill_structure(quantity, num_vertices, num_edges, num_faces):
             # Fill scalar quantity
             if metadata.structure_reference == "generic_grid_scalar":
                 fill_scalar_quantity(subquantity, num_vertices, num_edges, num_faces)
+
+            elif metadata.structure_reference == "generic_grid_scalar_complex":
+                fill_complex_scalar_quantity(
+                    subquantity, num_vertices, num_edges, num_faces
+                )
 
             # Fill vector quantity
             elif metadata.structure_reference == "generic_grid_vector_components":
@@ -270,7 +317,22 @@ def fill_ids(ids):
 
     # Skip filling GGD if it does not exist
     if ggd is None:
-        logger.debug(f"{ids.metadata.name} has no ggd")
+
+        # The tf and waves IDSs do not have GGDs, but they do have scalar and vector
+        # arrays that are read by read_ps, so fill them manually
+        if ids.metadata.name == "tf":
+            # /tf/field_map(itime)/ has arrays that can be filled
+            structure_to_fill = ids.field_map[0]
+            fill_ggd(structure_to_fill, num_vertices, num_edges, num_faces)
+            logger.debug(f"filled {structure_to_fill} for {ids.metadata.name}")
+
+        elif ids.metadata.name == "waves":
+            # /waves/coherent_wave(i1)/full_wave(itime)/ has arrays that can be filled
+            structure_to_fill = ids.coherent_wave[0].full_wave[0]
+            fill_ggd(structure_to_fill, num_vertices, num_edges, num_faces)
+            logger.debug(f"filled {structure_to_fill} for {ids.metadata.name}")
+        else:
+            logger.debug(f"{ids.metadata.name} has no ggd")
     else:
         # Fill the GGD with random values
         fill_ggd(ggd, num_vertices, num_edges, num_faces)
