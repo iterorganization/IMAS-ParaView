@@ -249,8 +249,6 @@ def read_edge_profiles(
         node = getattr(ggd.electrons, q_name)
         if use_units:
             name += f" {format_units(node)}"
-        print(name)
-        print(node)
         _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
     # vector array:
     name = f"Electron Velocity {format_units(ggd.electrons.velocity)}"
