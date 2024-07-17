@@ -1,12 +1,13 @@
 import logging
 
 import numpy as np
+from imaspy.ids_data_type import IDSDataType
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
 
 # We'll need these below when we create some units manually:
-from vtkggdtools.util import format_units
+from vtkggdtools.util import format_units, get_ggd_path
 
 logger = logging.getLogger(__name__)
 
@@ -34,44 +35,144 @@ def read_plasma_state(
     :param ugrid: the unstructured grid instance.
     :return: None
     """
-    if ids_name == "distribution_sources":
-        read_distribution_sources(ids_obj, aos_index_values, subset_idx, ugrid)
 
-    elif ids_name == "distributions":
-        read_distributions(ids_obj, aos_index_values, subset_idx, ugrid)
+    read_ids(ids_obj, aos_index_values, subset_idx, ugrid)
 
-    elif ids_name == "edge_profiles":
-        read_edge_profiles(ids_obj, aos_index_values, subset_idx, ugrid)
+    # if ids_name == "distribution_sources":
+    #     read_distribution_sources(ids_obj, aos_index_values, subset_idx, ugrid)
 
-    elif ids_name == "edge_sources":
-        read_edge_sources(ids_obj, aos_index_values, subset_idx, ugrid)
+    # elif ids_name == "distributions":
+    #     read_distributions(ids_obj, aos_index_values, subset_idx, ugrid)
 
-    elif ids_name == "edge_transport":
-        read_edge_transport(ids_obj, aos_index_values, subset_idx, ugrid)
+    # elif ids_name == "edge_profiles":
+    #     read_edge_profiles(ids_obj, aos_index_values, subset_idx, ugrid)
 
-    elif ids_name == "equilibrium":
-        read_equilibrium(ids_obj, aos_index_values, subset_idx, ugrid)
+    # elif ids_name == "edge_sources":
+    #     read_edge_sources(ids_obj, aos_index_values, subset_idx, ugrid)
 
-    elif ids_name == "mhd":
-        read_mhd(ids_obj, aos_index_values, subset_idx, ugrid)
+    # elif ids_name == "edge_transport":
+    #     read_edge_transport(ids_obj, aos_index_values, subset_idx, ugrid)
 
-    elif ids_name == "radiation":
-        read_radiation(ids_obj, aos_index_values, subset_idx, ugrid)
+    # elif ids_name == "equilibrium":
+    #     read_equilibrium(ids_obj, aos_index_values, subset_idx, ugrid)
 
-    elif ids_name == "tf":
-        read_tf(ids_obj, aos_index_values, subset_idx, ugrid)
+    # elif ids_name == "mhd":
+    #     read_mhd(ids_obj, aos_index_values, subset_idx, ugrid)
 
-    elif ids_name == "transport_solver_numerics":
-        read_transport_solver_numerics(ids_obj, aos_index_values, subset_idx, ugrid)
+    # elif ids_name == "radiation":
+    #     read_radiation(ids_obj, aos_index_values, subset_idx, ugrid)
 
-    elif ids_name == "wall":
-        read_wall(ids_obj, aos_index_values, subset_idx, ugrid)
+    # elif ids_name == "tf":
+    #     read_tf(ids_obj, aos_index_values, subset_idx, ugrid)
 
-    elif ids_name == "waves":
-        read_waves(ids_obj, aos_index_values, subset_idx, ugrid)
+    # elif ids_name == "transport_solver_numerics":
+    #     read_transport_solver_numerics(ids_obj, aos_index_values, subset_idx, ugrid)
 
+    # elif ids_name == "wall":
+    #     read_wall(ids_obj, aos_index_values, subset_idx, ugrid)
+
+    # elif ids_name == "waves":
+    #     read_waves(ids_obj, aos_index_values, subset_idx, ugrid)
+
+    # else:
+    #     logger.warn(f"Reading plasma state from IDS {ids_name} not implemented.")
+
+
+def read_ids(
+    ids, aos_index_values: dict, subset_idx: int, ugrid: vtkUnstructuredGrid
+) -> None:
+    """
+    Reads ids and converts GGD to VTK data
+    """
+    ggd_path = get_ggd_path(ids.metadata)
+
+    # TF and waves do not have GGDs but do have scalar/vector arrays
+    if ggd_path is None:
+        if ids.metadata.name == "tf":
+            ggd = ids.field_map[0]  # FIXME indexing
+        elif ids.metadata.name == "waves":
+            ggd = ids.coherent_wave[0].full_wave[0]  # FIXME indexing
+        else:
+            raise ValueError("Could not find a GGD in provided IDS.")
     else:
-        logger.warn(f"Reading plasma state from IDS {ids_name} not implemented.")
+        ggd_path = ggd_path.replace("/", "[0]/")  # FIXME indexing
+        ggd = ids[ggd_path][0]
+
+    # Retrieve all scalar and vector arrays from GGD
+    scalar_array_list, vector_array_list = _get_arrays_from_ggd(ggd)
+
+    # Read scalar arrays
+    for scalar_array in scalar_array_list:
+        name = _get_name(scalar_array)
+        _add_aos_scalar_array_to_vtk_field_data(scalar_array, subset_idx, name, ugrid)
+
+    # Read vector arrays
+    for vector_array in vector_array_list:
+        name = _get_name(vector_array)
+        _add_aos_vector_array_to_vtk_field_data(vector_array, subset_idx, name, ugrid)
+
+    # TODO: GGD-fast
+
+
+def _get_arrays_from_ggd(ggd):
+    """
+    Returns all scalar and vector arrays belonging to the ggd.
+    """
+    scalar_array_list = []
+    vector_array_list = []
+    _recursive_array_search(ggd, scalar_array_list, vector_array_list)
+    return scalar_array_list, vector_array_list
+
+
+def _recursive_array_search(quantity, scalar_array_list, vector_array_list):
+    """
+    Recursively searches through the IDS quantity for scalar and vector arrays, and
+    appends these to the scalar_array_list and vector_array_list respectively.
+    """
+    for subquantity in quantity:
+        metadata = subquantity.metadata
+        # If subquantity is a struct array
+        if metadata.data_type == IDSDataType.STRUCT_ARRAY:
+            # Get scalar array quantities
+            if metadata.structure_reference == "generic_grid_scalar":
+                scalar_array_list.append(subquantity)
+            # Get scalar array quantities
+            elif metadata.structure_reference == "generic_grid_vector_components":
+                vector_array_list.append(subquantity)
+            # Recursively search
+            else:
+                _recursive_array_search(
+                    subquantity[0], scalar_array_list, vector_array_list
+                )
+
+        # If subquantity is a structure
+        elif metadata.data_type == IDSDataType.STRUCTURE:
+            # Skip "grid" quantity, this can occur if the grid is stored within the GGD
+            # e.g. in distribution_sources distributions IDSs
+            if metadata.name != "grid":
+                _recursive_array_search(
+                    subquantity, scalar_array_list, vector_array_list
+                )
+
+
+def _get_name(array):
+    """
+    Get name and units of quantity and return combined string
+    """
+    quantity_name = _beautify_name(array.metadata.name)
+
+    # TODO: currently all variables are given units, but in the manual read functions
+    # some are skipped. How to deal with this?
+    units = format_units(array)
+
+    return f"{quantity_name} {units}"
+
+
+def _beautify_name(name):
+    """
+    Replaces underscores with spaces and capitalizes the first letter of each word
+    """
+    return " ".join(word.capitalize() for word in name.split("_"))
 
 
 def read_distribution_sources(
@@ -148,6 +249,8 @@ def read_edge_profiles(
         node = getattr(ggd.electrons, q_name)
         if use_units:
             name += f" {format_units(node)}"
+        print(name)
+        print(node)
         _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
     # vector array:
     name = f"Electron Velocity {format_units(ggd.electrons.velocity)}"
