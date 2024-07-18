@@ -130,7 +130,7 @@ def fill_vector_quantity(vector_quantity, num_vertices, num_edges, num_faces):
     Only the radial, poloidal and toroidal components of the vector quantity are filled.
 
     Args:
-        scalar_quantity: The vector quantity to be filled
+        vector_quantity: The vector quantity to be filled
         num_vertices: The number of vertices in the grid_ggd
         num_edges: The number of edges in the grid_ggd
         num_faces: The number of faces in the grid_ggd
@@ -157,6 +157,44 @@ def fill_vector_quantity(vector_quantity, num_vertices, num_edges, num_faces):
     vector_quantity[2].grid_subset_index = 5
     vector_quantity[2].radial = np.random.rand(num_faces)
     vector_quantity[2].poloidal = np.random.rand(num_faces)
+    vector_quantity[2].toroidal = np.random.rand(num_faces)
+
+
+def fill_vector_rzphi_quantity(vector_quantity, num_vertices, num_edges, num_faces):
+    """Fills vector rzphi quantity with with random data for each vertex, edge and face.
+    Only the radial, toroidal and z components of the vector quantity are filled.
+
+    Args:
+        vector_quantity: The vector quantity to be filled
+        num_vertices: The number of vertices in the grid_ggd
+        num_edges: The number of edges in the grid_ggd
+        num_faces: The number of faces in the grid_ggd
+    """
+    # Allocate memory for 3 entries: vertices, edges and faces
+    vector_quantity.resize(3)
+    imaspy.util.inspect(vector_quantity)
+    imaspy.util.inspect(vector_quantity.metadata)
+    imaspy.util.inspect(vector_quantity[0])
+
+    # Fill values for vertices
+    vector_quantity[0].grid_index = 1
+    vector_quantity[0].grid_subset_index = 1
+    vector_quantity[0].r = np.random.rand(num_vertices)
+    vector_quantity[0].z = np.random.rand(num_vertices)
+    vector_quantity[0].toroidal = np.random.rand(num_vertices)
+
+    # Fill values for edges
+    vector_quantity[1].grid_index = 1
+    vector_quantity[1].grid_subset_index = 2
+    vector_quantity[1].r = np.random.rand(num_edges)
+    vector_quantity[1].z = np.random.rand(num_edges)
+    vector_quantity[1].toroidal = np.random.rand(num_edges)
+
+    # Fill values for faces
+    vector_quantity[2].grid_index = 1
+    vector_quantity[2].grid_subset_index = 5
+    vector_quantity[2].r = np.random.rand(num_faces)
+    vector_quantity[2].z = np.random.rand(num_faces)
     vector_quantity[2].toroidal = np.random.rand(num_faces)
 
 
@@ -264,6 +302,11 @@ def fill_structure(quantity, num_vertices, num_edges, num_faces):
             elif metadata.structure_reference == "generic_grid_vector_components":
                 fill_vector_quantity(subquantity, num_vertices, num_edges, num_faces)
 
+            # Fill rzphi-vector quantity
+            elif metadata.structure_reference == "generic_grid_vector_components_rzphi":
+                fill_vector_rzphi_quantity(
+                    subquantity, num_vertices, num_edges, num_faces
+                )
             # Recursively fill struct array
             else:
                 subquantity.resize(1)

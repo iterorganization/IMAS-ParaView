@@ -161,6 +161,9 @@ def _recursive_array_search(quantity, scalar_array_list, vector_array_list):
             # Get vector array quantities
             elif metadata.structure_reference == "generic_grid_vector_components":
                 vector_array_list.append(subquantity)
+            # Get rzphi-vector array quantities
+            elif metadata.structure_reference == "generic_grid_vector_components_rzphi":
+                vector_array_list.append(subquantity)
             # Recursively search
             else:
                 _recursive_array_search(
