@@ -143,6 +143,10 @@ def _recursive_array_search(quantity, scalar_array_list, vector_array_list):
         vector_array_list: The GGD vector arrays
     """
     for subquantity in quantity:
+        # Only checkout subquantity if it is non-empty
+        if not subquantity.has_value:
+            continue
+
         metadata = subquantity.metadata
         # If subquantity is a struct array
         if metadata.data_type == IDSDataType.STRUCT_ARRAY:
