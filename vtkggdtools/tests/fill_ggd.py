@@ -254,6 +254,7 @@ def fill_structure(quantity, num_vertices, num_edges, num_faces):
             if metadata.structure_reference == "generic_grid_scalar":
                 fill_scalar_quantity(subquantity, num_vertices, num_edges, num_faces)
 
+            # Fill complex scalar quantity
             elif metadata.structure_reference == "generic_grid_scalar_complex":
                 fill_complex_scalar_quantity(
                     subquantity, num_vertices, num_edges, num_faces

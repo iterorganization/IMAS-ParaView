@@ -1,4 +1,5 @@
 import logging
+import re
 
 import numpy as np
 from imaspy.ids_data_type import IDSDataType
@@ -85,6 +86,8 @@ def read_ids(
     Reads ids and converts GGD to VTK data
     """
     ggd_path = get_ggd_path(ids.metadata)
+    # TODO: properly handle time indexing
+    time_idx = aos_index_values.get("TimeIdx")
 
     # TF and waves do not have GGDs but do have scalar/vector arrays
     if ggd_path is None:
@@ -96,19 +99,18 @@ def read_ids(
             raise ValueError("Could not find a GGD in provided IDS.")
     else:
         ggd_path = ggd_path.replace("/", "[0]/")  # FIXME indexing
-        ggd = ids[ggd_path][0]
-
+        ggd = ids[ggd_path][time_idx]
     # Retrieve all scalar and vector arrays from GGD
     scalar_array_list, vector_array_list = _get_arrays_from_ggd(ggd)
 
     # Read scalar arrays
     for scalar_array in scalar_array_list:
-        name = _get_name(scalar_array)
+        name = _get_name(ggd, scalar_array, time_idx)
         _add_aos_scalar_array_to_vtk_field_data(scalar_array, subset_idx, name, ugrid)
 
     # Read vector arrays
     for vector_array in vector_array_list:
-        name = _get_name(vector_array)
+        name = _get_name(ggd, vector_array, time_idx)
         _add_aos_vector_array_to_vtk_field_data(vector_array, subset_idx, name, ugrid)
 
     # TODO: GGD-fast
@@ -136,13 +138,19 @@ def _recursive_array_search(quantity, scalar_array_list, vector_array_list):
             # Get scalar array quantities
             if metadata.structure_reference == "generic_grid_scalar":
                 scalar_array_list.append(subquantity)
-            # Get scalar array quantities
+            # TODO: waves IDS can have complex arrays that are being read in by
+            # read_waves. This gives a warning for the pytests, due to casting complex
+            # to real. Need to investigate this further
+            # Get complex scalar array quantity
+            elif metadata.structure_reference == "generic_grid_scalar_complex":
+                scalar_array_list.append(subquantity)
+            # Get vector array quantities
             elif metadata.structure_reference == "generic_grid_vector_components":
                 vector_array_list.append(subquantity)
             # Recursively search
             else:
                 _recursive_array_search(
-                    subquantity[0], scalar_array_list, vector_array_list
+                    subquantity, scalar_array_list, vector_array_list
                 )
 
         # If subquantity is a structure
@@ -155,24 +163,93 @@ def _recursive_array_search(quantity, scalar_array_list, vector_array_list):
                 )
 
 
-def _get_name(array):
+def _get_name(ggd, array, ggd_idx):
     """
     Get name and units of quantity and return combined string
     """
-    quantity_name = _beautify_name(array.metadata.name)
-
-    # TODO: currently all variables are given units, but in the manual read functions
-    # some are skipped. How to deal with this?
+    # TODO: properly format the names
+    # Get full path of array vector
+    path = array._path
+    quantity_name = _beautify_name(ggd, path, ggd_idx)
     units = format_units(array)
 
     return f"{quantity_name} {units}"
 
 
-def _beautify_name(name):
+def _beautify_name(ggd, path, idx=0):
     """
-    Replaces underscores with spaces and capitalizes the first letter of each word
+    returns the name, writing out the label of parent nodes.
     """
-    return " ".join(word.capitalize() for word in name.split("_"))
+
+    # Remove before and including match_string[idx] from path
+    match_string = ggd.metadata.name
+    name = _remove_prefix_from_path(path, idx, match_string)
+
+    # Replace name with label
+    new_segments = []
+    split_name, accum_split_name = _split_and_accumulate_path(name)
+
+    for i in range(len(split_name)):
+        split_part = split_name[i]
+        split_accum_part = accum_split_name[i]
+        if "[" in split_part:
+            new_segments.append(ggd[split_accum_part].label.value)
+        else:
+            new_segments.append(split_part)
+
+    path = " ".join(new_segments)
+    return path
+
+
+def _remove_prefix_from_path(path, idx, pattern_match):
+    """
+    Removes everything from the path before and including the pattern matched string.
+    ---------------------------------------------
+    Example 1:
+    path = "source[0]/ggd[0]/particles"
+    idx = 0
+    pattern_match = "ggd"
+
+    returns "particles"
+    ---------------------------------------------
+    Example 2:
+    path = "coherent_wave[0]/full_wave[3]/k_perpendicular"
+    idx = 3
+    pattern_match = "full_wave"
+
+    returns "k_perpendicular"
+    ---------------------------------------------
+    Example 3:
+    "ggd[0]/neutral[3]/state[0]/energy_density_kinetic"
+    idx = 0
+    pattern_match = "ggd"
+
+    returns "neutral[3]/state[0]/energy_density_kinetic"
+    """
+    # Define the pattern to match everything before and including "ggd[ggd_idx]/"
+    pattern = r".*" + pattern_match + "\[" + str(idx) + "\]/"  # noqa
+
+    # Replace matched pattern with an empty string
+    path_without_prefix = re.sub(pattern, "", path)
+
+    return path_without_prefix
+
+
+def _split_and_accumulate_path(input_string):
+    """
+    splits the path and returns each path segment separately and accumulated
+    Example:
+    "neutral[3]/state[0]/density"
+
+    returns
+    split_path = ['neutral[3]', 'state[0]', 'density']
+    accumulated_split_path = ['neutral[3]', 'neutral[3]/state[0]', 'neutral[3]/state[0]/density']
+    """
+    split_path = input_string.split("/")
+    accumulated_split_path = []
+    for i in range(1, len(split_path) + 1):
+        accumulated_split_path.append("/".join(split_path[:i]))
+    return split_path, accumulated_split_path
 
 
 def read_distribution_sources(
