@@ -8,7 +8,7 @@ from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
 
 # We'll need these below when we create some units manually:
-from vtkggdtools.util import format_units, get_ggd_path
+from vtkggdtools.util import format_units
 
 logger = logging.getLogger(__name__)
 
@@ -23,18 +23,21 @@ def read_plasma_state(
     subset_idx: int,
     ugrid: vtkUnstructuredGrid,
 ) -> None:
-    """
-    Reads plasma state data arrays from the ggd node. These arrays are added as point
+    """Reads plasma state data arrays from the ggd node. These arrays are added as point
     data or cell data to the unstructured grid.
     This is just a dispatching routine, the real work is done in the called
     funtions read_<IDS_name>(ids_obj, aos_index_values, subset_idx, ugrid)
-    :param ids_name: name of the top level IDS.
-    :param ids_obj: an ids_obj of type ids_name
-    :param aos_index_values: the values that shall be used to navigate the AoS and reach
-        the scalar arrays.
-    :param subset_idx: an index into grid_ggd/grid_subset AoS
-    :param ugrid: the unstructured grid instance.
-    :return: None
+
+    Args:
+        ids_name: name of the top level IDS
+        ids_obj: an ids_obj of type ids_name
+        aos_index_values: the values that shall be used to navigate the AoS and reach
+        the scalar arrays
+        subset_idx: an index into grid_ggd/grid_subset AoS
+        ugrid: the unstructured grid instance
+
+    Returns:
+        None
     """
     # TODO: it seems read_plasma_state is getting called many times, some of the logic
     # in read_ids can be moved outside of this function (such as getting the scalar
@@ -85,8 +88,14 @@ def read_plasma_state(
 def read_ids(
     ids, aos_index_values: dict, subset_idx: int, ugrid: vtkUnstructuredGrid
 ) -> None:
-    """
-    Reads ids and converts GGD to VTK data
+    """Reads IDS and converts GGD to VTK data
+
+    Args:
+        ids: The IDS to be converted
+        aos_index_values: the values that shall be used to navigate the AoS and reach
+        the scalar arrays
+        subset_idx: an index into grid_ggd/grid_subset AoS
+        ugrid: the unstructured grid instance
     """
     # TODO: properly handle time indexing
     time_idx = aos_index_values.get("TimeIdx")
@@ -108,8 +117,14 @@ def read_ids(
 
 
 def _get_arrays_from_ids(ids):
-    """
-    Returns all GGD scalar and vector arrays that reside in the IDS.
+    """Fetches all GGD scalar and vector arrays that reside in the IDS.
+
+    Args:
+        ids: The IDS to retrieve the arrays from
+
+    Returns:
+        scalar_array_list: The GGD scalar arrays (real & complex)
+        vector_array_list: The GGD vector arrays
     """
     scalar_array_list = []
     vector_array_list = []
@@ -118,10 +133,14 @@ def _get_arrays_from_ids(ids):
 
 
 def _recursive_array_search(quantity, scalar_array_list, vector_array_list):
-    """
-    Recursively searches through the IDS quantity for scalar (real & complex) and vector
+    """Recursively searches through the IDS node for scalar (real & complex) and vector
     arrays, and appends these to the scalar_array_list and vector_array_list
     respectively.
+
+    Args:
+        quantity: The IDS node to search from
+        scalar_array_list: The GGD scalar arrays (real & complex)
+        vector_array_list: The GGD vector arrays
     """
     for subquantity in quantity:
         metadata = subquantity.metadata
@@ -156,33 +175,72 @@ def _recursive_array_search(quantity, scalar_array_list, vector_array_list):
 
 
 def _get_name(ids, array, time_idx):
-    """
-    The name of the quantity is obtained by getting the full path and displaying it in
-    a neat format.
+    """Creates a name for the GGD array based on its path and units.
+
+    Args:
+        ids: The IDS that this array belongs to
+        array: The specific scalar or vector array to create the name for
+        time_idx: The GGD time index
+
+    Returns:
+        name_with_units: The name and units of the provided GGD array
     """
     # TODO: properly format the names
     # Get full path of array vector
     path = array._path
 
     # Format the path in a neat format
-    array_name = _beautify_name(ids, path, time_idx)
+    name = _create_name_from_path(ids, path, time_idx)
 
     # Get units for this quantity
     units = format_units(array)
 
-    return f"{array_name} {units}"
+    # Combine name and units
+    name_with_units = f"{name} {units}"
+
+    return name_with_units
 
 
-def _beautify_name(ids, path, idx=0):
+def _create_name_from_path(ids, array_path, time_idx=0):
+    """Rewrites the path of the array to a neat format.
+
+    Example:
+        Given path="source[4]/ggd[0]/ion[2]/state[13]/energy"
+
+        This gets split into its constituents:
+            ["source[4]", "ggd[0]", "ion[2]", "state[13]", "energy"]
+
+        The part containing ggd gets removed:
+            ["source[4]", "ion[2]", "state[13]", "energy"]
+
+        For each part that contains brackets, the identifier name or label is
+        substituted:
+            ["Atomic ionization", "Ar", "Ar+14", "energy"]
+
+        These get appended to result in the final returned name:
+            name = "Atomic ionization Ar Ar+14 energy"
+
+    Args:
+        ids: The IDS that this array belongs to
+        array_path: The full path of the GGD array
+        time_idx: The GGD index. Defaults to 0.
+
+    Returns:
+        name: The name of the GGD array
     """
-    returns the name, writing out the label of parent nodes.
-    """
 
-    # Replace name with label
-    split_path, accum_split_name = _split_and_accumulate_path(path)
+    # Split path into parts
+    split_path, accum_split_name = _split_and_accumulate_path(array_path)
+
+    print(split_path)
+    print(accum_split_name)
+    # Remove the path part containing ggd, as this is not needed for the name
     split_path, accum_split_name = _remove_ggd_from_split_path(
-        split_path, accum_split_name, idx
+        split_path, accum_split_name, time_idx
     )
+
+    print(split_path)
+    print(accum_split_name)
 
     name_segments = []
     for i in range(len(split_path)):
@@ -190,7 +248,7 @@ def _beautify_name(ids, path, idx=0):
         split_accum_part = accum_split_name[i]
 
         # Check if name can be rewritten using identifier.name or label values
-        if "[" in split_part:
+        if "[" in split_part and "]" in split_part:
             # Check if node has an identifier.name
             if hasattr(ids[split_accum_part], "identifier") and hasattr(
                 ids[split_accum_part].identifier, "name"
@@ -200,7 +258,7 @@ def _beautify_name(ids, path, idx=0):
             elif hasattr(ids[split_accum_part], "label"):
                 name_segments.append(ids[split_accum_part].label.value)
 
-            # Otherwise just use the name as is
+            # Otherwise just use the split part as is
             else:
                 name_segments.append(split_part)
         else:
@@ -210,46 +268,84 @@ def _beautify_name(ids, path, idx=0):
     return name
 
 
-def _remove_ggd_from_split_path(split_path, accum_split_name, idx):
-    """
-    Removes the element from split_path that matches "ggd[idx]" and also removes
-    the element at the same index from accum_split_name.
+def _remove_ggd_from_split_path(split_path, accum_split_path, idx):
+    """Removes the element from split_path that matches "ggd[idx]" and also removes
+    the element at the same index from accum_split_path.
+
+    Example:
+        Given the following split_path and accum_split_path:
+
+        split_path=["source[11]", "ggd[0]", "neutral[3]", "momentum"]
+
+        accum_split_path=[
+            "source[11]",
+            "source[11]/ggd[0]",
+            "source[11]/ggd[0]/neutral[3]",
+            "source[11]/ggd[0]/neutral[3]/momentum"]
+
+        We obtain:
+
+        split_path_no_ggd = ["source[11]", "neutral[3]", "momentum"]
+
+        accum_split_path_no_ggd = [
+            "source[11]",
+            "source[11]/ggd[0]/neutral[3]",
+            "source[11]/ggd[0]/neutral[3]/momentum"]
 
     Args:
-    split_path: List of strings representing the split path.
-    accum_split_name: List of strings to accumulate names.
-    idx: Integer index to match within "ggd[idx]".
+        split_path: The split path of the GGD array
+        accum_split_path: The splitted and accumulated path of the GGD array
+        idx: The GGD index
 
     Returns:
-    A tuple of two lists (updated_split_path, updated_accum_split_name) with the matching elements removed.
+        split_path_no_ggd: The split path of the GGD array without the GGD part
+        accum_split_path_no_ggd: The splitted and accumulated path of the GGD array,
+        without GGD part
     """
+
     # Define the pattern to match "ggd[idx]"
     pattern = re.compile(r"ggd\[" + str(idx) + r"\]")
 
     # Create new lists for the output
-    updated_split_path = []
-    updated_accum_split_name = []
+    split_path_no_ggd = []
+    accum_split_path_no_ggd = []
 
     # Iterate through both lists and only add elements that do not match the pattern
     for i in range(len(split_path)):
         if not pattern.match(split_path[i]):
-            updated_split_path.append(split_path[i])
-            updated_accum_split_name.append(accum_split_name[i])
+            split_path_no_ggd.append(split_path[i])
+            accum_split_path_no_ggd.append(accum_split_path[i])
 
-    return updated_split_path, updated_accum_split_name
+    return split_path_no_ggd, accum_split_path_no_ggd
 
 
-def _split_and_accumulate_path(input_string):
-    """
-    splits the path and returns each path segment separately and accumulated
+def _split_and_accumulate_path(path):
+    """Splits the path and returns each path segment separately and accumulated.
+
     Example:
-    "ggd[0]/neutral[0]/state[0]/density"
+        Given input path:
 
-    returns
-    split_path = ['ggd[0]', 'neutral[0]', 'state[0]', 'density_fast']
-    accumulated_split_path = ['ggd[0]', 'ggd[0]/neutral[0]', 'ggd[0]/neutral[0]/state[0]', 'ggd[0]/neutral[0]/state[0]/density_fast'] # noqa
+        "ggd[0]/neutral[0]/state[0]/density"
+
+        We get the following output:
+
+        split_path = ["ggd[0]", "neutral[0]", "state[0]", "density_fast"]
+
+        accumulated_split_path = [
+        "ggd[0]",
+        "ggd[0]/neutral[0]",
+        "ggd[0]/neutral[0]/state[0]",
+        "ggd[0]/neutral[0]/state[0]/density_fast"]
+
+    Args:
+        path: The path of a GGD array
+
+    Returns:
+        split_path: A list of strings containing the path segments
+        accumulated_split_path: A list of strings containing the accumulated path
+        segments
     """
-    split_path = input_string.split("/")
+    split_path = path.split("/")
     accumulated_split_path = []
     for i in range(1, len(split_path) + 1):
         accumulated_split_path.append("/".join(split_path[:i]))
