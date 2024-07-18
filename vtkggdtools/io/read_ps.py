@@ -302,7 +302,9 @@ def _remove_ggd_from_split_path(split_path, accum_split_path):
     """
 
     # Define the pattern to match "ggd[idx]"
-    pattern = re.compile(r"ggd\[\d+\]")
+    ggd_pattern = re.compile(r"ggd\[\d+\]")
+    description_ggd_pattern = re.compile(r"description_ggd\[\d+\]")
+    time_slice_pattern = re.compile(r"time_slice\[\d+\]")
 
     # Create new lists for the output
     split_path_no_ggd = []
@@ -310,7 +312,11 @@ def _remove_ggd_from_split_path(split_path, accum_split_path):
 
     # Iterate through both lists and only add elements that do not match the pattern
     for i in range(len(split_path)):
-        if not pattern.match(split_path[i]):
+        if (
+            not ggd_pattern.match(split_path[i])
+            and not description_ggd_pattern.match(split_path[i])
+            and not time_slice_pattern.match(split_path[i])
+        ):
             split_path_no_ggd.append(split_path[i])
             accum_split_path_no_ggd.append(accum_split_path[i])
 
