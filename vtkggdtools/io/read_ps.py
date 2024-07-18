@@ -98,19 +98,18 @@ def read_ids(
         ugrid: the unstructured grid instance
     """
     # TODO: properly handle time indexing
-    time_idx = aos_index_values.get("TimeIdx")
 
     # Retrieve all GGD scalar and vector arrays from IDS
     scalar_array_list, vector_array_list = _get_arrays_from_ids(ids)
 
     # Read scalar arrays
     for scalar_array in scalar_array_list:
-        name = _get_name(ids, scalar_array, time_idx)
+        name = _get_name(ids, scalar_array)
         _add_aos_scalar_array_to_vtk_field_data(scalar_array, subset_idx, name, ugrid)
 
     # Read vector arrays
     for vector_array in vector_array_list:
-        name = _get_name(ids, vector_array, time_idx)
+        name = _get_name(ids, vector_array)
         _add_aos_vector_array_to_vtk_field_data(vector_array, subset_idx, name, ugrid)
 
     # TODO: GGD-fast
@@ -178,13 +177,12 @@ def _recursive_array_search(quantity, scalar_array_list, vector_array_list):
                 )
 
 
-def _get_name(ids, array, time_idx):
+def _get_name(ids, array):
     """Creates a name for the GGD array based on its path and units.
 
     Args:
         ids: The IDS that this array belongs to
         array: The specific scalar or vector array to create the name for
-        time_idx: The GGD time index
 
     Returns:
         name_with_units: The name and units of the provided GGD array
@@ -194,7 +192,7 @@ def _get_name(ids, array, time_idx):
     path = array._path
 
     # Format the path in a neat format
-    name = _create_name_from_path(ids, path, time_idx)
+    name = _create_name_from_path(ids, path)
 
     # Get units for this quantity
     units = format_units(array)
@@ -205,7 +203,7 @@ def _get_name(ids, array, time_idx):
     return name_with_units
 
 
-def _create_name_from_path(ids, array_path, time_idx=0):
+def _create_name_from_path(ids, array_path):
     """Rewrites the path of the array to a neat format.
 
     Example:
@@ -227,7 +225,6 @@ def _create_name_from_path(ids, array_path, time_idx=0):
     Args:
         ids: The IDS that this array belongs to
         array_path: The full path of the GGD array
-        time_idx: The GGD index. Defaults to 0.
 
     Returns:
         name: The name of the GGD array
@@ -238,7 +235,7 @@ def _create_name_from_path(ids, array_path, time_idx=0):
 
     # Remove the path part containing ggd, as this is not needed for the name
     split_path, accum_split_name = _remove_ggd_from_split_path(
-        split_path, accum_split_name, time_idx
+        split_path, accum_split_name
     )
 
     name_segments = []
@@ -267,7 +264,7 @@ def _create_name_from_path(ids, array_path, time_idx=0):
     return name
 
 
-def _remove_ggd_from_split_path(split_path, accum_split_path, idx):
+def _remove_ggd_from_split_path(split_path, accum_split_path):
     """Removes the element from split_path that matches "ggd[idx]" and also removes
     the element at the same index from accum_split_path.
 
@@ -294,7 +291,6 @@ def _remove_ggd_from_split_path(split_path, accum_split_path, idx):
     Args:
         split_path: The split path of the GGD array
         accum_split_path: The splitted and accumulated path of the GGD array
-        idx: The GGD index
 
     Returns:
         split_path_no_ggd: The split path of the GGD array without the GGD part
@@ -303,7 +299,7 @@ def _remove_ggd_from_split_path(split_path, accum_split_path, idx):
     """
 
     # Define the pattern to match "ggd[idx]"
-    pattern = re.compile(r"ggd\[" + str(idx) + r"\]")
+    pattern = re.compile(r"ggd\[\d+\]")
 
     # Create new lists for the output
     split_path_no_ggd = []
