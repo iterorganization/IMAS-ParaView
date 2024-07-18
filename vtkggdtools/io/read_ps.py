@@ -303,7 +303,11 @@ def _remove_ggd_from_split_path(split_path, accum_split_path):
 
     # Define the pattern to match "ggd[idx]"
     ggd_pattern = re.compile(r"ggd\[\d+\]")
+
+    # Required for wall IDS
     description_ggd_pattern = re.compile(r"description_ggd\[\d+\]")
+
+    # Required for equilbrium IDS
     time_slice_pattern = re.compile(r"time_slice\[\d+\]")
 
     # Create new lists for the output
