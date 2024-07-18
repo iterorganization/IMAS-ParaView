@@ -144,11 +144,18 @@ def read_edge_profiles(
         "distribution_function": ("Electron Distribution Function", False),  # no units
     }
     for q_name in quantities:
-        (name, use_units) = quantities[q_name]
-        node = getattr(ggd.electrons, q_name)
-        if use_units:
-            name += f" {format_units(node)}"
-        _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+        try:
+            (name, use_units) = quantities[q_name]
+            node = getattr(ggd.electrons, q_name)
+            if use_units:
+                name += f" {format_units(node)}"
+            _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+        except AttributeError as e:
+            logger.warn(
+                f"No quantity {q_name} found, "
+                "perhaps mismatched data dictionary versions?"
+            )
+            
     # vector array:
     name = f"Electron Velocity {format_units(ggd.electrons.velocity)}"
     _add_aos_vector_array_to_vtk_field_data(
@@ -171,9 +178,16 @@ def read_edge_profiles(
             "energy_density_kinetic": f"{hp_name} Kinetic Energy Density",
         }
         for q_name in quantities:
-            node = getattr(hp, q_name)
-            name = f"{quantities[q_name]} {format_units(node)}"
-            _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+            try:
+                node = getattr(hp, q_name)
+                name = f"{quantities[q_name]} {format_units(node)}"
+                _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+            except AttributeError as e:
+                logger.warn(
+                    f"No quantity {q_name} found, "
+                    "perhaps mismatched data dictionary versions?"
+                )
+                
         # vector array:
         name = f"{hp_name} Velocity {format_units(hp.velocity)}"
         _add_aos_vector_array_to_vtk_field_data(hp.velocity, subset_idx, name, ugrid)
@@ -215,11 +229,18 @@ def read_edge_profiles(
                     False,
                 )
             for q_name in quantities:
-                (name, use_units) = quantities[q_name]
-                node = getattr(state, q_name)
-                if use_units:
-                    name += f" {format_units(node)}"
-                _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+                try:
+                    (name, use_units) = quantities[q_name]
+                    node = getattr(state, q_name)
+                    if use_units:
+                        name += f" {format_units(node)}"
+                    _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+                except AttributeError as e:
+                    logger.warn(
+                        f"No quantity {q_name} found, "
+                        "perhaps mismatched data dictionary versions?"
+                    )
+                        
             # vectors:
             quantities = {
                 "velocity": f"{state.label} Velocity",
@@ -227,9 +248,16 @@ def read_edge_profiles(
                 "velocity_exb": f"{state.label} Velocity (ExB)",
             }
             for q_name in quantities:
-                node = getattr(state, q_name)
-                name = f"{quantities[q_name]} {format_units(node)}"
-                _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+                try:
+                    node = getattr(state, q_name)
+                    name = f"{quantities[q_name]} {format_units(node)}"
+                    _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+                except AttributeError as e:
+                    logger.warn(
+                        f"No quantity {q_name} found, "
+                        "perhaps mismatched data dictionary versions?"
+                    )
+                    
 
     # Other scalar quantities:
     quantities = {
@@ -243,9 +271,15 @@ def read_edge_profiles(
         "phi_potential": "Potential Phi",
     }
     for q_name in quantities:
-        node = getattr(ggd, q_name)
-        name = f"{quantities[q_name]} {format_units(node)}"
-        _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+        try:
+            node = getattr(ggd, q_name)
+            name = f"{quantities[q_name]} {format_units(node)}"
+            _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+        except AttributeError as e:
+            logger.warn(
+                f"No quantity {q_name} found, "
+                "perhaps mismatched data dictionary versions?"
+            )
 
     # other vector quantities
     quantities = {
@@ -261,10 +295,15 @@ def read_edge_profiles(
         "e_field": "E",
     }
     for q_name in quantities:
-        node = getattr(ggd, q_name)
-        name = f"{quantities[q_name]} {format_units(node)}"
-        _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
-
+        try:
+            node = getattr(ggd, q_name)
+            name = f"{quantities[q_name]} {format_units(node)}"
+            _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+        except AttributeError as e:
+            logger.warn(
+                f"No quantity {q_name} found, "
+                "perhaps mismatched data dictionary versions?"
+            )
     # TODO: ggd_fast...
 
 
@@ -524,11 +563,16 @@ def read_equilibrium(
         "b_field_tor": "Magnetic Field Btor",
     }
     for q_name in quantities:
-        node = getattr(ggd, q_name)
-        name = f"{quantities[q_name]} {format_units(node)}"
-        _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
-
-
+        try:
+            node = getattr(ggd, q_name)
+            name = f"{quantities[q_name]} {format_units(node)}"
+            _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+        except AttributeError as e:
+            logger.warn(
+                f"No quantity {q_name} found, "
+                "perhaps mismatched data dictionary versions?"
+            )
+            
 def read_mhd(
     ids_obj, aos_index_values: dict, subset_idx: int, ugrid: vtkUnstructuredGrid
 ) -> None:
@@ -572,9 +616,16 @@ def read_mhd(
         "mass_density": "Mass Density",
     }
     for q_name in quantities:
-        node = getattr(ggd, q_name)
-        name = f"{quantities[q_name]} {format_units(node)}"
-        _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+        try:
+            node = getattr(ggd, q_name)
+            name = f"{quantities[q_name]} {format_units(node)}"
+            _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+        except AttributeError as e:
+            logger.warn(
+                f"No quantity {q_name} found, "
+                "perhaps mismatched data dictionary versions?"
+            )
+            
 
     # NOT TESTED! Can't find a data entry to test.
 
@@ -652,7 +703,7 @@ def read_tf(
     ]:
         try:
             aos_scalar_node = getattr(ids_obj.field_map[time_idx], attr_name)
-        except IndexError:
+        except (IndexError, AttributeError) as e:
             continue
         component_name = attr_name.split("_")[-1]
         name = f"Magnetic Field B{component_name} {format_units(aos_scalar_node)}"
@@ -767,12 +818,12 @@ def read_wall(
             name = f"{quantities[q_name]} {format_units(node)}"
             _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
         except AttributeError:
-            logger.info(
+            logger.warn(
                 f"No quantity {q_name} found, "
                 "perhaps mismatched data dictionary versions?"
             )
         except IndexError:
-            logger.info(f"No subset {subset_idx} found for quantity{q_name}.")
+            logger.warn(f"No subset {subset_idx} found for quantity{q_name}.")
 
     # Vector quantities:
     quantities = {
@@ -786,12 +837,12 @@ def read_wall(
             name = f"{quantities[q_name]} {format_units(node)}"
             _add_aos_vector_array_to_vtk_field_data(node, subset_idx, name, ugrid)
         except AttributeError:
-            logger.info(
+            logger.warn(
                 f"No quantity {q_name} found, "
                 "perhaps missmatched data dictionary versions?"
             )
         except IndexError:
-            logger.info(f"No subset {subset_idx} found for quantity{q_name}.")
+            logger.warn(f"No subset {subset_idx} found for quantity{q_name}.")
 
 
 def read_waves(
@@ -825,9 +876,16 @@ def read_waves(
             "bi_normal": "Electric Field - Tangential to flux surface",
         }
         for q_name in quantities:
-            node = getattr(e_field, q_name)
-            name = f"{quantities[q_name]} {format_units(node)}"
-            _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+            try:
+                node = getattr(e_field, q_name)
+                name = f"{quantities[q_name]} {format_units(node)}"
+                _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+            except AttributeError as e:
+                logger.warn(
+                    f"No quantity {q_name} found, "
+                    "perhaps mismatched data dictionary versions?"
+                )
+                
     except IndexError:
         pass
 
@@ -839,9 +897,16 @@ def read_waves(
             "bi_normal": "Magnetic Field - Tangential to flux surface",
         }
         for q_name in quantities:
-            node = getattr(b_field, q_name)
-            name = f"{quantities[q_name]} {format_units(node)}"
-            _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+            try:
+                node = getattr(b_field, q_name)
+                name = f"{quantities[q_name]} {format_units(node)}"
+                _add_aos_scalar_array_to_vtk_field_data(node, subset_idx, name, ugrid)
+            except AttributeError as e:
+                logger.warn(
+                    f"No quantity {q_name} found, "
+                    "perhaps mismatched data dictionary versions?"
+                )
+                
     except IndexError:
         pass
 
@@ -905,9 +970,9 @@ def _add_aos_scalar_array_to_vtk_field_data(
                         aos_scalar_node[i].values, name, ugrid
                     )
             except IndexError:
-                logger.info(f"           no index {i} for subset {subset_idx}...")
+                logger.warn(f"           no index {i} for subset {subset_idx}...")
             except AttributeError:
-                logger.info(f"           no index {i} for subset {subset_idx}...")
+                logger.warn(f"           no index {i} for subset {subset_idx}...")
     else:
         if hasattr(aos_scalar_node[subset_idx], "values") and len(
             aos_scalar_node[subset_idx].values
@@ -950,7 +1015,7 @@ def _add_aos_vector_array_to_vtk_field_data(
     ]:
         try:
             values = getattr(aos_vector_node[subset_idx], component_name)
-        except Exception:
+        except (IndexError, AttributeError) as e:
             continue
         if len(values):
             components[component_name] = values
