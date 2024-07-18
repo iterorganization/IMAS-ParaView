@@ -232,15 +232,10 @@ def _create_name_from_path(ids, array_path, time_idx=0):
     # Split path into parts
     split_path, accum_split_name = _split_and_accumulate_path(array_path)
 
-    print(split_path)
-    print(accum_split_name)
     # Remove the path part containing ggd, as this is not needed for the name
     split_path, accum_split_name = _remove_ggd_from_split_path(
         split_path, accum_split_name, time_idx
     )
-
-    print(split_path)
-    print(accum_split_name)
 
     name_segments = []
     for i in range(len(split_path)):
