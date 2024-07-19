@@ -172,9 +172,6 @@ def fill_vector_rzphi_quantity(vector_quantity, num_vertices, num_edges, num_fac
     """
     # Allocate memory for 3 entries: vertices, edges and faces
     vector_quantity.resize(3)
-    imaspy.util.inspect(vector_quantity)
-    imaspy.util.inspect(vector_quantity.metadata)
-    imaspy.util.inspect(vector_quantity[0])
 
     # Fill values for vertices
     vector_quantity[0].grid_index = 1
@@ -302,7 +299,7 @@ def fill_structure(quantity, num_vertices, num_edges, num_faces):
             elif metadata.structure_reference == "generic_grid_vector_components":
                 fill_vector_quantity(subquantity, num_vertices, num_edges, num_faces)
 
-            # Fill rzphi-vector quantity
+            # Fill rzphi vector
             elif metadata.structure_reference == "generic_grid_vector_components_rzphi":
                 fill_vector_rzphi_quantity(
                     subquantity, num_vertices, num_edges, num_faces

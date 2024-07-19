@@ -248,14 +248,29 @@ def _create_name_from_path(ids, array_path):
 
         # Check if name can be rewritten using identifier.name or label values
         if "[" in split_part and "]" in split_part:
+
             # Check if node has an identifier.name
             if hasattr(ids[split_accum_part], "identifier") and hasattr(
                 ids[split_accum_part].identifier, "name"
             ):
-                name_segments.append(str(ids[split_accum_part].identifier.name))
+                name_segments.append(
+                    f"{str(ids[split_accum_part].metadata.name).strip()} "
+                    f"({str(ids[split_accum_part].identifier.name).strip()})"
+                )
+
+            # Check if node has a name
+            elif hasattr(ids[split_accum_part], "name"):
+                name_segments.append(
+                    f"{str(ids[split_accum_part].metadata.name).strip()} "
+                    f"({str(ids[split_accum_part].name).strip()})"
+                )
+
             # Check if node has a label
             elif hasattr(ids[split_accum_part], "label"):
-                name_segments.append(ids[split_accum_part].label.value)
+                name_segments.append(
+                    f"{str(ids[split_accum_part].metadata.name).strip()} "
+                    f"({str(ids[split_accum_part].label.value).strip()})"
+                )
 
             # Otherwise just use the split part as is
             else:
