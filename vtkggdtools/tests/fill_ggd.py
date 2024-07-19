@@ -4,6 +4,7 @@ import imaspy
 import numpy as np
 from imaspy.ids_data_type import IDSDataType
 
+from vtkggdtools.io.read_ps import get_arrays_from_ids
 from vtkggdtools.util import create_first_ggd, create_first_grid, int32array
 
 logger = logging.getLogger(__name__)
@@ -265,70 +266,38 @@ def fill_complex_scalar_quantity(
     complex_scalar_quantity[2].values = _generate_random_complex(num_faces)
 
 
-def fill_structure(quantity, num_vertices, num_edges, num_faces):
-    """Recursively fills an IDS structure with random values.
-
-    Args:
-        quantity: Node belonging to an IDS
-        num_vertices: The number of vertices in the grid_ggd
-        num_edges: The number of edges in the grid_ggd
-        num_faces: The number of faces in the grid_ggd
-    """
-
-    for subquantity in quantity:
-        # Skip filling subquantity if it already has a value
-        if subquantity.has_value:
-            continue
-
-        metadata = subquantity.metadata
-
-        # If subquantity is a struct array
-        if metadata.data_type == IDSDataType.STRUCT_ARRAY:
-
-            # Fill scalar quantity
-            if metadata.structure_reference == "generic_grid_scalar":
-                fill_scalar_quantity(subquantity, num_vertices, num_edges, num_faces)
-
-            # Fill complex scalar quantity
-            elif metadata.structure_reference == "generic_grid_scalar_complex":
-                fill_complex_scalar_quantity(
-                    subquantity, num_vertices, num_edges, num_faces
-                )
-
-            # Fill vector quantity
-            elif metadata.structure_reference == "generic_grid_vector_components":
-                fill_vector_quantity(subquantity, num_vertices, num_edges, num_faces)
-
-            # Fill rzphi vector
-            elif metadata.structure_reference == "generic_grid_vector_components_rzphi":
-                fill_vector_rzphi_quantity(
-                    subquantity, num_vertices, num_edges, num_faces
-                )
-            # Recursively fill struct array
-            else:
-                subquantity.resize(1)
-                fill_structure(subquantity[0], num_vertices, num_edges, num_faces)
-
-        # If subquantity is a structure
-        elif metadata.data_type == IDSDataType.STRUCTURE:
-
-            # Recursively fill structure
-            fill_structure(subquantity, num_vertices, num_edges, num_faces)
-
-
-def fill_ggd(ggd, num_vertices, num_edges, num_faces):
+def fill_ggd_data(ids, num_vertices, num_edges, num_faces):
     """Fills all generic grid scalar and generic grid vector components of a GGD
     with random values.
 
     Args:
-        ggd: The GGD that will be filled
+        ids: The IDS for which the GGD will be filled
         num_vertices: The number of vertices in the grid_ggd
         num_edges: The number of edges in the grid_ggd
         num_faces: The number of faces in the grid_ggd
     """
 
     # Fill IDS structure with random values
-    fill_structure(ggd, num_vertices, num_edges, num_faces)
+    scalar_array_list, vector_array_list = get_arrays_from_ids(
+        ids, get_empty_arrays=True
+    )
+
+    # Read scalar arrays
+    for scalar_array in scalar_array_list:
+        if scalar_array.metadata.structure_reference == "generic_grid_scalar":
+            fill_scalar_quantity(scalar_array, num_vertices, num_edges, num_faces)
+        elif scalar_array.metadata.structure_reference == "generic_grid_scalar_complex":
+            fill_complex_scalar_quantity(
+                scalar_array, num_vertices, num_edges, num_faces
+            )
+
+    # Read vector arrays
+    for vector_array in vector_array_list:
+        structure_reference = vector_array.metadata.structure_reference
+        if structure_reference == "generic_grid_vector_components":
+            fill_vector_quantity(vector_array, num_vertices, num_edges, num_faces)
+        elif structure_reference == "generic_grid_vector_components_rzphi":
+            fill_vector_rzphi_quantity(vector_array, num_vertices, num_edges, num_faces)
 
 
 def fill_ids(ids):
@@ -354,27 +323,5 @@ def fill_ids(ids):
         logger.debug(f"filled grid_ggd for {ids.metadata.name}")
 
     # Create an empty GGD
-    ggd = create_first_ggd(ids)
-
-    # Skip filling GGD if it does not exist
-    if ggd is None:
-
-        # The tf and waves IDSs do not have GGDs, but they do have scalar and vector
-        # arrays that are read by read_ps, so fill them manually
-        if ids.metadata.name == "tf":
-            # /tf/field_map(itime)/ has arrays that can be filled
-            structure_to_fill = ids.field_map[0]
-            fill_ggd(structure_to_fill, num_vertices, num_edges, num_faces)
-            logger.debug(f"filled {structure_to_fill} for {ids.metadata.name}")
-
-        elif ids.metadata.name == "waves":
-            # /waves/coherent_wave(i1)/full_wave(itime)/ has arrays that can be filled
-            structure_to_fill = ids.coherent_wave[0].full_wave[0]
-            fill_ggd(structure_to_fill, num_vertices, num_edges, num_faces)
-            logger.debug(f"filled {structure_to_fill} for {ids.metadata.name}")
-        else:
-            logger.debug(f"{ids.metadata.name} has no ggd")
-    else:
-        # Fill the GGD with random values
-        fill_ggd(ggd, num_vertices, num_edges, num_faces)
-        logger.debug(f"filled ggd for {ids.metadata.name}")
+    create_first_ggd(ids)
+    fill_ggd_data(ids, num_vertices, num_edges, num_faces)

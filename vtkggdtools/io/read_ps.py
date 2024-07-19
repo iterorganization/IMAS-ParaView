@@ -100,7 +100,9 @@ def read_ids(
     # TODO: properly handle time indexing
 
     # Retrieve all GGD scalar and vector arrays from IDS
-    scalar_array_list, vector_array_list = _get_arrays_from_ids(ids)
+    scalar_array_list, vector_array_list = get_arrays_from_ids(
+        ids, get_empty_arrays=False
+    )
 
     # Read scalar arrays
     for scalar_array in scalar_array_list:
@@ -115,7 +117,7 @@ def read_ids(
     # TODO: GGD-fast
 
 
-def _get_arrays_from_ids(ids):
+def get_arrays_from_ids(ids, get_empty_arrays):
     """Fetches all GGD scalar and vector arrays that reside in the IDS.
 
     Args:
@@ -127,11 +129,13 @@ def _get_arrays_from_ids(ids):
     """
     scalar_array_list = []
     vector_array_list = []
-    _recursive_array_search(ids, scalar_array_list, vector_array_list)
+    _recursive_array_search(ids, scalar_array_list, vector_array_list, get_empty_arrays)
     return scalar_array_list, vector_array_list
 
 
-def _recursive_array_search(quantity, scalar_array_list, vector_array_list):
+def _recursive_array_search(
+    quantity, scalar_array_list, vector_array_list, get_empty_arrays
+):
     """Recursively searches through the IDS node for scalar (real & complex) and vector
     arrays, and appends these to the scalar_array_list and vector_array_list
     respectively.
@@ -140,10 +144,11 @@ def _recursive_array_search(quantity, scalar_array_list, vector_array_list):
         quantity: The IDS node to search from
         scalar_array_list: The GGD scalar arrays (real & complex)
         vector_array_list: The GGD vector arrays
+        get_empty_arrays (bool): Whether to return empty arrays
     """
     for subquantity in quantity:
         # Only checkout subquantity if it is non-empty
-        if not subquantity.has_value:
+        if not subquantity.has_value and not get_empty_arrays:
             continue
 
         metadata = subquantity.metadata
@@ -167,7 +172,7 @@ def _recursive_array_search(quantity, scalar_array_list, vector_array_list):
             # Recursively search
             else:
                 _recursive_array_search(
-                    subquantity, scalar_array_list, vector_array_list
+                    subquantity, scalar_array_list, vector_array_list, get_empty_arrays
                 )
 
         # If subquantity is a structure
@@ -176,7 +181,7 @@ def _recursive_array_search(quantity, scalar_array_list, vector_array_list):
             # e.g. in distribution_sources distributions IDSs
             if metadata.name != "grid":
                 _recursive_array_search(
-                    subquantity, scalar_array_list, vector_array_list
+                    subquantity, scalar_array_list, vector_array_list, get_empty_arrays
                 )
 
 
