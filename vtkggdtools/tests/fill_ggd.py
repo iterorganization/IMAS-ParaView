@@ -2,7 +2,6 @@ import logging
 
 import imaspy
 import numpy as np
-from imaspy.ids_data_type import IDSDataType
 
 from vtkggdtools.io.read_ps import get_arrays_from_ids
 from vtkggdtools.util import create_first_ggd, create_first_grid, int32array

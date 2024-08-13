@@ -429,7 +429,7 @@ def _add_aos_vector_array_to_vtk_field_data(
     ]:
         try:
             values = getattr(aos_vector_node[subset_idx], component_name)
-        except (IndexError, AttributeError) as e:
+        except (IndexError, AttributeError):
             continue
         if len(values):
             components[component_name] = values
