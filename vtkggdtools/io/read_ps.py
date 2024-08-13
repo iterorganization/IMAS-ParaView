@@ -384,9 +384,9 @@ def _add_aos_scalar_array_to_vtk_field_data(
                         aos_scalar_node[i].values, name, ugrid
                     )
             except IndexError:
-                logger.info(f"           no index {i} for subset {subset_idx}...")
+                logger.warn(f"           no index {i} for subset {subset_idx}...")
             except AttributeError:
-                logger.info(f"           no index {i} for subset {subset_idx}...")
+                logger.warn(f"           no index {i} for subset {subset_idx}...")
     else:
         if hasattr(aos_scalar_node[subset_idx], "values") and len(
             aos_scalar_node[subset_idx].values
@@ -429,7 +429,7 @@ def _add_aos_vector_array_to_vtk_field_data(
     ]:
         try:
             values = getattr(aos_vector_node[subset_idx], component_name)
-        except Exception:
+        except (IndexError, AttributeError) as e:
             continue
         if len(values):
             components[component_name] = values
