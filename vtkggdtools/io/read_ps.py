@@ -92,9 +92,6 @@ def _recursive_array_search(
             # Get scalar array quantities
             if metadata.structure_reference == "generic_grid_scalar":
                 scalar_array_list.append(subquantity)
-            # TODO: waves IDS can have complex arrays that are being read in by
-            # read_waves. This gives a warning for the pytests, due to casting complex
-            # to real. Need to investigate this further
             # Get complex scalar array quantity
             elif metadata.structure_reference == "generic_grid_scalar_complex":
                 scalar_array_list.append(subquantity)
@@ -330,12 +327,28 @@ def _add_scalar_array_to_vtk_field_data(
     cell_data: vtkCellData = ugrid.GetCellData()
     num_cells = ugrid.GetNumberOfCells()
 
+    # Split complex arrays into real and imaginary parts
+    if array.data_type == "CPX_1D":
+        array_real = np.real(array)
+        array_imag = np.imag(array)
+        vtk_arr_real = dsa.numpyTovtkDataArray(array_real, name=f"{name}_real")
+        vtk_arr_imag = dsa.numpyTovtkDataArray(array_imag, name=f"{name}_imag")
+    else:
+        vtk_arr = dsa.numpyTovtkDataArray(array, name)
+
     # To see interpolation of point data on cells, just point data is necessary.
-    vtk_arr = dsa.numpyTovtkDataArray(array, name)
     if len(array) == num_points:
-        point_data.AddArray(vtk_arr)
+        if array.data_type == "CPX_1D":
+            point_data.AddArray(vtk_arr_real)
+            point_data.AddArray(vtk_arr_imag)
+        else:
+            point_data.AddArray(vtk_arr)
     if len(array) == num_cells:
-        cell_data.AddArray(vtk_arr)
+        if array.data_type == "CPX_1D":
+            cell_data.AddArray(vtk_arr_real)
+            cell_data.AddArray(vtk_arr_imag)
+        else:
+            cell_data.AddArray(vtk_arr)
 
 
 def _add_aos_scalar_array_to_vtk_field_data(
