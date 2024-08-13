@@ -130,7 +130,6 @@ def _get_name(ids, array):
     Returns:
         name_with_units: The name and units of the provided GGD array
     """
-    # TODO: properly format the names
     # Get full path of array vector
     path = array._path
 
