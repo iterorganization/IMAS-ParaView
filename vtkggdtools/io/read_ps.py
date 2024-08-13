@@ -2,10 +2,11 @@ import logging
 import re
 
 import numpy as np
-from imaspy.ids_data_type import IDSDataType
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
+
+from vtkggdtools.ids_util import get_arrays_from_ids
 
 # We'll need these below when we create some units manually:
 from vtkggdtools.util import format_units
@@ -17,36 +18,17 @@ u_post = "]"
 
 class PlasmaStateReader:
     def __init__(self, ids):
-        """Initialize plasma state reader
+        """Initializes plasma state reader and retrieves all filled GGD scalar and
+        vector arrays from the IDS.
 
         Args:
-            ids: The IDS to be converted to VTK
+            ids: The IDS to load GGD arrays from
         """
         self.ids = ids
 
         # Retrieve all GGD scalar and vector arrays from IDS
         logger.debug("Retrieving GGD arrays from IDS")
-        self.scalar_array_list, self.vector_array_list = (
-            PlasmaStateReader.get_arrays_from_ids(ids)
-        )
-
-    @staticmethod
-    def get_arrays_from_ids(ids, get_empty_arrays=False):
-        """Fetches all GGD scalar and vector arrays that reside in the IDS.
-
-        Args:
-            get_arrays_from_ids (bool): Whether to return empty arrays
-
-        Returns:
-            scalar_array_list: The GGD scalar arrays (real & complex)
-            vector_array_list: The GGD vector arrays
-        """
-        scalar_array_list = []
-        vector_array_list = []
-        PlasmaStateReader._recursive_array_search(
-            ids, scalar_array_list, vector_array_list, get_empty_arrays
-        )
-        return scalar_array_list, vector_array_list
+        self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(ids)
 
     def read_plasma_state(self, subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
         """Reads plasma state data arrays from the ggd node in the IDS. These arrays are
@@ -74,64 +56,6 @@ class PlasmaStateReader:
             self._add_aos_vector_array_to_vtk_field_data(
                 vector_array, subset_idx, name, ugrid
             )
-
-    @staticmethod
-    def _recursive_array_search(
-        quantity, scalar_array_list, vector_array_list, get_empty_arrays
-    ):
-        """Recursively searches through the IDS node for scalar (real & complex) and
-        vector arrays, and appends these to the scalar_array_list and vector_array_list
-        respectively.
-
-        Args:
-            quantity: The IDS node to search from
-            scalar_array_list: The GGD scalar arrays (real & complex)
-            vector_array_list: The GGD vector arrays
-            get_empty_arrays (bool): Whether to return empty arrays
-        """
-        for subquantity in quantity:
-            # Only checkout subquantity if it is non-empty
-            if not subquantity.has_value and not get_empty_arrays:
-                continue
-
-            metadata = subquantity.metadata
-            # If subquantity is a struct array
-            if metadata.data_type == IDSDataType.STRUCT_ARRAY:
-                # Get scalar array quantities
-                if metadata.structure_reference == "generic_grid_scalar":
-                    scalar_array_list.append(subquantity)
-                # Get complex scalar array quantity
-                elif metadata.structure_reference == "generic_grid_scalar_complex":
-                    scalar_array_list.append(subquantity)
-                # Get vector array quantities
-                elif metadata.structure_reference == "generic_grid_vector_components":
-                    vector_array_list.append(subquantity)
-                # Get rzphi-vector array quantities
-                elif (
-                    metadata.structure_reference
-                    == "generic_grid_vector_components_rzphi"
-                ):
-                    vector_array_list.append(subquantity)
-                # Recursively search
-                else:
-                    PlasmaStateReader._recursive_array_search(
-                        subquantity,
-                        scalar_array_list,
-                        vector_array_list,
-                        get_empty_arrays,
-                    )
-
-            # If subquantity is a structure
-            elif metadata.data_type == IDSDataType.STRUCTURE:
-                # Skip "grid" quantity, this can occur if the grid is stored within the
-                # GGD. e.g. in distribution_sources distributions IDSs
-                if metadata.name != "grid":
-                    PlasmaStateReader._recursive_array_search(
-                        subquantity,
-                        scalar_array_list,
-                        vector_array_list,
-                        get_empty_arrays,
-                    )
 
     def _get_name(self, array):
         """Creates a name for the GGD array based on its path and units.

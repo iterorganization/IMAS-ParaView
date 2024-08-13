@@ -3,7 +3,7 @@ import logging
 import imaspy
 import numpy as np
 
-from vtkggdtools.io.read_ps import PlasmaStateReader
+from vtkggdtools.ids_util import get_arrays_from_ids
 from vtkggdtools.util import create_first_ggd, create_first_grid, int32array
 
 logger = logging.getLogger(__name__)
@@ -277,7 +277,7 @@ def fill_ggd_data(ids, num_vertices, num_edges, num_faces):
     """
 
     # Fill IDS structure with random values
-    scalar_array_list, vector_array_list = PlasmaStateReader.get_arrays_from_ids(
+    scalar_array_list, vector_array_list = get_arrays_from_ids(
         ids, get_empty_arrays=True
     )
 
