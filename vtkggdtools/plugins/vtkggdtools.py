@@ -181,9 +181,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
                 grid_ggd, subset_idx, points
             )
-            read_ps.read_plasma_state(
-                self._idsname, self._ids, _aos_index_values, subset_idx, ugrid
-            )
+            read_ps.read_plasma_state(self._ids, subset_idx, ugrid)
             output.SetPartition(partition, 0, ugrid)
             label = str(subset.identifier.name) if subset else self._idsname
             child = assembly.AddNode(label.replace(" ", "_"), 0)
