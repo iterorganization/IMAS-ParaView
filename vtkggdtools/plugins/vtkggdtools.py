@@ -176,12 +176,12 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                 )
             return 1
 
-        def fill_grid_and_plasma_state(subset_idx, partition):
+        def fill_grid_and_plasma_state(ps_reader, subset_idx, partition):
             subset = None if subset_idx < 0 else grid_ggd.grid_subset[subset_idx]
             ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
                 grid_ggd, subset_idx, points
             )
-            read_ps.read_plasma_state(self._ids, subset_idx, ugrid)
+            ps_reader.read_plasma_state(subset_idx, ugrid)
             output.SetPartition(partition, 0, ugrid)
             label = str(subset.identifier.name) if subset else self._idsname
             child = assembly.AddNode(label.replace(" ", "_"), 0)
@@ -189,21 +189,22 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
 
         # Regular grid reading
+        ps_reader = read_ps.PlasmaStateReader(self._ids)
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             output.SetNumberOfPartitionedDataSets(1)
-            fill_grid_and_plasma_state(-1, 0)
+            fill_grid_and_plasma_state(ps_reader, -1, 0)
         elif self._idsname == "wall":
             # FIXME: what if num_subsets is 2 or 3?
             output.SetNumberOfPartitionedDataSets(num_subsets - 3)
-            fill_grid_and_plasma_state(-1, 0)
+            fill_grid_and_plasma_state(ps_reader, -1, 0)
             for subset_idx in range(4, num_subsets):
-                fill_grid_and_plasma_state(subset_idx, subset_idx - 3)
+                fill_grid_and_plasma_state(ps_reader, subset_idx, subset_idx - 3)
                 self.UpdateProgress(self.GetProgress() + 1 / num_subsets)
         else:
             output.SetNumberOfPartitionedDataSets(num_subsets)
             for subset_idx in range(num_subsets):
-                fill_grid_and_plasma_state(subset_idx, subset_idx)
+                fill_grid_and_plasma_state(ps_reader, subset_idx, subset_idx)
                 self.UpdateProgress(self.GetProgress() + 1 / num_subsets)
 
         return 1
