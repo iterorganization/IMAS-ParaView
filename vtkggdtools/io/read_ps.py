@@ -15,39 +15,19 @@ u_pre = "["
 u_post = "]"
 
 
-def read_plasma_state(
-    ids,
-    subset_idx: int,
-    ugrid: vtkUnstructuredGrid,
-) -> None:
-    """Reads plasma state data arrays from the ggd node. These arrays are added as point
-    data or cell data to the unstructured grid.
-    This is just a dispatching routine, the real work is done in the called
-    funtions read_<IDS_name>(ids_obj, aos_index_values, subset_idx, ugrid)
-
-    Args:
-        ids: an ids object
-        subset_idx: an index into grid_ggd/grid_subset AoS
-        ugrid: the unstructured grid instance
-
-    Returns:
-        None
-    """
-    # TODO: read_plasma_state is getting called many times for every subset
-    # in vtkggdtools.py, which means some functionality (such as getting the scalar and
-    # vector arrays from the IDS) is done multiple times unnecessarily. In the future,
-    # change this to an OOP approach so this is only done once to improve loading times.
-    read_ids(ids, subset_idx, ugrid)
-
-
-def read_ids(ids, subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
-    """Reads IDS and converts GGD to VTK data
+def read_plasma_state(ids, subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
+    """Reads plasma state data arrays from the ggd node in the IDS. These arrays are
+    added as point data or cell data to the unstructured grid.
 
     Args:
         ids: The IDS to be converted
         subset_idx: an index into grid_ggd/grid_subset AoS
         ugrid: the unstructured grid instance
     """
+    # TODO: read_plasma_state is getting called many times for every subset
+    # in vtkggdtools.py, which means some functionality (such as getting the scalar and
+    # vector arrays from the IDS) is done multiple times unnecessarily. In the future,
+    # change this to an OOP approach so this is only done once to improve loading times.
 
     # TODO: properly handle time indexing
     # TODO: GGD-fast
