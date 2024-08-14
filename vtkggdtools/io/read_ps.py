@@ -1,5 +1,4 @@
 import logging
-import re
 
 import numpy as np
 from vtkmodules.numpy_interface import dataset_adapter as dsa
@@ -44,7 +43,7 @@ class PlasmaStateReader:
         # Read scalar arrays
         logger.debug("Converting scalar GGD arrays to VTK field data")
         for scalar_array in self.scalar_array_list:
-            name = self._get_name(scalar_array)
+            name = self._create_name_with_units(scalar_array)
             self._add_aos_scalar_array_to_vtk_field_data(
                 scalar_array, subset_idx, name, ugrid
             )
@@ -52,200 +51,91 @@ class PlasmaStateReader:
         # Read vector arrays
         logger.debug("Converting Vector GGD arrays to VTK field data")
         for vector_array in self.vector_array_list:
-            name = self._get_name(vector_array)
+            name = self._create_name_with_units(vector_array)
             self._add_aos_vector_array_to_vtk_field_data(
                 vector_array, subset_idx, name, ugrid
             )
 
-    def _get_name(self, array):
+    def _create_name_with_units(self, array):
         """Creates a name for the GGD array based on its path and units.
 
         Args:
             ids: The IDS that this array belongs to
-            array: The specific scalar or vector array to create the name for
+            array: The ggd scalar or vector array to create the name for
 
         Returns:
             name_with_units: The name and units of the provided GGD array
         """
-        # Get full path of array vector
-        path = array._path
 
         # Format the path in a neat format
-        name = self._create_name_from_path(path)
+        name = self._create_name(array)
 
         # Get units for this quantity
         units = format_units(array)
 
         # Combine name and units
         name_with_units = f"{name} {units}"
-
         return name_with_units
 
-    def _create_name_from_path(self, array_path):
-        """Rewrites the path of the array to a neat format.
-
-        Example:
-            Given path="source[4]/ggd[0]/ion[2]/state[13]/energy"
-
-            This gets split into its constituents:
-                ["source[4]", "ggd[0]", "ion[2]", "state[13]", "energy"]
-
-            The part containing ggd gets removed:
-                ["source[4]", "ion[2]", "state[13]", "energy"]
-
-            For each part that contains brackets, the identifier name or label is
-            substituted:
-                ["Atomic ionization", "Ar", "Ar+14", "energy"]
-
-            These get appended to result in the final returned name:
-                name = "Atomic ionization Ar Ar+14 energy"
+    def _create_name(self, array):
+        """Generates a name for the GGD array. The parent nodes of the array are
+        traversed until the IDS toplevel is reached. The name of the metadata of each
+        parent node is stored as well as the identifier, name or labels of the node,
+        which are added in brackets, if applicable.
 
         Args:
-            ids: The IDS that this array belongs to
-            array_path: The full path of the GGD array
+            array: The ggd scalar or vector array to create the name for
 
         Returns:
-            name: The name of the GGD array
+            Name of the ggd scalar or vector
         """
+        current_node = array
+        name = ""
+        name_current_node = ""
 
-        # Split path into parts
-        split_path, accum_split_name = self._split_and_accumulate_path(array_path)
+        # Traverse through the parent nodes until the IDS top level is reached
+        while not hasattr(current_node, "ids_properties"):
+            previous_name = name_current_node
+            name_current_node = current_node.metadata.name
 
-        # Remove the path part containing ggd, as this is not needed for the name
-        split_path, accum_split_name = self._remove_ggd_from_split_path(
-            split_path, accum_split_name
-        )
-
-        name_segments = []
-        for i in range(len(split_path)):
-            split_part = split_path[i]
-            split_accum_part = accum_split_name[i]
-
-            # Check if name can be rewritten using identifier.name or label values
-            if "[" in split_part and "]" in split_part:
+            # Do not nodes contain 'GGD' or 'time_slice' to the final name.
+            # Also, avoid adding a name if it's the same as the previous name.
+            # This occurs for example when searching through edge_sources. First it
+            # The loop may first encounter 'source[0]' and then 'source', both of which
+            # have the same metadata name. We only include 'source[0]' because this
+            # entry contains the identifier/label name.
+            if (
+                "ggd" != name_current_node
+                and "time_slice" not in name_current_node
+                and previous_name != name_current_node
+            ):
+                name_appendix = ""
 
                 # Check if node has an identifier.name
-                if hasattr(self.ids[split_accum_part], "identifier") and hasattr(
-                    self.ids[split_accum_part].identifier, "name"
+                if hasattr(current_node, "identifier") and hasattr(
+                    current_node.identifier, "name"
                 ):
-                    name_segments.append(
-                        f"{str(self.ids[split_accum_part].metadata.name).strip()} "
-                        f"({str(self.ids[split_accum_part].identifier.name).strip()})"
-                    )
+                    name_appendix = f"{str(current_node.identifier.name).strip()}"
 
                 # Check if node has a name
-                elif hasattr(self.ids[split_accum_part], "name"):
-                    name_segments.append(
-                        f"{str(self.ids[split_accum_part].metadata.name).strip()} "
-                        f"({str(self.ids[split_accum_part].name).strip()})"
-                    )
+                elif hasattr(current_node, "name"):
+                    name_appendix = f"{str(current_node.name).strip()}"
 
                 # Check if node has a label
-                elif hasattr(self.ids[split_accum_part], "label"):
-                    name_segments.append(
-                        f"{str(self.ids[split_accum_part].metadata.name).strip()} "
-                        f"({str(self.ids[split_accum_part].label.value).strip()})"
-                    )
+                elif hasattr(current_node, "label"):
+                    name_appendix = f"{str(current_node.label.value).strip()}"
 
-                # Otherwise just use the split part as is
+                # Add identifier/name/label in between brackets to the full name
+                if name_appendix != "":
+                    full_name = f"{name_current_node} ({name_appendix})"
                 else:
-                    name_segments.append(split_part)
-            else:
-                name_segments.append(split_part)
+                    full_name = name_current_node
 
-        name = " ".join(name_segments)
+                name = " ".join((full_name, name))
+
+            # Set current node to the parent node
+            current_node = current_node._parent
         return name
-
-    def _remove_ggd_from_split_path(self, split_path, accum_split_path):
-        """Removes the element from split_path that matches "ggd[idx]" and also removes
-        the element at the same index from accum_split_path.
-
-        Example:
-            Given the following split_path and accum_split_path:
-
-            split_path=["source[11]", "ggd[0]", "neutral[3]", "momentum"]
-
-            accum_split_path=[
-                "source[11]",
-                "source[11]/ggd[0]",
-                "source[11]/ggd[0]/neutral[3]",
-                "source[11]/ggd[0]/neutral[3]/momentum"]
-
-            We obtain:
-
-            split_path_no_ggd = ["source[11]", "neutral[3]", "momentum"]
-
-            accum_split_path_no_ggd = [
-                "source[11]",
-                "source[11]/ggd[0]/neutral[3]",
-                "source[11]/ggd[0]/neutral[3]/momentum"]
-
-        Args:
-            split_path: The split path of the GGD array
-            accum_split_path: The splitted and accumulated path of the GGD array
-
-        Returns:
-            split_path_no_ggd: The split path of the GGD array without the GGD part
-            accum_split_path_no_ggd: The splitted and accumulated path of the GGD array,
-            without GGD part
-        """
-
-        # Define the pattern to match "ggd[idx]"
-        ggd_pattern = re.compile(r"ggd\[\d+\]")
-
-        # Required for wall IDS
-        description_ggd_pattern = re.compile(r"description_ggd\[\d+\]")
-
-        # Required for equilbrium IDS
-        time_slice_pattern = re.compile(r"time_slice\[\d+\]")
-
-        # Create new lists for the output
-        split_path_no_ggd = []
-        accum_split_path_no_ggd = []
-
-        # Iterate through both lists and only add elements that do not match the pattern
-        for i in range(len(split_path)):
-            if (
-                not ggd_pattern.match(split_path[i])
-                and not description_ggd_pattern.match(split_path[i])
-                and not time_slice_pattern.match(split_path[i])
-            ):
-                split_path_no_ggd.append(split_path[i])
-                accum_split_path_no_ggd.append(accum_split_path[i])
-
-        return split_path_no_ggd, accum_split_path_no_ggd
-
-    def _split_and_accumulate_path(self, path):
-        """Splits the path and returns each path segment separately and accumulated.
-
-        Example:
-            Given input path:
-
-            "ggd[0]/neutral[0]/state[0]/density"
-
-            We get the following output:
-
-            split_path = ["ggd[0]", "neutral[0]", "state[0]", "density_fast"]
-
-            accumulated_split_path = [
-            "ggd[0]",
-            "ggd[0]/neutral[0]",
-            "ggd[0]/neutral[0]/state[0]",
-            "ggd[0]/neutral[0]/state[0]/density_fast"]
-
-        Args:
-            path: The path of a GGD array
-
-        Returns:
-            split_path: A list of strings containing the path segments
-            accumulated_split_path: A list of strings containing the accumulated path
-            segments
-        """
-        split_path = path.split("/")
-        accumulated_split_path = []
-        for i in range(1, len(split_path) + 1):
-            accumulated_split_path.append("/".join(split_path[:i]))
-        return split_path, accumulated_split_path
 
     def _add_scalar_array_to_vtk_field_data(
         self, array: np.ndarray, name: str, ugrid: vtkUnstructuredGrid
