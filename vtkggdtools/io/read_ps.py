@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+from imaspy.ids_data_type import IDSDataType
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
@@ -139,13 +140,14 @@ class PlasmaStateReader:
     def _add_scalar_array_to_vtk_field_data(
         self, array: np.ndarray, name: str, ugrid: vtkUnstructuredGrid
     ) -> None:
+        """Add a named array as scalars to a vtkUnstructuredGrid instance
+
+        Args:
+            array: the numpy array.
+            name: the name string.
+            ugrid: an instance of vtkUnstructuredGrid
         """
-        Add a named array as scalars to a vtkUnstructuredGrid instance
-        :param array: the numpy array.
-        :param name: the name string.
-        :param ugrid: an instance of vtkUnstructuredGrid
-        :return: None
-        """
+
         logger.debug(f"           {name}...")
         point_data: vtkPointData = ugrid.GetPointData()
         num_points = ugrid.GetNumberOfPoints()
@@ -153,7 +155,7 @@ class PlasmaStateReader:
         num_cells = ugrid.GetNumberOfCells()
 
         # Split complex arrays into real and imaginary parts
-        if array.data_type == "CPX_1D":
+        if array.metadata.data_type is IDSDataType.CPX:
             array_real = np.real(array)
             array_imag = np.imag(array)
             vtk_arr_real = dsa.numpyTovtkDataArray(array_real, name=f"{name}_real")
@@ -163,13 +165,13 @@ class PlasmaStateReader:
 
         # To see interpolation of point data on cells, just point data is necessary.
         if len(array) == num_points:
-            if array.data_type == "CPX_1D":
+            if array.metadata.data_type is IDSDataType.CPX:
                 point_data.AddArray(vtk_arr_real)
                 point_data.AddArray(vtk_arr_imag)
             else:
                 point_data.AddArray(vtk_arr)
         if len(array) == num_cells:
-            if array.data_type == "CPX_1D":
+            if array.metadata.data_type is IDSDataType.CPX:
                 cell_data.AddArray(vtk_arr_real)
                 cell_data.AddArray(vtk_arr_imag)
             else:
@@ -178,13 +180,13 @@ class PlasmaStateReader:
     def _add_aos_scalar_array_to_vtk_field_data(
         self, aos_scalar_node, subset_idx: int, name: str, ugrid: vtkUnstructuredGrid
     ) -> None:
-        """
-        Add the array under the aos_scalar_node to the unstructured grid.
-        :param aos_scalar_node: A node with scalar values for each grid subset.
-        :param subset_idx: an index into aos_scalar_node
-        :param name: this becomes the array name in VTK
-        :param ugrid: an unstructured grid instance
-        :return: None
+        """Add the array under the aos_scalar_node to the unstructured grid.
+
+        Args:
+            aos_scalar_node: A node with scalar values for each grid subset.
+            subset_idx: an index into aos_scalar_node
+            name: this becomes the array name in VTK
+            ugrid: an unstructured grid instance
         """
         logger.debug(f"           {name}...")
         if subset_idx >= len(aos_scalar_node):
@@ -215,13 +217,13 @@ class PlasmaStateReader:
     def _add_aos_vector_array_to_vtk_field_data(
         self, aos_vector_node, subset_idx: int, name: str, ugrid: vtkUnstructuredGrid
     ) -> None:
-        """
-        Add the array under the aos_vector_node to the unstructured grid.
-        :param aos_vector_node: A node with component vectors for each grid subset.
-        :param subset_idx: an index into aos_vector_node
-        :param name: this becomes the array name in VTK
-        :param ugrid: an unstructured grid instance
-        :return: None
+        """Add the array under the aos_vector_node to the unstructured grid.
+
+        Args:
+            aos_vector_node: A node with component vectors for each grid subset.
+            subset_idx: an index into aos_vector_node
+            name: this becomes the array name in VTK
+            ugrid: an unstructured grid instance
         """
         logger.debug(f"           {name}...")
         if subset_idx >= len(aos_vector_node):
