@@ -115,15 +115,15 @@ class PlasmaStateReader:
                 if hasattr(current_node, "identifier") and hasattr(
                     current_node.identifier, "name"
                 ):
-                    name_appendix = f"{str(current_node.identifier.name).strip()}"
+                    name_appendix = str(current_node.identifier.name).strip()
 
                 # Check if node has a name
                 elif hasattr(current_node, "name"):
-                    name_appendix = f"{str(current_node.name).strip()}"
+                    name_appendix = str(current_node.name).strip()
 
                 # Check if node has a label
                 elif hasattr(current_node, "label"):
-                    name_appendix = f"{str(current_node.label.value).strip()}"
+                    name_appendix = str(current_node.label.value).strip()
 
                 # Add identifier/name/label in between brackets to the full name
                 if name_appendix != "":
