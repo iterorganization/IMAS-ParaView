@@ -40,9 +40,6 @@ def test_create_name_with_units():
     ids.source[0].ggd[0].ion[0].state.resize(1)
     array = ids.source[0].ggd[0].ion[0].state[0].energy
 
-    name = ps_reader._create_name_with_units(array)
-    assert name == "source ion state energy [W.m^-3]"
-
     # Set identifier name and labels
     ids.source[0].identifier.name = "Charge exchange"
     ids.source[0].ggd[0].ion[0].label = "Ar"

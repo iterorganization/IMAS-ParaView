@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 from imaspy.ids_data_type import IDSDataType
+from imaspy.ids_toplevel import IDSToplevel
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
@@ -25,7 +26,7 @@ class PlasmaStateReader:
             ids: The IDS to load GGD arrays from
         """
         self.ids = ids
-
+        self._cache = {}
         # Retrieve all GGD scalar and vector arrays from IDS
         logger.debug("Retrieving GGD arrays from IDS")
         self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(ids)
@@ -69,7 +70,7 @@ class PlasmaStateReader:
         """
 
         # Format the path in a neat format
-        name = self._create_name(array)
+        name = self._create_name_recursive(array)
 
         # Get units for this quantity
         units = format_units(array)
@@ -78,64 +79,52 @@ class PlasmaStateReader:
         name_with_units = f"{name} {units}"
         return name_with_units
 
-    def _create_name(self, array):
+    def _create_name_recursive(self, node):
         """Generates a name for the GGD array. The parent nodes of the array are
-        traversed until the IDS toplevel is reached. The name of the metadata of each
-        parent node is stored as well as the identifier, name or labels of the node,
-        which are added in brackets, if applicable.
-
+        searched recursively until the IDS toplevel is reached. The name of the metadata
+        of each parent node is stored as well as the identifier, name or labels of the
+        node, which are added in brackets, if applicable.
         Args:
-            array: The ggd scalar or vector array to create the name for
+            node: The IDS node
 
         Returns:
             Name of the ggd scalar or vector
         """
-        current_node = array
-        name_current_node = ""
-        name = []
-        # Traverse through the parent nodes until the IDS top level is reached
-        while not hasattr(current_node, "ids_properties"):
-            previous_name = name_current_node
-            name_current_node = current_node.metadata.name
+        node_id = id(node)
+        if node_id in self._cache:
+            return self._cache[node_id]
+        name_current_node = node.metadata.name
+        name = ""
+        if "ggd" != name_current_node and "time_slice" not in name_current_node:
+            name_appendix = ""
 
-            # Do not nodes contain 'GGD' or 'time_slice' to the final name.
-            # Also, avoid adding a name if it's the same as the previous name.
-            # This occurs for example when searching through edge_sources. First it
-            # The loop may first encounter 'source[0]' and then 'source', both of which
-            # have the same metadata name. We only include 'source[0]' because this
-            # entry contains the identifier/label name.
-            if (
-                "ggd" != name_current_node
-                and "time_slice" not in name_current_node
-                and previous_name != name_current_node
-            ):
-                name_appendix = ""
+            # Check if node has an identifier.name
+            if hasattr(node, "identifier") and hasattr(node.identifier, "name"):
+                name_appendix = str(node.identifier.name).strip()
 
-                # Check if node has an identifier.name
-                if hasattr(current_node, "identifier") and hasattr(
-                    current_node.identifier, "name"
-                ):
-                    name_appendix = str(current_node.identifier.name).strip()
+            # Check if node has a name
+            elif hasattr(node, "name"):
+                name_appendix = str(node.name).strip()
 
-                # Check if node has a name
-                elif hasattr(current_node, "name"):
-                    name_appendix = str(current_node.name).strip()
+            # Check if node has a label
+            elif hasattr(node, "label"):
+                name_appendix = str(node.label.value).strip()
 
-                # Check if node has a label
-                elif hasattr(current_node, "label"):
-                    name_appendix = str(current_node.label.value).strip()
+            # Add identifier/name/label in between brackets to the full name
+            if name_appendix != "":
+                name = f"{name_current_node} ({name_appendix})"
+            else:
+                name = name_current_node
 
-                # Add identifier/name/label in between brackets to the full name
-                if name_appendix:
-                    full_name = f"{name_current_node} ({name_appendix})"
-                else:
-                    full_name = name_current_node
+        parent = node._parent
+        if parent.metadata is node.metadata:
+            parent = parent._parent
+        if not isinstance(parent, IDSToplevel):
+            name = f"{self._create_name_recursive(parent)} {name}"
 
-                name.append(full_name)
-
-            # Set current node to the parent node
-            current_node = current_node._parent
-        return " ".join(reversed(name))
+        name = name.strip()
+        self._cache[node_id] = name
+        return name
 
     def _add_scalar_array_to_vtk_field_data(
         self, array: np.ndarray, name: str, ugrid: vtkUnstructuredGrid
