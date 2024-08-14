@@ -178,7 +178,7 @@ class PlasmaStateReader:
 
     def _add_aos_scalar_array_to_vtk_field_data(
         self, aos_scalar_node, subset_idx: int, name: str, ugrid: vtkUnstructuredGrid
-    ):
+    ) -> None:
         """
         Add the array under the aos_scalar_node to the unstructured grid.
         :param aos_scalar_node: A node with scalar values for each grid subset.
@@ -215,7 +215,7 @@ class PlasmaStateReader:
 
     def _add_aos_vector_array_to_vtk_field_data(
         self, aos_vector_node, subset_idx: int, name: str, ugrid: vtkUnstructuredGrid
-    ):
+    ) -> None:
         """
         Add the array under the aos_vector_node to the unstructured grid.
         :param aos_vector_node: A node with component vectors for each grid subset.

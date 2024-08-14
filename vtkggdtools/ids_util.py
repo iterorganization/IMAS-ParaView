@@ -38,17 +38,17 @@ def _recursive_array_search(
         metadata = subquantity.metadata
         # If subquantity is a struct array
         if metadata.data_type == IDSDataType.STRUCT_ARRAY:
-            # Get scalar array quantities
-            if metadata.structure_reference == "generic_grid_scalar":
+            # Get scalar and complex scalar array quantities
+            if metadata.structure_reference in [
+                "generic_grid_scalar",
+                "generic_grid_scalar_complex",
+            ]:
                 scalar_array_list.append(subquantity)
-            # Get complex scalar array quantity
-            elif metadata.structure_reference == "generic_grid_scalar_complex":
-                scalar_array_list.append(subquantity)
-            # Get vector array quantities
-            elif metadata.structure_reference == "generic_grid_vector_components":
-                vector_array_list.append(subquantity)
-            # Get rzphi-vector array quantities
-            elif metadata.structure_reference == "generic_grid_vector_components_rzphi":
+            # Get vector and rzphi-vector array quantities
+            elif metadata.structure_reference in [
+                "generic_grid_vector_components",
+                "generic_grid_vector_components_rzphi",
+            ]:
                 vector_array_list.append(subquantity)
             # Recursively search
             else:
