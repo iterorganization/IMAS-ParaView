@@ -90,9 +90,8 @@ class PlasmaStateReader:
             Name of the ggd scalar or vector
         """
         current_node = array
-        name = ""
         name_current_node = ""
-
+        name = []
         # Traverse through the parent nodes until the IDS top level is reached
         while not hasattr(current_node, "ids_properties"):
             previous_name = name_current_node
@@ -126,16 +125,16 @@ class PlasmaStateReader:
                     name_appendix = str(current_node.label.value).strip()
 
                 # Add identifier/name/label in between brackets to the full name
-                if name_appendix != "":
+                if name_appendix:
                     full_name = f"{name_current_node} ({name_appendix})"
                 else:
                     full_name = name_current_node
 
-                name = " ".join((full_name, name))
+                name.append(full_name)
 
             # Set current node to the parent node
             current_node = current_node._parent
-        return name
+        return " ".join(reversed(name))
 
     def _add_scalar_array_to_vtk_field_data(
         self, array: np.ndarray, name: str, ugrid: vtkUnstructuredGrid
