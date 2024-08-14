@@ -30,7 +30,7 @@ def test_read_plasma_state(ids_name, dummy_ids):
 
 
 def test_create_name_with_units():
-    ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
+    ids = imaspy.IDSFactory(version="3.40.0").new("edge_sources")
     ps_reader = PlasmaStateReader(ids)
 
     # Resize relevant structures
