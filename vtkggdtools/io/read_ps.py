@@ -115,6 +115,7 @@ class PlasmaStateReader:
             else:
                 name = name_current_node
 
+        # TODO: In IMASPy 1.1 you can use imaspy.util.get_parent(node) instead
         parent = node._parent
         if parent.metadata is node.metadata:
             parent = parent._parent
