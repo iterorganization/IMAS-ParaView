@@ -25,7 +25,6 @@ class PlasmaStateReader:
         Args:
             ids: The IDS to load GGD arrays from
         """
-        self.ids = ids
         self._cache = {}
         # Retrieve all GGD scalar and vector arrays from IDS
         logger.debug("Retrieving GGD arrays from IDS")
@@ -222,14 +221,24 @@ class PlasmaStateReader:
         num_points = ugrid.GetNumberOfPoints()
         cell_data: vtkCellData = ugrid.GetCellData()
         num_cells = ugrid.GetNumberOfCells()
-        components = dict()  # name and values
 
-        for component in aos_vector_node[subset_idx]:
-            if component.has_value and component.metadata.name not in [
-                "grid_index",
-                "grid_subset_index",
-            ]:
-                components[component.metadata.name] = component.value
+        # Only add the components that have data:
+        components = dict()  # name and values
+        for component_name in [
+            "radial",
+            "diamagnetic",
+            "parallel",
+            "poloidal",
+            "toroidal",
+            "r",
+            "z",
+        ]:
+            try:
+                values = getattr(aos_vector_node[subset_idx], component_name)
+            except (IndexError, AttributeError):
+                continue
+            if len(values):
+                components[component_name] = values
 
         vtk_arr = vtkDoubleArray()
         vtk_arr.SetName(name)
