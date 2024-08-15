@@ -1,12 +1,9 @@
-import logging
-
 import imaspy
 import numpy as np
 
+from vtkggdtools import logger
 from vtkggdtools.ids_util import get_arrays_from_ids
 from vtkggdtools.util import create_first_ggd, create_first_grid, int32array
-
-logger = logging.getLogger(__name__)
 
 
 def fill_with_2_by_3_grid(grid_ggd):

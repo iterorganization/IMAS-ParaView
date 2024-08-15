@@ -4,7 +4,6 @@ These methods copy contents from the grid_ggd/space and grid_ggd/grid_subset
 children into distinct vtkUnstructuredGrid objects.
 """
 
-import logging
 from typing import Any, Callable
 
 from vtkmodules.vtkCommonCore import vtkIdList, vtkPoints
@@ -20,7 +19,7 @@ from vtkmodules.vtkCommonDataModel import (
     vtkUnstructuredGrid,
 )
 
-logger = logging.getLogger(__name__)
+from vtkggdtools import logger
 
 
 def convert_grid_subset_geometry_to_unstructured_grid(

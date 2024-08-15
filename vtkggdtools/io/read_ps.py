@@ -1,5 +1,3 @@
-import logging
-
 import numpy as np
 from imaspy.ids_data_type import IDSDataType
 from imaspy.ids_toplevel import IDSToplevel
@@ -7,12 +5,12 @@ from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
 
+from vtkggdtools import logger
 from vtkggdtools.ids_util import get_arrays_from_ids
 
 # We'll need these below when we create some units manually:
 from vtkggdtools.util import format_units
 
-logger = logging.getLogger(__name__)
 u_pre = "["
 u_post = "]"
 
