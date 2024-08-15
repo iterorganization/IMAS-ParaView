@@ -25,6 +25,9 @@ class PlasmaStateReader:
         Args:
             ids: The IDS to load GGD arrays from
         """
+        # _cache stores names for each node to avoid recomputing them. It checks if
+        # a node's name is already cached before generating it, speeding up the process
+        # and ensuring names are computed only once.
         self._cache = {}
         # Retrieve all GGD scalar and vector arrays from IDS
         logger.debug("Retrieving GGD arrays from IDS")
