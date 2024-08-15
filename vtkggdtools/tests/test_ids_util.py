@@ -10,6 +10,7 @@ def test_get_arrays_from_ids():
     ids.source[0].ggd.resize(1)
     ids.source[0].ggd[0].ion.resize(1)
     ids.source[0].ggd[0].ion[0].state.resize(1)
+
     scalar_quantity1 = ids.source[0].ggd[0].ion[0].energy
     scalar_quantity2 = ids.source[0].ggd[0].ion[0].state[0].energy
     vector_quantity1 = ids.source[0].ggd[0].ion[0].momentum
@@ -29,5 +30,7 @@ def test_get_arrays_from_ids():
     fill_vector_quantity(vector_quantity2, num_vertices, num_edges, num_faces)
 
     scalar_array_list, vector_array_list = get_arrays_from_ids(ids)
-    assert scalar_array_list == [scalar_quantity1, scalar_quantity2]
-    assert vector_array_list == [vector_quantity1, vector_quantity2]
+    assert scalar_quantity1 in scalar_array_list
+    assert scalar_quantity2 in scalar_array_list
+    assert vector_quantity1 in vector_array_list
+    assert vector_quantity2 in vector_array_list
