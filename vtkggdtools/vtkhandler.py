@@ -28,6 +28,14 @@ class VTKHandler(logging.Handler):
                     lvlText = "WARN: "
                     fullMsg = f"{record.filename}:{record.lineno} {lvlText}{msg}\n"
                     outputWindow.DisplayWarningText(fullMsg)
+                elif lvl == vtkLogger.VERBOSITY_INFO:
+                    lvlText = "INFO: "
+                    fullMsg = f"{record.filename}:{record.lineno} {lvlText}{msg}\n"
+                    outputWindow.DisplayText(fullMsg)
+                elif lvl == vtkLogger.VERBOSITY_TRACE:
+                    lvlText = "DEBUG: "
+                    fullMsg = f"{record.filename}:{record.lineno} {lvlText}{msg}\n"
+                    outputWindow.DisplayDebugText(fullMsg)
                 else:
                     fullMsg = f"{record.filename}:{record.lineno} {msg}\n"
                     outputWindow.DisplayText(fullMsg)
@@ -49,3 +57,15 @@ class VTKHandler(logging.Handler):
             return vtkLogger.VERBOSITY_TRACE
         else:
             return vtkLogger.VERBOSITY_MAX
+
+    def set_vtk_level(self, level):
+        if level >= logging.ERROR:
+            vtkLogger.SetStderrVerbosity(vtkLogger.VERBOSITY_ERROR)
+        elif level >= logging.WARNING:
+            vtkLogger.SetStderrVerbosity(vtkLogger.VERBOSITY_WARNING)
+        elif level >= logging.INFO:
+            vtkLogger.SetStderrVerbosity(vtkLogger.VERBOSITY_INFO)
+        elif level >= logging.DEBUG:
+            vtkLogger.SetStderrVerbosity(vtkLogger.VERBOSITY_TRACE)
+        else:
+            vtkLogger.SetStderrVerbosity(vtkLogger.VERBOSITY_MAX)
