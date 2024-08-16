@@ -5,10 +5,28 @@ from vtkmodules.vtkCommonCore import vtkOutputWindow as win
 
 
 class VTKHandler(logging.Handler):
+    """
+    A custom logging handler for VTK, intended to work independently from ParaView,
+    adapted from paraview.detail.loghandler.py.
+
+    This handler formats and logs messages using VTK's logging system and displays
+    them in the VTK output window. It maps Python's standard logging levels to VTK's
+    verbosity levels.
+    """
+
     def __init__(self, *args, **kwargs):
         super(VTKHandler, self).__init__(*args, **kwargs)
 
     def emit(self, record):
+        """Formats and logs a record using VTK's logging system and displays it in the
+        VTK output window.
+
+        Args:
+            record: The log record to be processed.
+        Raises:
+            Exception: Any exceptions raised during the logging process will be
+            handled by the `handleError` method.
+        """
         try:
             msg = self.format(record)
             lvl = self.get_vtk_level(record.levelno)
@@ -46,7 +64,14 @@ class VTKHandler(logging.Handler):
             self.handleError(record)
 
     def get_vtk_level(self, level):
+        """Converts a Python logging level to a VTK verbosity level.
 
+        Args:
+            level: The Python logging level (e.g., logging.ERROR, logging.WARNING).
+
+        Returns:
+            The corresponding VTK verbosity level.
+        """
         if level >= logging.ERROR:
             return vtkLogger.VERBOSITY_ERROR
         elif level >= logging.WARNING:
@@ -57,15 +82,3 @@ class VTKHandler(logging.Handler):
             return vtkLogger.VERBOSITY_TRACE
         else:
             return vtkLogger.VERBOSITY_MAX
-
-    def set_vtk_level(self, level):
-        if level >= logging.ERROR:
-            vtkLogger.SetStderrVerbosity(vtkLogger.VERBOSITY_ERROR)
-        elif level >= logging.WARNING:
-            vtkLogger.SetStderrVerbosity(vtkLogger.VERBOSITY_WARNING)
-        elif level >= logging.INFO:
-            vtkLogger.SetStderrVerbosity(vtkLogger.VERBOSITY_INFO)
-        elif level >= logging.DEBUG:
-            vtkLogger.SetStderrVerbosity(vtkLogger.VERBOSITY_TRACE)
-        else:
-            vtkLogger.SetStderrVerbosity(vtkLogger.VERBOSITY_MAX)
