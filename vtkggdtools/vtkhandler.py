@@ -23,6 +23,7 @@ class VTKHandler(logging.Handler):
 
         Args:
             record: The log record to be processed.
+
         Raises:
             Exception: Any exceptions raised during the logging process will be
             handled by the `handleError` method.
