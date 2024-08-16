@@ -108,7 +108,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
             # TODO: enable lazy loading
             logger.info("Loading IDS %s/%d ...", self._idsname, self._occurrence)
-            lazy = False  # TODO: Test lazy loading before enabling
+            lazy = True
             try:
                 ids = self._dbentry.get(
                     self._idsname, self._occurrence, autoconvert=False, lazy=lazy

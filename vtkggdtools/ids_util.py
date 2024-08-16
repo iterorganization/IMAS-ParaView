@@ -1,4 +1,5 @@
 from imaspy.ids_data_type import IDSDataType
+from imaspy.util import is_lazy_loaded
 
 
 def get_arrays_from_ids(ids, get_empty_arrays=False):
@@ -13,12 +14,15 @@ def get_arrays_from_ids(ids, get_empty_arrays=False):
     """
     scalar_array_list = []
     vector_array_list = []
-    _recursive_array_search(ids, scalar_array_list, vector_array_list, get_empty_arrays)
+    ids_is_lazy_loaded = is_lazy_loaded(ids)
+    _recursive_array_search(
+        ids, scalar_array_list, vector_array_list, get_empty_arrays, ids_is_lazy_loaded
+    )
     return scalar_array_list, vector_array_list
 
 
 def _recursive_array_search(
-    quantity, scalar_array_list, vector_array_list, get_empty_arrays
+    quantity, scalar_array_list, vector_array_list, get_empty_arrays, ids_is_lazy_loaded
 ):
     """Recursively searches through the IDS node for scalar (real & complex) and
     vector arrays, and appends these to the scalar_array_list and vector_array_list
@@ -29,11 +33,13 @@ def _recursive_array_search(
         scalar_array_list: The GGD scalar arrays (real & complex)
         vector_array_list: The GGD vector arrays
         get_empty_arrays (bool): Whether to return empty arrays
+        ids_is_lazy_loaded (bool): Whether the IDS was lazy loaded
     """
     for subquantity in quantity:
-        # Only checkout subquantity if it is non-empty
-        if not subquantity.has_value and not get_empty_arrays:
-            continue
+        if not ids_is_lazy_loaded:
+            # Only checkout subquantity if it is non-empty
+            if not subquantity.has_value and not get_empty_arrays:
+                continue
 
         metadata = subquantity.metadata
         # If subquantity is a struct array
@@ -57,6 +63,7 @@ def _recursive_array_search(
                     scalar_array_list,
                     vector_array_list,
                     get_empty_arrays,
+                    ids_is_lazy_loaded,
                 )
 
         # If subquantity is a structure
@@ -69,4 +76,5 @@ def _recursive_array_search(
                     scalar_array_list,
                     vector_array_list,
                     get_empty_arrays,
+                    ids_is_lazy_loaded,
                 )
