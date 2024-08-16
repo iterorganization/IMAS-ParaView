@@ -82,3 +82,27 @@ class VTKHandler(logging.Handler):
             return vtkLogger.VERBOSITY_TRACE
         else:
             return vtkLogger.VERBOSITY_MAX
+
+
+def get_level(vtklevel=None):
+    """Converts a VTK verbosity level to a Python logging level. If VTK verbosity level
+    is provided, it defaults to using the current verbosity cutoff defined in the VTK
+    logger.
+
+    Args:
+        vtklevel: The VTK verbosity level to convert.
+
+    Returns:
+        The corresponding Python logging level.
+    """
+    from vtkmodules.vtkCommonCore import vtkLogger
+
+    vtk_level = vtkLogger.GetCurrentVerbosityCutoff() if vtklevel is None else vtklevel
+    if vtk_level == vtkLogger.VERBOSITY_ERROR:
+        return logging.ERROR
+    elif vtk_level == vtkLogger.VERBOSITY_WARNING:
+        return logging.WARNING
+    elif vtk_level == vtkLogger.VERBOSITY_INFO:
+        return logging.INFO
+    else:
+        return logging.DEBUG

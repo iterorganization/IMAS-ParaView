@@ -1,6 +1,6 @@
 import logging
 
-from vtkggdtools.vtkhandler import VTKHandler
+from vtkggdtools.vtkhandler import VTKHandler, get_level
 
 from . import _version
 
@@ -13,3 +13,4 @@ if not hasattr(logger, "_paraview_initialized"):
 
     handler = VTKHandler()
     logger.addHandler(handler)
+    logger.setLevel(get_level())
