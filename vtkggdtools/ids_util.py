@@ -44,6 +44,8 @@ def _recursive_array_search(
                 "generic_grid_scalar_complex",
             ]:
                 scalar_array_list.append(subquantity)
+            # TODO: From DDv4 onward `generic_grid_vector_components_rzphi` will be
+            # replaced by `generic_grid_vector_components_rphiz`
             # Get vector and rzphi-vector array quantities
             elif metadata.structure_reference in [
                 "generic_grid_vector_components",
