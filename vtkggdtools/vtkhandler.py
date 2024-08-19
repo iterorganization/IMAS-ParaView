@@ -15,7 +15,7 @@ class VTKHandler(logging.Handler):
     """
 
     def __init__(self, *args, **kwargs):
-        super(VTKHandler, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def emit(self, record):
         """Formats and logs a record using VTK's logging system and displays it in the
