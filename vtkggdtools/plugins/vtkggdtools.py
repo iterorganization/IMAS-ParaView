@@ -3,6 +3,7 @@
 
 import datetime
 import getpass
+import logging
 
 import imaspy
 import imaspy.ids_defs
@@ -10,7 +11,6 @@ import numpy as np
 from identifiers.ggd_identifier import ggd_identifier
 from identifiers.ggd_space_identifier import ggd_space_identifier
 from imaspy.exception import UnknownDDVersion
-from paraview import logger
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonCore import vtkDataArray, vtkPoints
@@ -38,6 +38,8 @@ from vtkggdtools.paraview_support.servermanager_tools import (
     stringvector,
 )
 from vtkggdtools.util import FauxIndexMap, create_first_grid, get_first_grid
+
+logger = logging.getLogger("ggdvtk")
 
 BACKENDS = {
     "MDSplus": imaspy.ids_defs.MDSPLUS_BACKEND,
