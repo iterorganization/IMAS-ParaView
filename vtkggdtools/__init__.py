@@ -7,7 +7,7 @@ from . import _version
 __version__ = _version.get_versions()["version"]
 
 # Setup logger for GGDVTK module
-logger = logging.getLogger("ggdvtk")
+logger = logging.getLogger("vtkggdtools")
 handler = VTKHandler()
 logger.addHandler(handler)
 logger.setLevel(handler.get_level())

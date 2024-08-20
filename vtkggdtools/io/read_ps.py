@@ -12,7 +12,7 @@ from vtkggdtools.ids_util import get_arrays_from_ids
 # We'll need these below when we create some units manually:
 from vtkggdtools.util import format_units
 
-logger = logging.getLogger("ggdvtk")
+logger = logging.getLogger("vtkggdtools")
 u_pre = "["
 u_post = "]"
 

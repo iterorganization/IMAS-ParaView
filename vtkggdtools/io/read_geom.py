@@ -20,7 +20,7 @@ from vtkmodules.vtkCommonDataModel import (
     vtkUnstructuredGrid,
 )
 
-logger = logging.getLogger("ggdvtk")
+logger = logging.getLogger("vtkggdtools")
 
 
 def convert_grid_subset_geometry_to_unstructured_grid(

@@ -39,7 +39,7 @@ from vtkggdtools.paraview_support.servermanager_tools import (
 )
 from vtkggdtools.util import FauxIndexMap, create_first_grid, get_first_grid
 
-logger = logging.getLogger("ggdvtk")
+logger = logging.getLogger("vtkggdtools")
 
 BACKENDS = {
     "MDSplus": imaspy.ids_defs.MDSPLUS_BACKEND,
