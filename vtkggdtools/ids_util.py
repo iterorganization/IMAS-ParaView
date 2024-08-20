@@ -1,5 +1,3 @@
-from imaspy.util import is_lazy_loaded
-
 from vtkggdtools._ids_util import (
     _get_nodes_from_path,
     _recursive_array_search,
@@ -19,10 +17,7 @@ def get_arrays_from_ids(ids, get_empty_arrays=False):
     """
     scalar_array_list = []
     vector_array_list = []
-    ids_is_lazy_loaded = is_lazy_loaded(ids)
-    _recursive_array_search(
-        ids, scalar_array_list, vector_array_list, get_empty_arrays, ids_is_lazy_loaded
-    )
+    _recursive_array_search(ids, scalar_array_list, vector_array_list, get_empty_arrays)
     return scalar_array_list, vector_array_list
 
 

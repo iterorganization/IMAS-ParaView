@@ -16,9 +16,9 @@ def _recursive_array_search(
         get_empty_arrays (bool): Whether to return empty arrays
     """
     for subquantity in quantity:
-        # # Only checkout subquantity if it is non-empty
-        # if not subquantity.has_value and not get_empty_arrays:
-        #     continue
+        # Only checkout subquantity if it is non-empty
+        if not subquantity.has_value and not get_empty_arrays:
+            continue
 
         metadata = subquantity.metadata
         # If subquantity is a struct array
