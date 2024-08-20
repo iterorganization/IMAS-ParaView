@@ -1,5 +1,7 @@
 import logging
 
+import imaspy  # noqa
+
 from vtkggdtools.vtkhandler import VTKHandler
 
 from . import _version
