@@ -15,7 +15,7 @@ def _recursive_ggd_path_search(
         vector_array_list: The GGD vector arrays
         get_empty_arrays (bool): Whether to return empty arrays
     """
-    for _, subquantity_metadata in quantity_metadata._children.items():
+    for subquantity_metadata in quantity_metadata:
         # If subquantity is a struct array
         if subquantity_metadata.data_type == IDSDataType.STRUCT_ARRAY:
             # Get scalar and complex scalar array quantities
