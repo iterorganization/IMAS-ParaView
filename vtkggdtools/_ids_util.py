@@ -14,7 +14,9 @@ def _recursive_ggd_path_search(
         scalar_array_paths: The IDSPaths of GGD scalar arrays (real & complex)
         vector_array_paths: The IDSPaths of GGD vector arrays (regular and rphiz)
     """
-    for subquantity_metadata in quantity_metadata:
+    # TODO: Change to `for subquantity_metadata in quantity_metadata:` once IMASPy 1.1
+    # is released
+    for _, subquantity_metadata in quantity_metadata._children.items():
         if subquantity_metadata.data_type == IDSDataType.STRUCT_ARRAY:
             # Get scalar and complex scalar array quantities
             if subquantity_metadata.structure_reference in [
