@@ -1,27 +1,7 @@
-from vtkggdtools._ids_util import (
-    _get_nodes_from_path,
-    _recursive_array_search,
-    _recursive_ggd_path_search,
-)
+from vtkggdtools._ids_util import _get_nodes_from_path, _recursive_ggd_path_search
 
 
 def get_arrays_from_ids(ids, get_empty_arrays=False):
-    """Fetches all GGD scalar and vector arrays that reside in the IDS.
-
-    Args:
-        get_arrays_from_ids (bool): Whether to return empty arrays
-
-    Returns:
-        scalar_array_list: The GGD scalar arrays (real & complex)
-        vector_array_list: The GGD vector arrays
-    """
-    scalar_array_list = []
-    vector_array_list = []
-    _recursive_array_search(ids, scalar_array_list, vector_array_list, get_empty_arrays)
-    return scalar_array_list, vector_array_list
-
-
-def get_arrays_from_ids_lazy(ids):
     """Fetches all GGD scalar and vector arrays that reside in the IDS.
 
     Args:
@@ -48,5 +28,10 @@ def get_arrays_from_ids_lazy(ids):
 
     for vector_path in vector_array_paths:
         vector_array_list.extend(_get_nodes_from_path(ids, vector_path))
+
+    # Remove empty arrays
+    if not get_empty_arrays:
+        scalar_array_list = [array for array in scalar_array_list if len(array) > 0]
+        vector_array_list = [array for array in vector_array_list if len(array) > 0]
 
     return scalar_array_list, vector_array_list

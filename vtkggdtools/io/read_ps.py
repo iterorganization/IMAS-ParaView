@@ -3,12 +3,11 @@ import logging
 import numpy as np
 from imaspy.ids_data_type import IDSDataType
 from imaspy.ids_toplevel import IDSToplevel
-from imaspy.util import is_lazy_loaded
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
 
-from vtkggdtools.ids_util import get_arrays_from_ids, get_arrays_from_ids_lazy
+from vtkggdtools.ids_util import get_arrays_from_ids
 
 # We'll need these below when we create some units manually:
 from vtkggdtools.util import format_units
@@ -32,13 +31,7 @@ class PlasmaStateReader:
         self._cache = {}
         # Retrieve all GGD scalar and vector arrays from IDS
         logger.debug("Retrieving GGD arrays from IDS")
-        ids_is_lazy_loaded = is_lazy_loaded(ids)
-        if ids_is_lazy_loaded:
-            self.scalar_array_list, self.vector_array_list = get_arrays_from_ids_lazy(
-                ids
-            )
-        else:
-            self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(ids)
+        self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(ids)
 
         logger.debug(
             f"Found {len(self.scalar_array_list)} scalar arrays and "
@@ -59,20 +52,18 @@ class PlasmaStateReader:
         # Read scalar arrays
         logger.debug("Converting scalar GGD arrays to VTK field data")
         for scalar_array in self.scalar_array_list:
-            if len(scalar_array) > 0:
-                name = self._create_name_with_units(scalar_array)
-                self._add_aos_scalar_array_to_vtk_field_data(
-                    scalar_array, subset_idx, name, ugrid
-                )
+            name = self._create_name_with_units(scalar_array)
+            self._add_aos_scalar_array_to_vtk_field_data(
+                scalar_array, subset_idx, name, ugrid
+            )
 
         # Read vector arrays
         logger.debug("Converting Vector GGD arrays to VTK field data")
         for vector_array in self.vector_array_list:
-            if len(vector_array) > 0:
-                name = self._create_name_with_units(vector_array)
-                self._add_aos_vector_array_to_vtk_field_data(
-                    vector_array, subset_idx, name, ugrid
-                )
+            name = self._create_name_with_units(vector_array)
+            self._add_aos_vector_array_to_vtk_field_data(
+                vector_array, subset_idx, name, ugrid
+            )
 
     def _create_name_with_units(self, array):
         """Creates a name for the GGD array based on its path and units.
