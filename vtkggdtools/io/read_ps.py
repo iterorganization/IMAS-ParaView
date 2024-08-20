@@ -40,6 +40,11 @@ class PlasmaStateReader:
         else:
             self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(ids)
 
+        logger.debug(
+            f"Found {len(self.scalar_array_list)} scalar arrays and "
+            f"{len(self.vector_array_list)} vector arrays in the IDS."
+        )
+
     def read_plasma_state(self, subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
         """Reads plasma state data arrays from the ggd node in the IDS. These arrays are
         added as point data or cell data to the unstructured grid.

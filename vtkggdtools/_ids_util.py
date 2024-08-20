@@ -59,10 +59,12 @@ def _recursive_array_search(
                 )
 
 
-def _recursive_path_search(quantity, scalar_array_paths, vector_array_paths):
+def _recursive_ggd_path_search(
+    quantity_metadata, scalar_array_paths, vector_array_paths
+):
     """Recursively searches through the IDS node for scalar (real & complex) and
-    vector arrays, and appends these to the scalar_array_list and vector_array_list
-    respectively.
+    vector arrays, and appends the paths of these to the scalar_array_paths and
+    vector_array_paths respectively.
 
     Args:
         quantity: The IDS node to search from
@@ -70,48 +72,68 @@ def _recursive_path_search(quantity, scalar_array_paths, vector_array_paths):
         vector_array_list: The GGD vector arrays
         get_empty_arrays (bool): Whether to return empty arrays
     """
-    for _, subquantity in quantity._children.items():
+    for _, subquantity_metadata in quantity_metadata._children.items():
         # If subquantity is a struct array
-        if subquantity.data_type == IDSDataType.STRUCT_ARRAY:
+        if subquantity_metadata.data_type == IDSDataType.STRUCT_ARRAY:
             # Get scalar and complex scalar array quantities
-            if subquantity.structure_reference in [
+            if subquantity_metadata.structure_reference in [
                 "generic_grid_scalar",
                 "generic_grid_scalar_complex",
             ]:
-                scalar_array_paths.append(subquantity.path)
+                scalar_array_paths.append(subquantity_metadata.path)
             # TODO: From DDv4 onward `generic_grid_vector_components_rzphi` will be
             # replaced by `generic_grid_vector_components_rphiz`
             # Get vector and rzphi-vector array quantities
-            elif subquantity.structure_reference in [
+            elif subquantity_metadata.structure_reference in [
                 "generic_grid_vector_components",
                 "generic_grid_vector_components_rzphi",
             ]:
-                vector_array_paths.append(subquantity.path)
+                vector_array_paths.append(subquantity_metadata.path)
             # Recursively search
             else:
-                _recursive_path_search(
-                    subquantity,
+                _recursive_ggd_path_search(
+                    subquantity_metadata,
                     scalar_array_paths,
                     vector_array_paths,
                 )
 
         # If subquantity is a structure
-        elif subquantity.data_type == IDSDataType.STRUCTURE:
+        elif subquantity_metadata.data_type == IDSDataType.STRUCTURE:
             # Skip "grid" quantity, this can occur if the grid is stored within the
             # GGD. e.g. in distribution_sources distributions IDSs
-            if subquantity.name != "grid":
-                _recursive_path_search(
-                    subquantity,
+            if subquantity_metadata.name != "grid":
+                _recursive_ggd_path_search(
+                    subquantity_metadata,
                     scalar_array_paths,
                     vector_array_paths,
                 )
 
 
 def _get_nodes_from_path(node, path):
+    """Retrieve a list of nodes from a given IDSPath.
+
+    Args:
+        node: The starting node to navigate.
+        path: An IDSPath to traverse.
+
+    Returns:
+        list: A list of nodes obtained from the specified path.
+    """
     return list(_iter_nodes_from_path(node, path.parts))
 
 
 def _iter_nodes_from_path(node, path_parts):
+    """Recursively iterate through nodes in a hierarchical structure based on path
+    parts.
+
+    Args:
+        node: The current node being traversed.
+        path_parts: A list of IDSPath segments (parts) that guide the traversal through
+        the structure.
+
+    Yields:
+        node: The next node in the structure corresponding to the current path part.
+    """
     child_node = node[path_parts[0]]
     if len(path_parts) == 1:
         yield child_node
