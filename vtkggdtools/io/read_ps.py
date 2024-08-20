@@ -3,6 +3,7 @@ import logging
 import numpy as np
 from imaspy.ids_data_type import IDSDataType
 from imaspy.ids_toplevel import IDSToplevel
+from imaspy.util import is_lazy_loaded
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
@@ -31,8 +32,13 @@ class PlasmaStateReader:
         self._cache = {}
         # Retrieve all GGD scalar and vector arrays from IDS
         logger.debug("Retrieving GGD arrays from IDS")
-        self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(ids)
-        # self.scalar_array_list, self.vector_array_list = get_arrays_from_ids_lazy(ids)
+        ids_is_lazy_loaded = is_lazy_loaded(ids)
+        if ids_is_lazy_loaded:
+            self.scalar_array_list, self.vector_array_list = get_arrays_from_ids_lazy(
+                ids
+            )
+        else:
+            self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(ids)
 
     def read_plasma_state(self, subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
         """Reads plasma state data arrays from the ggd node in the IDS. These arrays are
