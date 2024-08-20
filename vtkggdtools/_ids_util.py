@@ -50,34 +50,39 @@ def _recursive_ggd_path_search(
                 )
 
 
-def _get_nodes_from_path(node, path):
+def _get_nodes_from_path(node, path, get_empty_arrays):
     """Retrieve a list of nodes from a given IDSPath.
 
     Args:
         node: The starting node to navigate.
         path: An IDSPath to traverse.
+        get_empty_arrays (bool): Whether to return empty GGD arrays
 
     Returns:
         A list of nodes obtained from the specified path.
     """
-    return list(_iter_nodes_from_path(node, path.parts))
+    return list(_iter_nodes_from_path(node, path.parts, get_empty_arrays))
 
 
-def _iter_nodes_from_path(node, path_parts):
+def _iter_nodes_from_path(node, path_parts, get_empty_arrays):
     """Recursively iterate through nodes of an IDS node based on path parts.
 
     Args:
         node: The current node being traversed.
         path_parts: A list of IDSPath segments (parts).
+        get_empty_arrays (bool): Whether to return empty GGD arrays
 
     Yields:
         The next node in the structure corresponding to the current path part.
     """
     child_node = node[path_parts[0]]
     if len(path_parts) == 1:
-        yield child_node
+        if len(child_node) > 1 or get_empty_arrays:
+            yield child_node
     elif isinstance(child_node, IDSStructArray):
         for structure in child_node:
-            yield from _iter_nodes_from_path(structure, path_parts[1:])
+            yield from _iter_nodes_from_path(
+                structure, path_parts[1:], get_empty_arrays
+            )
     else:
-        yield from _iter_nodes_from_path(child_node, path_parts[1:])
+        yield from _iter_nodes_from_path(child_node, path_parts[1:], get_empty_arrays)

@@ -25,14 +25,13 @@ def get_arrays_from_ids(ids, get_empty_arrays=False):
     scalar_array_list = []
     vector_array_list = []
     for scalar_path in scalar_array_paths:
-        scalar_array_list.extend(_get_nodes_from_path(ids, scalar_path))
+        scalar_array_list.extend(
+            _get_nodes_from_path(ids, scalar_path, get_empty_arrays)
+        )
 
     for vector_path in vector_array_paths:
-        vector_array_list.extend(_get_nodes_from_path(ids, vector_path))
-
-    # Remove empty arrays
-    if not get_empty_arrays:
-        scalar_array_list = [array for array in scalar_array_list if len(array) > 0]
-        vector_array_list = [array for array in vector_array_list if len(array) > 0]
+        vector_array_list.extend(
+            _get_nodes_from_path(ids, vector_path, get_empty_arrays)
+        )
 
     return scalar_array_list, vector_array_list
