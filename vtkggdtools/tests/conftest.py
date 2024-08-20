@@ -1,26 +1,11 @@
 import imaspy
 import pytest
 
+from vtkggdtools.io.read_ps import SUPPORTED_IDS_NAMES
 from vtkggdtools.tests.fill_ggd import fill_ids
 
 
-@pytest.fixture(
-    params=[
-        "distribution_sources",
-        "distributions",
-        "edge_profiles",
-        "edge_sources",
-        "edge_transport",
-        "equilibrium",
-        "mhd",
-        "radiation",
-        "tf",
-        "transport_solver_numerics",
-        "wall",
-        "waves",
-        "runaway_electrons",
-    ]
-)
+@pytest.fixture(params=SUPPORTED_IDS_NAMES)
 def ids_name(request):
     """Provides IDS names for testing."""
 
