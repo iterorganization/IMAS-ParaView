@@ -7,7 +7,7 @@ from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
 
-from vtkggdtools.ids_util import get_arrays_from_ids
+from vtkggdtools.ids_util import get_arrays_from_ids, get_arrays_from_ids_lazy
 
 # We'll need these below when we create some units manually:
 from vtkggdtools.util import format_units
@@ -32,6 +32,7 @@ class PlasmaStateReader:
         # Retrieve all GGD scalar and vector arrays from IDS
         logger.debug("Retrieving GGD arrays from IDS")
         self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(ids)
+        # self.scalar_array_list, self.vector_array_list = get_arrays_from_ids_lazy(ids)
 
     def read_plasma_state(self, subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
         """Reads plasma state data arrays from the ggd node in the IDS. These arrays are
