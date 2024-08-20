@@ -59,18 +59,20 @@ class PlasmaStateReader:
         # Read scalar arrays
         logger.debug("Converting scalar GGD arrays to VTK field data")
         for scalar_array in self.scalar_array_list:
-            name = self._create_name_with_units(scalar_array)
-            self._add_aos_scalar_array_to_vtk_field_data(
-                scalar_array, subset_idx, name, ugrid
-            )
+            if len(scalar_array) > 0:
+                name = self._create_name_with_units(scalar_array)
+                self._add_aos_scalar_array_to_vtk_field_data(
+                    scalar_array, subset_idx, name, ugrid
+                )
 
         # Read vector arrays
         logger.debug("Converting Vector GGD arrays to VTK field data")
         for vector_array in self.vector_array_list:
-            name = self._create_name_with_units(vector_array)
-            self._add_aos_vector_array_to_vtk_field_data(
-                vector_array, subset_idx, name, ugrid
-            )
+            if len(vector_array) > 0:
+                name = self._create_name_with_units(vector_array)
+                self._add_aos_vector_array_to_vtk_field_data(
+                    vector_array, subset_idx, name, ugrid
+                )
 
     def _create_name_with_units(self, array):
         """Creates a name for the GGD array based on its path and units.
