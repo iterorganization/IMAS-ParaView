@@ -5,7 +5,7 @@ from imaspy.ids_struct_array import IDSStructArray
 def _recursive_ggd_path_search(
     quantity_metadata, scalar_array_paths, vector_array_paths
 ):
-    """Recursively searches through the metadata of an IDS  node for scalar GGD arrays
+    """Recursively searches through the metadata of an IDS node for scalar GGD arrays
     (real & complex) and vector GGD arrays (regular and rphiz), and appends the paths of
     these to the scalar_array_paths and vector_array_paths respectively.
 
