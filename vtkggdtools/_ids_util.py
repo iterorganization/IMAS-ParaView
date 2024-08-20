@@ -64,7 +64,7 @@ def _get_nodes_from_path(node, path):
 
 
 def _iter_nodes_from_path(node, path_parts):
-    """Recursively iterate through nodes in an IDS mpde based on path parts.
+    """Recursively iterate through nodes of an IDS node based on path parts.
 
     Args:
         node: The current node being traversed.
