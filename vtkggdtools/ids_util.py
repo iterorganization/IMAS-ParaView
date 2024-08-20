@@ -6,6 +6,7 @@ def get_arrays_from_ids(ids, get_empty_arrays=False):
 
     Args:
         ids: The IDS from which to fetch GGD arrays
+        get_arrays_from_ids (bool): Whether to return empty GGD arrays
 
     Returns:
         scalar_array_list: The GGD scalar arrays (real & complex)
