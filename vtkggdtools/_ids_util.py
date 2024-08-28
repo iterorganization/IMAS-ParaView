@@ -24,12 +24,14 @@ def _recursive_ggd_path_search(
                 "generic_grid_scalar_complex",
             ]:
                 scalar_array_paths.append(subquantity_metadata.path)
-            # TODO: From DDv4 onward `generic_grid_vector_components_rzphi` will be
-            # replaced by `generic_grid_vector_components_rphiz`
+
             # Get vector and rzphi-vector array quantities
+            # From DDv4 onward `generic_grid_vector_components_rzphi` will be
+            # replaced by `generic_grid_vector_components_rphiz`
             elif subquantity_metadata.structure_reference in [
                 "generic_grid_vector_components",
                 "generic_grid_vector_components_rzphi",
+                "generic_grid_vector_components_rphiz",
             ]:
                 vector_array_paths.append(subquantity_metadata.path)
             else:
