@@ -1,6 +1,6 @@
 import logging
 
-import imaspy  # noqa
+import imaspy
 from packaging import version
 
 from vtkggdtools.vtkhandler import VTKHandler
