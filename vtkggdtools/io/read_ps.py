@@ -1,5 +1,6 @@
 import logging
 
+import imaspy
 import numpy as np
 from imaspy.ids_data_type import IDSDataType
 from imaspy.ids_toplevel import IDSToplevel
@@ -123,10 +124,9 @@ class PlasmaStateReader:
             else:
                 name = name_current_node
 
-        # TODO: In IMASPy 1.1 you can use imaspy.util.get_parent(node) instead
-        parent = node._parent
+        parent = imaspy.util.get_parent(node)
         if parent.metadata is node.metadata:
-            parent = parent._parent
+            parent = imaspy.util.get_parent(parent)
         if not isinstance(parent, IDSToplevel):
             name = f"{self._create_name_recursive(parent)} {name}"
 
