@@ -1,6 +1,7 @@
 import logging
 
 import imaspy  # noqa
+from packaging import version
 
 from vtkggdtools.vtkhandler import VTKHandler
 
@@ -21,3 +22,12 @@ if len(imaspy_logger.handlers) == 1:
     imaspy_logger.removeHandler(imaspy_logger.handlers[0])
 imaspy_logger.addHandler(handler)
 imaspy_logger.setLevel(handler.get_level())
+
+# Check IMASPy version
+imaspy_version = imaspy.version
+required_imaspy_version = "1.1.0"
+if version.parse(imaspy_version) < version.parse(required_imaspy_version):
+    logger.warning(
+        f"IMASPy version {imaspy_version} is lower than the recommended version "
+        f"{required_imaspy_version}. Some features might not work as expected."
+    )

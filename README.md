@@ -16,6 +16,12 @@ couple of things:
 3. Temporarily, the functionality to select time slice (_TimeIdx_) and other
    Array of Structure indices has been disabled. This will be added back later.
 
+To ensure proper functionality, it is recommended to use **IMASPy version 1.1.0 or higher**.
+You can check your installed version using the following commands:
+
+```bash
+imaspy version
+```
 
 ### Running on SDCC
 
