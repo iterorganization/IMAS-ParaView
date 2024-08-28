@@ -32,19 +32,12 @@ def _recursive_ggd_path_search(
                 "generic_grid_vector_components_rphiz",
             ]:
                 vector_array_paths.append(subquantity_metadata.path)
-            else:
-                _recursive_ggd_path_search(
-                    subquantity_metadata,
-                    scalar_array_paths,
-                    vector_array_paths,
-                )
 
-        elif subquantity_metadata.data_type == IDSDataType.STRUCTURE:
-            _recursive_ggd_path_search(
-                subquantity_metadata,
-                scalar_array_paths,
-                vector_array_paths,
-            )
+        _recursive_ggd_path_search(
+            subquantity_metadata,
+            scalar_array_paths,
+            vector_array_paths,
+        )
 
 
 def _get_nodes_from_path(node, path, get_empty_arrays):
