@@ -42,14 +42,11 @@ def _recursive_ggd_path_search(
                 )
 
         elif subquantity_metadata.data_type == IDSDataType.STRUCTURE:
-            # Skip "grid" quantity, this can occur if the grid is stored within the
-            # GGD. e.g. in distribution_sources distributions IDSs
-            if subquantity_metadata.name != "grid":
-                _recursive_ggd_path_search(
-                    subquantity_metadata,
-                    scalar_array_paths,
-                    vector_array_paths,
-                )
+            _recursive_ggd_path_search(
+                subquantity_metadata,
+                scalar_array_paths,
+                vector_array_paths,
+            )
 
 
 def _get_nodes_from_path(node, path, get_empty_arrays):
@@ -77,6 +74,9 @@ def _iter_nodes_from_path(node, path_parts, get_empty_arrays):
     Yields:
         The next node in the structure corresponding to the current path part.
     """
+    # The path_parts refer to something with a length, such as an array of structures
+    # or a data array. This function assumes that the nodes
+    # being traversed can be indexed and have a length.
     child_node = node[path_parts[0]]
     if len(path_parts) == 1:
         if len(child_node) > 1 or get_empty_arrays:
