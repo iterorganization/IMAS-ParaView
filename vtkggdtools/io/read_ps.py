@@ -13,9 +13,26 @@ from vtkggdtools.ids_util import get_arrays_from_ids
 # We'll need these below when we create some units manually:
 from vtkggdtools.util import format_units
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("vtkggdtools")
 u_pre = "["
 u_post = "]"
+
+SUPPORTED_IDS_NAMES = [
+    "distribution_sources",
+    "distributions",
+    "edge_profiles",
+    "edge_sources",
+    "edge_transport",
+    "equilibrium",
+    "mhd",
+    "radiation",
+    # TODO: this IDS contains a GGD, but reading is not supported yet
+    # "runaway_electrons",
+    "tf",
+    "transport_solver_numerics",
+    "wall",
+    "waves",
+]
 
 
 class PlasmaStateReader:
@@ -26,6 +43,7 @@ class PlasmaStateReader:
         Args:
             ids: The IDS to load GGD arrays from
         """
+
         # _cache stores names for each node to avoid recomputing them. It checks if
         # a node's name is already cached before generating it, speeding up the process
         # and ensuring names are computed only once.
