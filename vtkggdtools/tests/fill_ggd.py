@@ -295,9 +295,12 @@ def fill_ggd_data(ids, num_vertices, num_edges, num_faces):
         structure_reference = vector_array.metadata.structure_reference
         if structure_reference == "generic_grid_vector_components":
             fill_vector_quantity(vector_array, num_vertices, num_edges, num_faces)
-        # TODO: From DDv4 onward `generic_grid_vector_components_rzphi` will be
+        # From DDv4 onward `generic_grid_vector_components_rzphi` will be
         # replaced by `generic_grid_vector_components_rphiz`
-        elif structure_reference == "generic_grid_vector_components_rzphi":
+        elif structure_reference in [
+            "generic_grid_vector_components_rzphi",
+            "generic_grid_vector_components_rphiz",
+        ]:
             fill_vector_rzphi_quantity(vector_array, num_vertices, num_edges, num_faces)
 
 
