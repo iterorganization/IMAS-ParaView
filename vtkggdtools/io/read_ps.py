@@ -36,7 +36,7 @@ SUPPORTED_IDS_NAMES = [
 
 
 class PlasmaStateReader:
-    def __init__(self, ids):
+    def __init__(self, ids, ggd_idx=None):
         """Initializes plasma state reader and retrieves all filled GGD scalar and
         vector arrays from the IDS.
 
@@ -50,7 +50,9 @@ class PlasmaStateReader:
         self._cache = {}
         # Retrieve all GGD scalar and vector arrays from IDS
         logger.debug("Retrieving GGD arrays from IDS")
-        self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(ids)
+        self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(
+            ids, ggd_idx
+        )
 
         logger.debug(
             f"Found {len(self.scalar_array_list)} scalar arrays and "

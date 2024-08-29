@@ -1,7 +1,7 @@
 from vtkggdtools._ids_util import _get_nodes_from_path, _recursive_ggd_path_search
 
 
-def get_arrays_from_ids(ids, get_empty_arrays=False):
+def get_arrays_from_ids(ids, ggd_idx, get_empty_arrays=False):
     """Fetches all GGD scalar and vector arrays that reside in the IDS.
 
     Args:
@@ -20,7 +20,6 @@ def get_arrays_from_ids(ids, get_empty_arrays=False):
         scalar_array_paths,
         vector_array_paths,
     )
-    ggd_idx = 4
     # Find scalar and vector GGD arrays in the IDS from the paths
     scalar_array_list = []
     vector_array_list = []
@@ -34,6 +33,4 @@ def get_arrays_from_ids(ids, get_empty_arrays=False):
             _get_nodes_from_path(ids, vector_path, get_empty_arrays, ggd_idx)
         )
 
-    print(scalar_array_list)
-    print(vector_array_list)
     return scalar_array_list, vector_array_list

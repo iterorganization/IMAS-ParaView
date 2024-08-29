@@ -40,7 +40,7 @@ def _recursive_ggd_path_search(
         )
 
 
-def _get_nodes_from_path(node, path, get_empty_arrays, ggd_idx=None):
+def _get_nodes_from_path(node, path, get_empty_arrays, ggd_idx):
     """Retrieve a list of nodes from a given IDSPath.
 
     Args:
@@ -66,12 +66,14 @@ def _iter_nodes_from_path(node, path_parts, get_empty_arrays, ggd_idx):
         The next node in the structure corresponding to the current path part.
     """
     child_node = node[path_parts[0]]
+    print(child_node)
     if len(path_parts) == 1:
         # The path_parts refer to nodes that have a defined length, such as struct
         # arrays
         if len(child_node) > 1 or get_empty_arrays:
             yield child_node
     elif isinstance(child_node, IDSStructArray):
+        # Only load specific timeidx from ggd node
         if ggd_idx is not None and path_parts[0] == "ggd":
             structure = child_node[ggd_idx]
             yield from _iter_nodes_from_path(
