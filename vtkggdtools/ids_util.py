@@ -20,18 +20,20 @@ def get_arrays_from_ids(ids, get_empty_arrays=False):
         scalar_array_paths,
         vector_array_paths,
     )
-
+    ggd_idx = 4
     # Find scalar and vector GGD arrays in the IDS from the paths
     scalar_array_list = []
     vector_array_list = []
     for scalar_path in scalar_array_paths:
         scalar_array_list.extend(
-            _get_nodes_from_path(ids, scalar_path, get_empty_arrays)
+            _get_nodes_from_path(ids, scalar_path, get_empty_arrays, ggd_idx)
         )
 
     for vector_path in vector_array_paths:
         vector_array_list.extend(
-            _get_nodes_from_path(ids, vector_path, get_empty_arrays)
+            _get_nodes_from_path(ids, vector_path, get_empty_arrays, ggd_idx)
         )
 
+    print(scalar_array_list)
+    print(vector_array_list)
     return scalar_array_list, vector_array_list
