@@ -66,7 +66,6 @@ def _iter_nodes_from_path(node, path_parts, get_empty_arrays, ggd_idx):
         The next node in the structure corresponding to the current path part.
     """
     child_node = node[path_parts[0]]
-    print(child_node)
     if len(path_parts) == 1:
         # The path_parts refer to nodes that have a defined length, such as struct
         # arrays
