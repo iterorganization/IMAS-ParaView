@@ -7,7 +7,7 @@ from vtkggdtools.io.read_geom import (
     fill_vtk_points,
 )
 from vtkggdtools.io.read_ps import PlasmaStateReader
-from vtkggdtools.util import get_first_grid
+from vtkggdtools.util import get_grid_ggd
 
 
 def test_read_plasma_state(ids_name, dummy_ids):
@@ -19,7 +19,7 @@ def test_read_plasma_state(ids_name, dummy_ids):
 
     subset_idx = 0
     space_idx = 0
-    grid_ggd = get_first_grid(dummy_ids)
+    grid_ggd = get_grid_ggd(dummy_ids)
     points = vtkPoints()
     fill_vtk_points(grid_ggd, space_idx, points, ids_name)
     ugrid = convert_grid_subset_geometry_to_unstructured_grid(

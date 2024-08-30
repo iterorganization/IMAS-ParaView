@@ -37,7 +37,7 @@ from vtkggdtools.paraview_support.servermanager_tools import (
     stringlistdomain,
     stringvector,
 )
-from vtkggdtools.util import FauxIndexMap, create_first_grid, get_first_grid
+from vtkggdtools.util import FauxIndexMap, create_first_grid, get_grid_ggd
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -336,7 +336,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # TODO: allow selecting other grids
         _aos_index_values = FauxIndexMap()
-        grid_ggd = get_first_grid(self._ids, self._ggd_idx)
+        grid_ggd = get_grid_ggd(self._ids, self._ggd_idx)
 
         # We now have the grid_ggd
         # Check if we have anything to read:

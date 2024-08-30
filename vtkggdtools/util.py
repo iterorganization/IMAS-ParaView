@@ -58,7 +58,7 @@ def get_ggd_path(ids_metadata) -> Optional[str]:
     return None
 
 
-def get_first_grid(ids, ggd_idx=0):
+def get_grid_ggd(ids, ggd_idx=0):
     """Finds and returns the first grid_ggd within IDS.
 
     Args:
