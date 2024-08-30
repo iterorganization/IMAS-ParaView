@@ -58,11 +58,12 @@ def get_ggd_path(ids_metadata) -> Optional[str]:
     return None
 
 
-def get_first_grid(ids):
+def get_first_grid(ids, ggd_idx=0):
     """Finds and returns the first grid_ggd within IDS.
 
     Args:
         ids: The IDS for which to return the first grid_gdd.
+        ggd_idx: Time index for which to load the grid. Defaults to 0.
 
     Returns:
         The first grid_ggd node found, or None if not found.
@@ -75,7 +76,7 @@ def get_first_grid(ids):
     for path in grid_path.split("/"):
         node = node[path]
         try:
-            node = node[0]  # get first element of AoS
+            node = node[ggd_idx]  # get first element of AoS
         except (LookupError, ValueError):
             pass  # apparently this was not an AoS :)
 

@@ -87,6 +87,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         self._dbentry = None
         self._ids_list = []
         self._ids = None
+        # TODO: load ggd_idx from paraview UI
+        self._ggd_idx = 0
 
     def _update_property(self, name, value, callback=None):
         """Convenience method to update a property when value changed."""
@@ -334,7 +336,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # TODO: allow selecting other grids
         _aos_index_values = FauxIndexMap()
-        grid_ggd = get_first_grid(self._ids)
+        grid_ggd = get_first_grid(self._ids, self._ggd_idx)
 
         # We now have the grid_ggd
         # Check if we have anything to read:
@@ -399,7 +401,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
 
         # Regular grid reading
-        ps_reader = read_ps.PlasmaStateReader(self._ids)
+        ps_reader = read_ps.PlasmaStateReader(self._ids, self._ggd_idx)
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             output.SetNumberOfPartitionedDataSets(1)
