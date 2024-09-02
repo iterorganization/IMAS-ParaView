@@ -87,8 +87,9 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         self._dbentry = None
         self._ids_list = []
         self._ids = None
-        # TODO: load ggd_idx from paraview UI
-        self._ggd_idx = 0
+
+        # Load ggd_idx from paraview UI
+        self._time_steps = []
 
     def _update_property(self, name, value, callback=None):
         """Convenience method to update a property when value changed."""
@@ -254,6 +255,15 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         """Return a list of IDSs with data inside the selected Data Entry."""
         return self._ids_list
 
+    # Properties for handling time steps
+    ####################################################################################
+
+    @smproperty.doublevector(
+        name="TimestepValues", information_only="1", si_class="vtkSITimeStepsProperty"
+    )
+    def GetTimestepValues(self):
+        return self._time_steps
+
     # Properties for Bezier interpolation
     ####################################################################################
 
@@ -329,14 +339,41 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             self._ids = ids
             logger.info("Done loading IDS.")
 
+    def RequestInformation(self, request, inInfo, outInfo):
+        if self._dbentry is None or not self._ids_and_occurrence:
+            return 1
+
+        # Load IDS and available time steps
+        self._ensure_ids()
+        self._time_steps = self._ids.time
+
+        # Pass time steps to Paraview
+        executive = self.GetExecutive()
+        outInfo = outInfo.GetInformationObject(0)
+        outInfo.Remove(executive.TIME_STEPS())
+        outInfo.Remove(executive.TIME_RANGE())
+        for time_step in self._time_steps:
+            outInfo.Append(executive.TIME_STEPS(), time_step)
+
+        outInfo.Append(executive.TIME_RANGE(), self._time_steps[0])
+        outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
+
+        return 1
+
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence:
             return 1
-        self._ensure_ids()
+
+        # Retrieve time step from time selection in Paraview UI
+        executive = self.GetExecutive()
+        info = outInfo.GetInformationObject(0)
+        time_step = info.Get(executive.UPDATE_TIME_STEP())
+        time_step_idx = np.where(self._time_steps == time_step)[0][0]
+        logger.debug(f"Selected time step: {self._time_steps[time_step_idx]}")
 
         # TODO: allow selecting other grids
         _aos_index_values = FauxIndexMap()
-        grid_ggd = get_grid_ggd(self._ids, self._ggd_idx)
+        grid_ggd = get_grid_ggd(self._ids, time_step_idx)
 
         # We now have the grid_ggd
         # Check if we have anything to read:
@@ -401,7 +438,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
 
         # Regular grid reading
-        ps_reader = read_ps.PlasmaStateReader(self._ids, self._ggd_idx)
+        ps_reader = read_ps.PlasmaStateReader(self._ids, time_step_idx)
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             output.SetNumberOfPartitionedDataSets(1)
