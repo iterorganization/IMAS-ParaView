@@ -357,7 +357,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         outInfo.Append(executive.TIME_RANGE(), self._time_steps[0])
         outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
-
         return 1
 
     def RequestData(self, request, inInfo, outInfo):
@@ -366,10 +365,15 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # Retrieve time step from time selection in Paraview UI
         executive = self.GetExecutive()
-        info = outInfo.GetInformationObject(0)
-        time_step = info.Get(executive.UPDATE_TIME_STEP())
-        time_step_idx = np.where(self._time_steps == time_step)[0][0]
-        logger.debug(f"Selected time step: {self._time_steps[time_step_idx]}")
+        outInfo = outInfo.GetInformationObject(0)
+        time_step = outInfo.Get(executive.UPDATE_TIME_STEP())
+        time_step_idx = np.where(self._time_steps == time_step)[0]
+        if len(time_step_idx) == 0:
+            logger.warning("Selected invalid time step")
+            return 1
+        else:
+            time_step_idx = time_step_idx[0]
+            logger.debug(f"Selected time step: {self._time_steps[time_step_idx]}")
 
         # TODO: allow selecting other grids
         _aos_index_values = FauxIndexMap()
@@ -377,9 +381,9 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # We now have the grid_ggd
         # Check if we have anything to read:
-        if len(grid_ggd.grid_subset) < 1 and len(grid_ggd.space) < 1:
+        if len(grid_ggd.grid_subset) < 1 or len(grid_ggd.space) < 1:
             logger.info("No points to read from grid_ggd")
-            return 0
+            return 1
 
         output = vtkPartitionedDataSetCollection.GetData(outInfo)
         num_subsets = len(grid_ggd.grid_subset)
