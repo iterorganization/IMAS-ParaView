@@ -42,6 +42,8 @@ class PlasmaStateReader:
 
         Args:
             ids: The IDS to load GGD arrays from
+            ggd_idx: The time step to load. Defaults to None, which corresponds with
+            loading all timesteps.
         """
 
         # _cache stores names for each node to avoid recomputing them. It checks if
@@ -67,7 +69,6 @@ class PlasmaStateReader:
             subset_idx: an index into grid_ggd/grid_subset AoS
             ugrid: the unstructured grid instance
         """
-        # TODO: properly handle time indexing
         # TODO: GGD-fast
 
         # Read scalar arrays

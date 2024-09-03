@@ -47,6 +47,8 @@ def _get_nodes_from_path(node, path, get_empty_arrays, ggd_idx):
         node: The starting node to navigate.
         path: An IDSPath to traverse.
         get_empty_arrays (bool): Whether to return empty GGD arrays
+        ggd_idx: The GGD time step to load. Defaults to None, which corresponds with
+        loading all timesteps.
 
     Returns:
         A list of nodes obtained from the specified path.
@@ -61,6 +63,7 @@ def _iter_nodes_from_path(node, path_parts, get_empty_arrays, ggd_idx):
         node: The current node being traversed.
         path_parts: A list of IDSPath segments (parts).
         get_empty_arrays (bool): Whether to return empty GGD arrays
+        ggd_idx: The GGD time step to load.
 
     Yields:
         The next node in the structure corresponding to the current path part.

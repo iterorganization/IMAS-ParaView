@@ -354,9 +354,9 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         outInfo = outInfo.GetInformationObject(0)
         outInfo.Remove(executive.TIME_STEPS())
         outInfo.Remove(executive.TIME_RANGE())
+
         for time_step in self._time_steps:
             outInfo.Append(executive.TIME_STEPS(), time_step)
-
         outInfo.Append(executive.TIME_RANGE(), self._time_steps[0])
         outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
         return 1
@@ -365,11 +365,16 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         if self._dbentry is None or not self._ids_and_occurrence:
             return 1
 
-        # Retrieve time step from time selection in Paraview UI
+        # Retrieve time step from time selection widget in Paraview UI
         executive = self.GetExecutive()
         outInfo = outInfo.GetInformationObject(0)
         time_step = outInfo.Get(executive.UPDATE_TIME_STEP())
         time_step_idx = np.where(self._time_steps == time_step)[0]
+        # TODO: If the dataset contains only a single timestep, Paraview switches to
+        # non-temporal mode, which creates synthetic time steps. See:
+        # https://discourse.paraview.org/t/issue-with-python-plugin-when-loading-a-single-time-step/15338/3 # noqa
+        # For now these are caught here, but it would be nicer if we can remove them
+        # somehow
         if len(time_step_idx) == 0:
             logger.warning("Selected invalid time step")
             return 1
@@ -506,6 +511,7 @@ class IMASPyGGDWriter(VTKPythonAlgorithmBase):
     @smproperty.stringvector(name="IMAS URI", default_values="")
     def SetURI(self, uri):
         if uri != self._uri:
+            self._uri = uri
             if self._dbentry is not None:
                 self._dbentry.close()
                 self._dbentry = None

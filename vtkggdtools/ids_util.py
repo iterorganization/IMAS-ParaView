@@ -7,7 +7,8 @@ def get_arrays_from_ids(ids, ggd_idx=None, get_empty_arrays=False):
     Args:
         ids: The IDS from which to fetch GGD arrays
         get_arrays_from_ids (bool): Whether to return empty GGD arrays
-
+        ggd_idx: The GGD time step to load. Defaults to None, which corresponds with
+        loading all timesteps.
     Returns:
         scalar_array_list: The GGD scalar arrays (real & complex)
         vector_array_list: The GGD vector arrays (normal & rphiz)

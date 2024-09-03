@@ -88,7 +88,7 @@ def get_grid_ggd(ids, ggd_idx=0):
             return None
 
         try:
-            node = node[ggd_idx]  # get first element of AoS
+            node = node[ggd_idx]
         except (LookupError, ValueError):
             pass  # apparently this was not an AoS :)
 
