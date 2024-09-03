@@ -102,8 +102,10 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     def _calculate_uri(self) -> None:
         """Determine the IMAS URI from user input."""
         if self._uri_selection_mode == 1:
-            # Use URI provided by user:
+            # Use URI provided by user, removing leading/trailing whitespaces
             uri = self._uri_input
+            if uri is not None:
+                uri = uri.strip()
         elif self._uri_selection_mode == 2:
             # Determine URI from selected file
             uri = uri_from_path(self._uri_path)
@@ -385,7 +387,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # We now have the grid_ggd
         # Check if we have anything to read:
-        if len(grid_ggd.grid_subset) < 1 or len(grid_ggd.space) < 1:
+        if len(grid_ggd.grid_subset) < 1 and len(grid_ggd.space) < 1:
             logger.warning("The grid_ggd does not contain a subset or space.")
             return 1
 
@@ -506,7 +508,6 @@ class IMASPyGGDWriter(VTKPythonAlgorithmBase):
     @smproperty.stringvector(name="IMAS URI", default_values="")
     def SetURI(self, uri):
         if uri != self._uri:
-            self._uri = uri
             if self._dbentry is not None:
                 self._dbentry.close()
                 self._dbentry = None
