@@ -3,7 +3,13 @@ from imaspy.ids_data_type import IDSDataType
 from vtkggdtools._ids_util import _get_nodes_from_path
 
 
-def get_arrays_from_ids(ids, ggd_idx=None, get_empty_arrays=False):
+def get_arrays_from_ids(
+    ids,
+    ggd_idx=None,
+    get_empty_arrays=False,
+    scalar_array_paths=None,
+    vector_array_paths=None,
+):
     """Fetches all GGD scalar and vector arrays that reside in the IDS.
 
     Args:
@@ -15,14 +21,16 @@ def get_arrays_from_ids(ids, ggd_idx=None, get_empty_arrays=False):
         scalar_array_list: The GGD scalar arrays (real & complex)
         vector_array_list: The GGD vector arrays (normal & rphiz)
     """
-    # Recursively search the IDS for GGD paths
-    scalar_array_paths = []
-    vector_array_paths = []
-    recursive_ggd_path_search(
-        ids.metadata,
-        scalar_array_paths,
-        vector_array_paths,
-    )
+    if scalar_array_paths is None or vector_array_paths is None:
+        # Recursively search the IDS for GGD paths
+        scalar_array_paths = []
+        vector_array_paths = []
+        recursive_ggd_path_search(
+            ids.metadata,
+            scalar_array_paths,
+            vector_array_paths,
+        )
+
     # Find scalar and vector GGD arrays in the IDS from the paths
     scalar_array_list = []
     vector_array_list = []

@@ -8,7 +8,7 @@ from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
 
-from vtkggdtools.ids_util import get_arrays_from_ids
+from vtkggdtools.ids_util import get_arrays_from_ids, recursive_ggd_path_search
 
 # We'll need these below when we create some units manually:
 from vtkggdtools.util import format_units
@@ -36,7 +36,7 @@ SUPPORTED_IDS_NAMES = [
 
 
 class PlasmaStateReader:
-    def __init__(self, ids, ggd_idx=None):
+    def __init__(self, ids):
         """Initializes plasma state reader and retrieves all filled GGD scalar and
         vector arrays from the IDS.
 
@@ -50,12 +50,31 @@ class PlasmaStateReader:
         # a node's name is already cached before generating it, speeding up the process
         # and ensuring names are computed only once.
         self._cache = {}
-        # Retrieve all GGD scalar and vector arrays from IDS
-        logger.debug("Retrieving GGD arrays from IDS")
-        self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(
-            ids, ggd_idx
+        self._ids = ids
+        self.scalar_array_paths = []
+        self.vector_array_paths = []
+        self.scalar_array_list = []
+        self.vector_array_list = []
+
+        self.load_paths_from_ids()
+
+    def load_paths_from_ids(self):
+
+        logger.debug("Retrieving GGD paths from IDS metadata")
+        recursive_ggd_path_search(
+            self._ids.metadata, self.scalar_array_paths, self.vector_array_paths
         )
 
+        return self.scalar_array_paths, self.vector_array_paths
+
+    def load_ggd_arrays(self, ggd_idx):
+        logger.debug("Retrieving GGD arrays from IDS")
+        self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(
+            self._ids,
+            ggd_idx,
+            scalar_array_paths=self.scalar_array_paths,
+            vector_array_paths=self.vector_array_paths,
+        )
         logger.debug(
             f"Found {len(self.scalar_array_list)} scalar arrays and "
             f"{len(self.vector_array_list)} vector arrays in the IDS."
