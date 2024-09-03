@@ -388,7 +388,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         # We now have the grid_ggd
         # Check if we have anything to read:
         if len(grid_ggd.grid_subset) < 1 and len(grid_ggd.space) < 1:
-            logger.warning("The grid_ggd does not contain a subset or space.")
+            logger.warning("The grid_ggd does not contain a subset nor a space.")
             return 1
 
         output = vtkPartitionedDataSetCollection.GetData(outInfo)
