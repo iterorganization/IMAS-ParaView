@@ -1,6 +1,9 @@
+import logging
 from typing import Optional
 
 import numpy as np
+
+logger = logging.getLogger("vtkggdtools")
 
 
 class FauxIndexMap:
@@ -74,7 +77,16 @@ def get_grid_ggd(ids, ggd_idx=0):
 
     node = ids
     for path in grid_path.split("/"):
-        node = node[path]
+
+        try:
+            node = node[path]
+        except ValueError:
+            logger.warning(
+                "Could not find a valid grid_ggd to load, because node "
+                f"{node.metadata.name} does not have a {path}."
+            )
+            return None
+
         try:
             node = node[ggd_idx]  # get first element of AoS
         except (LookupError, ValueError):

@@ -379,10 +379,14 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         _aos_index_values = FauxIndexMap()
         grid_ggd = get_grid_ggd(self._ids, time_step_idx)
 
+        if grid_ggd is None:
+            logger.warning("Could not load a valid GGD grid.")
+            return 1
+
         # We now have the grid_ggd
         # Check if we have anything to read:
         if len(grid_ggd.grid_subset) < 1 or len(grid_ggd.space) < 1:
-            logger.info("No points to read from grid_ggd")
+            logger.warning("The grid_ggd does not contain a subset or space.")
             return 1
 
         output = vtkPartitionedDataSetCollection.GetData(outInfo)
