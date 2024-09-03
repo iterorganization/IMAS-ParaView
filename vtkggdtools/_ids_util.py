@@ -77,7 +77,7 @@ def _iter_nodes_from_path(node, path_parts, get_empty_arrays, ggd_idx):
     elif isinstance(child_node, IDSStructArray):
         # Only load specific timeidx from ggd node
         if ggd_idx is not None and path_parts[0] == "ggd":
-            if len(child_node) > 0:
+            if len(child_node) > ggd_idx:
                 structure = child_node[ggd_idx]
                 yield from _iter_nodes_from_path(
                     structure, path_parts[1:], get_empty_arrays, ggd_idx
