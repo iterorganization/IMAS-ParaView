@@ -1,4 +1,6 @@
-from vtkggdtools._ids_util import _get_nodes_from_path, _recursive_ggd_path_search
+from imaspy.ids_data_type import IDSDataType
+
+from vtkggdtools._ids_util import _get_nodes_from_path
 
 
 def get_arrays_from_ids(ids, ggd_idx=None, get_empty_arrays=False):
@@ -16,7 +18,7 @@ def get_arrays_from_ids(ids, ggd_idx=None, get_empty_arrays=False):
     # Recursively search the IDS for GGD paths
     scalar_array_paths = []
     vector_array_paths = []
-    _recursive_ggd_path_search(
+    recursive_ggd_path_search(
         ids.metadata,
         scalar_array_paths,
         vector_array_paths,
@@ -35,3 +37,41 @@ def get_arrays_from_ids(ids, ggd_idx=None, get_empty_arrays=False):
         )
 
     return scalar_array_list, vector_array_list
+
+
+def recursive_ggd_path_search(
+    quantity_metadata, scalar_array_paths, vector_array_paths
+):
+    """Recursively searches through the metadata of an IDS node for scalar GGD arrays
+    (real & complex) and vector GGD arrays (regular and rphiz), and appends the paths of
+    these to the scalar_array_paths and vector_array_paths respectively.
+
+    Args:
+        quantity_metadata: The metadata of an IDS node
+        scalar_array_paths: The IDSPaths of GGD scalar arrays (real & complex)
+        vector_array_paths: The IDSPaths of GGD vector arrays (regular and rphiz)
+    """
+    for subquantity_metadata in quantity_metadata:
+        if subquantity_metadata.data_type == IDSDataType.STRUCT_ARRAY:
+            # Get scalar and complex scalar array quantities
+            if subquantity_metadata.structure_reference in [
+                "generic_grid_scalar",
+                "generic_grid_scalar_complex",
+            ]:
+                scalar_array_paths.append(subquantity_metadata.path)
+
+            # Get vector and rzphi-vector array quantities
+            # From DDv4 onward `generic_grid_vector_components_rzphi` will be
+            # replaced by `generic_grid_vector_components_rphiz`
+            elif subquantity_metadata.structure_reference in [
+                "generic_grid_vector_components",
+                "generic_grid_vector_components_rzphi",
+                "generic_grid_vector_components_rphiz",
+            ]:
+                vector_array_paths.append(subquantity_metadata.path)
+
+        recursive_ggd_path_search(
+            subquantity_metadata,
+            scalar_array_paths,
+            vector_array_paths,
+        )
