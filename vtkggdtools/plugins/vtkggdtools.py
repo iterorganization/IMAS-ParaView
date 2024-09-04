@@ -90,6 +90,11 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # Load ggd_idx from paraview UI
         self._time_steps = []
+        self._selected_vector_arrays = []
+        self._selectable_vector_arrays = []
+        self._selected_scalar_arrays = []
+        self._selectable_scalar_arrays = []
+
         self.ps_reader = None
 
     def _update_property(self, name, value, callback=None):
@@ -339,9 +344,96 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                 # Apparently IMASPy doesn't know the DD version that this IDS was
                 # written with. Use the default DD version instead:
                 ids = self._dbentry.get(idsname, occurrence, lazy=lazy)
-            self.ps_reader = read_ps.PlasmaStateReader(ids)
+
             self._ids = ids
+            # Load paths from IDS
+            self.ps_reader = read_ps.PlasmaStateReader(ids)
+            scalar_paths, vector_paths = self.ps_reader.load_paths_from_ids()
+            self._selectable_vector_arrays = [path for path in vector_paths]
+            self._selectable_scalar_arrays = [path for path in scalar_paths]
             logger.info("Done loading IDS.")
+
+    @smproperty.xml(
+        """
+        <StringVectorProperty information_only="1" name="VectorArray">
+            <ArraySelectionInformationHelper attribute_name="Vector" />
+        </StringVectorProperty>
+        <StringVectorProperty
+                name="VectorArrayStatus"
+                label="Select Vector Array"
+                command="SetVectorArray"
+                number_of_elements="0"
+                number_of_elements_per_command="2"
+                panel_visibility="default"
+                element_types="2 0"
+                repeat_command="1">
+            <ArraySelectionDomain name="array_list">
+                <RequiredProperties>
+                    <Property function="ArrayList" name="VectorArray" />
+                </RequiredProperties>
+            </ArraySelectionDomain>
+            <Documentation>This property lists which IDS arrays to
+            read.</Documentation>
+        </StringVectorProperty>
+        """
+    )
+    def SetVectorArray(self, vector_array, status):
+        if status == 1 and vector_array not in self._selected_vector_arrays:
+            self._selected_vector_arrays.append(vector_array)
+            self.Modified()
+        elif status == 0 and vector_array in self._selected_vector_arrays:
+            self._selected_vector_arrays.remove(vector_array)
+            self.Modified()
+
+    def GetNumberOfVectorArrays(self):
+        return len(self._selectable_vector_arrays)
+
+    def GetVectorArrayName(self, idx):
+        return str(self._selectable_vector_arrays[idx])
+
+    def GetVectorArrayStatus(self, *args):
+        return 1
+
+    @smproperty.xml(
+        """
+        <StringVectorProperty information_only="1" name="ScalarArray">
+            <ArraySelectionInformationHelper attribute_name="Scalar" />
+        </StringVectorProperty>
+        <StringVectorProperty
+                name="ScalarArrayStatus"
+                label="Select Scalar Array"
+                command="SetScalarArray"
+                number_of_elements="0"
+                number_of_elements_per_command="2"
+                panel_visibility="default"
+                element_types="2 0"
+                repeat_command="1">
+            <ArraySelectionDomain name="array_list">
+                <RequiredProperties>
+                    <Property function="ArrayList" name="ScalarArray" />
+                </RequiredProperties>
+            </ArraySelectionDomain>
+            <Documentation>This property lists which IDS arrays to
+            read.</Documentation>
+        </StringVectorProperty>
+        """
+    )
+    def SetScalarArray(self, scalar_array, status):
+        if status == 1 and scalar_array not in self._selected_scalar_arrays:
+            self._selected_scalar_arrays.append(scalar_array)
+            self.Modified()
+        elif status == 0 and scalar_array in self._selected_scalar_arrays:
+            self._selected_scalar_arrays.remove(scalar_array)
+            self.Modified()
+
+    def GetNumberOfScalarArrays(self):
+        return len(self._selectable_scalar_arrays)
+
+    def GetScalarArrayName(self, idx):
+        return str(self._selectable_scalar_arrays[idx])
+
+    def GetScalarArrayStatus(self, *args):
+        return 1
 
     def RequestInformation(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence:
@@ -364,8 +456,27 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         return 1
 
     def RequestData(self, request, inInfo, outInfo):
-        if self._dbentry is None or not self._ids_and_occurrence:
+        if (
+            self._dbentry is None
+            or not self._ids_and_occurrence
+            or (not self._selected_vector_arrays and not self._selected_scalar_arrays)
+        ):
             return 1
+
+        selected_scalars = []
+        selected_vectors = []
+
+        for selected_str in self._selected_scalar_arrays:
+            for obj in self._selectable_scalar_arrays:
+                if str(obj) == selected_str:
+                    selected_scalars.append(obj)
+                    break
+
+        for selected_str in self._selected_vector_arrays:
+            for obj in self._selectable_vector_arrays:
+                if str(obj) == selected_str:
+                    selected_vectors.append(obj)
+                    break
 
         # Retrieve time step from time selection widget in Paraview UI
         executive = self.GetExecutive()
@@ -458,7 +569,9 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
 
         # Regular grid reading
-        self.ps_reader.load_ggd_arrays(time_step_idx)
+        self.ps_reader.load_arrays_from_path(
+            time_step_idx, selected_scalars, selected_vectors
+        )
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             output.SetNumberOfPartitionedDataSets(1)

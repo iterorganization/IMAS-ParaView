@@ -51,29 +51,27 @@ class PlasmaStateReader:
         # and ensuring names are computed only once.
         self._cache = {}
         self._ids = ids
-        self.scalar_array_paths = []
-        self.vector_array_paths = []
         self.scalar_array_list = []
         self.vector_array_list = []
 
-        self.load_paths_from_ids()
-
     def load_paths_from_ids(self):
+        scalar_array_paths = []
+        vector_array_paths = []
 
         logger.debug("Retrieving GGD paths from IDS metadata")
         recursive_ggd_path_search(
-            self._ids.metadata, self.scalar_array_paths, self.vector_array_paths
+            self._ids.metadata, scalar_array_paths, vector_array_paths
         )
 
-        return self.scalar_array_paths, self.vector_array_paths
+        return scalar_array_paths, vector_array_paths
 
-    def load_ggd_arrays(self, ggd_idx):
+    def load_arrays_from_path(self, ggd_idx, scalar_array_paths, vector_array_paths):
         logger.debug("Retrieving GGD arrays from IDS")
         self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(
             self._ids,
             ggd_idx,
-            scalar_array_paths=self.scalar_array_paths,
-            vector_array_paths=self.vector_array_paths,
+            scalar_array_paths=scalar_array_paths,
+            vector_array_paths=vector_array_paths,
         )
         logger.debug(
             f"Found {len(self.scalar_array_list)} scalar arrays and "
