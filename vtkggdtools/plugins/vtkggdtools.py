@@ -90,9 +90,9 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # Load ggd_idx from paraview UI
         self._time_steps = []
-        self._selected_vector_arrays = []
+        self._selected_arrays = []
+        self._selectable_arrays = []
         self._selectable_vector_arrays = []
-        self._selected_scalar_arrays = []
         self._selectable_scalar_arrays = []
 
         self.ps_reader = None
@@ -351,17 +351,20 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             scalar_paths, vector_paths = self.ps_reader.load_paths_from_ids()
             self._selectable_vector_arrays = [path for path in vector_paths]
             self._selectable_scalar_arrays = [path for path in scalar_paths]
+            self._selectable_arrays = (
+                self._selectable_vector_arrays + self._selectable_scalar_arrays
+            )
             logger.info("Done loading IDS.")
 
     @smproperty.xml(
         """
-        <StringVectorProperty information_only="1" name="VectorArray">
-            <ArraySelectionInformationHelper attribute_name="Vector" />
+        <StringVectorProperty information_only="1" name="GGDArray">
+            <ArraySelectionInformationHelper attribute_name="GGD" />
         </StringVectorProperty>
         <StringVectorProperty
-                name="VectorArrayStatus"
-                label="Select Vector Array"
-                command="SetVectorArray"
+                name="GGDArrayStatus"
+                label="Select GGD Array"
+                command="SetGGDArray"
                 number_of_elements="0"
                 number_of_elements_per_command="2"
                 panel_visibility="default"
@@ -369,70 +372,29 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                 repeat_command="1">
             <ArraySelectionDomain name="array_list">
                 <RequiredProperties>
-                    <Property function="ArrayList" name="VectorArray" />
+                    <Property function="ArrayList" name="GGDArray" />
                 </RequiredProperties>
             </ArraySelectionDomain>
-            <Documentation>This property lists which IDS arrays to
-            read.</Documentation>
+            <Documentation>Here you can select a subset of IDS nodes to load.
+            </Documentation>
         </StringVectorProperty>
         """
     )
-    def SetVectorArray(self, vector_array, status):
-        if status == 1 and vector_array not in self._selected_vector_arrays:
-            self._selected_vector_arrays.append(vector_array)
+    def SetGGDArray(self, array, status):
+        if status == 1 and array not in self._selected_arrays:
+            self._selected_arrays.append(array)
             self.Modified()
-        elif status == 0 and vector_array in self._selected_vector_arrays:
-            self._selected_vector_arrays.remove(vector_array)
-            self.Modified()
-
-    def GetNumberOfVectorArrays(self):
-        return len(self._selectable_vector_arrays)
-
-    def GetVectorArrayName(self, idx):
-        return str(self._selectable_vector_arrays[idx])
-
-    def GetVectorArrayStatus(self, *args):
-        return 1
-
-    @smproperty.xml(
-        """
-        <StringVectorProperty information_only="1" name="ScalarArray">
-            <ArraySelectionInformationHelper attribute_name="Scalar" />
-        </StringVectorProperty>
-        <StringVectorProperty
-                name="ScalarArrayStatus"
-                label="Select Scalar Array"
-                command="SetScalarArray"
-                number_of_elements="0"
-                number_of_elements_per_command="2"
-                panel_visibility="default"
-                element_types="2 0"
-                repeat_command="1">
-            <ArraySelectionDomain name="array_list">
-                <RequiredProperties>
-                    <Property function="ArrayList" name="ScalarArray" />
-                </RequiredProperties>
-            </ArraySelectionDomain>
-            <Documentation>This property lists which IDS arrays to
-            read.</Documentation>
-        </StringVectorProperty>
-        """
-    )
-    def SetScalarArray(self, scalar_array, status):
-        if status == 1 and scalar_array not in self._selected_scalar_arrays:
-            self._selected_scalar_arrays.append(scalar_array)
-            self.Modified()
-        elif status == 0 and scalar_array in self._selected_scalar_arrays:
-            self._selected_scalar_arrays.remove(scalar_array)
+        elif status == 0 and array in self._selected_arrays:
+            self._selected_arrays.remove(array)
             self.Modified()
 
-    def GetNumberOfScalarArrays(self):
-        return len(self._selectable_scalar_arrays)
+    def GetNumberOfGGDArrays(self):
+        return len(self._selectable_arrays)
 
-    def GetScalarArrayName(self, idx):
-        return str(self._selectable_scalar_arrays[idx])
+    def GetGGDArrayName(self, idx):
+        return str(self._selectable_arrays[idx])
 
-    def GetScalarArrayStatus(self, *args):
+    def GetGGDArrayStatus(self, *args):
         return 1
 
     def RequestInformation(self, request, inInfo, outInfo):
@@ -459,20 +421,20 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         if (
             self._dbentry is None
             or not self._ids_and_occurrence
-            or (not self._selected_vector_arrays and not self._selected_scalar_arrays)
+            or not self._selected_arrays
         ):
             return 1
 
         selected_scalars = []
         selected_vectors = []
 
-        for selected_str in self._selected_scalar_arrays:
+        for selected_str in self._selected_arrays:
             for obj in self._selectable_scalar_arrays:
                 if str(obj) == selected_str:
                     selected_scalars.append(obj)
                     break
 
-        for selected_str in self._selected_vector_arrays:
+        for selected_str in self._selected_arrays:
             for obj in self._selectable_vector_arrays:
                 if str(obj) == selected_str:
                     selected_vectors.append(obj)
