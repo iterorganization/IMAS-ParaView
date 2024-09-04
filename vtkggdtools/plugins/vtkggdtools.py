@@ -370,11 +370,16 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         outInfo = outInfo.GetInformationObject(0)
         time_step = outInfo.Get(executive.UPDATE_TIME_STEP())
         time_step_idx = np.where(self._time_steps == time_step)[0]
-        # TODO: If the dataset contains only a single timestep, Paraview switches to
-        # non-temporal mode, which creates synthetic time steps. See:
-        # https://discourse.paraview.org/t/issue-with-python-plugin-when-loading-a-single-time-step/15338/3 # noqa
-        # For now these are caught here, but it would be nicer if we can remove them
-        # somehow
+
+        # Paraview (v5.12.1) contains a bug where, if you load a dataset with only a
+        # single timestep, it automatically loads 10 synthetic timesteps ranging from
+        # timestep upto time step + 1. The issue can be found here:
+        # https://gitlab.kitware.com/paraview/paraview/-/issues/22360
+        # A workaround is as follows:
+        # 1. load the single timestep data
+        # 2. open "View > Time Manager"
+        # 3. uncheck and check again the checkbox "Time Sources"
+        # For now, just return without doing anything if such a timestep is chosen
         if len(time_step_idx) == 0:
             logger.warning("Selected invalid time step")
             return 1
