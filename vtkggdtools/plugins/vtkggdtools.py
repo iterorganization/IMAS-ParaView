@@ -363,7 +363,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         </StringVectorProperty>
         <StringVectorProperty
                 name="GGDArrayStatus"
-                label="Select GGD Array"
+                label="Select GGD Arrays"
                 command="SetGGDArray"
                 number_of_elements="0"
                 number_of_elements_per_command="2"
@@ -421,7 +421,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         if (
             self._dbentry is None
             or not self._ids_and_occurrence
-            or not self._selected_arrays
         ):
             return 1
 
