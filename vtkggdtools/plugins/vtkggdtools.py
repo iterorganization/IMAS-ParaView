@@ -362,7 +362,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         return 1
 
     def RequestData(self, request, inInfo, outInfo):
-        if self._dbentry is None or not self._ids_and_occurrence:
+        if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
             return 1
 
         # Retrieve time step from time selection widget in Paraview UI
@@ -395,7 +395,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         if grid_ggd is None:
             logger.warning("Could not load a valid GGD grid.")
             return 1
-        if len(grid_ggd.space) < 1:
+        if not hasattr(grid_ggd, "space") or len(grid_ggd.space) < 1:
             logger.warning("The grid_ggd does not contain a space.")
             return 1
 
