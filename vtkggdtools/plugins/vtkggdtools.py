@@ -29,6 +29,8 @@ from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
 from vtkggdtools.io import read_bezier, read_geom, read_ps, write_geom, write_ps
 from vtkggdtools.io.representables import GridSubsetRepresentable
 from vtkggdtools.paraview_support.servermanager_tools import (
+    arrayselectiondomain,
+    arrayselectionstringvector,
     doublevector,
     enumeration,
     genericdecorator,
@@ -238,7 +240,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             f"This Data Entry contains {len(self._ids_list)} supported IDSs."
         )
 
-    # Properties for setting the IDS name and occurrence
+    # Properties for setting the IDS name, occurrence and which GGD arrays to load
     ####################################################################################
 
     def _clear_ids(self):
@@ -262,6 +264,36 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     def P11_GetIDSList(self):
         """Return a list of IDSs with data inside the selected Data Entry."""
         return self._ids_list
+
+    @arrayselectiondomain(
+        property_name="GGDArray",
+        name="GGDArraySelector",
+        label="Select GGD Arrays",
+    )
+    def P12_SetGGDArray(self, array, status):
+        """Select all or a subset of available GGD arrays to load."""
+        # Add a GGD array to selected list
+        if status == 1 and array not in self._selected_arrays:
+            self._selected_arrays.append(array)
+            self.Modified()
+
+        # Remove a GGD array from selected list
+        if status == 0 and array in self._selected_arrays:
+            self._selected_arrays.remove(array)
+            self.Modified()
+
+    @arrayselectionstringvector(property_name="GGDArray", attribute_name="GGD")
+    def _GGDArraySelector(self):
+        pass
+
+    def GetNumberOfGGDArrays(self):
+        return len(self._selectable_arrays)
+
+    def GetGGDArrayName(self, idx):
+        return str(self._selectable_arrays[idx])
+
+    def GetGGDArrayStatus(self, *args):
+        return 1
 
     # Properties for handling time steps
     ####################################################################################
@@ -306,7 +338,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     def PG0_DataEntryGroup(self):
         """Dummy function to define a PropertyGroup."""
 
-    @propertygroup("Select IDS", ["IDSAndOccurrence", "IDSList"])
+    @propertygroup("Select IDS", ["IDSAndOccurrence", "IDSList", "GGDArraySelector"])
     def PG1_IDSGroup(self):
         """Dummy function to define a PropertyGroup."""
 
@@ -356,47 +388,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             )
             logger.info("Done loading IDS.")
 
-    @smproperty.xml(
-        """
-        <StringVectorProperty information_only="1" name="GGDArray">
-            <ArraySelectionInformationHelper attribute_name="GGD" />
-        </StringVectorProperty>
-        <StringVectorProperty
-                name="GGDArrayStatus"
-                label="Select GGD Arrays"
-                command="SetGGDArray"
-                number_of_elements="0"
-                number_of_elements_per_command="2"
-                panel_visibility="default"
-                element_types="2 0"
-                repeat_command="1">
-            <ArraySelectionDomain name="array_list">
-                <RequiredProperties>
-                    <Property function="ArrayList" name="GGDArray" />
-                </RequiredProperties>
-            </ArraySelectionDomain>
-            <Documentation>Here you can select a subset of IDS nodes to load.
-            </Documentation>
-        </StringVectorProperty>
-        """
-    )
-    def SetGGDArray(self, array, status):
-        if status == 1 and array not in self._selected_arrays:
-            self._selected_arrays.append(array)
-            self.Modified()
-        elif status == 0 and array in self._selected_arrays:
-            self._selected_arrays.remove(array)
-            self.Modified()
-
-    def GetNumberOfGGDArrays(self):
-        return len(self._selectable_arrays)
-
-    def GetGGDArrayName(self, idx):
-        return str(self._selectable_arrays[idx])
-
-    def GetGGDArrayStatus(self, *args):
-        return 1
-
     def RequestInformation(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence:
             return 1
@@ -418,10 +409,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         return 1
 
     def RequestData(self, request, inInfo, outInfo):
-        if (
-            self._dbentry is None
-            or not self._ids_and_occurrence
-        ):
+        if self._dbentry is None or not self._ids_and_occurrence:
             return 1
 
         selected_scalars = []
