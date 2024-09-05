@@ -90,7 +90,11 @@ def get_grid_ggd(ids, ggd_idx=0):
         try:
             node = node[ggd_idx]
         except (LookupError, ValueError):
-            pass  # apparently this was not an AoS :)
+            # if node at ggd_idx does not exist, instead try at index 0
+            try:
+                node = node[0]
+            except (LookupError, ValueError):
+                pass  # apparently this was not an AoS :)
 
     return node
 
