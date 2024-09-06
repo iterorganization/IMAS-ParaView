@@ -53,7 +53,7 @@ class PlasmaStateReader:
         # Retrieve all GGD scalar and vector arrays from IDS
         logger.debug("Retrieving GGD arrays from IDS")
         self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(
-            ids, ggd_idx
+            ids, ggd_idx=ggd_idx
         )
 
         logger.debug(
