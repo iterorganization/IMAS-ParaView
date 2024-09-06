@@ -55,6 +55,13 @@ class PlasmaStateReader:
         self.vector_array_list = []
 
     def load_paths_from_ids(self):
+        """Retrieves scalar and vector array paths from the IDS metadata by performing a
+        recursive search through GGD paths.
+
+        Returns:
+            scalar_array_paths: A list of paths of GGD scalar arrays in the IDS
+            vector_array_paths: A list of paths of GGD vector arrays in the IDS
+        """
         scalar_array_paths = []
         vector_array_paths = []
 
@@ -66,6 +73,14 @@ class PlasmaStateReader:
         return scalar_array_paths, vector_array_paths
 
     def load_arrays_from_path(self, ggd_idx, scalar_array_paths, vector_array_paths):
+        """Retrieves scalar and vector arrays from the IDS based on the provided time
+        index and array paths, and stores them in the respective lists.
+
+        Args:
+            ggd_idx: The time index for which to load GGD arrays
+            scalar_array_paths: A list of paths of GGD scalar arrays in the IDS
+            vector_array_paths: A list of paths of GGD vector arrays in the IDS
+        """
         logger.debug("Retrieving GGD arrays from IDS")
         self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(
             self._ids,
