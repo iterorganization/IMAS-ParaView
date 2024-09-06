@@ -92,6 +92,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # Load ggd_idx from paraview UI
         self._time_steps = []
+
+        # GGD arrays to load
         self._selected_arrays = []
         self._selectable_arrays = []
         self._selectable_vector_arrays = []
@@ -289,8 +291,29 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     def GetNumberOfGGDArrays(self):
         return len(self._selectable_arrays)
 
+    def _name_from_idspath(self, path):
+        """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part
+        of the path, with the parts separated by spaces.
+
+        Example:
+            If path is IDSPath('ggd/electrons/pressure'), the function returns
+            "Electrons Pressure"
+
+        Args:
+            path: The IDSPath object to convert into a formatted string
+
+        Returns:
+            A formatted string of the IDSPath
+        """
+        path_list = list(path.parts)
+        if "ggd" in path_list:
+            path_list.remove("ggd")
+        for i in range(len(path_list)):
+            path_list[i] = path_list[i].capitalize()
+        return " ".join(path_list)
+
     def GetGGDArrayName(self, idx):
-        return str(self._selectable_arrays[idx])
+        return self._name_from_idspath(self._selectable_arrays[idx])
 
     def GetGGDArrayStatus(self, *args):
         return 1
@@ -408,24 +431,32 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
         return 1
 
+    def _get_selected_ggd_arrays(self):
+        """Retrieve the IDSPaths of the selected scalar and vector GGD arrays.
+
+        Returns:
+            selected_scalars: List of IDSPaths of selected scalar GGD arrays
+            selected_vectors: List of IDSPaths of selected vector GGD arrays
+        """
+
+        # Determine if selected GGD arrays are scalar or vector arrays
+        selected_scalars = [
+            obj
+            for obj in self._selectable_scalar_arrays
+            if self._name_from_idspath(obj) in self._selected_arrays
+        ]
+        selected_vectors = [
+            obj
+            for obj in self._selectable_vector_arrays
+            if self._name_from_idspath(obj) in self._selected_arrays
+        ]
+        return selected_scalars, selected_vectors
+
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
             return 1
 
-        selected_scalars = []
-        selected_vectors = []
-
-        for selected_str in self._selected_arrays:
-            for obj in self._selectable_scalar_arrays:
-                if str(obj) == selected_str:
-                    selected_scalars.append(obj)
-                    break
-
-        for selected_str in self._selected_arrays:
-            for obj in self._selectable_vector_arrays:
-                if str(obj) == selected_str:
-                    selected_vectors.append(obj)
-                    break
+        selected_scalars, selected_vectors = self._get_selected_ggd_arrays()
 
         # Retrieve time step from time selection widget in Paraview UI
         executive = self.GetExecutive()
