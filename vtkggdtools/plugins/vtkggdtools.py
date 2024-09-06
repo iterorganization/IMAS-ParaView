@@ -291,27 +291,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     def GetNumberOfGGDArrays(self):
         return len(self._selectable_arrays)
 
-    def _name_from_idspath(self, path):
-        """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part
-        of the path, with the parts separated by spaces.
-
-        Example:
-            If path is IDSPath('ggd/electrons/pressure'), the function returns
-            "Electrons Pressure"
-
-        Args:
-            path: The IDSPath object to convert into a formatted string
-
-        Returns:
-            A formatted string of the IDSPath
-        """
-        path_list = list(path.parts)
-        if "ggd" in path_list:
-            path_list.remove("ggd")
-        for i in range(len(path_list)):
-            path_list[i] = path_list[i].capitalize()
-        return " ".join(path_list)
-
     def GetGGDArrayName(self, idx):
         return self._name_from_idspath(self._selectable_arrays[idx])
 
@@ -430,6 +409,27 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         outInfo.Append(executive.TIME_RANGE(), self._time_steps[0])
         outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
         return 1
+
+    def _name_from_idspath(self, path):
+        """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part
+        of the path, with the parts separated by spaces.
+
+        Example:
+            If path is IDSPath('ggd/electrons/pressure'), the function returns
+            "Electrons Pressure"
+
+        Args:
+            path: The IDSPath object to convert into a formatted string
+
+        Returns:
+            A formatted string of the IDSPath
+        """
+        path_list = list(path.parts)
+        if "ggd" in path_list:
+            path_list.remove("ggd")
+        for i in range(len(path_list)):
+            path_list[i] = path_list[i].capitalize()
+        return " ".join(path_list)
 
     def _get_selected_ggd_arrays(self):
         """Retrieve the IDSPaths of the selected scalar and vector GGD arrays.
