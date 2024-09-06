@@ -158,9 +158,11 @@ class PlasmaStateReader:
 
             # Add identifier/name/label in between brackets to the full name
             if name_appendix != "":
-                name = f"{name_current_node} ({name_appendix})"
+                name = (
+                    f"{name_current_node.capitalize()} ({name_appendix.capitalize()})"
+                )
             else:
-                name = name_current_node
+                name = name_current_node.capitalize()
 
         parent = imaspy.util.get_parent(node)
         if parent.metadata is node.metadata:
