@@ -1,7 +1,7 @@
 from imaspy.ids_struct_array import IDSStructArray
 
 
-def _get_nodes_from_path(node, path, get_empty_arrays, ggd_idx):
+def _get_nodes_from_path(node, path, get_empty_arrays, ggd_idx=None):
     """Retrieve a list of nodes from a given IDSPath.
 
     Args:
