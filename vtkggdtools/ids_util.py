@@ -10,13 +10,18 @@ def get_arrays_from_ids(
     scalar_array_paths=None,
     vector_array_paths=None,
 ):
-    """Fetches all GGD scalar and vector arrays that reside in the IDS.
+    """Fetches GGD scalar and vector arrays that reside in the IDS. If lists of
+    IDSPaths of GGD arrays are provided through scalar_array_paths or
+    vector_array_paths, only these will be loaded. If either of them is not provided,
+    instead all GGD arrays in the IDS will be returned.
 
     Args:
         ids: The IDS from which to fetch GGD arrays
-        get_arrays_from_ids (bool): Whether to return empty GGD arrays
         ggd_idx: The GGD time step to load. Defaults to None, which corresponds with
         loading all timesteps.
+        get_arrays_from_ids (bool): Whether to return empty GGD arrays
+        scalar_array_paths: A list of IDSPaths of GGD scalar arrays to search through.
+        vector_array_paths: A list of IDSPaths of GGD vector arrays to search through.
     Returns:
         scalar_array_list: The GGD scalar arrays (real & complex)
         vector_array_list: The GGD vector arrays (normal & rphiz)
