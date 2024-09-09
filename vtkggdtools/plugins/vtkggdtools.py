@@ -10,7 +10,6 @@ import imaspy.ids_defs
 import numpy as np
 from identifiers.ggd_identifier import ggd_identifier
 from identifiers.ggd_space_identifier import ggd_space_identifier
-from imaspy.exception import UnknownDDVersion
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonCore import vtkDataArray, vtkPoints
@@ -31,6 +30,7 @@ from vtkggdtools.io.representables import GridSubsetRepresentable
 from vtkggdtools.paraview_support.servermanager_tools import (
     arrayselectiondomain,
     arrayselectionstringvector,
+    checkbox,
     doublevector,
     enumeration,
     genericdecorator,
@@ -298,6 +298,20 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     def GetGGDArrayStatus(self, *args):
         return 1
 
+    @checkbox(
+        name="LazyLoading",
+        label="Enable Lazy Loading",
+        default_values="1",
+    )
+    def P13_SetLazyLoading(self, val):
+        """Lazy loading can be enabled to load data only when you need it. It is
+        recommended to leave this on if you are only loading a small subset of the data.
+        If you want to load most of the data, it is recommended to turn this off."""
+        self.lazy = val
+        status = "enabled" if val == 1 else "disabled"
+        logger.info(f"Lazy Loading is {status}.")
+        self.Modified()
+
     # Properties for handling time steps
     ####################################################################################
 
@@ -341,7 +355,9 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     def PG0_DataEntryGroup(self):
         """Dummy function to define a PropertyGroup."""
 
-    @propertygroup("Select IDS", ["IDSAndOccurrence", "IDSList", "GGDArraySelector"])
+    @propertygroup(
+        "Select IDS", ["IDSAndOccurrence", "IDSList", "GGDArraySelector", "LazyLoading"]
+    )
     def PG1_IDSGroup(self):
         """Dummy function to define a PropertyGroup."""
 
@@ -492,13 +508,12 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             idsname, _, occurrence = self._ids_and_occurrence.partition("/")
             occurrence = int(occurrence or 0)
             logger.info("Loading IDS %s/%d ...", idsname, occurrence)
-            # TODO: Add option to turn off lazy loading
-            lazy = True
+
             self._ids = self._dbentry.get(
                 idsname,
                 occurrence,
                 autoconvert=False,
-                lazy=lazy,
+                lazy=self.lazy,
                 ignore_unknown_dd_version=True,
             )
 

@@ -107,6 +107,27 @@ def arrayselectiondomain(property_name, **kwargs):
     return decorator
 
 
+def checkbox(**kwargs):
+    """Convenience decorator for creating a simple boolean checkbox."""
+
+    def decorator(func):
+        args = " ".join(f'{key}="{value}"' for key, value in kwargs.items())
+
+        xml = f"""
+        <IntVectorProperty
+            {args}
+            command="{func.__name__}"
+            number_of_elements="1">
+            <BooleanDomain name="bool" />
+            <Documentation>{func.__doc__}</Documentation>
+        </IntVectorProperty>
+        """
+
+        return smproperty.xml(xml)(func)
+
+    return decorator
+
+
 def add_docstring(func):
     """Convenience decorator to add a Documentation XML node filled with the docstring
     of the property.
