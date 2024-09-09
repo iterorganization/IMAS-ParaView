@@ -26,8 +26,7 @@ SUPPORTED_IDS_NAMES = [
     "equilibrium",
     "mhd",
     "radiation",
-    # TODO: this IDS contains a GGD, but reading is not supported yet
-    # "runaway_electrons",
+    "runaway_electrons",
     "tf",
     "transport_solver_numerics",
     "wall",
