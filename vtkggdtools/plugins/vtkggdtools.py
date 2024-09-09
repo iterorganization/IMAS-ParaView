@@ -99,6 +99,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         self._selectable_vector_arrays = []
         self._selectable_scalar_arrays = []
 
+        self.grid_ggd = None
         self.ps_reader = None
 
     def _update_property(self, name, value, callback=None):
@@ -481,32 +482,35 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # TODO: allow selecting other grids
         _aos_index_values = FauxIndexMap()
-        grid_ggd = get_grid_ggd(self._ids, time_step_idx)
+        self.grid_ggd = get_grid_ggd(self._ids, time_step_idx)
 
         # Check if grid is valid
-        if grid_ggd is None:
+        if self.grid_ggd is None:
             logger.warning("Could not load a valid GGD grid.")
             return 1
-        if not hasattr(grid_ggd, "space") or len(grid_ggd.space) < 1:
+        if not hasattr(self.grid_ggd, "space") or len(self.grid_ggd.space) < 1:
             logger.warning("The grid_ggd does not contain a space.")
             return 1
 
         output = vtkPartitionedDataSetCollection.GetData(outInfo)
-        num_subsets = len(grid_ggd.grid_subset)
+        num_subsets = len(self.grid_ggd.grid_subset)
         points = vtkPoints()
         space_idx = 0
         idsname = self._ids.metadata.name
 
-        read_geom.fill_vtk_points(grid_ggd, space_idx, points, idsname)
+        read_geom.fill_vtk_points(self.grid_ggd, space_idx, points, idsname)
         assembly = vtkDataAssembly()
         output.SetDataAssembly(assembly)
 
         # Interpolate JOREK Fourier space
         # TODO: figure out if we can put this functionality in a post-processing step?
         if self._n_plane != 0:
-            number_of_spaces = len(grid_ggd.space)
-            if number_of_spaces > 1 and len(grid_ggd.space[0].coordinates_type) == 2:
-                n_period = grid_ggd.space[1].geometry_type.index
+            number_of_spaces = len(self.grid_ggd.space)
+            if (
+                number_of_spaces > 1
+                and len(self.grid_ggd.space[0].coordinates_type) == 2
+            ):
+                n_period = self.grid_ggd.space[1].geometry_type.index
                 if n_period > 0:  # Fourier space with periodicity (JOREK)
                     logger.info(
                         f"Reading Bezier mesh with Fourier periodiciy {n_period}"
@@ -535,41 +539,48 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                 )
             return 1
 
-        def fill_grid_and_plasma_state(subset_idx, partition):
-            subset = None if subset_idx < 0 else grid_ggd.grid_subset[subset_idx]
-            ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
-                grid_ggd, subset_idx, points
-            )
-            self.ps_reader.read_plasma_state(subset_idx, ugrid)
-            output.SetPartition(partition, 0, ugrid)
-            label = str(subset.identifier.name) if subset else idsname
-            child = assembly.AddNode(label.replace(" ", "_"), 0)
-            assembly.AddDataSetIndex(child, partition)
-            output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
-
-        # Regular grid reading
+        # Load the GGD arrays from the selected GGD paths
         self.ps_reader.load_arrays_from_path(
             time_step_idx, selected_scalars, selected_vectors
         )
+
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             output.SetNumberOfPartitionedDataSets(1)
-            fill_grid_and_plasma_state(-1, 0)
+            self._fill_grid_and_plasma_state(-1, 0, points, output, assembly)
         elif idsname == "wall":
             # FIXME: what if num_subsets is 2 or 3?
             output.SetNumberOfPartitionedDataSets(num_subsets - 3)
-            fill_grid_and_plasma_state(-1, 0)
+            self._fill_grid_and_plasma_state(-1, 0, points, output, assembly)
             for subset_idx in range(4, num_subsets):
-                fill_grid_and_plasma_state(subset_idx, subset_idx - 3)
+                self._fill_grid_and_plasma_state(
+                    subset_idx, subset_idx - 3, points, output, assembly
+                )
                 self.UpdateProgress(self.GetProgress() + 1 / num_subsets)
         else:
             output.SetNumberOfPartitionedDataSets(num_subsets)
             for subset_idx in range(num_subsets):
-                fill_grid_and_plasma_state(subset_idx, subset_idx)
+                self._fill_grid_and_plasma_state(
+                    subset_idx, subset_idx, points, output, assembly
+                )
                 self.UpdateProgress(self.GetProgress() + 1 / num_subsets)
 
         logger.info("Finished loading IDS.")
         return 1
+
+    def _fill_grid_and_plasma_state(
+        self, subset_idx, partition, points, output, assembly
+    ):
+        subset = None if subset_idx < 0 else self.grid_ggd.grid_subset[subset_idx]
+        ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
+            self.grid_ggd, subset_idx, points
+        )
+        self.ps_reader.read_plasma_state(subset_idx, ugrid)
+        output.SetPartition(partition, 0, ugrid)
+        label = str(subset.identifier.name) if subset else self._ids.metadata.name
+        child = assembly.AddNode(label.replace(" ", "_"), 0)
+        assembly.AddDataSetIndex(child, partition)
+        output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
 
 
 _ggd_types_xml = "".join(
