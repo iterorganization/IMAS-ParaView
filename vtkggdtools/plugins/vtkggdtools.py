@@ -494,19 +494,16 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             logger.info("Loading IDS %s/%d ...", idsname, occurrence)
             # TODO: Add option to turn off lazy loading
             lazy = True
-            try:
-                ids = self._dbentry.get(
-                    idsname, occurrence, autoconvert=False, lazy=lazy
-                )
-            except UnknownDDVersion:
-                # Apparently IMASPy doesn't know the DD version that this IDS was
-                # written with. Use the default DD version instead:
-                ids = self._dbentry.get(idsname, occurrence, lazy=lazy)
-
-            self._ids = ids
+            self._ids = self._dbentry.get(
+                idsname,
+                occurrence,
+                autoconvert=False,
+                lazy=lazy,
+                ignore_unknown_dd_version=True,
+            )
 
             # Load paths from IDS
-            self.ps_reader = read_ps.PlasmaStateReader(ids)
+            self.ps_reader = read_ps.PlasmaStateReader(self._ids)
             self._selectable_scalar_arrays, self._selectable_vector_arrays = (
                 self.ps_reader.load_paths_from_ids()
             )
