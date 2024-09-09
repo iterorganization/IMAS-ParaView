@@ -388,7 +388,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             self._selectable_arrays = (
                 self._selectable_vector_arrays + self._selectable_scalar_arrays
             )
-            logger.info("Done loading IDS.")
 
     def RequestInformation(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence:
@@ -569,6 +568,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                 fill_grid_and_plasma_state(subset_idx, subset_idx)
                 self.UpdateProgress(self.GetProgress() + 1 / num_subsets)
 
+        logger.info("Finished loading IDS.")
         return 1
 
 
