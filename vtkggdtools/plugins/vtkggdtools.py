@@ -364,32 +364,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         )
         return 1
 
-    def _ensure_ids(self):
-        if self._ids is None:
-            idsname, _, occurrence = self._ids_and_occurrence.partition("/")
-            occurrence = int(occurrence or 0)
-            logger.info("Loading IDS %s/%d ...", idsname, occurrence)
-            # TODO: Add option to turn off lazy loading
-            lazy = True
-            try:
-                ids = self._dbentry.get(
-                    idsname, occurrence, autoconvert=False, lazy=lazy
-                )
-            except UnknownDDVersion:
-                # Apparently IMASPy doesn't know the DD version that this IDS was
-                # written with. Use the default DD version instead:
-                ids = self._dbentry.get(idsname, occurrence, lazy=lazy)
-
-            self._ids = ids
-            # Load paths from IDS
-            self.ps_reader = read_ps.PlasmaStateReader(ids)
-            scalar_paths, vector_paths = self.ps_reader.load_paths_from_ids()
-            self._selectable_vector_arrays = [path for path in vector_paths]
-            self._selectable_scalar_arrays = [path for path in scalar_paths]
-            self._selectable_arrays = (
-                self._selectable_vector_arrays + self._selectable_scalar_arrays
-            )
-
     def RequestInformation(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence:
             return 1
@@ -410,77 +384,18 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
         return 1
 
-    def _name_from_idspath(self, path):
-        """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part
-        of the path, with the parts separated by spaces.
-
-        Example:
-            If path is IDSPath('ggd/electrons/pressure'), the function returns
-            "Electrons Pressure"
-
-        Args:
-            path: The IDSPath object to convert into a formatted string
-
-        Returns:
-            A formatted string of the IDSPath
-        """
-        path_list = list(path.parts)
-        if "ggd" in path_list:
-            path_list.remove("ggd")
-        for i in range(len(path_list)):
-            path_list[i] = path_list[i].capitalize()
-        return " ".join(path_list)
-
-    def _get_selected_ggd_arrays(self):
-        """Retrieve the IDSPaths of the selected scalar and vector GGD arrays.
-
-        Returns:
-            selected_scalars: List of IDSPaths of selected scalar GGD arrays
-            selected_vectors: List of IDSPaths of selected vector GGD arrays
-        """
-
-        # Determine if selected GGD arrays are scalar or vector arrays
-        selected_scalars = [
-            obj
-            for obj in self._selectable_scalar_arrays
-            if self._name_from_idspath(obj) in self._selected_arrays
-        ]
-        selected_vectors = [
-            obj
-            for obj in self._selectable_vector_arrays
-            if self._name_from_idspath(obj) in self._selected_arrays
-        ]
-        return selected_scalars, selected_vectors
-
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
             return 1
 
+        # Retrieve the selected time step and GGD arrays
         selected_scalars, selected_vectors = self._get_selected_ggd_arrays()
-
-        # Retrieve time step from time selection widget in Paraview UI
-        executive = self.GetExecutive()
-        outInfo = outInfo.GetInformationObject(0)
-        time_step = outInfo.Get(executive.UPDATE_TIME_STEP())
-        time_step_idx = np.where(self._time_steps == time_step)[0]
-
-        # Paraview (v5.12.1) contains a bug where, if you load a dataset with only a
-        # single timestep, it automatically loads 10 synthetic timesteps ranging from
-        # timestep upto time step + 1. The issue can be found here:
-        # https://gitlab.kitware.com/paraview/paraview/-/issues/22360
-        # A workaround is as follows:
-        # 1. load the single timestep data
-        # 2. open "View > Time Manager"
-        # 3. uncheck and check again the checkbox "Time Sources"
-        # For now, just return without doing anything if such a timestep is chosen
-        if len(time_step_idx) == 0:
+        time_step_idx = self._get_selected_time_step(outInfo)
+        if time_step_idx is None:
             logger.warning("Selected invalid time step")
             return 1
-        else:
-            time_step_idx = time_step_idx[0]
-            logger.debug(f"Selected time step: {self._time_steps[time_step_idx]}")
 
-        # TODO: allow selecting other grids
+        # TODO: allow selecting other grids for Bezier
         _aos_index_values = FauxIndexMap()
         self.grid_ggd = get_grid_ggd(self._ids, time_step_idx)
 
@@ -567,6 +482,113 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         logger.info("Finished loading IDS.")
         return 1
+
+    def _ensure_ids(self):
+        """
+        Loads the IDS if not already loaded. Once loaded, initializes plasma state
+        reader and populates scalar and vector paths for selection.
+        """
+        if self._ids is None:
+            idsname, _, occurrence = self._ids_and_occurrence.partition("/")
+            occurrence = int(occurrence or 0)
+            logger.info("Loading IDS %s/%d ...", idsname, occurrence)
+            # TODO: Add option to turn off lazy loading
+            lazy = True
+            try:
+                ids = self._dbentry.get(
+                    idsname, occurrence, autoconvert=False, lazy=lazy
+                )
+            except UnknownDDVersion:
+                # Apparently IMASPy doesn't know the DD version that this IDS was
+                # written with. Use the default DD version instead:
+                ids = self._dbentry.get(idsname, occurrence, lazy=lazy)
+
+            self._ids = ids
+
+            # Load paths from IDS
+            self.ps_reader = read_ps.PlasmaStateReader(ids)
+            self._selectable_scalar_arrays, self._selectable_vector_arrays = (
+                self.ps_reader.load_paths_from_ids()
+            )
+            self._selectable_arrays = (
+                self._selectable_vector_arrays + self._selectable_scalar_arrays
+            )
+
+    def _name_from_idspath(self, path):
+        """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part
+        of the path, with the parts separated by spaces.
+
+        Example:
+            If path is IDSPath('ggd/electrons/pressure'), the function returns
+            "Electrons Pressure"
+
+        Args:
+            path: The IDSPath object to convert into a formatted string
+
+        Returns:
+            A formatted string of the IDSPath
+        """
+        path_list = list(path.parts)
+        if "ggd" in path_list:
+            path_list.remove("ggd")
+        for i in range(len(path_list)):
+            path_list[i] = path_list[i].capitalize()
+        return " ".join(path_list)
+
+    def _get_selected_ggd_arrays(self):
+        """Retrieve the IDSPaths of the selected scalar and vector GGD arrays.
+
+        Returns:
+            selected_scalars: List of IDSPaths of selected scalar GGD arrays
+            selected_vectors: List of IDSPaths of selected vector GGD arrays
+        """
+
+        # Determine if selected GGD arrays are scalar or vector arrays
+        selected_scalars = [
+            obj
+            for obj in self._selectable_scalar_arrays
+            if self._name_from_idspath(obj) in self._selected_arrays
+        ]
+        selected_vectors = [
+            obj
+            for obj in self._selectable_vector_arrays
+            if self._name_from_idspath(obj) in self._selected_arrays
+        ]
+        return selected_scalars, selected_vectors
+
+    def _get_selected_time_step(self, outInfo):
+        """Retrieves the selected time step index based on the time selection widget in
+        the ParaView UI.
+
+        Args:
+            outInfo: An information object that holds details about the update request
+
+        Returns:
+            time_step_idx: The index of the selected time step. If the selected time
+            step cannot be found in the IDS, returns None.
+        """
+        # Retrieve time step from time selection widget in Paraview UI
+        executive = self.GetExecutive()
+        outInfo = outInfo.GetInformationObject(0)
+        time_step = outInfo.Get(executive.UPDATE_TIME_STEP())
+        time_step_idx = np.where(self._time_steps == time_step)[0]
+
+        # Paraview (v5.12.1) contains a bug where, if you load a dataset with only a
+        # single timestep, it automatically loads 10 synthetic timesteps ranging from
+        # timestep upto time step + 1. The issue can be found here:
+        # https://gitlab.kitware.com/paraview/paraview/-/issues/22360
+        # A workaround is as follows:
+        # 1. load the single timestep data
+        # 2. open "View > Time Manager"
+        # 3. uncheck and check again the checkbox "Time Sources"
+        # For now, return None if such a timestep is chosen
+        if len(time_step_idx) == 0:
+            return None
+        else:
+            time_step_idx = time_step_idx[0]
+            logger.debug(f"Selected time step: {self._time_steps[time_step_idx]}")
+
+        return time_step_idx
 
     def _fill_grid_and_plasma_state(
         self, subset_idx, partition, points, output, assembly
