@@ -307,8 +307,12 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         """Lazy loading can be enabled to load data only when you need it. It is
         recommended to leave this on if you are only loading a small subset of the data.
         If you want to load most of the data, it is recommended to turn this off."""
-        self.lazy = val
-        status = "enabled" if val == 1 else "disabled"
+        if val == 1:
+            status = "enabled"
+            self.lazy = True
+        else:
+            status = "disabled"
+            self.lazy = False
         logger.info(f"Lazy Loading is {status}.")
         self.Modified()
 
