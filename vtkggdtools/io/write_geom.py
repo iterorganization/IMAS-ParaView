@@ -6,9 +6,7 @@ These methods populate the grid_ggd/space and grid_ggd/grid_subset children.
 from collections import OrderedDict, defaultdict
 from typing import Dict, List, Tuple
 
-from identifiers.coordinate_identifier import coordinate_identifier
-from identifiers.ggd_geometry_content_identifier import ggd_geometry_content_identifier
-from identifiers.ggd_subset_identifier import ggd_subset_identifier
+import imaspy
 from vtkmodules.numpy_interface import algorithms as algs
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDataArray, vtkIdList, vtkMath
@@ -86,14 +84,15 @@ def convert_vtk_dataset_to_grid_subset_geometry(
     :return: None
     """
 
-    is_custom_subset = ggd_subset_identifier.get(name) is None
+    is_custom_subset = name not in imaspy.identifiers.ggd_subset_identifier.__members__
+    subset_enum = (
+        imaspy.identifiers.ggd_subset_identifier[name] if not is_custom_subset else None
+    )
     if not is_custom_subset:
         grid_ggd.grid_subset[subset_idx].identifier.name = name
-        grid_ggd.grid_subset[subset_idx].identifier.index = ggd_subset_identifier.get(
-            name
-        ).get("index")
+        grid_ggd.grid_subset[subset_idx].identifier.index = subset_enum.index
         grid_ggd.grid_subset[subset_idx].identifier.description = (
-            ggd_subset_identifier.get(name).get("description")
+            subset_enum.description
         )
     else:
         grid_ggd.grid_subset[subset_idx].identifier.name = name
@@ -261,22 +260,22 @@ def _fill_0d_objects(dataset: vtkUnstructuredGrid, space_idx: int, grid_ggd) -> 
     space = grid_ggd.space[space_idx]
     space.coordinates_type.resize(geom_size)
     if geom_size == 2:
-        space.coordinates_type[0] = coordinate_identifier.get("r").get("index")
-        space.coordinates_type[1] = coordinate_identifier.get("z").get("index")
+        space.coordinates_type[0] = imaspy.identifiers.coordinate_identifier["r"].index
+        space.coordinates_type[1] = imaspy.identifiers.coordinate_identifier["z"].index
     else:
-        space.coordinates_type[0] = coordinate_identifier.get("x").get("index")
-        space.coordinates_type[1] = coordinate_identifier.get("y").get("index")
-        space.coordinates_type[2] = coordinate_identifier.get("z").get("index")
+        space.coordinates_type[0] = imaspy.identifiers.coordinate_identifier["x"].index
+        space.coordinates_type[1] = imaspy.identifiers.coordinate_identifier["y"].index
+        space.coordinates_type[2] = imaspy.identifiers.coordinate_identifier["z"].index
 
     objects_per_dim = space.objects_per_dimension
     geometry_content = objects_per_dim[0].geometry_content
     geometry_content.name = "node_coordinates"
-    geometry_content.index = ggd_geometry_content_identifier.get(
+    geometry_content.index = imaspy.identifiers.ggd_geometry_content_identifier[
         "node_coordinates"
-    ).get("index")
-    geometry_content.description = ggd_geometry_content_identifier.get(
+    ].index
+    geometry_content.description = imaspy.identifiers.ggd_geometry_content_identifier[
         "node_coordinates"
-    ).get("description")
+    ].description
 
     # Fill up 0-dim objects.
     objects_0d = objects_per_dim[0].object
@@ -304,12 +303,13 @@ def _fill_1d_objects(dataset: vtkUnstructuredGrid, space_idx: int, grid_ggd):
     objects_per_dim = space.objects_per_dimension
     geometry_content = objects_per_dim[1].geometry_content
     geometry_content.name = "edge_areas"
-    geometry_content.index = ggd_geometry_content_identifier.get("edge_areas").get(
-        "index"
-    )
-    geometry_content.description = ggd_geometry_content_identifier.get(
+
+    geometry_content.index = imaspy.identifiers.ggd_geometry_content_identifier[
         "edge_areas"
-    ).get("description")
+    ].index
+    geometry_content.description = imaspy.identifiers.ggd_geometry_content_identifier[
+        "edge_areas"
+    ].description
 
     coords = dsa.vtkDataArrayToVTKArray(points.GetData())
     cells_iter: vtkCellIterator = dataset.NewCellIterator()
@@ -393,12 +393,13 @@ def _fill_2d_objects(
     objects_per_dim = space.objects_per_dimension
     geometry_content = objects_per_dim[2].geometry_content
     geometry_content.name = "face_indices_volume"
-    geometry_content.index = ggd_geometry_content_identifier.get(
+
+    geometry_content.index = imaspy.identifiers.ggd_geometry_content_identifier[
         "face_indices_volume"
-    ).get("index")
-    geometry_content.description = ggd_geometry_content_identifier.get(
+    ].index
+    geometry_content.description = imaspy.identifiers.ggd_geometry_content_identifier[
         "face_indices_volume"
-    ).get("description")
+    ].description
 
     cells_iter: vtkCellIterator = dataset.NewCellIterator()
 
@@ -491,12 +492,13 @@ def _fill_3d_objects(
     objects_per_dim = space.objects_per_dimension
     geometry_content = objects_per_dim[3].geometry_content
     geometry_content.name = "unspecified"
-    geometry_content.index = ggd_geometry_content_identifier.get("unspecified").get(
-        "index"
-    )
-    geometry_content.description = ggd_geometry_content_identifier.get(
+
+    geometry_content.index = imaspy.identifiers.ggd_geometry_content_identifier[
         "unspecified"
-    ).get("description")
+    ].index
+    geometry_content.description = imaspy.identifiers.ggd_geometry_content_identifier[
+        "unspecified"
+    ].description
 
     cells_iter: vtkCellIterator = dataset.NewCellIterator()
 
@@ -580,11 +582,11 @@ def _fill_implicit_grid_subsets(space_idx: int, grid_ggd):
         dim = i
         name = grid_subset_id_name[dim]
         grid_ggd.grid_subset[subset_idx].identifier.name = name
-        grid_ggd.grid_subset[subset_idx].identifier.index = ggd_subset_identifier.get(
-            name
-        ).get("index")
+        grid_ggd.grid_subset[subset_idx].identifier.index = (
+            imaspy.identifiers.ggd_subset_identifier[name].index
+        )
         grid_ggd.grid_subset[subset_idx].identifier.description = (
-            ggd_subset_identifier.get(name).get("description")
+            imaspy.identifiers.ggd_subset_identifier[name].description
         )
         grid_ggd.grid_subset[subset_idx].dimension = dim + 1
         num_elements = len(grid_ggd.space[space_idx].objects_per_dimension[dim].object)
