@@ -390,7 +390,16 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             return 1
 
         # Load IDS and available time steps
+        # TODO: Add support for IDSs with heterogeneous time mode
         self._ensure_ids()
+        if (
+            self._ids.ids_properties.homogeneous_time
+            != imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
+        ):
+            logger.error(
+                "Only IDSs with homogeneous time mode are currently supported."
+            )
+            return 1
         self._time_steps = self._ids.time
 
         # Pass time steps to Paraview
