@@ -300,14 +300,15 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
     @checkbox(
         name="LazyLoading",
-        label="Enable Lazy Loading",
-        default_values="1",
+        label="Preload Data",
+        default_values="0",
     )
     def P13_SetLazyLoading(self, val):
-        """Lazy loading can be enabled to load data only when you need it. It is
-        recommended to leave this on if you are only loading a small subset of the data.
-        If you want to load most of the data, it is recommended to turn this off."""
-        if val == 1:
+        """Turn on to preload the entire IDS beforehand, if this is left off, the data
+        is loaded on-demand through lazy loading. It is recommended to leave this off
+        if you are only loading a small subset of the data. If you want to load most of
+        the data, it is recommended to turn this on."""
+        if val == 0:
             status = "enabled"
             self.lazy = True
         else:
