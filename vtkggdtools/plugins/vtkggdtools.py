@@ -8,8 +8,6 @@ import logging
 import imaspy
 import imaspy.ids_defs
 import numpy as np
-from identifiers.ggd_identifier import ggd_identifier
-from identifiers.ggd_space_identifier import ggd_space_identifier
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonCore import vtkDataArray, vtkPoints
@@ -632,12 +630,12 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
 
 _ggd_types_xml = "".join(
-    f'<Entry text="{key}" value="{value.get("index")}" />'
-    for key, value in ggd_identifier.items()
+    f'<Entry text="{member.name}" value="{member.index}" />'
+    for member in imaspy.identifiers.ggd_identifier
 )
 _ggd_space_types_xml = "".join(
-    f'<Entry text="{key}" value="{value.get("index")}" />'
-    for key, value in ggd_space_identifier.items()
+    f'<Entry text="{member.name}" value="{member.index}" />'
+    for member in imaspy.identifiers.ggd_space_identifier
 )
 
 
@@ -786,12 +784,14 @@ class IMASPyGGDWriter(VTKPythonAlgorithmBase):
         space_idx = 0
         logger.info(f"Populating grid_ggd/space[{space_idx}]")
 
-        space_name = list(ggd_space_identifier.keys())[self._grid_ggd_space_type]
+        space_name = imaspy.identifiers.ggd_space_identifier(
+            self._grid_ggd_space_type
+        ).name
+        description = imaspy.identifiers.ggd_space_identifier[space_name].description
+
         grid_ggd.space[space_idx].identifier.name = space_name
         grid_ggd.space[space_idx].identifier.index = self._grid_ggd_space_type
-        grid_ggd.space[space_idx].identifier.description = ggd_space_identifier.get(
-            space_name
-        ).get("description")
+        grid_ggd.space[space_idx].identifier.description = description
 
         # Fill up space with 0,1,2,3 d geometry from the first partition.
         # It is assumed all other partitions share same points.
