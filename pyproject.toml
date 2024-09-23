@@ -37,6 +37,9 @@ test = [
     "pytest-randomly",
 ]
 
+[project.scripts]
+vtkggdtools = "vtkggdtools.cli:cli"
+
 [project.urls]
 homepage = "https://git.iter.org/projects/IMEX/repos/ggd-vtk"
 
