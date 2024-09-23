@@ -49,12 +49,39 @@ def print_version():
         grid.width = 120
     grid.add_row("vtkggdtools version:", vtkggdtools.__version__)
     grid.add_section()
+    grid.add_row("IMASPy version:", imaspy.__version__)
+    grid.add_section()
     grid.add_row("Default data dictionary version:", imaspy.IDSFactory().dd_version)
     dd_versions = ", ".join(imaspy.dd_zip.dd_xml_versions())
     grid.add_row("Available data dictionary versions:", dd_versions)
     grid.add_section()
     grid.add_row("Access Layer core version:", ll_interface.get_al_version() or "N/A")
     console.Console().print(grid)
+
+
+@cli.command("convert_ggd_to_vtk")
+@click.argument("uri", type=str)
+@click.argument("ids", type=str)
+@click.argument("output_name", type=str)
+@click.argument("occurrence", type=int, default=0)
+def convert_ggd_to_vtk(uri, ids, output_name, occurrence):
+    """Convert a GGD structure to a VTK file.
+
+    \b
+    uri         URI of the Data Entry (e.g. "imas:mdsplus?path=testdb").
+    ids         Name of the IDS to print (e.g. "core_profiles").
+    output      Filename of the output vtk file.
+    occurrence  Which occurrence to print (defaults to 0).
+    """
+
+    click.echo(
+        f"Converting IDS {ids} from uri {uri} with occurrence {occurrence} "
+        "to a VTK file."
+    )
+
+    # TODO add conversion function for ggd to vtk
+
+    click.echo(f"Successfully converted to {output_name}.")
 
 
 if __name__ == "__main__":
