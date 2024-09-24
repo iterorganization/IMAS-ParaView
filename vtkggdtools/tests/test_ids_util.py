@@ -1,36 +1,85 @@
 import imaspy
+import pytest
 
 from vtkggdtools.ids_util import get_arrays_from_ids
 from vtkggdtools.tests.fill_ggd import fill_scalar_quantity, fill_vector_quantity
 
 
-def test_get_arrays_from_ids():
+@pytest.fixture
+def ids_fixture():
+    """Creates a dummy IDS with 4 time steps"""
     ids = imaspy.IDSFactory().new("edge_sources")
+    ids.time = [1.1, 2.2, 3.3, 4.4]
+    num_timesteps = len(ids.time)
     ids.source.resize(1)
-    ids.source[0].ggd.resize(1)
-    ids.source[0].ggd[0].ion.resize(1)
-    ids.source[0].ggd[0].ion[0].state.resize(1)
+    ids.source[0].ggd.resize(num_timesteps)
+    input_scalars = [None] * num_timesteps
+    input_vectors = [None] * num_timesteps
+    for ggd_idx in range(num_timesteps):
+        ids.source[0].ggd[ggd_idx].ion.resize(1)
+        ids.source[0].ggd[ggd_idx].ion[0].state.resize(1)
+        input_scalars[ggd_idx] = ids.source[0].ggd[ggd_idx].ion[0].energy
+        input_vectors[ggd_idx] = ids.source[0].ggd[ggd_idx].ion[0].momentum
+    return ids, input_scalars, input_vectors
 
-    scalar_quantity1 = ids.source[0].ggd[0].ion[0].energy
-    scalar_quantity2 = ids.source[0].ggd[0].ion[0].state[0].energy
-    vector_quantity1 = ids.source[0].ggd[0].ion[0].momentum
-    vector_quantity2 = ids.source[0].ggd[0].ion[0].state[0].momentum
 
-    scalar_array_list, vector_array_list = get_arrays_from_ids(ids)
-    assert scalar_array_list == []
-    assert vector_array_list == []
-
-    # Fill scalar and vector quantity
+def fill_quantities(ids, input_scalars, input_vectors):
+    """Fills the input scalar and vector GGD arrays with dummy values"""
     num_vertices = 6
     num_edges = 7
     num_faces = 2
-    fill_scalar_quantity(scalar_quantity1, num_vertices, num_edges, num_faces)
-    fill_scalar_quantity(scalar_quantity2, num_vertices, num_edges, num_faces)
-    fill_vector_quantity(vector_quantity1, num_vertices, num_edges, num_faces)
-    fill_vector_quantity(vector_quantity2, num_vertices, num_edges, num_faces)
+    for ggd_idx in range(len(ids.time)):
+        fill_scalar_quantity(input_scalars[ggd_idx], num_vertices, num_edges, num_faces)
+        fill_vector_quantity(input_vectors[ggd_idx], num_vertices, num_edges, num_faces)
 
-    scalar_array_list, vector_array_list = get_arrays_from_ids(ids)
-    assert scalar_quantity1 in scalar_array_list
-    assert scalar_quantity2 in scalar_array_list
-    assert vector_quantity1 in vector_array_list
-    assert vector_quantity2 in vector_array_list
+
+def test_get_arrays_from_ids_empty(ids_fixture):
+    """Tests get_arrays_from_ids when IDS has no filled GGD arrays"""
+    ids, _, _ = ids_fixture
+    retrieved_scalar_arrays, retrieved_vector_arrays = get_arrays_from_ids(ids)
+    assert retrieved_scalar_arrays == []
+    assert retrieved_vector_arrays == []
+
+
+def test_get_arrays_from_ids_all_timesteps(ids_fixture):
+    """Tests get_arrays_from_ids when requesting all time steps in the IDS"""
+
+    ids, input_scalars, input_vectors = ids_fixture
+    fill_quantities(ids, input_scalars, input_vectors)
+
+    retrieved_scalar_arrays, retrieved_vector_arrays = get_arrays_from_ids(ids)
+    assert len(retrieved_scalar_arrays) == len(ids.time)
+    assert len(retrieved_vector_arrays) == len(ids.time)
+    assert all(scalar in retrieved_scalar_arrays for scalar in input_scalars)
+    assert all(vector in retrieved_vector_arrays for vector in input_vectors)
+
+
+def test_get_arrays_from_ids_single_timesteps(ids_fixture):
+    """Tests get_arrays_from_ids when requesting only a single time step in the IDS"""
+
+    ids, input_scalars, input_vectors = ids_fixture
+    fill_quantities(ids, input_scalars, input_vectors)
+
+    for ggd_idx in range(len(ids.time)):
+        retrieved_scalar_arrays, retrieved_vector_arrays = get_arrays_from_ids(
+            ids, ggd_idx=ggd_idx
+        )
+        assert len(retrieved_scalar_arrays) == 1
+        assert len(retrieved_vector_arrays) == 1
+        assert input_scalars[ggd_idx] == retrieved_scalar_arrays[0]
+        assert input_vectors[ggd_idx] == retrieved_vector_arrays[0]
+
+
+def test_get_arrays_from_ids_not_defined_timesteps(ids_fixture):
+    """Tests get_arrays_from_ids when requesting a single time step that does not exist
+    in the IDS"""
+    ids, input_scalars, input_vectors = ids_fixture
+    fill_quantities(ids, input_scalars, input_vectors)
+
+    # Get timestep not in IDS
+    ggd_idx = len(ids.time)
+    retrieved_scalar_arrays, retrieved_vector_arrays = get_arrays_from_ids(
+        ids, ggd_idx=ggd_idx
+    )
+    assert retrieved_scalar_arrays == []
+    assert retrieved_vector_arrays == []

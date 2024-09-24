@@ -35,7 +35,7 @@ from vtkggdtools.paraview_support.servermanager_tools import (
     stringlistdomain,
     stringvector,
 )
-from vtkggdtools.util import FauxIndexMap, create_first_grid, get_first_grid
+from vtkggdtools.util import FauxIndexMap, create_first_grid, get_grid_ggd
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -86,6 +86,9 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         self._ids_list = []
         self._ids = None
 
+        # Load ggd_idx from paraview UI
+        self._time_steps = []
+
     def _update_property(self, name, value, callback=None):
         """Convenience method to update a property when value changed."""
         if getattr(self, name) != value:
@@ -97,8 +100,10 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     def _calculate_uri(self) -> None:
         """Determine the IMAS URI from user input."""
         if self._uri_selection_mode == 1:
-            # Use URI provided by user:
+            # Use URI provided by user, removing leading/trailing whitespaces
             uri = self._uri_input
+            if uri is not None:
+                uri = uri.strip()
         elif self._uri_selection_mode == 2:
             # Determine URI from selected file
             uri = uri_from_path(self._uri_path)
@@ -250,6 +255,15 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         """Return a list of IDSs with data inside the selected Data Entry."""
         return self._ids_list
 
+    # Properties for handling time steps
+    ####################################################################################
+
+    @smproperty.doublevector(
+        name="TimestepValues", information_only="1", si_class="vtkSITimeStepsProperty"
+    )
+    def GetTimestepValues(self):
+        return self._time_steps
+
     # Properties for Bezier interpolation
     ####################################################################################
 
@@ -325,20 +339,72 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             self._ids = ids
             logger.info("Done loading IDS.")
 
-    def RequestData(self, request, inInfo, outInfo):
+    def RequestInformation(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence:
             return 1
+
+        # Load IDS and available time steps
+        # TODO: Add support for IDSs with heterogeneous time mode
         self._ensure_ids()
+        if (
+            self._ids.ids_properties.homogeneous_time
+            != imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
+        ):
+            logger.error(
+                "Only IDSs with homogeneous time mode are currently supported."
+            )
+            return 1
+        self._time_steps = self._ids.time
+
+        # Pass time steps to Paraview
+        executive = self.GetExecutive()
+        outInfo = outInfo.GetInformationObject(0)
+        outInfo.Remove(executive.TIME_STEPS())
+        outInfo.Remove(executive.TIME_RANGE())
+
+        for time_step in self._time_steps:
+            outInfo.Append(executive.TIME_STEPS(), time_step)
+        outInfo.Append(executive.TIME_RANGE(), self._time_steps[0])
+        outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
+        return 1
+
+    def RequestData(self, request, inInfo, outInfo):
+        if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
+            return 1
+
+        # Retrieve time step from time selection widget in Paraview UI
+        executive = self.GetExecutive()
+        outInfo = outInfo.GetInformationObject(0)
+        time_step = outInfo.Get(executive.UPDATE_TIME_STEP())
+        time_step_idx = np.where(self._time_steps == time_step)[0]
+
+        # Paraview (v5.12.1) contains a bug where, if you load a dataset with only a
+        # single timestep, it automatically loads 10 synthetic timesteps ranging from
+        # timestep upto time step + 1. The issue can be found here:
+        # https://gitlab.kitware.com/paraview/paraview/-/issues/22360
+        # A workaround is as follows:
+        # 1. load the single timestep data
+        # 2. open "View > Time Manager"
+        # 3. uncheck and check again the checkbox "Time Sources"
+        # For now, just return without doing anything if such a timestep is chosen
+        if len(time_step_idx) == 0:
+            logger.warning("Selected invalid time step")
+            return 1
+        else:
+            time_step_idx = time_step_idx[0]
+            logger.debug(f"Selected time step: {self._time_steps[time_step_idx]}")
 
         # TODO: allow selecting other grids
         _aos_index_values = FauxIndexMap()
-        grid_ggd = get_first_grid(self._ids)
+        grid_ggd = get_grid_ggd(self._ids, time_step_idx)
 
-        # We now have the grid_ggd
-        # Check if we have anything to read:
-        if len(grid_ggd.grid_subset) < 1 and len(grid_ggd.space) < 1:
-            logger.info("No points to read from grid_ggd")
-            return 0
+        # Check if grid is valid
+        if grid_ggd is None:
+            logger.warning("Could not load a valid GGD grid.")
+            return 1
+        if not hasattr(grid_ggd, "space") or len(grid_ggd.space) < 1:
+            logger.warning("The grid_ggd does not contain a space.")
+            return 1
 
         output = vtkPartitionedDataSetCollection.GetData(outInfo)
         num_subsets = len(grid_ggd.grid_subset)
@@ -397,7 +463,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
 
         # Regular grid reading
-        ps_reader = read_ps.PlasmaStateReader(self._ids)
+        ps_reader = read_ps.PlasmaStateReader(self._ids, time_step_idx)
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             output.SetNumberOfPartitionedDataSets(1)

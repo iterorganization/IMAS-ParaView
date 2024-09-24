@@ -1,6 +1,9 @@
+import logging
 from typing import Optional
 
 import numpy as np
+
+logger = logging.getLogger("vtkggdtools")
 
 
 class FauxIndexMap:
@@ -58,11 +61,12 @@ def get_ggd_path(ids_metadata) -> Optional[str]:
     return None
 
 
-def get_first_grid(ids):
+def get_grid_ggd(ids, ggd_idx=0):
     """Finds and returns the first grid_ggd within IDS.
 
     Args:
         ids: The IDS for which to return the first grid_gdd.
+        ggd_idx: Time index for which to load the grid. Defaults to 0.
 
     Returns:
         The first grid_ggd node found, or None if not found.
@@ -73,11 +77,28 @@ def get_first_grid(ids):
 
     node = ids
     for path in grid_path.split("/"):
-        node = node[path]
+
         try:
-            node = node[0]  # get first element of AoS
+            node = node[path]
+        except ValueError:
+            logger.warning(
+                "Could not find a valid grid_ggd to load, because node "
+                f"{node.metadata.name} does not have a {path}."
+            )
+            return None
+
+        try:
+            node = node[ggd_idx]
         except (LookupError, ValueError):
-            pass  # apparently this was not an AoS :)
+            # if node at ggd_idx does not exist, instead try at index 0
+            try:
+                node = node[0]
+                logger.warning(
+                    f"The GGD grid was not found at time index {ggd_idx}, so first "
+                    "grid was loaded instead."
+                )
+            except (LookupError, ValueError):
+                pass  # apparently this was not an AoS :)
 
     return node
 

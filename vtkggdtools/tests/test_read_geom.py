@@ -4,7 +4,7 @@ from vtkggdtools.io.read_geom import (
     convert_grid_subset_geometry_to_unstructured_grid,
     fill_vtk_points,
 )
-from vtkggdtools.util import get_first_grid
+from vtkggdtools.util import get_grid_ggd
 
 
 def test_fill_vtk_points(ids_name, dummy_ids):
@@ -13,7 +13,7 @@ def test_fill_vtk_points(ids_name, dummy_ids):
     ids = dummy_ids
     space_idx = 0
     points = vtkPoints()
-    grid_ggd = get_first_grid(ids)
+    grid_ggd = get_grid_ggd(ids)
     fill_vtk_points(grid_ggd, space_idx, points, ids_name)
     assert points.GetNumberOfPoints() > 0
 
@@ -24,7 +24,7 @@ def test_convert_grid_subset_geometry_to_unstructured_grid(ids_name, dummy_ids):
     ids = dummy_ids
     subset_idx = 0
     space_idx = 0
-    grid_ggd = get_first_grid(ids)
+    grid_ggd = get_grid_ggd(ids)
     points = vtkPoints()
     fill_vtk_points(grid_ggd, space_idx, points, ids_name)
     grid = convert_grid_subset_geometry_to_unstructured_grid(

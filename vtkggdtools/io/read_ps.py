@@ -36,12 +36,14 @@ SUPPORTED_IDS_NAMES = [
 
 
 class PlasmaStateReader:
-    def __init__(self, ids):
+    def __init__(self, ids, ggd_idx=None):
         """Initializes plasma state reader and retrieves all filled GGD scalar and
         vector arrays from the IDS.
 
         Args:
             ids: The IDS to load GGD arrays from
+            ggd_idx: The time step to load. Defaults to None, which corresponds with
+            loading all timesteps.
         """
 
         # _cache stores names for each node to avoid recomputing them. It checks if
@@ -50,7 +52,9 @@ class PlasmaStateReader:
         self._cache = {}
         # Retrieve all GGD scalar and vector arrays from IDS
         logger.debug("Retrieving GGD arrays from IDS")
-        self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(ids)
+        self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(
+            ids, ggd_idx=ggd_idx
+        )
 
         logger.debug(
             f"Found {len(self.scalar_array_list)} scalar arrays and "
@@ -65,7 +69,6 @@ class PlasmaStateReader:
             subset_idx: an index into grid_ggd/grid_subset AoS
             ugrid: the unstructured grid instance
         """
-        # TODO: properly handle time indexing
         # TODO: GGD-fast
 
         # Read scalar arrays

@@ -58,6 +58,8 @@ def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints, ids_name: str) 
     logger.info(f"Reading {num_objects0d} points from grid_ggd/space[{space_idx}]")
 
     s = 1  # scale objects from mm to m
+    if len(grid_ggd.space[space_idx].objects_per_dimension[0].object[0].geometry) == 0:
+        raise RuntimeError("Geometry of object is empty.")
     if grid_ggd.space[space_idx].objects_per_dimension[0].object[0].geometry[0] > 100:
         s = 0.001
 
@@ -77,6 +79,8 @@ def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints, ids_name: str) 
                 (obj.geometry[0] * s, obj.geometry[1] * s, third_dim(obj) * s)
             )
         else:
+            if len(obj.geometry) < 2:
+                raise RuntimeError("Geometry of object is smaller than 2.")
             points.InsertNextPoint(
                 (obj.geometry[0] * s, third_dim(obj) * s, obj.geometry[1] * s)
             )
