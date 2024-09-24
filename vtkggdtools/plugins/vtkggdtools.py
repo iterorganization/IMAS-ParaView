@@ -10,11 +10,9 @@ import imaspy.ids_defs
 import numpy as np
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
-from vtkmodules.vtkCommonCore import vtkDataArray, vtkPoints
+from vtkmodules.vtkCommonCore import vtkDataArray
 from vtkmodules.vtkCommonDataModel import (
     vtkCellData,
-    vtkCompositeDataSet,
-    vtkDataAssembly,
     vtkDataObject,
     vtkPartitionedDataSetCollection,
     vtkPointSet,
@@ -22,8 +20,9 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from vtkggdtools._version import get_versions
+from vtkggdtools.convert import ggd_to_vtk
 from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
-from vtkggdtools.io import read_bezier, read_geom, read_ps, write_geom, write_ps
+from vtkggdtools.io import read_ps, write_geom, write_ps
 from vtkggdtools.io.representables import GridSubsetRepresentable
 from vtkggdtools.paraview_support.servermanager_tools import (
     arrayselectiondomain,
@@ -37,7 +36,7 @@ from vtkggdtools.paraview_support.servermanager_tools import (
     stringlistdomain,
     stringvector,
 )
-from vtkggdtools.util import FauxIndexMap, create_first_grid, get_grid_ggd
+from vtkggdtools.util import FauxIndexMap, create_first_grid
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -417,98 +416,22 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             return 1
 
         # Retrieve the selected time step and GGD arrays
-        selected_scalars, selected_vectors = self._get_selected_ggd_arrays()
+        selected_scalar_paths, selected_vector_paths = self._get_selected_ggd_arrays()
         time_step_idx = self._get_selected_time_step(outInfo)
         if time_step_idx is None:
             logger.warning("Selected invalid time step")
             return 1
 
-        # TODO: allow selecting other grids for Bezier
-        _aos_index_values = FauxIndexMap()
-        self.grid_ggd = get_grid_ggd(self._ids, time_step_idx)
-
-        # Check if grid is valid
-        if self.grid_ggd is None:
-            logger.warning("Could not load a valid GGD grid.")
-            return 1
-        if not hasattr(self.grid_ggd, "space") or len(self.grid_ggd.space) < 1:
-            logger.warning("The grid_ggd does not contain a space.")
-            return 1
-
-        output = vtkPartitionedDataSetCollection.GetData(outInfo)
-        num_subsets = len(self.grid_ggd.grid_subset)
-        points = vtkPoints()
-        space_idx = 0
-        idsname = self._ids.metadata.name
-
-        read_geom.fill_vtk_points(self.grid_ggd, space_idx, points, idsname)
-        assembly = vtkDataAssembly()
-        output.SetDataAssembly(assembly)
-
-        # Interpolate JOREK Fourier space
-        # TODO: figure out if we can put this functionality in a post-processing step?
-        if self._n_plane != 0:
-            number_of_spaces = len(self.grid_ggd.space)
-            if (
-                number_of_spaces > 1
-                and len(self.grid_ggd.space[0].coordinates_type) == 2
-            ):
-                n_period = self.grid_ggd.space[1].geometry_type.index
-                if n_period > 0:  # Fourier space with periodicity (JOREK)
-                    logger.info(
-                        f"Reading Bezier mesh with Fourier periodiciy {n_period}"
-                    )
-                    ugrid = read_bezier.convert_grid_subset_to_unstructured_grid(
-                        idsname,
-                        self._ids,
-                        _aos_index_values,
-                        self._n_plane,
-                        self._phi_start,
-                        self._phi_end,
-                    )
-                    output.SetPartition(0, 0, ugrid)
-                    child = assembly.AddNode(idsname, 0)
-                    assembly.AddDataSetIndex(child, 0)
-                    output.GetMetaData(0).Set(vtkCompositeDataSet.NAME(), idsname)
-                else:
-                    logger.error(
-                        f"Number of planes {self._n_plane} invalid for this "
-                        f"{number_of_spaces} number of spaces"
-                    )
-            else:
-                logger.error(
-                    f"Number of planes {self._n_plane} invalid for this IDS type."
-                    " Try using N = 0"
-                )
-            return 1
-
-        # Load the GGD arrays from the selected GGD paths
-        self.ps_reader.load_arrays_from_path(
-            time_step_idx, selected_scalars, selected_vectors
+        output = ggd_to_vtk(
+            self._ids,
+            time_step_idx=time_step_idx,
+            scalar_paths_to_load=selected_scalar_paths,
+            vector_paths_to_load=selected_vector_paths,
+            outInfo=outInfo,
         )
-
-        if num_subsets <= 1:
-            logger.info("No subsets to read from grid_ggd")
-            output.SetNumberOfPartitionedDataSets(1)
-            self._fill_grid_and_plasma_state(-1, 0, points, output, assembly)
-        elif idsname == "wall":
-            # FIXME: what if num_subsets is 2 or 3?
-            output.SetNumberOfPartitionedDataSets(num_subsets - 3)
-            self._fill_grid_and_plasma_state(-1, 0, points, output, assembly)
-            for subset_idx in range(4, num_subsets):
-                self._fill_grid_and_plasma_state(
-                    subset_idx, subset_idx - 3, points, output, assembly
-                )
-                self.UpdateProgress(self.GetProgress() + 1 / num_subsets)
-        else:
-            output.SetNumberOfPartitionedDataSets(num_subsets)
-            for subset_idx in range(num_subsets):
-                self._fill_grid_and_plasma_state(
-                    subset_idx, subset_idx, points, output, assembly
-                )
-                self.UpdateProgress(self.GetProgress() + 1 / num_subsets)
-
-        logger.info("Finished loading IDS.")
+        if output is None:
+            logger.warning("Could not convert GGD to VTK.")
+            return 1
         return 1
 
     def _ensure_ids(self):
@@ -613,20 +536,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             logger.debug(f"Selected time step: {self._time_steps[time_step_idx]}")
 
         return time_step_idx
-
-    def _fill_grid_and_plasma_state(
-        self, subset_idx, partition, points, output, assembly
-    ):
-        subset = None if subset_idx < 0 else self.grid_ggd.grid_subset[subset_idx]
-        ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
-            self.grid_ggd, subset_idx, points
-        )
-        self.ps_reader.read_plasma_state(subset_idx, ugrid)
-        output.SetPartition(partition, 0, ugrid)
-        label = str(subset.identifier.name) if subset else self._ids.metadata.name
-        child = assembly.AddNode(label.replace(" ", "_"), 0)
-        assembly.AddDataSetIndex(child, partition)
-        output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
 
 
 _ggd_types_xml = "".join(

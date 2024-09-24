@@ -1,5 +1,6 @@
 import logging
 import sys
+from pathlib import Path
 
 import click
 import imaspy
@@ -7,8 +8,10 @@ import imaspy.backends.imas_core.imas_interface
 from imaspy.backends.imas_core.imas_interface import ll_interface
 from rich import box, console, traceback
 from rich.table import Table
+from vtk import vtkXMLPartitionedDataSetCollectionWriter
 
 import vtkggdtools
+from vtkggdtools.convert import ggd_to_vtk
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +68,7 @@ def print_version():
 @click.argument("output_name", type=str)
 @click.argument("occurrence", type=int, default=0)
 def convert_ggd_to_vtk(uri, ids, output_name, occurrence):
-    """Convert a GGD structure to a VTK file.
+    """Convert a GGD structure in an IDS to a VTK file.
 
     \b
     uri         URI of the Data Entry (e.g. "imas:mdsplus?path=testdb").
@@ -74,14 +77,21 @@ def convert_ggd_to_vtk(uri, ids, output_name, occurrence):
     occurrence  Which occurrence to print (defaults to 0).
     """
 
-    click.echo(
-        f"Converting IDS {ids} from uri {uri} with occurrence {occurrence} "
-        "to a VTK file."
-    )
+    entry = imaspy.DBEntry(uri, "r")
+    click.echo(f"Loading {ids} from {uri}...")
+    ids = entry.get(ids, autoconvert=False)
 
-    # TODO add conversion function for ggd to vtk
+    click.echo("Converting GGD to a VTK file...")
+    vtk_object = ggd_to_vtk(ids, time_step_idx=0)
 
-    click.echo(f"Successfully converted to {output_name}.")
+    click.echo("Writing VTK file to disk...")
+    writer = vtkXMLPartitionedDataSetCollectionWriter()
+    writer.SetInputData(vtk_object)
+    output_file = Path(output_name).stem + ".vtpc"
+    writer.SetFileName(output_file)
+    writer.Write()
+
+    click.echo(f"Successfully converted GGD to {output_file}.")
 
 
 if __name__ == "__main__":
