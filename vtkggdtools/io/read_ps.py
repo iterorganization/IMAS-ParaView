@@ -8,7 +8,7 @@ from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
 
-from vtkggdtools.ids_util import get_arrays_from_ids
+from vtkggdtools.ids_util import get_arrays_from_ids, recursive_ggd_path_search
 
 # We'll need these below when we create some units manually:
 from vtkggdtools.util import format_units
@@ -26,8 +26,7 @@ SUPPORTED_IDS_NAMES = [
     "equilibrium",
     "mhd",
     "radiation",
-    # TODO: this IDS contains a GGD, but reading is not supported yet
-    # "runaway_electrons",
+    "runaway_electrons",
     "tf",
     "transport_solver_numerics",
     "wall",
@@ -36,7 +35,7 @@ SUPPORTED_IDS_NAMES = [
 
 
 class PlasmaStateReader:
-    def __init__(self, ids, ggd_idx=None):
+    def __init__(self, ids):
         """Initializes plasma state reader and retrieves all filled GGD scalar and
         vector arrays from the IDS.
 
@@ -50,12 +49,44 @@ class PlasmaStateReader:
         # a node's name is already cached before generating it, speeding up the process
         # and ensuring names are computed only once.
         self._cache = {}
-        # Retrieve all GGD scalar and vector arrays from IDS
-        logger.debug("Retrieving GGD arrays from IDS")
-        self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(
-            ids, ggd_idx=ggd_idx
+        self._ids = ids
+        self.scalar_array_list = []
+        self.vector_array_list = []
+
+    def load_paths_from_ids(self):
+        """Retrieves scalar and vector array paths from the IDS metadata by performing a
+        recursive search through GGD paths.
+
+        Returns:
+            scalar_array_paths: A list of paths of GGD scalar arrays in the IDS
+            vector_array_paths: A list of paths of GGD vector arrays in the IDS
+        """
+        scalar_array_paths = []
+        vector_array_paths = []
+
+        logger.debug("Retrieving GGD paths from IDS metadata")
+        recursive_ggd_path_search(
+            self._ids.metadata, scalar_array_paths, vector_array_paths
         )
 
+        return scalar_array_paths, vector_array_paths
+
+    def load_arrays_from_path(self, ggd_idx, scalar_array_paths, vector_array_paths):
+        """Retrieves scalar and vector arrays from the IDS based on the provided time
+        index and array paths, and stores them in the respective lists.
+
+        Args:
+            ggd_idx: The time index for which to load GGD arrays
+            scalar_array_paths: A list of paths of GGD scalar arrays in the IDS
+            vector_array_paths: A list of paths of GGD vector arrays in the IDS
+        """
+        logger.debug("Retrieving GGD arrays from IDS")
+        self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(
+            self._ids,
+            ggd_idx=ggd_idx,
+            scalar_array_paths=scalar_array_paths,
+            vector_array_paths=vector_array_paths,
+        )
         logger.debug(
             f"Found {len(self.scalar_array_list)} scalar arrays and "
             f"{len(self.vector_array_list)} vector arrays in the IDS."
@@ -141,9 +172,11 @@ class PlasmaStateReader:
 
             # Add identifier/name/label in between brackets to the full name
             if name_appendix != "":
-                name = f"{name_current_node} ({name_appendix})"
+                name = (
+                    f"{name_current_node.capitalize()} ({name_appendix.capitalize()})"
+                )
             else:
-                name = name_current_node
+                name = name_current_node.capitalize()
 
         parent = imaspy.util.get_parent(node)
         if parent.metadata is node.metadata:

@@ -8,7 +8,6 @@ import logging
 import imaspy
 import imaspy.ids_defs
 import numpy as np
-from imaspy.exception import UnknownDDVersion
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonCore import vtkDataArray, vtkPoints
@@ -27,6 +26,9 @@ from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
 from vtkggdtools.io import read_bezier, read_geom, read_ps, write_geom, write_ps
 from vtkggdtools.io.representables import GridSubsetRepresentable
 from vtkggdtools.paraview_support.servermanager_tools import (
+    arrayselectiondomain,
+    arrayselectionstringvector,
+    checkbox,
     doublevector,
     enumeration,
     genericdecorator,
@@ -88,6 +90,15 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # Load ggd_idx from paraview UI
         self._time_steps = []
+
+        # GGD arrays to load
+        self._selected_arrays = []
+        self._selectable_arrays = []
+        self._selectable_vector_arrays = []
+        self._selectable_scalar_arrays = []
+
+        self.grid_ggd = None
+        self.ps_reader = None
 
     def _update_property(self, name, value, callback=None):
         """Convenience method to update a property when value changed."""
@@ -230,7 +241,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             f"This Data Entry contains {len(self._ids_list)} supported IDSs."
         )
 
-    # Properties for setting the IDS name and occurrence
+    # Properties for setting the IDS name, occurrence and which GGD arrays to load
     ####################################################################################
 
     def _clear_ids(self):
@@ -254,6 +265,55 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     def P11_GetIDSList(self):
         """Return a list of IDSs with data inside the selected Data Entry."""
         return self._ids_list
+
+    @arrayselectiondomain(
+        property_name="GGDArray",
+        name="GGDArraySelector",
+        label="Select GGD Arrays",
+    )
+    def P12_SetGGDArray(self, array, status):
+        """Select all or a subset of available GGD arrays to load."""
+        # Add a GGD array to selected list
+        if status == 1 and array not in self._selected_arrays:
+            self._selected_arrays.append(array)
+            self.Modified()
+
+        # Remove a GGD array from selected list
+        if status == 0 and array in self._selected_arrays:
+            self._selected_arrays.remove(array)
+            self.Modified()
+
+    @arrayselectionstringvector(property_name="GGDArray", attribute_name="GGD")
+    def _GGDArraySelector(self):
+        pass
+
+    def GetNumberOfGGDArrays(self):
+        return len(self._selectable_arrays)
+
+    def GetGGDArrayName(self, idx):
+        return self._name_from_idspath(self._selectable_arrays[idx])
+
+    def GetGGDArrayStatus(self, *args):
+        return 1
+
+    @checkbox(
+        name="LazyLoading",
+        label="Preload Data",
+        default_values="0",
+    )
+    def P13_SetLazyLoading(self, val):
+        """Turn on to preload the entire IDS beforehand, if this is left off, the data
+        is loaded on-demand through lazy loading. It is recommended to leave this off
+        if you are only loading a small subset of the data. If you want to load most of
+        the data, it is recommended to turn this on."""
+        if val == 0:
+            status = "enabled"
+            self.lazy = True
+        else:
+            status = "disabled"
+            self.lazy = False
+        logger.info(f"Lazy Loading is {status}.")
+        self.Modified()
 
     # Properties for handling time steps
     ####################################################################################
@@ -298,7 +358,9 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     def PG0_DataEntryGroup(self):
         """Dummy function to define a PropertyGroup."""
 
-    @propertygroup("Select IDS", ["IDSAndOccurrence", "IDSList"])
+    @propertygroup(
+        "Select IDS", ["IDSAndOccurrence", "IDSList", "GGDArraySelector", "LazyLoading"]
+    )
     def PG1_IDSGroup(self):
         """Dummy function to define a PropertyGroup."""
 
@@ -320,24 +382,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             vtkDataObject.DATA_EXTENT_TYPE(), output.GetExtentType()
         )
         return 1
-
-    def _ensure_ids(self):
-        if self._ids is None:
-            idsname, _, occurrence = self._ids_and_occurrence.partition("/")
-            occurrence = int(occurrence or 0)
-            logger.info("Loading IDS %s/%d ...", idsname, occurrence)
-            # TODO: Add option to turn off lazy loading
-            lazy = True
-            try:
-                ids = self._dbentry.get(
-                    idsname, occurrence, autoconvert=False, lazy=lazy
-                )
-            except UnknownDDVersion:
-                # Apparently IMASPy doesn't know the DD version that this IDS was
-                # written with. Use the default DD version instead:
-                ids = self._dbentry.get(idsname, occurrence, lazy=lazy)
-            self._ids = ids
-            logger.info("Done loading IDS.")
 
     def RequestInformation(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence:
@@ -372,56 +416,44 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
             return 1
 
-        # Retrieve time step from time selection widget in Paraview UI
-        executive = self.GetExecutive()
-        outInfo = outInfo.GetInformationObject(0)
-        time_step = outInfo.Get(executive.UPDATE_TIME_STEP())
-        time_step_idx = np.where(self._time_steps == time_step)[0]
-
-        # Paraview (v5.12.1) contains a bug where, if you load a dataset with only a
-        # single timestep, it automatically loads 10 synthetic timesteps ranging from
-        # timestep upto time step + 1. The issue can be found here:
-        # https://gitlab.kitware.com/paraview/paraview/-/issues/22360
-        # A workaround is as follows:
-        # 1. load the single timestep data
-        # 2. open "View > Time Manager"
-        # 3. uncheck and check again the checkbox "Time Sources"
-        # For now, just return without doing anything if such a timestep is chosen
-        if len(time_step_idx) == 0:
+        # Retrieve the selected time step and GGD arrays
+        selected_scalars, selected_vectors = self._get_selected_ggd_arrays()
+        time_step_idx = self._get_selected_time_step(outInfo)
+        if time_step_idx is None:
             logger.warning("Selected invalid time step")
             return 1
-        else:
-            time_step_idx = time_step_idx[0]
-            logger.debug(f"Selected time step: {self._time_steps[time_step_idx]}")
 
-        # TODO: allow selecting other grids
+        # TODO: allow selecting other grids for Bezier
         _aos_index_values = FauxIndexMap()
-        grid_ggd = get_grid_ggd(self._ids, time_step_idx)
+        self.grid_ggd = get_grid_ggd(self._ids, time_step_idx)
 
         # Check if grid is valid
-        if grid_ggd is None:
+        if self.grid_ggd is None:
             logger.warning("Could not load a valid GGD grid.")
             return 1
-        if not hasattr(grid_ggd, "space") or len(grid_ggd.space) < 1:
+        if not hasattr(self.grid_ggd, "space") or len(self.grid_ggd.space) < 1:
             logger.warning("The grid_ggd does not contain a space.")
             return 1
 
         output = vtkPartitionedDataSetCollection.GetData(outInfo)
-        num_subsets = len(grid_ggd.grid_subset)
+        num_subsets = len(self.grid_ggd.grid_subset)
         points = vtkPoints()
         space_idx = 0
         idsname = self._ids.metadata.name
 
-        read_geom.fill_vtk_points(grid_ggd, space_idx, points, idsname)
+        read_geom.fill_vtk_points(self.grid_ggd, space_idx, points, idsname)
         assembly = vtkDataAssembly()
         output.SetDataAssembly(assembly)
 
         # Interpolate JOREK Fourier space
         # TODO: figure out if we can put this functionality in a post-processing step?
         if self._n_plane != 0:
-            number_of_spaces = len(grid_ggd.space)
-            if number_of_spaces > 1 and len(grid_ggd.space[0].coordinates_type) == 2:
-                n_period = grid_ggd.space[1].geometry_type.index
+            number_of_spaces = len(self.grid_ggd.space)
+            if (
+                number_of_spaces > 1
+                and len(self.grid_ggd.space[0].coordinates_type) == 2
+            ):
+                n_period = self.grid_ggd.space[1].geometry_type.index
                 if n_period > 0:  # Fourier space with periodicity (JOREK)
                     logger.info(
                         f"Reading Bezier mesh with Fourier periodiciy {n_period}"
@@ -450,38 +482,151 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                 )
             return 1
 
-        def fill_grid_and_plasma_state(ps_reader, subset_idx, partition):
-            subset = None if subset_idx < 0 else grid_ggd.grid_subset[subset_idx]
-            ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
-                grid_ggd, subset_idx, points
-            )
-            ps_reader.read_plasma_state(subset_idx, ugrid)
-            output.SetPartition(partition, 0, ugrid)
-            label = str(subset.identifier.name) if subset else idsname
-            child = assembly.AddNode(label.replace(" ", "_"), 0)
-            assembly.AddDataSetIndex(child, partition)
-            output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
+        # Load the GGD arrays from the selected GGD paths
+        self.ps_reader.load_arrays_from_path(
+            time_step_idx, selected_scalars, selected_vectors
+        )
 
-        # Regular grid reading
-        ps_reader = read_ps.PlasmaStateReader(self._ids, time_step_idx)
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             output.SetNumberOfPartitionedDataSets(1)
-            fill_grid_and_plasma_state(ps_reader, -1, 0)
+            self._fill_grid_and_plasma_state(-1, 0, points, output, assembly)
         elif idsname == "wall":
             # FIXME: what if num_subsets is 2 or 3?
             output.SetNumberOfPartitionedDataSets(num_subsets - 3)
-            fill_grid_and_plasma_state(ps_reader, -1, 0)
+            self._fill_grid_and_plasma_state(-1, 0, points, output, assembly)
             for subset_idx in range(4, num_subsets):
-                fill_grid_and_plasma_state(ps_reader, subset_idx, subset_idx - 3)
+                self._fill_grid_and_plasma_state(
+                    subset_idx, subset_idx - 3, points, output, assembly
+                )
                 self.UpdateProgress(self.GetProgress() + 1 / num_subsets)
         else:
             output.SetNumberOfPartitionedDataSets(num_subsets)
             for subset_idx in range(num_subsets):
-                fill_grid_and_plasma_state(ps_reader, subset_idx, subset_idx)
+                self._fill_grid_and_plasma_state(
+                    subset_idx, subset_idx, points, output, assembly
+                )
                 self.UpdateProgress(self.GetProgress() + 1 / num_subsets)
 
+        logger.info("Finished loading IDS.")
         return 1
+
+    def _ensure_ids(self):
+        """
+        Loads the IDS if not already loaded. Once loaded, initializes plasma state
+        reader and populates scalar and vector paths for selection.
+        """
+        if self._ids is None:
+            idsname, _, occurrence = self._ids_and_occurrence.partition("/")
+            occurrence = int(occurrence or 0)
+            logger.info("Loading IDS %s/%d ...", idsname, occurrence)
+
+            self._ids = self._dbentry.get(
+                idsname,
+                occurrence,
+                autoconvert=False,
+                lazy=self.lazy,
+                ignore_unknown_dd_version=True,
+            )
+
+            # Load paths from IDS
+            self.ps_reader = read_ps.PlasmaStateReader(self._ids)
+            self._selectable_scalar_arrays, self._selectable_vector_arrays = (
+                self.ps_reader.load_paths_from_ids()
+            )
+            self._selectable_arrays = (
+                self._selectable_vector_arrays + self._selectable_scalar_arrays
+            )
+
+    def _name_from_idspath(self, path):
+        """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part
+        of the path, with the parts separated by spaces.
+
+        Example:
+            If path is IDSPath('ggd/electrons/pressure'), the function returns
+            "Electrons Pressure"
+
+        Args:
+            path: The IDSPath object to convert into a formatted string
+
+        Returns:
+            A formatted string of the IDSPath
+        """
+        path_list = list(path.parts)
+        if "ggd" in path_list:
+            path_list.remove("ggd")
+        for i in range(len(path_list)):
+            path_list[i] = path_list[i].capitalize()
+        return " ".join(path_list)
+
+    def _get_selected_ggd_arrays(self):
+        """Retrieve the IDSPaths of the selected scalar and vector GGD arrays.
+
+        Returns:
+            selected_scalars: List of IDSPaths of selected scalar GGD arrays
+            selected_vectors: List of IDSPaths of selected vector GGD arrays
+        """
+
+        # Determine if selected GGD arrays are scalar or vector arrays
+        selected_scalars = [
+            obj
+            for obj in self._selectable_scalar_arrays
+            if self._name_from_idspath(obj) in self._selected_arrays
+        ]
+        selected_vectors = [
+            obj
+            for obj in self._selectable_vector_arrays
+            if self._name_from_idspath(obj) in self._selected_arrays
+        ]
+        return selected_scalars, selected_vectors
+
+    def _get_selected_time_step(self, outInfo):
+        """Retrieves the selected time step index based on the time selection widget in
+        the ParaView UI.
+
+        Args:
+            outInfo: An information object that holds details about the update request
+
+        Returns:
+            time_step_idx: The index of the selected time step. If the selected time
+            step cannot be found in the IDS, returns None.
+        """
+        # Retrieve time step from time selection widget in Paraview UI
+        executive = self.GetExecutive()
+        outInfo = outInfo.GetInformationObject(0)
+        time_step = outInfo.Get(executive.UPDATE_TIME_STEP())
+        time_step_idx = np.where(self._time_steps == time_step)[0]
+
+        # Paraview (v5.12.1) contains a bug where, if you load a dataset with only a
+        # single timestep, it automatically loads 10 synthetic timesteps ranging from
+        # timestep upto time step + 1. The issue can be found here:
+        # https://gitlab.kitware.com/paraview/paraview/-/issues/22360
+        # A workaround is as follows:
+        # 1. load the single timestep data
+        # 2. open "View > Time Manager"
+        # 3. uncheck and check again the checkbox "Time Sources"
+        # For now, return None if such a timestep is chosen
+        if len(time_step_idx) == 0:
+            return None
+        else:
+            time_step_idx = time_step_idx[0]
+            logger.debug(f"Selected time step: {self._time_steps[time_step_idx]}")
+
+        return time_step_idx
+
+    def _fill_grid_and_plasma_state(
+        self, subset_idx, partition, points, output, assembly
+    ):
+        subset = None if subset_idx < 0 else self.grid_ggd.grid_subset[subset_idx]
+        ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
+            self.grid_ggd, subset_idx, points
+        )
+        self.ps_reader.read_plasma_state(subset_idx, ugrid)
+        output.SetPartition(partition, 0, ugrid)
+        label = str(subset.identifier.name) if subset else self._ids.metadata.name
+        child = assembly.AddNode(label.replace(" ", "_"), 0)
+        assembly.AddDataSetIndex(child, partition)
+        output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
 
 
 _ggd_types_xml = "".join(

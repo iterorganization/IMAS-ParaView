@@ -1,7 +1,8 @@
 import imaspy
 import pytest
+from imaspy.ids_path import IDSPath
 
-from vtkggdtools.ids_util import get_arrays_from_ids
+from vtkggdtools.ids_util import get_arrays_from_ids, recursive_ggd_path_search
 from vtkggdtools.tests.fill_ggd import fill_scalar_quantity, fill_vector_quantity
 
 
@@ -83,3 +84,36 @@ def test_get_arrays_from_ids_not_defined_timesteps(ids_fixture):
     )
     assert retrieved_scalar_arrays == []
     assert retrieved_vector_arrays == []
+
+
+def test_recursive_ggd_path_search():
+    """Test if recursive_ggd_path_search returns all GGD array paths"""
+    ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
+
+    es_scalar_v3_41 = [
+        IDSPath("source/ggd/electrons/particles"),
+        IDSPath("source/ggd/electrons/energy"),
+        IDSPath("source/ggd/ion/energy"),
+        IDSPath("source/ggd/ion/particles"),
+        IDSPath("source/ggd/ion/state/particles"),
+        IDSPath("source/ggd/ion/state/energy"),
+        IDSPath("source/ggd/neutral/particles"),
+        IDSPath("source/ggd/neutral/energy"),
+        IDSPath("source/ggd/neutral/state/particles"),
+        IDSPath("source/ggd/neutral/state/energy"),
+        IDSPath("source/ggd/total_ion_energy"),
+        IDSPath("source/ggd/current"),
+    ]
+    es_vector_v3_41 = [
+        IDSPath("source/ggd/ion/momentum"),
+        IDSPath("source/ggd/ion/state/momentum"),
+        IDSPath("source/ggd/neutral/momentum"),
+        IDSPath("source/ggd/neutral/state/momentum"),
+        IDSPath("source/ggd/momentum"),
+    ]
+
+    scalar_arrays = []
+    vector_arrays = []
+    recursive_ggd_path_search(ids.metadata, scalar_arrays, vector_arrays)
+    assert set(scalar_arrays) == set(es_scalar_v3_41)
+    assert set(vector_arrays) == set(es_vector_v3_41)

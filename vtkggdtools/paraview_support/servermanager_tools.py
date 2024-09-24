@@ -54,6 +54,80 @@ def stringlistdomain(property_name, **kwargs):
     )
 
 
+def arrayselectionstringvector(property_name, attribute_name):
+    """Convenience decorator to add a stringvector for an ArraySelectionDomain.
+    Paraview requires the following functions to be defined with the corresponding
+    `attribute_name`:
+
+        - GetNumberOf{attribute_name}Arrays(self)
+        - Get{attribute_name}ArrayName(self, idx)
+        - Get{attribute_name}ArrayStatus(self, *args)
+
+    Args:
+        property_name: Name of the stringvector property. Must match the
+            `property_name` in arrayselectiondomain
+        attribute_name: Name to use in the auxiliary Paraview functions
+    """
+    return smproperty.xml(
+        f"""
+        <StringVectorProperty
+        information_only="1" name="{property_name}">
+            <ArraySelectionInformationHelper attribute_name="{attribute_name}" />
+        </StringVectorProperty>
+        """
+    )
+
+
+def arrayselectiondomain(property_name, **kwargs):
+    """Convenience decorator to add an ArraySelectionDomain to a property."""
+
+    def decorator(func):
+        args = " ".join(f'{key}="{value}"' for key, value in kwargs.items())
+
+        xml = f"""
+        <StringVectorProperty
+            {args}
+            command="{func.__name__}"
+            number_of_elements="0"
+            number_of_elements_per_command="2"
+            panel_visibility="default"
+            element_types="2 0"
+            repeat_command="1">
+            <ArraySelectionDomain name="array_list">
+                <RequiredProperties>
+                    <Property function="ArrayList" name="{property_name}" />
+                </RequiredProperties>
+            </ArraySelectionDomain>
+            <Documentation>{func.__doc__}</Documentation>
+            </StringVectorProperty>
+        """
+
+        return smproperty.xml(xml)(func)
+
+    return decorator
+
+
+def checkbox(**kwargs):
+    """Convenience decorator for creating a simple boolean checkbox."""
+
+    def decorator(func):
+        args = " ".join(f'{key}="{value}"' for key, value in kwargs.items())
+
+        xml = f"""
+        <IntVectorProperty
+            {args}
+            command="{func.__name__}"
+            number_of_elements="1">
+            <BooleanDomain name="bool" />
+            <Documentation>{func.__doc__}</Documentation>
+        </IntVectorProperty>
+        """
+
+        return smproperty.xml(xml)(func)
+
+    return decorator
+
+
 def add_docstring(func):
     """Convenience decorator to add a Documentation XML node filled with the docstring
     of the property.
