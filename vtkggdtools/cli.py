@@ -82,7 +82,7 @@ def convert_ggd_to_vtk(uri, ids, output_name, occurrence):
     ids = entry.get(ids, autoconvert=False)
 
     click.echo("Converting GGD to a VTK file...")
-    vtk_object = ggd_to_vtk(ids, time_step_idx=0)
+    vtk_object = ggd_to_vtk(ids, time_idx=0)
 
     click.echo("Writing VTK file to disk...")
     writer = vtkXMLPartitionedDataSetCollectionWriter()

@@ -15,7 +15,7 @@ logger = logging.getLogger("vtkggdtools")
 
 def ggd_to_vtk(
     ids,
-    time_step_idx,
+    time_idx,
     *,
     scalar_paths=None,
     vector_paths=None,
@@ -26,9 +26,7 @@ def ggd_to_vtk(
     progress=None,
 ):
     ps_reader = read_ps.PlasmaStateReader(ids)
-
-    # TODO: make time actual time not index
-    grid_ggd = get_grid_ggd(ids, time_step_idx)
+    grid_ggd = get_grid_ggd(ids, time_idx)
 
     # Check if grid is valid
     if grid_ggd is None:
@@ -59,7 +57,7 @@ def ggd_to_vtk(
         return output
 
     # Load the GGD arrays from the selected GGD paths
-    ps_reader.load_arrays_from_path(time_step_idx, scalar_paths, vector_paths)
+    ps_reader.load_arrays_from_path(time_idx, scalar_paths, vector_paths)
 
     if num_subsets <= 1:
         logger.info("No subsets to read from grid_ggd")

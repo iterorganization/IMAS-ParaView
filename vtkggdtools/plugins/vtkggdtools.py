@@ -418,8 +418,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # Retrieve the selected time step and GGD arrays
         selected_scalar_paths, selected_vector_paths = self._get_selected_ggd_arrays()
-        time_step_idx = self._get_selected_time_step(outInfo)
-        if time_step_idx is None:
+        time_idx = self._get_selected_time_step(outInfo)
+        if time_idx is None:
             logger.warning("Selected invalid time step")
             return 1
 
@@ -429,7 +429,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         # Convert GGD of IDS to VTK format
         output = ggd_to_vtk(
             self._ids,
-            time_step_idx=time_step_idx,
+            time_idx=time_idx,
             scalar_paths=selected_scalar_paths,
             vector_paths=selected_vector_paths,
             outInfo=outInfo,
