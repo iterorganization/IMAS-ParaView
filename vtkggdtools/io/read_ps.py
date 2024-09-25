@@ -254,9 +254,13 @@ class PlasmaStateReader:
                             aos_scalar_node[i].values, name, ugrid
                         )
                 except IndexError:
-                    logger.warn(f"           no index {i} for subset {subset_idx}...")
+                    logger.warning(
+                        f"           no index {i} for subset {subset_idx}..."
+                    )
                 except AttributeError:
-                    logger.warn(f"           no index {i} for subset {subset_idx}...")
+                    logger.warning(
+                        f"           no index {i} for subset {subset_idx}..."
+                    )
         else:
             if hasattr(aos_scalar_node[subset_idx], "values") and len(
                 aos_scalar_node[subset_idx].values
