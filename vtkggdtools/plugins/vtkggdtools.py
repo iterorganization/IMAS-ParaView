@@ -36,6 +36,7 @@ from vtkggdtools.paraview_support.servermanager_tools import (
     stringlistdomain,
     stringvector,
 )
+from vtkggdtools.progress import Progress
 from vtkggdtools.util import FauxIndexMap, create_first_grid
 
 logger = logging.getLogger("vtkggdtools")
@@ -422,12 +423,20 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             logger.warning("Selected invalid time step")
             return 1
 
+        # Create progress object to advance Paraview progress bar
+        progress = Progress(self.UpdateProgress, self.GetProgress)
+
+        # Convert GGD of IDS to VTK format
         output = ggd_to_vtk(
             self._ids,
             time_step_idx=time_step_idx,
-            scalar_paths_to_load=selected_scalar_paths,
-            vector_paths_to_load=selected_vector_paths,
+            scalar_paths=selected_scalar_paths,
+            vector_paths=selected_vector_paths,
             outInfo=outInfo,
+            n_plane=self._n_plane,
+            phi_start=self._phi_start,
+            phi_end=self._phi_end,
+            progress=progress,
         )
         if output is None:
             logger.warning("Could not convert GGD to VTK.")

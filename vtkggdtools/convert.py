@@ -1,5 +1,3 @@
-# ggd_to_vtk.py
-
 import logging
 
 from vtkmodules.vtkCommonCore import vtkPoints
@@ -9,8 +7,8 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPartitionedDataSetCollection,
 )
 
-from vtkggdtools.io import read_geom, read_ps
-from vtkggdtools.util import get_grid_ggd
+from vtkggdtools.io import read_bezier, read_geom, read_ps
+from vtkggdtools.util import FauxIndexMap, get_grid_ggd
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -18,13 +16,16 @@ logger = logging.getLogger("vtkggdtools")
 def ggd_to_vtk(
     ids,
     time_step_idx,
-    scalar_paths_to_load=None,
-    vector_paths_to_load=None,
+    *,
+    scalar_paths=None,
+    vector_paths=None,
     outInfo=None,
+    n_plane=0,
+    phi_start=0,
+    phi_end=0,
+    progress=None,
 ):
     ps_reader = read_ps.PlasmaStateReader(ids)
-
-    # TODO: allow selecting other grids for Bezier
 
     # TODO: make time actual time not index
     grid_ggd = get_grid_ggd(ids, time_step_idx)
@@ -41,6 +42,7 @@ def ggd_to_vtk(
         output = vtkPartitionedDataSetCollection()
     else:
         output = vtkPartitionedDataSetCollection.GetData(outInfo)
+
     num_subsets = len(grid_ggd.grid_subset)
     points = vtkPoints()
     space_idx = 0
@@ -50,46 +52,14 @@ def ggd_to_vtk(
     assembly = vtkDataAssembly()
     output.SetDataAssembly(assembly)
 
-    # TODO add jorek functionality
-    # TODO fix updateprogress
-
-    # _aos_index_values = FauxIndexMap()
-    # # Interpolate JOREK Fourier space
-    # # TODO: figure out if we can put this functionality in a post-processing step?
-    # if self._n_plane != 0:
-    #     number_of_spaces = len(grid_ggd.space)
-    #     if number_of_spaces > 1 and len(grid_ggd.space[0].coordinates_type) == 2:
-    #         n_period = grid_ggd.space[1].geometry_type.index
-    #         if n_period > 0:  # Fourier space with periodicity (JOREK)
-    #             logger.info(f"Reading Bezier mesh with Fourier periodiciy {n_period}")
-    #             ugrid = read_bezier.convert_grid_subset_to_unstructured_grid(
-    #                 idsname,
-    #                 ids,
-    #                 _aos_index_values,
-    #                 self._n_plane,
-    #                 self._phi_start,
-    #                 self._phi_end,
-    #             )
-    #             output.SetPartition(0, 0, ugrid)
-    #             child = assembly.AddNode(idsname, 0)
-    #             assembly.AddDataSetIndex(child, 0)
-    #             output.GetMetaData(0).Set(vtkCompositeDataSet.NAME(), idsname)
-    #         else:
-    #             logger.error(
-    #                 f"Number of planes {self._n_plane} invalid for this "
-    #                 f"{number_of_spaces} number of spaces"
-    #             )
-    #     else:
-    #         logger.error(
-    #             f"Number of planes {self._n_plane} invalid for this IDS type."
-    #             " Try using N = 0"
-    #         )
-    #     return 1
+    if n_plane != 0:
+        _bezier_interpolate(
+            ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly
+        )
+        return output
 
     # Load the GGD arrays from the selected GGD paths
-    ps_reader.load_arrays_from_path(
-        time_step_idx, scalar_paths_to_load, vector_paths_to_load
-    )
+    ps_reader.load_arrays_from_path(time_step_idx, scalar_paths, vector_paths)
 
     if num_subsets <= 1:
         logger.info("No subsets to read from grid_ggd")
@@ -114,7 +84,8 @@ def ggd_to_vtk(
                 ids,
                 ps_reader,
             )
-            # self.UpdateProgress(self.GetProgress() + 1 / num_subsets)
+            if progress:
+                progress.increment(1.0 / num_subsets)
     else:
         output.SetNumberOfPartitionedDataSets(num_subsets)
         for subset_idx in range(num_subsets):
@@ -128,10 +99,47 @@ def ggd_to_vtk(
                 ids,
                 ps_reader,
             )
-            # self.UpdateProgress(self.GetProgress() + 1 / num_subsets)
+            if progress:
+                progress.increment(1.0 / num_subsets)
 
     logger.info("Finished loading IDS.")
     return output
+
+
+def _bezier_interpolate(ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly):
+    # TODO: allow selecting other grids for Bezier
+    aos_index_values = FauxIndexMap()
+    # Interpolate JOREK Fourier space
+    # TODO: figure out if we can put this functionality in a post-processing step?
+    ids_name = ids.metadata.name
+    number_of_spaces = len(grid_ggd.space)
+    if number_of_spaces > 1 and len(grid_ggd.space[0].coordinates_type) == 2:
+        n_period = grid_ggd.space[1].geometry_type.index
+        if n_period > 0:  # Fourier space with periodicity (JOREK)
+            logger.info(f"Reading Bezier mesh with Fourier periodiciy {n_period}")
+            ugrid = read_bezier.convert_grid_subset_to_unstructured_grid(
+                ids_name,
+                ids,
+                aos_index_values,
+                n_plane,
+                phi_start,
+                phi_end,
+            )
+            output.SetPartition(0, 0, ugrid)
+            child = assembly.AddNode(ids_name, 0)
+            assembly.AddDataSetIndex(child, 0)
+            output.GetMetaData(0).Set(vtkCompositeDataSet.NAME(), ids_name)
+        else:
+            logger.error(
+                f"Number of planes {n_plane} invalid for this "
+                f"{number_of_spaces} number of spaces"
+            )
+            output = None
+    else:
+        logger.error(
+            f"Number of planes {n_plane} invalid for this IDS type." " Try using N = 0"
+        )
+        output = None
 
 
 def _fill_grid_and_plasma_state(
