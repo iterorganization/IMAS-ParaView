@@ -10,7 +10,7 @@ import imaspy.ids_defs
 import numpy as np
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
-from vtkmodules.vtkCommonCore import vtkDataArray, vtkPoints
+from vtkmodules.vtkCommonCore import vtkDataArray, vtkPoints, vtkStringArray
 from vtkmodules.vtkCommonDataModel import (
     vtkCellData,
     vtkCompositeDataSet,
@@ -145,6 +145,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                     self._dbentry = imaspy.DBEntry(self._uri, "r")
                 except Exception as exc:
                     self._uri_error = str(exc)
+                    self._selectable_arrays = []
+                    self._ids_list = []
             self._update_ids_list()
             self.Modified()
 
@@ -261,10 +263,13 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             value = ""
         self._update_property("_ids_and_occurrence", value, self._clear_ids)
 
-    @stringvector(name="IDSList", information_only=1)
+    @stringvector(name="IDSList", information_only=1, si_class="vtkSIDataArrayProperty")
     def P11_GetIDSList(self):
         """Return a list of IDSs with data inside the selected Data Entry."""
-        return self._ids_list
+        arr = vtkStringArray()
+        for val in self._ids_list:
+            arr.InsertNextValue(val)
+        return arr
 
     @arrayselectiondomain(
         property_name="GGDArray",
