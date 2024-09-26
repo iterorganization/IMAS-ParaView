@@ -1,31 +1,22 @@
-# Write the benchmarking functions here.
-# See "Writing benchmarks" in the asv docs for more information.
+from pathlib import Path
+
+import imaspy
+
+from vtkggdtools.convert import ggd_to_vtk
+from vtkggdtools.tests.fill_ggd import fill_ids
+
+from .utils import all_backends, create_dbentry, create_uri
 
 
-class TimeSuite:
-    """
-    An example benchmark that times the performance of various kinds
-    of iterating over dictionaries in Python.
-    """
-    def setup(self):
-        self.d = {}
-        for x in range(500):
-            self.d[x] = None
+class Get:
+    params = all_backends
+    param_names = ["backend"]
 
-    def time_keys(self):
-        for key in self.d.keys():
-            pass
-
-    def time_values(self):
-        for value in self.d.values():
-            pass
-
-    def time_range(self):
-        d = self.d
-        for key in range(500):
-            d[key]
-
-
-class MemSuite:
-    def mem_list(self):
-        return [0] * 256
+    def convert(self, backend):
+        path = Path.cwd() / f"DB-{backend}"
+        self.dbentry = create_dbentry(backend, path)
+        edge_profiles = imaspy.IDSFactory().edge_profiles()
+        fill_ids(edge_profiles, N=20)
+        self.dbentry.put(edge_profiles)
+        uri = create_uri(backend, path)
+        ggd_to_vtk(uri, 0)
