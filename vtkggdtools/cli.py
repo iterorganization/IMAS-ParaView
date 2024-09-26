@@ -79,15 +79,16 @@ def convert_ggd_to_vtk(uri, ids, output_name, occurrence):
 
     entry = imaspy.DBEntry(uri, "r")
     click.echo(f"Loading {ids} from {uri}...")
-    ids = entry.get(ids, autoconvert=False)
+    ids = entry.get(ids, occurrence=occurrence, autoconvert=False)
 
     click.echo("Converting GGD to a VTK file...")
+    # TODO: convert timesteps other than first
     vtk_object = ggd_to_vtk(ids, time_idx=0)
 
     click.echo("Writing VTK file to disk...")
     writer = vtkXMLPartitionedDataSetCollectionWriter()
     writer.SetInputData(vtk_object)
-    output_file = Path(output_name).stem + ".vtpc"
+    output_file = Path(output_name).with_suffix(".vtpc")
     writer.SetFileName(output_file)
     writer.Write()
 
