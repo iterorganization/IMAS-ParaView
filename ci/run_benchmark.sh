@@ -24,17 +24,14 @@ rm -rf venv  # Environment should be clean, but remove directory to be sure
 python -m venv venv
 source venv/bin/activate
 
-# Install asv and imaspy
+# Install asv and vtkggd
 pip install --upgrade pip setuptools wheel
 pip install virtualenv .[test]
 
-# Generate MDS+ models cache
-python -c 'import imaspy.backends.imas_core.mdsplus_model; print(imaspy.backends.imas_core.mdsplus_model.mdsplus_model_dir(imaspy.IDSFactory()))'
-
 # Copy previous results (if any)
-mkdir -p /mnt/bamboo_deploy/imaspy/benchmarks/results
+mkdir -p /mnt/bamboo_deploy/vtkggdtools/benchmarks/results
 mkdir -p .asv
-cp -rf /mnt/bamboo_deploy/imaspy/benchmarks/results .asv/
+cp -rf /mnt/bamboo_deploy/vtkggdtools/benchmarks/results .asv/
 
 # Ensure there is a machine configuration
 asv machine --yes
@@ -44,17 +41,17 @@ asv run --skip-existing-successful HEAD^!
 # asv run --skip-existing-successful develop^!
 # asv run --skip-existing-successful main^!
 
-# Compare results
-if [ `git rev-parse --abbrev-ref HEAD` == develop ]
-then
-    asv compare main develop
-else
-    asv compare develop HEAD
-fi
+# # Compare results
+# if [ `git rev-parse --abbrev-ref HEAD` == develop ]
+# then
+#     asv compare main develop
+# else
+#     asv compare develop HEAD
+# fi
 
 # Publish results
 asv publish
 
 # And persistently store them
-cp -rf .asv/{results,html} /mnt/bamboo_deploy/imaspy/benchmarks/
+cp -rf .asv/{results,html} /mnt/bamboo_deploy/vtkggdtools/benchmarks/
 

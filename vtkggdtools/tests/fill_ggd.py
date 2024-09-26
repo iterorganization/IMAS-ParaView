@@ -125,7 +125,7 @@ def set_vertices(N, space):
     for i in range(N):
         for j in range(N):
             idx = i * N + j
-            vertices[idx].geometry = [j, i]
+            vertices[idx].geometry = [float(j), float(i)]
     return num_vertices
 
 

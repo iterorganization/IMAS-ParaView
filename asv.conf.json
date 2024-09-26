@@ -18,18 +18,17 @@
     // of the repository.
     // "repo_subdir": "",
 
-    // Customizable commands for building the project.
-    // See asv.conf.json documentation.
-    // To build the package using pyproject.toml (PEP518), uncomment the following lines
+    // Customizable commands for building, installing, and
+    // uninstalling the project. See asv.conf.json documentation.
+    //
+    // "install_command": ["in-dir={env_dir} python -mpip install {wheel_file}[netcdf]"],
+    // // "uninstall_command": ["return-code=any python -mpip uninstall -y {project}"],
     // "build_command": [
-    //     "python -m pip install build",
-    //     "python -m build",
-    //     "PIP_NO_BUILD_ISOLATION=false python -mpip wheel --no-deps --no-index -w {build_cache_dir} {build_dir}"
-    // ],
-    // To build the package using setuptools and a setup.py file, uncomment the following lines
-    // "build_command": [
-    //     "python setup.py build",
-    //     "PIP_NO_BUILD_ISOLATION=false python -mpip wheel --no-deps --no-index -w {build_cache_dir} {build_dir}"
+    //     // link data-dictionary and build folder so the DD source files remain cached
+    //     // Note: when using `ln -s`, asv complains about 
+    //     "python -c 'import os\nfor folder in (\"data-dictionary\", \"build\"):\n\tos.symlink(\"{conf_dir}/\" + folder, \"{build_dir}/\" + folder)'",
+    //     // "python setup.py build",
+    //     "python -m pip wheel --no-deps -w {build_cache_dir} {build_dir}"
     // ],
 
     // Customizable commands for installing and uninstalling the project.
@@ -39,8 +38,8 @@
 
     // List of branches to benchmark. If not provided, defaults to "master"
     // (for git) or "default" (for mercurial).
-    // TODO: Add Master
-    "branches": ["develop"],
+    // TODO: Add Master/develop
+    "branches": ["ASV-benchmark"],
 
     // The DVCS being used.  If not set, it will be automatically
     // determined from "repo" by looking at the protocol in the URL
@@ -146,7 +145,7 @@
 
     // The directory (relative to the current directory) that benchmarks are
     // stored in.  If not provided, defaults to "benchmarks"
-    // "benchmark_dir": "benchmarks",
+    "benchmark_dir": "benchmarks",
 
     // The directory (relative to the current directory) to cache the Python
     // environments in.  If not provided, defaults to "env"
