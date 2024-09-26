@@ -1,5 +1,5 @@
 #!/bin/bash
-# Bamboo CI script to install imaspy and run all tests
+# Bamboo CI script to install vtkggdtools and run all benchmarks
 # Note: this script should be run from the root of the git repository
 
 # Debuggging:
@@ -40,8 +40,8 @@ cp -rf /mnt/bamboo_deploy/imaspy/benchmarks/results .asv/
 asv machine --yes
 
 # Run ASV for the current commit, develop and main
-# asv run --skip-existing-successful HEAD^!
-asv run --skip-existing-successful develop^!
+asv run --skip-existing-successful HEAD^!
+# asv run --skip-existing-successful develop^!
 # asv run --skip-existing-successful main^!
 
 # Compare results
