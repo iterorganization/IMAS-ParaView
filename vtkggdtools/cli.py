@@ -65,15 +65,15 @@ def print_version():
 @cli.command("ggd2vtk")
 @click.argument("uri", type=str)
 @click.argument("ids", type=str)
-@click.argument("output_name", type=str)
+@click.argument("output", type=str)
 @click.argument("occurrence", type=int, default=0)
-def convert_ggd_to_vtk(uri, ids, output_name, occurrence):
+def convert_ggd_to_vtk(uri, ids, output, occurrence):
     """Convert a GGD structure in an IDS to a VTK file.
 
     \b
     uri         URI of the Data Entry (e.g. "imas:mdsplus?path=testdb").
-    ids         Name of the IDS to print (e.g. "core_profiles").
-    output      Filename of the output vtk file.
+    ids         Name of the IDS to print (e.g. "edge_profiles").
+    output      Name of the output VTK file/directory.
     occurrence  Which occurrence to print (defaults to 0).
     """
 
@@ -84,11 +84,14 @@ def convert_ggd_to_vtk(uri, ids, output_name, occurrence):
     click.echo("Converting GGD to a VTK file...")
     # TODO: convert timesteps other than first
     vtk_object = ggd_to_vtk(ids, time_idx=0)
+    if vtk_object is None:
+        click.echo("Could not convert GGD to VTK file.")
+        return
 
     click.echo("Writing VTK file to disk...")
     writer = vtkXMLPartitionedDataSetCollectionWriter()
     writer.SetInputData(vtk_object)
-    output_file = Path(output_name).with_suffix(".vtpc")
+    output_file = Path(output).with_suffix(".vtpc")
     writer.SetFileName(output_file)
     writer.Write()
 
