@@ -9,14 +9,15 @@ from vtkggdtools.util import create_first_ggd, create_first_grid, int32array
 logger = logging.getLogger("vtkggdtools")
 
 
-def fill_NxN_grid(grid_ggd, N=2):
+def fill_NxN_grid(grid_ggd, N):
     """Fills the grid_ggd of an IDS with a uniform rectangular grid of size N x N,
     containing vertices, edges and faces.
 
     Adapted from https://sharepoint.iter.org/departments/POP/CM/IMDesign/Data%20Model/sphinx/3.41/ggd_guide/examples.html # noqa
 
     Args:
-        grid_ggd: The GGD grid that will be filled with the NxN grid.
+        grid_ggd: The GGD grid that will be filled with the N x N grid.
+        N: The size of the N x N grid
 
     Returns:
         num_vertices: The number of vertices in the generated grid_ggd
@@ -369,11 +370,13 @@ def fill_ggd_data(ids, num_vertices, num_edges, num_faces):
             fill_vector_rzphi_quantity(vector_array, num_vertices, num_edges, num_faces)
 
 
-def fill_ids(ids):
-    """Fills the GGD and grid_ggd for the given IDS.
+def fill_ids(ids, N=2):
+    """Fills the IDS with an N x N GGD grid and fills all available GGD arrays on this
+    grid with random values.
 
     Args:
         ids: IDS that will be filled
+        N: Size of the N x N grid
     """
 
     # Create an empty grid_ggd
@@ -388,7 +391,7 @@ def fill_ids(ids):
         ids.ids_properties.homogeneous_time = imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
 
         # Fill GGD grid with a simple 2x3 grid
-        num_vertices, num_edges, num_faces = fill_NxN_grid(grid_ggd)
+        num_vertices, num_edges, num_faces = fill_NxN_grid(grid_ggd, N)
         logger.debug(f"filled grid_ggd for {ids.metadata.name}")
 
     # Create an empty GGD
