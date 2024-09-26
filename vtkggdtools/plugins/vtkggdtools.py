@@ -440,7 +440,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         )
         if output is None:
             logger.warning("Could not convert GGD to VTK.")
-            return 1
         return 1
 
     def _ensure_ids(self):
