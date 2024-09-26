@@ -62,7 +62,7 @@ def print_version():
     console.Console().print(grid)
 
 
-@cli.command("convert_ggd_to_vtk")
+@cli.command("ggd2vtk")
 @click.argument("uri", type=str)
 @click.argument("ids", type=str)
 @click.argument("output_name", type=str)
