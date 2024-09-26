@@ -19,10 +19,10 @@ def ggd_to_vtk(
     *,
     scalar_paths=None,
     vector_paths=None,
-    outInfo=None,
     n_plane=0,
     phi_start=0,
     phi_end=0,
+    outInfo=None,
     progress=None,
 ):
     """Converts the GGD of an IDS to VTK format.
@@ -30,17 +30,19 @@ def ggd_to_vtk(
     Args:
         ids: The IDS to convert to VTK
         time_idx: Which
-        scalar_paths: A list of IDSPaths of GGD scalar arrays to convert.
-        vector_paths: A list of IDSPaths of GGD vector arrays to convert.
-        outInfo: Source outInfo information object. Defaults to None.
+        scalar_paths: A list of IDSPaths of GGD scalar arrays to convert. Defaults
+            to None, in which case all scalar arrays are converted.
+        vector_paths: A list of IDSPaths of GGD vector arrays to convert. Defaults
+            to None, in which case all vectors arrays are converted.
         n_plane: Number of toroidal planes to be generated if 3D axysimetric. Defaults
             to 0.
         phi_start: Start phi plane in degrees. Defaults to 0.
         phi_end: End plane at phi in degrees. Defaults to 0.
+        outInfo: Source outInfo information object. Defaults to None.
         progress: Progress indicator for Paraview. Defaults to None.
 
     Returns:
-        vtkPartitionedDataSetCollection containing the converted GGD data
+        vtkPartitionedDataSetCollection containing the converted GGD data.
     """
     ps_reader = read_ps.PlasmaStateReader(ids)
     grid_ggd = get_grid_ggd(ids, time_idx)
@@ -81,24 +83,24 @@ def ggd_to_vtk(
         logger.info("No subsets to read from grid_ggd")
         output.SetNumberOfPartitionedDataSets(1)
         _fill_grid_and_plasma_state(
-            -1, 0, points, output, assembly, grid_ggd, ids_name, ps_reader
+            ids_name, grid_ggd, ps_reader, -1, 0, points, output, assembly
         )
     elif idsname == "wall":
         # FIXME: what if num_subsets is 2 or 3?
         output.SetNumberOfPartitionedDataSets(num_subsets - 3)
         _fill_grid_and_plasma_state(
-            -1, 0, points, output, assembly, grid_ggd, ids_name, ps_reader
+            ids_name, grid_ggd, ps_reader, -1, 0, points, output, assembly
         )
         for subset_idx in range(4, num_subsets):
             _fill_grid_and_plasma_state(
+                ids_name,
+                grid_ggd,
+                ps_reader,
                 subset_idx,
                 subset_idx - 3,
                 points,
                 output,
                 assembly,
-                grid_ggd,
-                ids_name,
-                ps_reader,
             )
             if progress:
                 progress.increment(1.0 / num_subsets)
@@ -106,14 +108,14 @@ def ggd_to_vtk(
         output.SetNumberOfPartitionedDataSets(num_subsets)
         for subset_idx in range(num_subsets):
             _fill_grid_and_plasma_state(
+                ids_name,
+                grid_ggd,
+                ps_reader,
                 subset_idx,
                 subset_idx,
                 points,
                 output,
                 assembly,
-                grid_ggd,
-                ids_name,
-                ps_reader,
             )
             if progress:
                 progress.increment(1.0 / num_subsets)
@@ -123,6 +125,18 @@ def ggd_to_vtk(
 
 
 def _bezier_interpolate(ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly):
+    """Perform Bezier interpolation
+
+    Args:
+        ids: The IDS object.
+        grid_ggd: The grid_ggd IDS node.
+        n_plane: Number of toroidal planes to be generated if 3D axysimetric.
+        phi_start: Start phi plane.
+        phi_end: End plane at phi in degrees.
+        output: vtkPartitionedDataSetCollection containing the converted GGD data.
+        assembly: vtkDataAssembly containing the hierarchical hierarchical organization
+            of items in the vtkPartitionedDataSetCollection.
+    """
     # TODO: allow selecting other grids for Bezier
     aos_index_values = FauxIndexMap()
     # Interpolate JOREK Fourier space
@@ -159,11 +173,32 @@ def _bezier_interpolate(ids, grid_ggd, n_plane, phi_start, phi_end, output, asse
 
 
 def _fill_grid_and_plasma_state(
-    subset_idx, partition, points, output, assembly, grid_ggd, ids_name, ps_reader
+    ids_name,
+    grid_ggd,
+    ps_reader,
+    subset_idx,
+    partition,
+    vtk_grid_points,
+    output,
+    assembly,
 ):
+    """Read GGD data from the IDS and convert it to VTK data.
+
+    Args:
+        ids_name: Name of the IDS object.
+        grid_ggd: The grid_ggd IDS node.
+        ps_reader: Plasmastate reader class responsible for reading the IDS data.
+        subset_idx: Index of the grid subset.
+        partition: Index of the VTK partition.
+        vtk_grid_points: The point coordinates corresponding to 1d objects in
+            the subset elements.
+        output: vtkPartitionedDataSetCollection containing the converted GGD data.
+        assembly: vtkDataAssembly containing the hierarchical hierarchical organization
+            of items in the vtkPartitionedDataSetCollection.
+    """
     subset = None if subset_idx < 0 else grid_ggd.grid_subset[subset_idx]
     ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
-        grid_ggd, subset_idx, points
+        grid_ggd, subset_idx, vtk_grid_points
     )
     ps_reader.read_plasma_state(subset_idx, ugrid)
     output.SetPartition(partition, 0, ugrid)

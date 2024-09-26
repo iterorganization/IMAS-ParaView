@@ -432,10 +432,10 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             time_idx=time_idx,
             scalar_paths=selected_scalar_paths,
             vector_paths=selected_vector_paths,
-            outInfo=outInfo,
             n_plane=self._n_plane,
             phi_start=self._phi_start,
             phi_end=self._phi_end,
+            outInfo=outInfo,
             progress=progress,
         )
         if output is None:
