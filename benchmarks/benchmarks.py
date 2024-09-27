@@ -28,7 +28,7 @@ class Convert:
 
     def setup(self, backend):
         self.edge_profiles = imaspy.IDSFactory().edge_profiles()
-        fill_ids(self.edge_profiles, N=50)
+        fill_ids(self.edge_profiles, N=10)
         uri = create_uri(backend)
         with imaspy.DBEntry(uri, "w") as dbentry:
             dbentry.put(self.edge_profiles)
@@ -43,8 +43,7 @@ class Convert:
         ggd_to_vtk(ids, 0)
 
     def time_load_and_convert_lazy(self, backend):
-        path = Path.cwd() / f"DB-{backend}"
-        uri = f"imas:{backend.lower()}?path={path}"
+        uri = create_uri(backend)
         entry = imaspy.DBEntry(uri, "r")
         ids = entry.get("edge_profiles", lazy=True, autoconvert=False)
         ggd_to_vtk(ids, 0)
