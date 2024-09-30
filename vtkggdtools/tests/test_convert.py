@@ -7,7 +7,7 @@ from vtkggdtools.util import get_grid_ggd
 def test_ggd_to_vtk(dummy_ids, tmp_path):
     time_idx = 0
     output_file = tmp_path / "test.vtpc"
-    vtk_object = ggd_to_vtk(dummy_ids, time_idx)
+    vtk_object = ggd_to_vtk(dummy_ids)
     writer = vtkXMLPartitionedDataSetCollectionWriter()
     writer.SetInputData(vtk_object)
     writer.SetFileName(output_file)

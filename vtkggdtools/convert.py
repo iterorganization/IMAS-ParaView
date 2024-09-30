@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     vtkCompositeDataSet,
@@ -15,8 +16,8 @@ logger = logging.getLogger("vtkggdtools")
 
 def ggd_to_vtk(
     ids,
-    time_idx,
     *,
+    time=None,
     scalar_paths=None,
     vector_paths=None,
     n_plane=0,
@@ -29,7 +30,7 @@ def ggd_to_vtk(
 
     Args:
         ids: The IDS to convert to VTK.
-        time_idx: Index of the time step.
+        time: Time step to convert. Defaults to converting the first time step.
         scalar_paths: A list of IDSPaths of GGD scalar arrays to convert. Defaults
             to None, in which case all scalar arrays are converted.
         vector_paths: A list of IDSPaths of GGD vector arrays to convert. Defaults
@@ -44,7 +45,9 @@ def ggd_to_vtk(
     Returns:
         vtkPartitionedDataSetCollection containing the converted GGD data.
     """
-    ps_reader = read_ps.PlasmaStateReader(ids)
+
+    # Retrieve GGD grid from IDS
+    time_idx = _get_nearest_time_idx(ids, time)
     grid_ggd = get_grid_ggd(ids, time_idx)
 
     # Check if grid is valid
@@ -54,13 +57,14 @@ def ggd_to_vtk(
     if not hasattr(grid_ggd, "space") or len(grid_ggd.space) < 1:
         logger.warning("The grid_ggd does not contain a space.")
         return None
+    num_subsets = len(grid_ggd.grid_subset)
 
+    # Create output VTK object
     if outInfo is None:
         output = vtkPartitionedDataSetCollection()
     else:
         output = vtkPartitionedDataSetCollection.GetData(outInfo)
 
-    num_subsets = len(grid_ggd.grid_subset)
     points = vtkPoints()
     space_idx = 0
     ids_name = ids.metadata.name
@@ -74,6 +78,7 @@ def ggd_to_vtk(
         return output
 
     # Load the GGD arrays from the selected GGD paths
+    ps_reader = read_ps.PlasmaStateReader(ids)
     ps_reader.load_arrays_from_path(time_idx, scalar_paths, vector_paths)
 
     if num_subsets <= 1:
@@ -119,6 +124,28 @@ def ggd_to_vtk(
 
     logger.info("Finished loading IDS.")
     return output
+
+
+def _get_nearest_time_idx(ids, time):
+    """Finds the index of the nearest time step in the IDS time array to the provided
+    time value.
+
+    Args:
+        ds: The IDS object.
+        time: Timestep to retrieve. If it is None, the first time step is retrieved.
+
+    Returns:
+        Index of the nearest time step
+    """
+    if time:
+        time_idx = np.argmin(np.abs(ids.time - time))
+        logger.info(
+            f"Converting timestep: t = {ids.time[time_idx]} at index = {time_idx}"
+        )
+    else:
+        time_idx = 0
+        logger.info(f"Converting first timestep: t = {ids.time[time_idx]}")
+    return time_idx
 
 
 def _interpolate_jorek(ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly):

@@ -69,14 +69,16 @@ def print_version():
 @click.argument("uri", type=str)
 @click.argument("ids", type=str)
 @click.argument("output", type=str)
+@click.argument("time", type=int, default=None)
 @click.argument("occurrence", type=int, default=0)
-def convert_ggd_to_vtk(uri, ids, output, occurrence):
+def convert_ggd_to_vtk(uri, ids, output, time, occurrence):
     """Convert a GGD structure in an IDS to a VTK file.
 
     \b
     uri         URI of the Data Entry (e.g. "imas:mdsplus?path=testdb").
     ids         Name of the IDS to print (e.g. "edge_profiles").
     output      Name of the output VTK file/directory.
+    time        Time slice to convert (defaults to first time step).
     occurrence  Which occurrence to print (defaults to 0).
     """
 
@@ -86,7 +88,7 @@ def convert_ggd_to_vtk(uri, ids, output, occurrence):
 
     click.echo("Converting GGD to a VTK file...")
     # TODO: convert timesteps other than first
-    vtk_object = ggd_to_vtk(ids, time_idx=0)
+    vtk_object = ggd_to_vtk(ids, time=time)
     if vtk_object is None:
         click.echo("Could not convert GGD to VTK file.")
         return

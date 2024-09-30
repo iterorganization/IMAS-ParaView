@@ -428,8 +428,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # Retrieve the selected time step and GGD arrays
         selected_scalar_paths, selected_vector_paths = self._get_selected_ggd_paths()
-        time_idx = self._get_selected_time_step(outInfo)
-        if time_idx is None:
+        time = self._get_selected_time_step(outInfo)
+        if time is None:
             logger.warning("Selected invalid time step")
             return 1
 
@@ -439,7 +439,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         # Convert GGD of IDS to VTK format
         output = ggd_to_vtk(
             self._ids,
-            time_idx=time_idx,
+            time=time,
             scalar_paths=selected_scalar_paths,
             vector_paths=selected_vector_paths,
             n_plane=self._n_plane,
@@ -538,21 +538,20 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         return selected_scalar_paths, selected_vector_paths
 
     def _get_selected_time_step(self, outInfo):
-        """Retrieves the selected time step index based on the time selection widget in
+        """Retrieves the selected time step based on the time selection widget in
         the ParaView UI.
 
         Args:
             outInfo: An information object that holds details about the update request
 
         Returns:
-            time_step_idx: The index of the selected time step. If the selected time
-            step cannot be found in the IDS, returns None.
+            time_step: The selected time step. If the selected time step cannot be found
+            in the IDS, returns None.
         """
         # Retrieve time step from time selection widget in Paraview UI
         executive = self.GetExecutive()
         outInfo = outInfo.GetInformationObject(0)
         time_step = outInfo.Get(executive.UPDATE_TIME_STEP())
-        time_step_idx = np.where(self._time_steps == time_step)[0]
 
         # Paraview (v5.12.1) contains a bug where, if you load a dataset with only a
         # single timestep, it automatically loads 10 synthetic timesteps ranging from
@@ -563,13 +562,13 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         # 2. open "View > Time Manager"
         # 3. uncheck and check again the checkbox "Time Sources"
         # For now, return None if such a timestep is chosen
-        if len(time_step_idx) == 0:
-            return None
-        else:
-            time_step_idx = time_step_idx[0]
-            logger.debug(f"Selected time step: {self._time_steps[time_step_idx]}")
 
-        return time_step_idx
+        # Check if it exists in list of time steps
+        if time_step in self._time_steps:
+            logger.debug(f"Selected time step in Paraview: {time_step}")
+            return time_step
+        else:
+            return None
 
 
 _ggd_types_xml = "".join(
