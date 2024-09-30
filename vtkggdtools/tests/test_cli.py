@@ -1,13 +1,19 @@
 import imaspy
 from click.testing import CliRunner
 
-from vtkggdtools.cli import convert_ggd_to_vtk, print_version
+from vtkggdtools.cli import cli, convert_ggd_to_vtk
 
 
 def test_version():
     runner = CliRunner()
-    result = runner.invoke(print_version)
+
+    result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
+    assert "vtkggdtools version:" in result.output
+    assert "IMASPy version:" in result.output
+    assert "Default data dictionary version:" in result.output
+    assert "Available data dictionary versions:" in result.output
+    assert "Access Layer core version:" in result.output
 
 
 def test_ggd2vtk(tmp_path, dummy_ids):
