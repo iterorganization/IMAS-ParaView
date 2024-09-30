@@ -28,8 +28,8 @@ def ggd_to_vtk(
     """Converts the GGD of an IDS to VTK format.
 
     Args:
-        ids: The IDS to convert to VTK
-        time_idx: Which
+        ids: The IDS to convert to VTK.
+        time_idx: Index of the time step.
         scalar_paths: A list of IDSPaths of GGD scalar arrays to convert. Defaults
             to None, in which case all scalar arrays are converted.
         vector_paths: A list of IDSPaths of GGD vector arrays to convert. Defaults
@@ -63,9 +63,9 @@ def ggd_to_vtk(
     num_subsets = len(grid_ggd.grid_subset)
     points = vtkPoints()
     space_idx = 0
-    idsname = ids.metadata.name
+    ids_name = ids.metadata.name
 
-    read_geom.fill_vtk_points(grid_ggd, space_idx, points, idsname)
+    read_geom.fill_vtk_points(grid_ggd, space_idx, points, ids_name)
     assembly = vtkDataAssembly()
     output.SetDataAssembly(assembly)
 
@@ -78,14 +78,13 @@ def ggd_to_vtk(
     # Load the GGD arrays from the selected GGD paths
     ps_reader.load_arrays_from_path(time_idx, scalar_paths, vector_paths)
 
-    ids_name = ids.metadata.name
     if num_subsets <= 1:
         logger.info("No subsets to read from grid_ggd")
         output.SetNumberOfPartitionedDataSets(1)
         _fill_grid_and_plasma_state(
             ids_name, grid_ggd, ps_reader, -1, 0, points, output, assembly
         )
-    elif idsname == "wall":
+    elif ids_name == "wall":
         # FIXME: what if num_subsets is 2 or 3?
         output.SetNumberOfPartitionedDataSets(num_subsets - 3)
         _fill_grid_and_plasma_state(
@@ -125,7 +124,7 @@ def ggd_to_vtk(
 
 
 def _bezier_interpolate(ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly):
-    """Perform Bezier interpolation
+    """Perform Bezier interpolation.
 
     Args:
         ids: The IDS object.
