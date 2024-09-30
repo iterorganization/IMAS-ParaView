@@ -27,7 +27,8 @@ def _excepthook(type_, value, tb):
 
 
 @click.group("vtkggdtools", invoke_without_command=True, no_args_is_help=True)
-def cli():
+@click.option("-v", "--version", is_flag=True, help="Show version information")
+def cli(version):
     """vtkggdtools command line interface.
 
     Please use one of the available commands listed below. You can get help for each
@@ -39,8 +40,10 @@ def cli():
     # and let them focus on the actual error message
     sys.excepthook = _excepthook
 
+    if version:
+        print_version()
 
-@cli.command("version")
+
 def print_version():
     """Print version information of vtkggdtools."""
     cons = console.Console()
