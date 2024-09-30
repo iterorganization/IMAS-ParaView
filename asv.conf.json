@@ -39,7 +39,7 @@
     // List of branches to benchmark. If not provided, defaults to "master"
     // (for git) or "default" (for mercurial).
     // TODO: Add Master/develop
-    "branches": ["master"],
+    "branches": ["develop", "master"],
 
     // The DVCS being used.  If not set, it will be automatically
     // determined from "repo" by looking at the protocol in the URL
