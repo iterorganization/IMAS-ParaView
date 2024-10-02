@@ -5,7 +5,7 @@ import imaspy
 from vtkggdtools.convert import ggd_to_vtk
 from vtkggdtools.tests.fill_ggd import fill_ids
 
-SIZE_GRID = 3
+SIZE_GRID = 10
 
 
 def create_uri(backend):
