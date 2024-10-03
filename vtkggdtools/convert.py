@@ -70,9 +70,7 @@ def ggd_to_vtk(
     output.SetDataAssembly(assembly)
 
     if n_plane != 0:
-        _bezier_interpolate(
-            ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly
-        )
+        _interpolate_jorek(ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly)
         return output
 
     # Load the GGD arrays from the selected GGD paths
@@ -123,8 +121,8 @@ def ggd_to_vtk(
     return output
 
 
-def _bezier_interpolate(ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly):
-    """Perform Bezier interpolation.
+def _interpolate_jorek(ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly):
+    """Interpolate JOREK Fourier space.
 
     Args:
         ids: The IDS object.
