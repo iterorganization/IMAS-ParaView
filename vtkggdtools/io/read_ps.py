@@ -3,6 +3,7 @@ import logging
 import imaspy
 import numpy as np
 from imaspy.ids_data_type import IDSDataType
+from imaspy.ids_struct_array import IDSStructArray
 from imaspy.ids_toplevel import IDSToplevel
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
@@ -53,9 +54,13 @@ class PlasmaStateReader:
         self.scalar_array_list = []
         self.vector_array_list = []
 
-    def load_paths_from_ids(self):
+    def load_paths_from_ids(self, return_empty=False):
         """Retrieves scalar and vector array paths from the IDS metadata by performing a
         recursive search through GGD paths.
+
+        Args:
+            return_empty: Whether to return the paths of empty GGD arrays. Defaults to
+                False.
 
         Returns:
             scalar_array_paths: A list of paths of GGD scalar arrays in the IDS
@@ -68,6 +73,13 @@ class PlasmaStateReader:
         recursive_ggd_path_search(
             self._ids.metadata, scalar_array_paths, vector_array_paths
         )
+
+        if return_empty:
+            logger.debug("Retrieving all GGD arrays, including empty ones.")
+        else:
+            logger.debug("Only retrieving filled GGD arrays.")
+            scalar_array_paths = self._remove_empty_arrays(scalar_array_paths)
+            vector_array_paths = self._remove_empty_arrays(vector_array_paths)
 
         return scalar_array_paths, vector_array_paths
 
@@ -117,6 +129,36 @@ class PlasmaStateReader:
             self._add_aos_vector_array_to_vtk_field_data(
                 vector_array, subset_idx, name, ugrid
             )
+
+    def _remove_empty_arrays(self, path_list):
+        """Look through a list of IDSPaths containing GGD arrays and return a list
+        with only the IDSPaths of GGD arrays which are filled.
+
+        Args:
+            path_list: A list of IDSPaths containing GGD arrays.
+
+        Returns:
+            A list containing only the the paths of filled GGD arrays.
+        """
+        filled_arrays = []
+        for path in path_list:
+            aborted_search = False
+            node = None
+            for part in path.parts:
+                if node is None:
+                    node = self._ids[path.parts[0]]
+                else:
+                    if not hasattr(node, part):
+                        aborted_search = True
+                        break
+                    node = node[part]
+                if isinstance(node, IDSStructArray):
+                    if len(node) >= 1 and not part == path.parts[-1]:
+                        node = node[0]
+
+            if not aborted_search and node.size > 0:
+                filled_arrays.append(path)
+        return filled_arrays
 
     def _create_name_with_units(self, array):
         """Creates a name for the GGD array based on its path and units.

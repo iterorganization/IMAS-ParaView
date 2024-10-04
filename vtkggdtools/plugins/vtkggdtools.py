@@ -93,9 +93,9 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # GGD arrays to load
         self._selected_arrays = []
-        self._selectable_arrays = []
-        self._selectable_vector_arrays = []
-        self._selectable_scalar_arrays = []
+        self._selectable_paths = []
+        self._selectable_vector_paths = []
+        self._selectable_scalar_paths = []
 
         self.grid_ggd = None
         self.ps_reader = None
@@ -145,7 +145,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                     self._dbentry = imaspy.DBEntry(self._uri, "r")
                 except Exception as exc:
                     self._uri_error = str(exc)
-                    self._selectable_arrays = []
+                    self._selectable_paths = []
                     self._ids_list = []
             self._update_ids_list()
             self.Modified()
@@ -293,10 +293,10 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         pass
 
     def GetNumberOfGGDArrays(self):
-        return len(self._selectable_arrays)
+        return len(self._selectable_paths)
 
     def GetGGDArrayName(self, idx):
-        return self._name_from_idspath(self._selectable_arrays[idx])
+        return self._name_from_idspath(self._selectable_paths[idx])
 
     def GetGGDArrayStatus(self, *args):
         return 1
@@ -467,11 +467,11 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
             # Load paths from IDS
             self.ps_reader = read_ps.PlasmaStateReader(self._ids)
-            self._selectable_scalar_arrays, self._selectable_vector_arrays = (
+            self._selectable_scalar_paths, self._selectable_vector_paths = (
                 self.ps_reader.load_paths_from_ids()
             )
-            self._selectable_arrays = (
-                self._selectable_vector_arrays + self._selectable_scalar_arrays
+            self._selectable_paths = (
+                self._selectable_vector_paths + self._selectable_scalar_paths
             )
 
     def _name_from_idspath(self, path):
@@ -506,12 +506,12 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         # Determine if selected GGD arrays are scalar or vector arrays
         selected_scalar_paths = [
             obj
-            for obj in self._selectable_scalar_arrays
+            for obj in self._selectable_scalar_paths
             if self._name_from_idspath(obj) in self._selected_arrays
         ]
         selected_vector_paths = [
             obj
-            for obj in self._selectable_vector_arrays
+            for obj in self._selectable_vector_paths
             if self._name_from_idspath(obj) in self._selected_arrays
         ]
         return selected_scalar_paths, selected_vector_paths
