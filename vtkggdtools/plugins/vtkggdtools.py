@@ -10,7 +10,7 @@ import imaspy.ids_defs
 import numpy as np
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
-from vtkmodules.vtkCommonCore import vtkDataArray, vtkPoints, vtkStringArray
+from vtkmodules.vtkCommonCore import vtkDataArray, vtkStringArray
 from vtkmodules.vtkCommonDataModel import (
     vtkCellData,
     vtkDataObject,
