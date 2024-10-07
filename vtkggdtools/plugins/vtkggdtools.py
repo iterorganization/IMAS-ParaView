@@ -92,7 +92,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         self._time_steps = []
 
         # GGD arrays to load
-        self._selected_arrays = []
+        self._selected_paths = []
         self._selectable_paths = []
         self._selectable_vector_paths = []
         self._selectable_scalar_paths = []
@@ -279,13 +279,13 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
     def P12_SetGGDArray(self, array, status):
         """Select all or a subset of available GGD arrays to load."""
         # Add a GGD array to selected list
-        if status == 1 and array not in self._selected_arrays:
-            self._selected_arrays.append(array)
+        if status == 1 and array not in self._selected_paths:
+            self._selected_paths.append(array)
             self.Modified()
 
         # Remove a GGD array from selected list
-        if status == 0 and array in self._selected_arrays:
-            self._selected_arrays.remove(array)
+        if status == 0 and array in self._selected_paths:
+            self._selected_paths.remove(array)
             self.Modified()
 
     @arrayselectionstringvector(property_name="GGDArray", attribute_name="GGD")
@@ -520,12 +520,12 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         selected_scalar_paths = [
             obj
             for obj in self._selectable_scalar_paths
-            if self._name_from_idspath(obj) in self._selected_arrays
+            if self._name_from_idspath(obj) in self._selected_paths
         ]
         selected_vector_paths = [
             obj
             for obj in self._selectable_vector_paths
-            if self._name_from_idspath(obj) in self._selected_arrays
+            if self._name_from_idspath(obj) in self._selected_paths
         ]
         return selected_scalar_paths, selected_vector_paths
 
