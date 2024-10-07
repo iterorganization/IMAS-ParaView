@@ -177,6 +177,8 @@ class PlasmaStateReader:
             if isinstance(node, IDSStructArray):
                 name = getattr(node.metadata, "name", None)
                 if name == "ggd":
+                    if len(node) <= ggd_idx:
+                        return False
                     node = node[ggd_idx]
                     return _check_subnode(node, parts, idx)
 

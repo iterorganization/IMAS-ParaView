@@ -57,8 +57,7 @@ def test_load_paths_from_ids_empty():
     ps_reader = PlasmaStateReader(ids)
 
     _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
-    assert scalar_array_paths == []
-    assert vector_array_paths == []
+    assert scalar_array_paths == vector_array_paths == []
 
 
 def test_load_paths_from_ids_filled():
@@ -73,8 +72,7 @@ def test_load_paths_from_ids_filled():
     energy = ids.source[0].ggd[0].ion[0].state[0].energy
     momentum = ids.source[0].ggd[0].ion[0].state[0].momentum
     _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
-    assert scalar_array_paths == []
-    assert vector_array_paths == []
+    assert scalar_array_paths == vector_array_paths == []
 
     fill_scalar_quantity(energy, 1, 1, 1)
     fill_vector_quantity(momentum, 1, 1, 1)
@@ -96,14 +94,21 @@ def test_load_paths_from_ids_empty_first():
     momentum = ids.source[0].ggd[0].ion[1].state[0].momentum
 
     _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
-    assert scalar_array_paths == []
-    assert vector_array_paths == []
+    assert scalar_array_paths == vector_array_paths == []
 
     fill_scalar_quantity(energy, 1, 1, 1)
     fill_vector_quantity(momentum, 1, 1, 1)
     _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
     assert scalar_array_paths == [energy.metadata.path]
     assert vector_array_paths == [momentum.metadata.path]
+
+
+def test_load_paths_from_ids_empty_ids():
+    ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
+    ps_reader = PlasmaStateReader(ids)
+    ids.source.resize(1)
+    _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
+    assert scalar_array_paths == vector_array_paths == []
 
 
 def test_load_paths_from_ids_all():
@@ -160,8 +165,7 @@ def test_load_paths_from_ids_multiple_timesteps():
         _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids(
             ggd_idx=ggd_idx
         )
-        assert scalar_array_paths == []
-        assert vector_array_paths == []
+        assert scalar_array_paths == vector_array_paths == []
 
     fill_scalar_quantity(ion_energy, 1, 1, 1)
     fill_vector_quantity(ion_momentum, 1, 1, 1)
