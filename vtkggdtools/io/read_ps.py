@@ -54,11 +54,12 @@ class PlasmaStateReader:
         self.scalar_array_list = []
         self.vector_array_list = []
 
-    def load_paths_from_ids(self, return_empty=False):
+    def load_paths_from_ids(self, ggd_idx=0, return_empty=False):
         """Retrieves scalar and vector array paths from the IDS metadata by performing a
         recursive search through GGD paths.
 
         Args:
+            ggd_idx: Retrieve filled paths of a specific time step.
             return_empty: Whether to return the paths of empty GGD arrays. Defaults to
                 False.
 
@@ -78,8 +79,12 @@ class PlasmaStateReader:
             logger.debug("Retrieving all GGD arrays, including empty ones.")
         else:
             logger.debug("Only retrieving filled GGD arrays.")
-            scalar_array_paths = self._remove_empty_arrays(scalar_array_paths)
-            vector_array_paths = self._remove_empty_arrays(vector_array_paths)
+            scalar_array_paths = self._remove_empty_arrays(
+                scalar_array_paths, ggd_idx=ggd_idx
+            )
+            vector_array_paths = self._remove_empty_arrays(
+                vector_array_paths, ggd_idx=ggd_idx
+            )
 
         return scalar_array_paths, vector_array_paths
 
@@ -130,7 +135,7 @@ class PlasmaStateReader:
                 vector_array, subset_idx, name, ugrid
             )
 
-    def _remove_empty_arrays(self, path_list):
+    def _remove_empty_arrays(self, path_list, ggd_idx):
         """Look through a list of IDSPaths containing GGD arrays and return a list
         with only the IDSPaths of GGD arrays which are filled.
 
@@ -153,7 +158,10 @@ class PlasmaStateReader:
                         break
                     node = node[part]
                 if isinstance(node, IDSStructArray):
-                    if len(node) >= 1 and not part == path.parts[-1]:
+                    name = getattr(node.metadata, "name", None)
+                    if name == "ggd":
+                        node = node[ggd_idx]
+                    elif len(node) >= 1 and not part == path.parts[-1]:
                         node = node[0]
 
             if not aborted_search and node.size > 0:
