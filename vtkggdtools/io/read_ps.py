@@ -154,26 +154,42 @@ class PlasmaStateReader:
         """
         filled_arrays = []
         for path in path_list:
-            aborted_search = False
-            node = None
-            for part in path.parts:
-                if node is None:
-                    node = self._ids[path.parts[0]]
-                else:
-                    if not hasattr(node, part):
-                        aborted_search = True
-                        break
-                    node = node[part]
-                if isinstance(node, IDSStructArray):
-                    name = getattr(node.metadata, "name", None)
-                    if name == "ggd":
-                        node = node[ggd_idx]
-                    elif len(node) >= 1 and not part == path.parts[-1]:
-                        node = node[0]
-
-            if not aborted_search and node.size > 0:
+            if self._is_path_filled(path, ggd_idx):
                 filled_arrays.append(path)
         return filled_arrays
+
+    def _is_path_filled(self, path, ggd_idx):
+        """_summary_
+
+        Args:
+            path: _description_
+            ggd_idx: _description_
+        """
+
+        def _check_subnode(node, parts, idx):
+            """
+            Recursive helper function
+            """
+
+            if idx == len(parts):
+                return node.size > 0
+            part = parts[idx]
+            if isinstance(node, IDSStructArray):
+                name = getattr(node.metadata, "name", None)
+                if name == "ggd":
+                    node = node[ggd_idx]
+                    return _check_subnode(node, parts, idx)
+
+                elif len(node) >= 1:
+                    for subnode in node:
+                        if _check_subnode(subnode, parts, idx):
+                            return True
+            else:
+                node = node[part]
+                return _check_subnode(node, parts, idx + 1)
+
+        node = self._ids[path.parts[0]]
+        return _check_subnode(node, path.parts, 1)
 
     def _create_name_with_units(self, array):
         """Creates a name for the GGD array based on its path and units.

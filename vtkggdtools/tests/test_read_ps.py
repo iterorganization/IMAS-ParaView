@@ -100,7 +100,7 @@ def test_load_paths_from_ids_empty_first():
     assert vector_array_paths == []
 
     fill_scalar_quantity(energy, 1, 1, 1)
-    fill_scalar_quantity(momentum, 1, 1, 1)
+    fill_vector_quantity(momentum, 1, 1, 1)
     _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
     assert scalar_array_paths == [energy.metadata.path]
     assert vector_array_paths == [momentum.metadata.path]
