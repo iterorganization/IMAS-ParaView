@@ -159,11 +159,11 @@ class PlasmaStateReader:
         return filled_arrays
 
     def _is_path_filled(self, path, ggd_idx):
-        """_summary_
+        """Checks if the provided GGD path for a given time index is filled.
 
         Args:
-            path: _description_
-            ggd_idx: _description_
+            path: IDSPath containing a GGD array.
+            ggd_idx: Index for selecting specific GGD array.
         """
 
         def _check_subnode(node, parts, idx):

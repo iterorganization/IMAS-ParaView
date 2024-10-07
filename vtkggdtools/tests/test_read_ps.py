@@ -58,10 +58,13 @@ def test_load_paths_from_ids_empty():
 
     _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
     assert scalar_array_paths == vector_array_paths == []
+    ids.source.resize(1)
+    _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
+    assert scalar_array_paths == vector_array_paths == []
 
 
 def test_load_paths_from_ids_filled():
-    """Test if load_paths_from_ids returns only filled GGD paths"""
+    """Test if load_paths_from_ids returns filled GGD paths"""
     ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
     ps_reader = PlasmaStateReader(ids)
 
@@ -82,7 +85,7 @@ def test_load_paths_from_ids_filled():
 
 
 def test_load_paths_from_ids_empty_first():
-    """Test if load_paths_from_ids handles first entry being empty in IDSStructure"""
+    """Test if load_paths_from_ids handles first entry in IDSStructure being empty"""
     ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
     ps_reader = PlasmaStateReader(ids)
 
@@ -101,14 +104,6 @@ def test_load_paths_from_ids_empty_first():
     _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
     assert scalar_array_paths == [energy.metadata.path]
     assert vector_array_paths == [momentum.metadata.path]
-
-
-def test_load_paths_from_ids_empty_ids():
-    ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
-    ps_reader = PlasmaStateReader(ids)
-    ids.source.resize(1)
-    _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
-    assert scalar_array_paths == vector_array_paths == []
 
 
 def test_load_paths_from_ids_all():
@@ -148,7 +143,7 @@ def test_load_paths_from_ids_all():
 
 
 def test_load_paths_from_ids_multiple_timesteps():
-    """Test if load_paths_from_ids when GGD contains multiple time steps"""
+    """Test load_paths_from_ids when GGD contains multiple time steps"""
     ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
     ps_reader = PlasmaStateReader(ids)
 

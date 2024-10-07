@@ -499,6 +499,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         name = " ".join(path_list)
 
+        # If GGDs are not filled in the first time step, add (?) to their name and add
+        # zero-width space to move them to the bottom of the list.
         if (
             path not in self._filled_scalar_paths
             and path not in self._filled_vector_paths
