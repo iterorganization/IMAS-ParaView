@@ -56,7 +56,7 @@ def test_load_paths_from_ids_empty():
     ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
     ps_reader = PlasmaStateReader(ids)
 
-    scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
+    _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
     assert scalar_array_paths == []
     assert vector_array_paths == []
 
@@ -72,13 +72,36 @@ def test_load_paths_from_ids_filled():
     ids.source[0].ggd[0].ion[0].state.resize(1)
     energy = ids.source[0].ggd[0].ion[0].state[0].energy
     momentum = ids.source[0].ggd[0].ion[0].state[0].momentum
-    scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
+    _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
     assert scalar_array_paths == []
     assert vector_array_paths == []
 
     fill_scalar_quantity(energy, 1, 1, 1)
     fill_vector_quantity(momentum, 1, 1, 1)
-    scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
+    _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
+    assert scalar_array_paths == [energy.metadata.path]
+    assert vector_array_paths == [momentum.metadata.path]
+
+
+def test_load_paths_from_ids_empty_first():
+    """Test if load_paths_from_ids handles first entry being empty in IDSStructure"""
+    ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
+    ps_reader = PlasmaStateReader(ids)
+
+    ids.source.resize(1)
+    ids.source[0].ggd.resize(1)
+    ids.source[0].ggd[0].ion.resize(2)
+    ids.source[0].ggd[0].ion[1].state.resize(1)
+    energy = ids.source[0].ggd[0].ion[1].state[0].energy
+    momentum = ids.source[0].ggd[0].ion[1].state[0].momentum
+
+    _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
+    assert scalar_array_paths == []
+    assert vector_array_paths == []
+
+    fill_scalar_quantity(energy, 1, 1, 1)
+    fill_scalar_quantity(momentum, 1, 1, 1)
+    _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
     assert scalar_array_paths == [energy.metadata.path]
     assert vector_array_paths == [momentum.metadata.path]
 
@@ -89,7 +112,7 @@ def test_load_paths_from_ids_all():
     ps_reader = PlasmaStateReader(ids)
 
     # Only load filled GGD array paths
-    scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids(
+    scalar_array_paths, vector_array_paths, _, _ = ps_reader.load_paths_from_ids(
         return_empty=True
     )
 
@@ -132,20 +155,28 @@ def test_load_paths_from_ids_multiple_timesteps():
     ids.source[0].ggd[1].ion.resize(1)
     ids.source[0].ggd[1].ion[0].state.resize(1)
     momentum = ids.source[0].ggd[1].ion[0].state[0].momentum
-    scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids(ggd_idx=0)
+    _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids(
+        ggd_idx=0
+    )
     assert scalar_array_paths == []
     assert vector_array_paths == []
 
-    scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids(ggd_idx=1)
+    _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids(
+        ggd_idx=1
+    )
     assert scalar_array_paths == []
     assert vector_array_paths == []
 
     fill_scalar_quantity(energy, 1, 1, 1)
     fill_vector_quantity(momentum, 1, 1, 1)
-    scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids(ggd_idx=0)
+    _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids(
+        ggd_idx=0
+    )
     assert scalar_array_paths == [energy.metadata.path]
     assert vector_array_paths == []
 
-    scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids(ggd_idx=1)
+    _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids(
+        ggd_idx=1
+    )
     assert scalar_array_paths == []
     assert vector_array_paths == [momentum.metadata.path]

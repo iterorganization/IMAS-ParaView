@@ -67,26 +67,32 @@ class PlasmaStateReader:
             scalar_array_paths: A list of paths of GGD scalar arrays in the IDS
             vector_array_paths: A list of paths of GGD vector arrays in the IDS
         """
-        scalar_array_paths = []
-        vector_array_paths = []
-
         logger.debug("Retrieving GGD paths from IDS metadata")
+        all_scalar_paths = []
+        all_vector_paths = []
+        filled_scalar_paths = []
+        filled_vector_paths = []
         recursive_ggd_path_search(
-            self._ids.metadata, scalar_array_paths, vector_array_paths
+            self._ids.metadata, all_scalar_paths, all_vector_paths
         )
 
         if return_empty:
             logger.debug("Retrieving all GGD arrays, including empty ones.")
         else:
             logger.debug("Only retrieving filled GGD arrays.")
-            scalar_array_paths = self._remove_empty_arrays(
-                scalar_array_paths, ggd_idx=ggd_idx
+            filled_scalar_paths = self._get_filled_arrays(
+                all_scalar_paths, ggd_idx=ggd_idx
             )
-            vector_array_paths = self._remove_empty_arrays(
-                vector_array_paths, ggd_idx=ggd_idx
+            filled_vector_paths = self._get_filled_arrays(
+                all_vector_paths, ggd_idx=ggd_idx
             )
 
-        return scalar_array_paths, vector_array_paths
+        return (
+            all_scalar_paths,
+            all_vector_paths,
+            filled_scalar_paths,
+            filled_vector_paths,
+        )
 
     def load_arrays_from_path(self, ggd_idx, scalar_array_paths, vector_array_paths):
         """Retrieves scalar and vector arrays from the IDS based on the provided time
@@ -135,15 +141,16 @@ class PlasmaStateReader:
                 vector_array, subset_idx, name, ugrid
             )
 
-    def _remove_empty_arrays(self, path_list, ggd_idx):
+    def _get_filled_arrays(self, path_list, ggd_idx):
         """Look through a list of IDSPaths containing GGD arrays and return a list
         with only the IDSPaths of GGD arrays which are filled.
 
         Args:
             path_list: A list of IDSPaths containing GGD arrays.
+            ggd_idx: Index for selecting specific GGD array.
 
         Returns:
-            A list containing only the the paths of filled GGD arrays.
+            A list containing only the paths of filled GGD arrays.
         """
         filled_arrays = []
         for path in path_list:

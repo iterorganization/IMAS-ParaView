@@ -467,9 +467,12 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
             # Load paths from IDS
             self.ps_reader = read_ps.PlasmaStateReader(self._ids)
-            self._selectable_scalar_paths, self._selectable_vector_paths = (
-                self.ps_reader.load_paths_from_ids()
-            )
+            (
+                self._selectable_scalar_paths,
+                self._selectable_vector_paths,
+                self._filled_scalar_paths,
+                self._filled_vector_paths,
+            ) = self.ps_reader.load_paths_from_ids()
             self._selectable_paths = (
                 self._selectable_vector_paths + self._selectable_scalar_paths
             )
@@ -493,7 +496,15 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             path_list.remove("ggd")
         for i in range(len(path_list)):
             path_list[i] = path_list[i].capitalize()
-        return " ".join(path_list)
+
+        name = " ".join(path_list)
+
+        if (
+            path not in self._filled_scalar_paths
+            and path not in self._filled_vector_paths
+        ):
+            name = f"\u200B{name} (?)"
+        return name
 
     def _get_selected_ggd_paths(self):
         """Retrieve the IDSPaths of the selected scalar and vector GGD arrays.
