@@ -26,7 +26,7 @@ source venv/bin/activate
 
 # Install asv and vtkggd
 pip install --upgrade pip setuptools wheel
-pip install virtualenv .[test]
+pip install virtualenv .[benchmark]
 
 # Copy previous results (if any)
 mkdir -p /mnt/bamboo_deploy/vtkggdtools/benchmarks/results
