@@ -10,7 +10,7 @@ import imaspy.ids_defs
 import numpy as np
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
-from vtkmodules.vtkCommonCore import vtkDataArray
+from vtkmodules.vtkCommonCore import vtkDataArray, vtkStringArray
 from vtkmodules.vtkCommonDataModel import (
     vtkCellData,
     vtkDataObject,
@@ -145,6 +145,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
                     self._dbentry = imaspy.DBEntry(self._uri, "r")
                 except Exception as exc:
                     self._uri_error = str(exc)
+                    self._selectable_arrays = []
+                    self._ids_list = []
             self._update_ids_list()
             self.Modified()
 
@@ -261,10 +263,13 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             value = ""
         self._update_property("_ids_and_occurrence", value, self._clear_ids)
 
-    @stringvector(name="IDSList", information_only=1)
+    @stringvector(name="IDSList", information_only=1, si_class="vtkSIDataArrayProperty")
     def P11_GetIDSList(self):
         """Return a list of IDSs with data inside the selected Data Entry."""
-        return self._ids_list
+        arr = vtkStringArray()
+        for val in self._ids_list:
+            arr.InsertNextValue(val)
+        return arr
 
     @arrayselectiondomain(
         property_name="GGDArray",
@@ -417,7 +422,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             return 1
 
         # Retrieve the selected time step and GGD arrays
-        selected_scalar_paths, selected_vector_paths = self._get_selected_ggd_arrays()
+        selected_scalar_paths, selected_vector_paths = self._get_selected_ggd_paths()
         time_idx = self._get_selected_time_step(outInfo)
         if time_idx is None:
             logger.warning("Selected invalid time step")
@@ -490,26 +495,26 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             path_list[i] = path_list[i].capitalize()
         return " ".join(path_list)
 
-    def _get_selected_ggd_arrays(self):
+    def _get_selected_ggd_paths(self):
         """Retrieve the IDSPaths of the selected scalar and vector GGD arrays.
 
         Returns:
-            selected_scalars: List of IDSPaths of selected scalar GGD arrays
-            selected_vectors: List of IDSPaths of selected vector GGD arrays
+            selected_scalar_paths: List of IDSPaths of selected scalar GGD arrays
+            selected_vector_paths: List of IDSPaths of selected vector GGD arrays
         """
 
         # Determine if selected GGD arrays are scalar or vector arrays
-        selected_scalars = [
+        selected_scalar_paths = [
             obj
             for obj in self._selectable_scalar_arrays
             if self._name_from_idspath(obj) in self._selected_arrays
         ]
-        selected_vectors = [
+        selected_vector_paths = [
             obj
             for obj in self._selectable_vector_arrays
             if self._name_from_idspath(obj) in self._selected_arrays
         ]
-        return selected_scalars, selected_vectors
+        return selected_scalar_paths, selected_vector_paths
 
     def _get_selected_time_step(self, outInfo):
         """Retrieves the selected time step index based on the time selection widget in
