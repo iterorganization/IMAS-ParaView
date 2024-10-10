@@ -18,6 +18,7 @@ def ggd_to_vtk(
     ids,
     *,
     time=None,
+    time_idx=None,
     scalar_paths=None,
     vector_paths=None,
     n_plane=0,
@@ -45,9 +46,17 @@ def ggd_to_vtk(
     Returns:
         vtkPartitionedDataSetCollection containing the converted GGD data.
     """
+    if time and time_idx:
+        logger.error("The time and time index can not be provided at the same time.")
+        return None
 
     # Retrieve GGD grid from IDS
-    time_idx = _get_nearest_time_idx(ids, time)
+    if time:
+        time_idx = _get_nearest_time_idx(ids, time)
+    elif not time and not time_idx:
+        logger.info(f"Converting first timestep: t = {ids.time[time_idx]}")
+        time_idx = 0
+
     grid_ggd = get_grid_ggd(ids, time_idx)
 
     # Check if grid is valid
@@ -137,14 +146,8 @@ def _get_nearest_time_idx(ids, time):
     Returns:
         Index of the nearest time step
     """
-    if time:
-        time_idx = np.argmin(np.abs(ids.time - time))
-        logger.info(
-            f"Converting timestep: t = {ids.time[time_idx]} at index = {time_idx}"
-        )
-    else:
-        time_idx = 0
-        logger.info(f"Converting first timestep: t = {ids.time[time_idx]}")
+    time_idx = np.argmin(np.abs(ids.time - time))
+    logger.info(f"Converting timestep: t = {ids.time[time_idx]} at index = {time_idx}")
     return time_idx
 
 
