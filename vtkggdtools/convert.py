@@ -1,6 +1,8 @@
 import logging
+from pathlib import Path
 
 import numpy as np
+from vtk import vtkXMLPartitionedDataSetCollectionWriter
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     vtkCompositeDataSet,
@@ -12,6 +14,62 @@ from vtkggdtools.io import read_bezier, read_geom, read_ps
 from vtkggdtools.util import FauxIndexMap, get_grid_ggd
 
 logger = logging.getLogger("vtkggdtools")
+
+
+def convert_to_xml(ids, output, time_options):
+    """_summary_
+
+    Args:
+        ids: _description_
+        output: _description_
+        time_options: _description_
+    """
+    (time, time_range, all_times, time_mode) = time_options
+    vtk_object = None
+
+    # Create parent directory and point output path there
+    logger.info(f"Creating a output directory at {output}")
+    output.mkdir(parents=True, exist_ok=True)
+    output = output / output.stem
+
+    # Convert a single time step
+    if time is not None:
+        if time_mode == "index":
+            logger.info(f"Converting time step closest to {time}")
+            vtk_object = ggd_to_vtk(ids, time=time)
+        elif time_mode == "value":
+            logger.info(f"Converting time step at index {time}")
+            vtk_object = ggd_to_vtk(ids, time_idx=time)
+        _write_vtk(vtk_object, output)
+    # Convert all time steps
+    elif all_times:
+        if time_mode == "index":
+            for idx in range(len(ids.time)):
+                vtk_object = ggd_to_vtk(ids, time_idx=idx)
+                _write_vtk(vtk_object, Path(f"{output}_{idx}"))
+        elif time_mode == "value":
+            for time_step in ids.time:
+                vtk_object = ggd_to_vtk(ids, time=time_step)
+                _write_vtk(vtk_object, Path(f"{output}_{time_step}"))
+    # Convert a slice of time steps
+    elif time_range:
+        if time_mode == "index":
+            if time_range[1] >= len(ids.time):
+                raise RuntimeError(
+                    f"Index {time_range[1]} is out of bounds of the IDS time array "
+                    f"of size {len(ids.time)}"
+                )
+            sliced_indices = range(time_range[0], time_range[1] + 1)
+            for idx in sliced_indices:
+                vtk_object = ggd_to_vtk(ids, time_idx=idx)
+                _write_vtk(vtk_object, Path(f"{output}_{idx}"))
+        elif time_mode == "value":
+            min_idx = np.argmin(np.abs(ids.time - time_range[0]))
+            max_idx = np.argmin(np.abs(ids.time - time_range[1]))
+            sliced_indices = range(min_idx, max_idx)
+            for idx in sliced_indices:
+                vtk_object = ggd_to_vtk(ids, time_idx=idx)
+                _write_vtk(vtk_object, Path(f"{output}_{ids.time[idx]}"))
 
 
 def ggd_to_vtk(
@@ -133,6 +191,28 @@ def ggd_to_vtk(
 
     logger.info("Finished loading IDS.")
     return output
+
+
+def _write_vtk(vtk_object, output):
+    """_summary_
+
+    Args:
+        vtk_object: _description_
+        output: _description_
+
+    Raises:
+        RuntimeError: _description_
+    """
+    if vtk_object is None:
+        logger.info("Could not convert GGD to VTK file.")
+        raise RuntimeError
+    logger.info("Writing VTK file to disk...")
+    writer = vtkXMLPartitionedDataSetCollectionWriter()
+    writer.SetInputData(vtk_object)
+    output_file = output.with_suffix(".vtpc")
+    writer.SetFileName(output_file)
+    writer.Write()
+    logger.info(f"Successfully wrote VTK object to {output_file}.")
 
 
 def _get_nearest_time_idx(ids, time):

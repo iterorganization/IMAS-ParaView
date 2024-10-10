@@ -8,10 +8,9 @@ import imaspy.backends.imas_core.imas_interface
 from imaspy.backends.imas_core.imas_interface import ll_interface
 from rich import box, console, traceback
 from rich.table import Table
-from vtk import vtkXMLPartitionedDataSetCollectionWriter
 
 import vtkggdtools
-from vtkggdtools.convert import ggd_to_vtk
+from vtkggdtools.convert import convert_to_xml
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +67,7 @@ def print_version():
 @cli.command("ggd2vtk")
 @click.argument("uri", type=str)
 @click.argument("ids", type=str)
-@click.argument("output", type=str)
+@click.argument("output", type=Path)
 @click.argument(
     "occurrence",
     type=int,
@@ -118,32 +117,6 @@ def convert_ggd_to_vtk(
         click.echo("vtkhdf format is not yet implemented.")
 
 
-def convert_to_xml(ids, output, time_options):
-    (time, time_range, all_times, time_mode) = time_options
-    vtk_object = None
-    if time is not None:
-        if time_mode == "index":
-            click.echo(f"Converting time step closest to {time}")
-            vtk_object = ggd_to_vtk(ids, time=time)
-        elif time_mode == "value":
-            click.echo(f"Converting time step at index {time}")
-            vtk_object = ggd_to_vtk(ids, time_idx=time)
-        write_vtk(vtk_object, output)
-
-
-def write_vtk(vtk_object, output):
-    if vtk_object is None:
-        click.echo("Could not convert GGD to VTK file.")
-        raise RuntimeError
-    click.echo("Writing VTK file to disk...")
-    writer = vtkXMLPartitionedDataSetCollectionWriter()
-    writer.SetInputData(vtk_object)
-    output_file = Path(output).with_suffix(".vtpc")
-    writer.SetFileName(output_file)
-    writer.Write()
-    click.echo(f"Successfully wrote VTK object to {output_file}.")
-
-
 def validate_time_options(time, time_range, all_times, time_mode):
     """_summary_
 
@@ -171,13 +144,12 @@ def validate_time_options(time, time_range, all_times, time_mode):
                 click.echo(f"Converting time indices {list(range(start, end+1))}")
             elif time_mode == "value":
                 start, end = map(float, time_range.split(":"))
-                click.echo(
-                    f"Converting time steps in the range {list(range(start, end+1))}"
-                )
+                click.echo(f"Converting time steps between {start} and {end}")
             if end < start:
                 raise click.UsageError(
                     "The final time index must be greater than or equal to the first."
                 )
+            time_range = [start, end]
         except Exception:
             raise click.UsageError(
                 "Time range must be in the format 'start:end' with valid numbers."
