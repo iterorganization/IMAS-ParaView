@@ -32,13 +32,14 @@ def test_ggd2vtk(tmp_path, dummy_ids):
     assert result.exit_code == 0
 
     # Check if vtpc file and the directory containing vtu files exists
-    assert output_path.with_suffix(".vtpc").exists()
-    assert output_path.is_dir()
+    output_dir = output_path / file_name
+    assert output_dir.is_dir()
+    assert output_dir.with_suffix(".vtpc").exists()
 
     if ids_name == "wall":
-        vtu_file = output_path / f"{file_name}_0_0.vtu"
+        vtu_file = output_dir / f"{file_name}_0_0.vtu"
         assert vtu_file.exists()
     else:
         for i in range(3):
-            vtu_file = output_path / f"{file_name}_{i}_0.vtu"
+            vtu_file = output_dir / f"{file_name}_{i}_0.vtu"
             assert vtu_file.exists()
