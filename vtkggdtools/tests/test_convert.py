@@ -14,15 +14,6 @@ def test_ggd_to_vtk(dummy_ids, tmp_path):
     writer.Write()
     output_dir = output_file.parent / output_file.stem
 
-    # The vtkXMLPartitionedDataSetCollectionWriter will output the following:
-    # .
-    # ├── test
-    # │   ├── test_0_0.vtu
-    # │   ├── test_1_0.vtu
-    # │   ├── test_2_0.vtu
-    # |   ├── ...
-    # └── test.vtpc
-
     # Check if vtpc file and the directory exists
     assert output_file.exists()
     assert output_dir.is_dir()
