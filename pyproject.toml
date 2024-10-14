@@ -36,6 +36,10 @@ test = [
     "pytest-xdist",
     "pytest-randomly",
 ]
+benchmark=[
+    "asv == 0.6.1",
+    "virtualenv",
+]
 
 [project.scripts]
 vtkggdtools = "vtkggdtools.cli:cli"
