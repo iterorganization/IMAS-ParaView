@@ -370,7 +370,7 @@ def fill_ggd_data(ids, num_vertices, num_edges, num_faces):
             fill_vector_rzphi_quantity(vector_array, num_vertices, num_edges, num_faces)
 
 
-def fill_ids(ids, N=2):
+def fill_ids(ids, grid_size=2):
     """Fills the IDS with an N x N GGD grid and fills all available GGD arrays on this
     grid with random values.
 
@@ -391,7 +391,7 @@ def fill_ids(ids, N=2):
         ids.ids_properties.homogeneous_time = imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
 
         # Fill GGD grid with a simple 2x3 grid
-        num_vertices, num_edges, num_faces = fill_NxN_grid(grid_ggd, N)
+        num_vertices, num_edges, num_faces = fill_NxN_grid(grid_ggd, grid_size)
         logger.debug(f"filled grid_ggd for {ids.metadata.name}")
 
     # Create an empty GGD

@@ -16,7 +16,7 @@ def create_uri(backend):
 class Convert:
     def setup(self):
         self.edge_profiles = imaspy.IDSFactory().edge_profiles()
-        fill_ids(self.edge_profiles, N=SIZE_GRID)
+        fill_ids(self.edge_profiles, grid_size=SIZE_GRID)
 
     def time_convert(self):
         ggd_to_vtk(self.edge_profiles, 0)
@@ -25,7 +25,7 @@ class Convert:
 class ConvertHDF5:
     def setup(self):
         es = imaspy.IDSFactory().edge_profiles()
-        fill_ids(es, N=SIZE_GRID)
+        fill_ids(es, grid_size=SIZE_GRID)
         self.uri = create_uri("hdf5")
         with imaspy.DBEntry(self.uri, "w") as dbentry:
             dbentry.put(es)
@@ -44,7 +44,7 @@ class ConvertHDF5:
 class ConvertMDSPlus:
     def setup(self):
         es = imaspy.IDSFactory().edge_profiles()
-        fill_ids(es, N=SIZE_GRID)
+        fill_ids(es, grid_size=SIZE_GRID)
         self.uri = create_uri("mdsplus")
         with imaspy.DBEntry(self.uri, "w") as dbentry:
             dbentry.put(es)
