@@ -89,6 +89,14 @@ def print_version():
 @click.option(
     "--all-times", "-a", is_flag=True, help="Convert all available time steps."
 )
+@click.option(
+    "--format",
+    "-f",
+    type=click.Choice(["xml", "vtkhdf"], case_sensitive=True),
+    default="xml",
+    help="VTK output format: 'xml' (default) for standard VTK XML files, "
+    "or 'vtkhdf' for VTK files using HDF5 format.",
+)
 def convert_ggd_to_vtk(
     uri,
     ids,
@@ -99,7 +107,7 @@ def convert_ggd_to_vtk(
     time,
     time_range,
     all_times,
-    vtk_mode,
+    format,
 ):
     """Convert a GGD structure in an IDS to a VTK file.
 
@@ -119,10 +127,10 @@ def convert_ggd_to_vtk(
     click.echo("Converting GGD to a VTK file...")
 
     # TODO: Add time-dependent VTKHDF conversion
-    if vtk_mode == "xml":
+    if format == "xml":
         convert_to_xml(ids, output, index, index_range, time, time_range, all_times)
 
-    elif vtk_mode == "vtkhdf":
+    elif format == "vtkhdf":
         click.echo("vtkhdf format is not yet implemented.")
 
 
