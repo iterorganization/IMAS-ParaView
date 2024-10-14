@@ -5,6 +5,29 @@ import numpy as np
 
 logger = logging.getLogger("vtkggdtools")
 
+SUPPORTED_IDS_NAMES = [
+    "edge_profiles",
+    "edge_sources",
+    "edge_transport",
+    "equilibrium",
+    "mhd",
+    "radiation",
+    "runaway_electrons",
+    "wall",
+]
+
+# FIXME: Some IDSs do not have the structure as described by the GGD guidelines. e.g.
+# waves has its grid defined under coherent_wave/full_wave/grid instead of in a
+# dedicated grid_ggd. They are for now denoted as experimental IDS, as they are
+# currently not covered by the unit tests.
+EXPERIMENTAL_IDS_NAMES = [
+    "distribution_sources",
+    "distributions",
+    "tf",
+    "transport_solver_numerics",
+    "waves",
+]
+
 
 class FauxIndexMap:
     def __getitem__(self, item):

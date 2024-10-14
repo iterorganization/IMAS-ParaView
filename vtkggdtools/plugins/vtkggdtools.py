@@ -37,7 +37,12 @@ from vtkggdtools.paraview_support.servermanager_tools import (
     stringvector,
 )
 from vtkggdtools.progress import Progress
-from vtkggdtools.util import FauxIndexMap, create_first_grid
+from vtkggdtools.util import (
+    EXPERIMENTAL_IDS_NAMES,
+    SUPPORTED_IDS_NAMES,
+    FauxIndexMap,
+    create_first_grid,
+)
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -154,7 +159,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         """Update the list of available IDSs in the selected Data Entry."""
         self._ids_list = []
         if self._dbentry is not None:
-            for ids_name in read_ps.SUPPORTED_IDS_NAMES:
+            for ids_name in SUPPORTED_IDS_NAMES + EXPERIMENTAL_IDS_NAMES:
                 for occurrence in self._dbentry.list_all_occurrences(ids_name):
                     val = ids_name if occurrence == 0 else f"{ids_name}/{occurrence}"
                     self._ids_list.append(val)
