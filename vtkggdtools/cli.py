@@ -73,22 +73,21 @@ def print_version():
     type=int,
     default=0,
 )
-@click.option("--index", "-i", type=int, help="Convert a specific time index.")
+@click.option("--index", "-i", type=int, help="Specify a single index to convert.")
 @click.option(
-    "--index-range", "-ir", type=str, help="Convert index range in format 'start:end'."
+    "--index-range", "-ir", type=str, help="Specify a range of indices as 'start:end'."
 )
-@click.option("--time", "-t", type=float, help="Convert a specific time slice.")
 @click.option(
-    "--time-range", "-tr", type=str, help="Convert time range in format 'start:end'."
+    "--time", "-t", type=float, help="Specify a specific time step in seconds."
 )
-@click.option("--all-times", "-at", is_flag=True, help="Convert all available times.")
 @click.option(
-    "--vtk-mode",
-    "-vm",
-    type=click.Choice(["xml", "vtkhdf"], case_sensitive=True),
-    default="xml",
-    help="VTK output format: 'xml' (default) for standard VTK XML files, "
-    "or 'vtkhdf' for VTK files using HDF5 format.",
+    "--time-range",
+    "-tr",
+    type=str,
+    help="Specify a time range as 'start:end' in seconds.",
+)
+@click.option(
+    "--all-times", "-a", is_flag=True, help="Convert all available time steps."
 )
 def convert_ggd_to_vtk(
     uri,
