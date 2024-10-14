@@ -73,25 +73,34 @@ def print_version():
     type=int,
     default=0,
 )
+@click.option("--index", "-i", type=int, help="Convert a specific time index.")
 @click.option(
-    "--time-mode",
-    type=click.Choice(["index", "value"], case_sensitive=True),
-    default="index",
-    help="Select time mode: 'index' (default) for slicing by index or 'value' for "
-    "slicing by time value.",
+    "--index-range", "-ir", type=str, help="Convert index range in format 'start:end'."
 )
-@click.option("--time", type=float, help="Convert single time slice.")
-@click.option("--time-range", type=str, help="Convert time range in format start:end.")
-@click.option("--all-times", is_flag=True, help="Convert all available times.")
+@click.option("--time", "-t", type=float, help="Convert a specific time slice.")
+@click.option(
+    "--time-range", "-tr", type=str, help="Convert time range in format 'start:end'."
+)
+@click.option("--all-times", "-at", is_flag=True, help="Convert all available times.")
 @click.option(
     "--vtk-mode",
+    "-vm",
     type=click.Choice(["xml", "vtkhdf"], case_sensitive=True),
     default="xml",
     help="VTK output format: 'xml' (default) for standard VTK XML files, "
     "or 'vtkhdf' for VTK files using HDF5 format.",
 )
 def convert_ggd_to_vtk(
-    uri, ids, output, occurrence, time_mode, time, time_range, all_times, vtk_mode
+    uri,
+    ids,
+    output,
+    occurrence,
+    index,
+    index_range,
+    time,
+    time_range,
+    all_times,
+    vtk_mode,
 ):
     """Convert a GGD structure in an IDS to a VTK file.
 
@@ -101,8 +110,9 @@ def convert_ggd_to_vtk(
     output      Name of the output VTK file/directory.
     occurrence  Which occurrence to print (defaults to 0).
     """
-    time_options = validate_time_options(time, time_range, all_times, time_mode)
-
+    index, index_range, time, time_range, all_times = validate_time_options(
+        index, index_range, time, time_range, all_times
+    )
     click.echo(f"Loading {ids} from {uri}...")
     entry = imaspy.DBEntry(uri, "r")
     ids = entry.get(ids, occurrence=occurrence, autoconvert=False)
@@ -111,13 +121,13 @@ def convert_ggd_to_vtk(
 
     # TODO: Add time-dependent VTKHDF conversion
     if vtk_mode == "xml":
-        convert_to_xml(ids, output, time_options)
+        convert_to_xml(ids, output, index, index_range, time, time_range, all_times)
 
     elif vtk_mode == "vtkhdf":
         click.echo("vtkhdf format is not yet implemented.")
 
 
-def validate_time_options(time, time_range, all_times, time_mode):
+def validate_time_options(index, index_range, time, time_range, all_times):
     """_summary_
 
     Args:
@@ -126,8 +136,12 @@ def validate_time_options(time, time_range, all_times, time_mode):
         all_times: _description_
         time_mode: _description_
     """
-
-    if sum([time is not None, time_range is not None, all_times]) > 1:
+    # Check if at most one of the time options are provided
+    if (
+        sum(param is not None for param in [index, index_range, time, time_range])
+        + all_times
+        > 1
+    ):
         raise click.UsageError(
             "You must provide only one of --time, --time-range, or --all-times."
         )
@@ -139,36 +153,37 @@ def validate_time_options(time, time_range, all_times, time_mode):
         )
     elif time_range:
         try:
-            if time_mode == "index":
-                start, end = map(int, time_range.split(":"))
-                click.echo(f"Converting time indices {list(range(start, end+1))}")
-            elif time_mode == "value":
-                start, end = map(float, time_range.split(":"))
-                click.echo(f"Converting time steps between {start} and {end}")
+            start, end = map(float, time_range.split(":"))
+            click.echo(f"Converting time steps between {start} and {end}")
             if end < start:
-                raise click.UsageError(
-                    "The final time index must be greater than or equal to the first."
-                )
+                raise click.UsageError("The final time must be greater than the first.")
             time_range = [start, end]
         except Exception:
             raise click.UsageError(
                 "Time range must be in the format 'start:end' with valid numbers."
             )
-
-    elif time is not None:
-        if time_mode == "index":
-            if not time.is_integer():
+    elif index_range:
+        try:
+            start, end = map(int, index_range.split(":"))
+            click.echo(f"Converting time indices {list(range(start, end+1))}")
+            if end < start:
                 raise click.UsageError(
-                    "The time-mode is set to 'index', so an integer must be provided."
+                    "The final time index must be greater than the first."
                 )
-            time = int(time)
+            index_range = [start, end]
+        except Exception:
+            raise click.UsageError(
+                "Time range must be in the format 'start:end' with valid integers."
+            )
+    elif time is not None:
         click.echo(f"Converting time {time}")
+    elif index is not None:
+        click.echo(f"Converting time at index {index}")
     else:
         click.echo("No time options were set, so only converting the first time step.")
-        time_mode = "index"
-        time = 0
+        index = 0
 
-    return (time, time_range, all_times, time_mode)
+    return index, index_range, time, time_range, all_times
 
 
 if __name__ == "__main__":

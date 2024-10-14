@@ -16,7 +16,15 @@ from vtkggdtools.util import FauxIndexMap, get_grid_ggd
 logger = logging.getLogger("vtkggdtools")
 
 
-def convert_to_xml(ids, output, time_options):
+def convert_to_xml(
+    ids,
+    output,
+    index=None,
+    index_range=None,
+    time=None,
+    time_range=None,
+    all_times=False,
+):
     """_summary_
 
     Args:
@@ -24,7 +32,16 @@ def convert_to_xml(ids, output, time_options):
         output: _description_
         time_options: _description_
     """
-    (time, time_range, all_times, time_mode) = time_options
+    # Check if at most one of the time options are provided
+    if (
+        sum(param is not None for param in [index, index_range, time, time_range])
+        + all_times
+        > 1
+    ):
+        raise RuntimeError(
+            "You can only provide one of the following parameters: index, index_range, "
+            "time, time_range or all_times."
+        )
     vtk_object = None
 
     # Create parent directory and point output path there
@@ -34,42 +51,40 @@ def convert_to_xml(ids, output, time_options):
 
     # Convert a single time step
     if time is not None:
-        if time_mode == "index":
-            logger.info(f"Converting time step closest to {time}")
-            vtk_object = ggd_to_vtk(ids, time=time)
-        elif time_mode == "value":
-            logger.info(f"Converting time step at index {time}")
-            vtk_object = ggd_to_vtk(ids, time_idx=time)
+        logger.info(f"Converting time step closest to {time}.")
+        vtk_object = ggd_to_vtk(ids, time=time)
         _write_vtk(vtk_object, output)
-    # Convert all time steps
-    elif all_times:
-        if time_mode == "index":
-            for idx in range(len(ids.time)):
-                vtk_object = ggd_to_vtk(ids, time_idx=idx)
-                _write_vtk(vtk_object, Path(f"{output}_{idx}"))
-        elif time_mode == "value":
-            for time_step in ids.time:
-                vtk_object = ggd_to_vtk(ids, time=time_step)
-                _write_vtk(vtk_object, Path(f"{output}_{time_step}"))
+    elif index is not None:
+        logger.info(f"Converting time step at index {index}.")
+        vtk_object = ggd_to_vtk(ids, time_idx=index)
+        _write_vtk(vtk_object, output)
+
     # Convert a slice of time steps
     elif time_range:
-        if time_mode == "index":
-            if time_range[1] >= len(ids.time):
-                raise RuntimeError(
-                    f"Index {time_range[1]} is out of bounds of the IDS time array "
-                    f"of size {len(ids.time)}"
-                )
-            sliced_indices = range(time_range[0], time_range[1] + 1)
-            for idx in sliced_indices:
-                vtk_object = ggd_to_vtk(ids, time_idx=idx)
-                _write_vtk(vtk_object, Path(f"{output}_{idx}"))
-        elif time_mode == "value":
-            min_idx = np.argmin(np.abs(ids.time - time_range[0]))
-            max_idx = np.argmin(np.abs(ids.time - time_range[1]))
-            sliced_indices = range(min_idx, max_idx)
-            for idx in sliced_indices:
-                vtk_object = ggd_to_vtk(ids, time_idx=idx)
-                _write_vtk(vtk_object, Path(f"{output}_{ids.time[idx]}"))
+        min_idx = np.argmin(np.abs(ids.time - time_range[0]))
+        max_idx = np.argmin(np.abs(ids.time - time_range[1]))
+        sliced_indices = range(min_idx, max_idx)
+        for idx in sliced_indices:
+            vtk_object = ggd_to_vtk(ids, time_idx=idx)
+            _write_vtk(vtk_object, Path(f"{output}_{ids.time[idx]}"))
+    elif index_range:
+        if index_range[1] >= len(ids.time):
+            raise RuntimeError(
+                f"Index {index_range[1]} is out of bounds of the IDS time array "
+                f"of size {len(ids.time)}"
+            )
+        sliced_indices = range(index_range[0], index_range[1] + 1)
+        for idx in sliced_indices:
+            vtk_object = ggd_to_vtk(ids, time_idx=idx)
+            _write_vtk(vtk_object, Path(f"{output}_{idx}"))
+
+    # Convert all time steps
+    elif all_times:
+        for idx in range(len(ids.time)):
+            vtk_object = ggd_to_vtk(ids, time_idx=idx)
+            _write_vtk(vtk_object, Path(f"{output}_{idx}"))
+    else:
+        raise RuntimeError("No time was selected to convert. Aborting.")
 
 
 def ggd_to_vtk(
