@@ -24,8 +24,8 @@ def dummy_ids(ids_name):
 
 @pytest.fixture
 def dummy_ids_five_steps(ids_name):
-    """Creates a dummy IDS object with a dummy grid and random GGD values for
-    testing purposes."""
+    """Creates a dummy IDS object containing five time steps with a dummy grid and
+    random GGD values for testing purposes."""
 
     ids = imaspy.IDSFactory().new(ids_name)
     fill_ids(ids, time_steps=5)

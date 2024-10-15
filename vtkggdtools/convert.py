@@ -25,12 +25,27 @@ def convert_to_xml(
     time_range=None,
     all_times=False,
 ):
-    """_summary_
+    """Convert an IDS to VTK format and write it to disk using the XML output writer.
+    Only one of the following time parameters should be provided:
+    - `index`
+    - `index_range`
+    - `time`
+    - `time_range`
+    - `all_times`
 
     Args:
-        ids: _description_
-        output: _description_
-        time_options: _description_
+        ids: The IDS to be converted.
+        output: The name of the output files/directory.
+        index: The time index to be converted. Defaults to None.
+        index_range: The range of indices to be converted, including bounds. For
+            example, the index range [2,4] converts the indices [2, 3, 4]. Defaults to
+            None.
+        time: The time value to be converted. The nearest value in the IDS is chosen to
+            be converted. Defaults to None.
+        time_range: The range of indices to be converted. For example, the time range
+            [1.5, 5.6] converts all the time steps between 1.5 and 5.6 seconds. Defaults
+            to None.
+        all_times: Converts all the time steps in te IDS. Defaults to False.
     """
     # Check if at most one of the time options are provided
     if (
@@ -53,11 +68,11 @@ def convert_to_xml(
     if time is not None:
         logger.info(f"Converting time step closest to {time}.")
         vtk_object = ggd_to_vtk(ids, time=time)
-        _write_vtk(vtk_object, output)
+        _write_vtk_to_xml(vtk_object, output)
     elif index is not None:
         logger.info(f"Converting time step at index {index}.")
         vtk_object = ggd_to_vtk(ids, time_idx=index)
-        _write_vtk(vtk_object, output)
+        _write_vtk_to_xml(vtk_object, output)
 
     # Convert a slice of time steps
     elif time_range:
@@ -66,7 +81,7 @@ def convert_to_xml(
         sliced_indices = range(min_idx, max_idx)
         for idx in sliced_indices:
             vtk_object = ggd_to_vtk(ids, time_idx=idx)
-            _write_vtk(vtk_object, Path(f"{output}_{ids.time[idx]}"))
+            _write_vtk_to_xml(vtk_object, Path(f"{output}_{ids.time[idx]}"))
     elif index_range:
         if index_range[1] >= len(ids.time):
             raise RuntimeError(
@@ -76,13 +91,13 @@ def convert_to_xml(
         sliced_indices = range(index_range[0], index_range[1] + 1)
         for idx in sliced_indices:
             vtk_object = ggd_to_vtk(ids, time_idx=idx)
-            _write_vtk(vtk_object, Path(f"{output}_{idx}"))
+            _write_vtk_to_xml(vtk_object, Path(f"{output}_{idx}"))
 
     # Convert all time steps
     elif all_times:
         for idx in range(len(ids.time)):
             vtk_object = ggd_to_vtk(ids, time_idx=idx)
-            _write_vtk(vtk_object, Path(f"{output}_{idx}"))
+            _write_vtk_to_xml(vtk_object, Path(f"{output}_{idx}"))
     else:
         raise RuntimeError("No time was selected to convert. Aborting.")
 
@@ -105,6 +120,7 @@ def ggd_to_vtk(
     Args:
         ids: The IDS to convert to VTK.
         time: Time step to convert. Defaults to converting the first time step.
+        time_idx: Time index to convert. Defaults to converting the first time step.
         scalar_paths: A list of IDSPaths of GGD scalar arrays to convert. Defaults
             to None, in which case all scalar arrays are converted.
         vector_paths: A list of IDSPaths of GGD vector arrays to convert. Defaults
@@ -210,15 +226,13 @@ def ggd_to_vtk(
     return output
 
 
-def _write_vtk(vtk_object, output):
-    """_summary_
+def _write_vtk_to_xml(vtk_object, output):
+    """Writes the VTK object to disk using the XML partitioned dataset collection
+    writer.
 
     Args:
-        vtk_object: _description_
-        output: _description_
-
-    Raises:
-        RuntimeError: _description_
+        vtk_object: The VTK object to write to disk.
+        output: The name of the output file.
     """
     if vtk_object is None:
         logger.info("Could not convert GGD to VTK file.")

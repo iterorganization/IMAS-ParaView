@@ -371,12 +371,13 @@ def fill_ggd_data(ids, num_vertices, num_edges, num_faces):
 
 
 def fill_ids(ids, time_steps=1, grid_size=2):
-    """Fills the IDS with an N x N GGD grid and fills all available GGD arrays on this
+    """Fills the IDS with an N x N uniform GGD grid and fills all GGD arrays on this
     grid with random values.
 
     Args:
-        ids: IDS that will be filled
-        N: Size of the N x N grid
+        ids: IDS to be filled.
+        time_steps: Number of time steps to create in the IDS. Defaults to 1.
+        grid_size: Size of the N x N grid. Defaults to 2, meaning a 2 x 2 grid.
     """
 
     # Create an empty grid_ggd

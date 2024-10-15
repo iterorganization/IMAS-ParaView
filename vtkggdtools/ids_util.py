@@ -23,8 +23,9 @@ def get_arrays_from_ids(
         get_empty_arrays (bool): Whether to return empty GGD arrays
         scalar_array_paths: A list of IDSPaths of GGD scalar arrays to search through.
         vector_array_paths: A list of IDSPaths of GGD vector arrays to search through.
-        create_empty_structs: If required to traverse through an empty structure to
-            reach a GGD array, resize this structure to have length 1.
+        create_empty_structs: If this flag is enabled and an empty structure is
+            encountered through which has to be traversed to reach a GGD array, said
+            structure is resized to have length 1.
     Returns:
         scalar_array_list: The GGD scalar arrays (real & complex)
         vector_array_list: The GGD vector arrays (normal & rphiz)
