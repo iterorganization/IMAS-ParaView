@@ -19,7 +19,7 @@ class Convert:
         fill_ids(self.edge_profiles, grid_size=SIZE_GRID)
 
     def time_convert(self):
-        ggd_to_vtk(self.edge_profiles, 0)
+        ggd_to_vtk(self.edge_profiles, time_idx=0)
 
 
 class ConvertHDF5:
@@ -33,12 +33,12 @@ class ConvertHDF5:
     def time_load_and_convert(self):
         entry = imaspy.DBEntry(self.uri, "r")
         ids = entry.get("edge_profiles", lazy=False, autoconvert=False)
-        ggd_to_vtk(ids, 0)
+        ggd_to_vtk(ids, time_idx=0)
 
     def time_load_and_convert_lazy(self):
         entry = imaspy.DBEntry(self.uri, "r")
         ids = entry.get("edge_profiles", lazy=True, autoconvert=False)
-        ggd_to_vtk(ids, 0)
+        ggd_to_vtk(ids, time_idx=0)
 
 
 class ConvertMDSPlus:
@@ -52,9 +52,9 @@ class ConvertMDSPlus:
     def time_load_and_convert(self):
         entry = imaspy.DBEntry(self.uri, "r")
         ids = entry.get("edge_profiles", lazy=False, autoconvert=False)
-        ggd_to_vtk(ids, 0)
+        ggd_to_vtk(ids, time_idx=0)
 
     def time_load_and_convert_lazy(self):
         entry = imaspy.DBEntry(self.uri, "r")
         ids = entry.get("edge_profiles", lazy=True, autoconvert=False)
-        ggd_to_vtk(ids, 0)
+        ggd_to_vtk(ids, time_idx=0)
