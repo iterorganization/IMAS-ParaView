@@ -122,16 +122,16 @@ def ggd_to_vtk(
     if time and time_idx:
         logger.error("The time and time index can not be provided at the same time.")
         return None
-    if time_idx and time_idx >= len(ids.time):
+    elif time_idx and time_idx >= len(ids.time):
         logger.error("The requested index can not be found in the IDS.")
         return None
-    # Retrieve GGD grid from IDS
-    if time:
+    elif time:
         time_idx = _get_nearest_time_idx(ids, time)
-    elif not time and not time_idx:
-        logger.info(f"Converting first timestep: t = {ids.time[time_idx]}")
+    else:
+        logger.info(f"Converting first timestep: t = {ids.time[0]}")
         time_idx = 0
 
+    # Retrieve GGD grid from IDS
     grid_ggd = get_grid_ggd(ids, time_idx)
 
     # Check if grid is valid
