@@ -122,7 +122,9 @@ def ggd_to_vtk(
     if time and time_idx:
         logger.error("The time and time index can not be provided at the same time.")
         return None
-
+    if time_idx and time_idx >= len(ids.time):
+        logger.error("The requested index can not be found in the IDS.")
+        return None
     # Retrieve GGD grid from IDS
     if time:
         time_idx = _get_nearest_time_idx(ids, time)
