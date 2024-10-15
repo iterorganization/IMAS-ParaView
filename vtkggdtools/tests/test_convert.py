@@ -1,52 +1,45 @@
 import imaspy
+import pytest
 from imaspy.ids_path import IDSPath
-from vtk import vtkXMLPartitionedDataSetCollectionWriter
 
-from vtkggdtools.convert import ggd_to_vtk
+from vtkggdtools.convert import _get_nearest_time_idx, convert_to_xml, ggd_to_vtk
 from vtkggdtools.io.read_ps import PlasmaStateReader
 from vtkggdtools.tests.fill_ggd import fill_ids
 from vtkggdtools.util import get_grid_ggd
 
-# def test_ggd_to_vtk_time_idx(dummy_ids_five_steps, tmp_path):
-#     for time_idx in range(5):
-#         output_file = tmp_path / f"test_{time_idx}.vtpc"
-#         vtk_object = ggd_to_vtk(dummy_ids_five_steps, time_idx=time_idx)
-#         writer = vtkXMLPartitionedDataSetCollectionWriter()
-#         writer.SetInputData(vtk_object)
-#         writer.SetFileName(output_file)
-#         writer.Write()
-#         output_dir = output_file.parent / output_file.stem
 
-#         # Check if vtpc file and the directory exists
-#         assert output_file.exists()
-#         assert output_dir.is_dir()
+def test_ggd_to_vtk_time_idx(dummy_ids):
+    """Test if ggd_to_vtk works."""
+    ps = PlasmaStateReader(dummy_ids)
+    scalar_paths, vector_paths, _, _ = ps.load_paths_from_ids(return_empty=True)
+    ggd_names = names_from_ids(dummy_ids, scalar_paths, vector_paths)
 
-#         # Check if the vtu files exist
-#         grid_ggd = get_grid_ggd(dummy_ids_five_steps, time_idx)
-#         num_subsets = len(grid_ggd.grid_subset)
-#         for n in range(num_subsets):
-#             vtu_file = output_file.stem + f"_{n}_0.vtu"
-#             assert output_dir / vtu_file
+    # Check if names of VTK object match the GGD array names
+    vtk_object = ggd_to_vtk(dummy_ids)
+    vtk_array_names = names_from_vtk(vtk_object)
+    assert vtk_array_names == ggd_names
 
 
-def test_ggd_to_vtk_time_idx(dummy_ids_five_steps, tmp_path):
+def test_ggd_to_vtk_index(dummy_ids_five_steps):
     """Test if ggd_to_vtk works with different time indices."""
     ps = PlasmaStateReader(dummy_ids_five_steps)
     scalar_paths, vector_paths, _, _ = ps.load_paths_from_ids(return_empty=True)
     ggd_names = names_from_ids(dummy_ids_five_steps, scalar_paths, vector_paths)
+
+    # Check if names of VTK object match the GGD array names
     for time_idx in range(5):
         vtk_object = ggd_to_vtk(dummy_ids_five_steps, time_idx=time_idx)
         vtk_array_names = names_from_vtk(vtk_object)
         assert vtk_array_names == ggd_names
 
 
-def test_ggd_to_vtk_time(dummy_ids_five_steps, tmp_path):
+def test_ggd_to_vtk_time(dummy_ids_five_steps):
     """Test if ggd_to_vtk works with different times."""
     ps = PlasmaStateReader(dummy_ids_five_steps)
     scalar_paths, vector_paths, _, _ = ps.load_paths_from_ids(return_empty=True)
     ggd_names = names_from_ids(dummy_ids_five_steps, scalar_paths, vector_paths)
 
-    # Check if names of VTK match the GGD array names
+    # Check if names of VTK object match the GGD array names
     for time in range(5):
         vtk_object = ggd_to_vtk(dummy_ids_five_steps, time=time)
         vtk_array_names = names_from_vtk(vtk_object)
@@ -84,8 +77,137 @@ def test_ggd_to_vtk_subset():
     assert vtk_array_names == ggd_names
 
 
+def test_ggd_to_vtk_subset_time_index(dummy_ids_five_steps):
+    """Test if ggd_to_vtk returns None when given time and index values."""
+    vtk_object = ggd_to_vtk(dummy_ids_five_steps, time=5, time_idx=6)
+    assert vtk_object is None
+
+
+def test_convert_to_xml_no_time(dummy_ids_five_steps, tmp_path):
+    """Test if convert_to_xml raises an error if no time step is selected."""
+    output_file = tmp_path / "test_.vtpc"
+    with pytest.raises(RuntimeError):
+        convert_to_xml(dummy_ids_five_steps, output_file)
+
+
+def test_convert_to_xml_out_of_bounds(dummy_ids_five_steps, tmp_path):
+    """Test if convert_to_xml raises an error if no time step is selected."""
+    output_file = tmp_path / "test_.vtpc"
+    with pytest.raises(RuntimeError):
+        convert_to_xml(dummy_ids_five_steps, output_file, index=6)
+
+
+def test_convert_to_xml_index(dummy_ids_five_steps, tmp_path):
+    """Test if convert_to_xml converts a single index."""
+    for time_idx in range(5):
+        output_file = tmp_path / f"test_{time_idx}"
+        convert_to_xml(dummy_ids_five_steps, output_file, index=time_idx)
+        output_dir = output_file.parent / output_file.stem
+
+        # Check if vtpc file and the directory exists
+        assert output_file.exists()
+        assert output_dir.is_dir()
+
+        # Check if the vtu files exist
+        grid_ggd = get_grid_ggd(dummy_ids_five_steps, time_idx)
+        num_subsets = len(grid_ggd.grid_subset)
+        for n in range(num_subsets):
+            vtu_file = output_file.stem + f"_{n}_0.vtu"
+            assert output_dir / vtu_file
+
+
+def test_convert_to_xml_time(dummy_ids_five_steps, tmp_path):
+    """Test if convert_to_xml converts a single time."""
+    for time in range(5):
+        output_file = tmp_path / f"test_{time}"
+        convert_to_xml(dummy_ids_five_steps, output_file, time=time)
+        output_dir = output_file.parent / output_file.stem
+
+        # Check if vtpc file and the directory exists
+        assert output_file.exists()
+        assert output_dir.is_dir()
+
+        # Check if the vtu files exist
+        time_idx = _get_nearest_time_idx(dummy_ids_five_steps, time)
+        grid_ggd = get_grid_ggd(dummy_ids_five_steps, time_idx)
+        num_subsets = len(grid_ggd.grid_subset)
+        for n in range(num_subsets):
+            vtu_file = output_file.stem + f"_{n}_0.vtu"
+            assert output_dir / vtu_file
+
+
+def test_convert_to_xml_index_range(dummy_ids_five_steps, tmp_path):
+    """Test if convert_to_xml converts a range of indices."""
+    min_index = 1
+    max_index = 3
+
+    output_file = tmp_path / "test"
+    convert_to_xml(
+        dummy_ids_five_steps, output_file, index_range=[min_index, max_index]
+    )
+
+    for time_idx in range(min_index, max_index + 1):
+        output_dir = output_file.parent / output_file.stem
+
+        # Check if vtpc file and the directory exists
+        assert output_file.exists()
+        assert output_dir.is_dir()
+
+        # Check if the vtu files exist
+        grid_ggd = get_grid_ggd(dummy_ids_five_steps, time_idx)
+        num_subsets = len(grid_ggd.grid_subset)
+        for n in range(num_subsets):
+            vtu_file = output_file.stem + f"_{n}_0.vtu"
+            assert output_dir / vtu_file
+
+
+def test_convert_to_xml_time_range(dummy_ids_five_steps, tmp_path):
+    """Test if convert_to_xml converts a range of time steps."""
+    min_time = 1.1
+    max_time = 3.2
+
+    output_file = tmp_path / "test"
+    convert_to_xml(dummy_ids_five_steps, output_file, time_range=[min_time, max_time])
+
+    for time in range(int(min_time), int(max_time) + 1):
+        output_dir = output_file.parent / output_file.stem
+
+        # Check if vtpc file and the directory exists
+        assert output_file.exists()
+        assert output_dir.is_dir()
+
+        # Check if the vtu files exist
+        time_idx = _get_nearest_time_idx(dummy_ids_five_steps, time)
+        grid_ggd = get_grid_ggd(dummy_ids_five_steps, time_idx)
+        num_subsets = len(grid_ggd.grid_subset)
+        for n in range(num_subsets):
+            vtu_file = output_file.stem + f"_{n}_0.vtu"
+            assert output_dir / vtu_file
+
+
+def test_convert_to_xml_all_times(dummy_ids_five_steps, tmp_path):
+    """Test if convert_to_xml converts all times in the IDS."""
+
+    output_file = tmp_path / "test"
+    convert_to_xml(dummy_ids_five_steps, output_file, all_times=True)
+
+    for time_idx in range(5):
+        output_dir = output_file.parent / output_file.stem
+
+        # Check if vtpc file and the directory exists
+        assert output_file.exists()
+        assert output_dir.is_dir()
+
+        # Check if the vtu files exist
+        grid_ggd = get_grid_ggd(dummy_ids_five_steps, time_idx)
+        num_subsets = len(grid_ggd.grid_subset)
+        for n in range(num_subsets):
+            vtu_file = output_file.stem + f"_{n}_0.vtu"
+            assert output_dir / vtu_file
+
+
 def names_from_ids(ids, scalar_paths, vector_paths):
-    # Check if names of VTK match the GGD array names
+    """Convert the names of the GGD array paths to the names given in Paraview."""
     ps = PlasmaStateReader(ids)
     ps.load_arrays_from_path(0, scalar_paths, vector_paths)
     ggd_names = set()
@@ -96,6 +218,7 @@ def names_from_ids(ids, scalar_paths, vector_paths):
 
 
 def names_from_vtk(vtk_object):
+    """Extract the array names from the VTK object."""
     n_partds = vtk_object.GetNumberOfPartitionedDataSets()
     array_names = set()
     for i in range(n_partds):
