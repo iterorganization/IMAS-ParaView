@@ -344,7 +344,7 @@ def fill_ggd_data(ids, num_vertices, num_edges, num_faces):
 
     # Fill IDS structure with random values
     scalar_array_list, vector_array_list = get_arrays_from_ids(
-        ids, get_empty_arrays=True
+        ids, get_empty_arrays=True, create_empty_structs=True
     )
 
     # Read scalar arrays

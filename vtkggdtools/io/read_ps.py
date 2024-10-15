@@ -181,7 +181,6 @@ class PlasmaStateReader:
         """Creates a name for the GGD array based on its path and units.
 
         Args:
-            ids: The IDS that this array belongs to
             array: The ggd scalar or vector array to create the name for
 
         Returns:
