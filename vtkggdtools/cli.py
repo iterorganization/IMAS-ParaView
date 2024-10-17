@@ -93,7 +93,7 @@ def convert_ggd_to_vtk(
     """Convert a GGD structure in an IDS to a VTK file.
 
     \b
-    uri         URI of the Data Entry (e.g. "imas:mdsplus?path=testdb").
+    uri         URI of the Data Entry (e.g. "imas:hdf5?path=testdb#edge_profiles").
     output      Name of the output VTK directory.
     """
     uri, ids_name, occurrence = parse_uri(uri)
