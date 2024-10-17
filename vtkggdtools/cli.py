@@ -110,7 +110,7 @@ def convert_ggd_to_vtk(
     click.echo(f"Loading {ids} from {uri}...")
     entry = imaspy.DBEntry(uri, "r")
     ids = entry.get(ids, occurrence=occurrence, autoconvert=False)
-    index_list = parse_time_options(ids, index, time, all_times)
+    index_list = parse_time_options(ids.time, index, time, all_times)
 
     click.echo("Converting GGD to a VTK file...")
 
@@ -122,7 +122,7 @@ def convert_ggd_to_vtk(
         click.echo("vtkhdf format is not yet implemented.")
 
 
-def parse_time_options(ids, index, time, all_times):
+def parse_time_options(ids_time, index, time, all_times):
     """_summary_
 
     Args:
@@ -142,17 +142,17 @@ def parse_time_options(ids, index, time, all_times):
     if index:
         index_list = parse_index(index)
     elif time:
-        index_list = parse_time(ids.time, time)
+        index_list = parse_time(ids_time, time)
     elif all_times:
-        index_list = list(range(len(ids.time)))
+        index_list = list(range(len(ids_time)))
         click.echo(
             "Converting all time steps in the IDS. Depending on the number of time "
             f"steps, this could take a while. Converting a total of {len(index_list)} "
             "time steps."
         )
     else:
-        index = len(ids.time) // 2
-        middle_time = ids.time[index]
+        index = len(ids_time) // 2
+        middle_time = ids_time[index]
         click.echo(
             "No time options were set, so only converting the middle time step: "
             f"t = {middle_time}  at index {index}"
@@ -190,6 +190,8 @@ def parse_index(index):
             index_list = list(indices_dict)
     # Range of indices
     elif ":" in index:
+        if index.count(":") > 1:
+            raise click.UsageError("Only a single range may be provided.")
         start_str, end_str = index.split(":")
         if not start_str.strip().isdigit() or not end_str.strip().isdigit():
             raise click.UsageError(
@@ -235,6 +237,8 @@ def parse_time(ids_times, time):
             index_list = list(indices_dict)
     # Range of time steps
     elif ":" in time:
+        if time.count(":") > 1:
+            raise click.UsageError("Only a single range may be provided.")
         start_str, end_str = time.split(":")
         try:
             start = float(start_str)

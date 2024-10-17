@@ -16,38 +16,22 @@ from vtkggdtools.util import FauxIndexMap, get_grid_ggd
 logger = logging.getLogger("vtkggdtools")
 
 
-def convert_to_xml(
-    ids,
-    output,
-    index_list=None,
-):
+def convert_to_xml(ids, output, index_list=[0]):
     """Convert an IDS to VTK format and write it to disk using the XML output writer.
-    Only one of the following time parameters should be provided:
-    - `index`
-    - `index_range`
-    - `time`
-    - `time_range`
-    - `all_times`
 
     Args:
-        ids: The IDS to be converted.
-        output: The name of the output directory.
-        index: The time index to be converted. Defaults to None.
-        index_range: The range of indices to be converted, including bounds. For
-            example, the index range [2,4] converts the indices [2, 3, 4]. Defaults to
-            None.
-        time: The time value to be converted. The nearest value in the IDS is chosen to
-            be converted. Defaults to None.
-        time_range: The range of indices to be converted. For example, the time range
-            [1.5, 5.6] converts all the time steps between 1.5 and 5.6 seconds. Defaults
-            to None.
-        all_times: Converts all the time steps in te IDS. Defaults to False.
+    ids: The IDS to be converted.
+    output: The name of the output directory.
+    index_list: A list of time indices to convert. By default only the first time step
+        is converted.
     """
     # Create parent directory and point output path there
     logger.info(f"Creating a output directory at {output}")
     output.mkdir(parents=True, exist_ok=True)
     output = output / ids.metadata.name
 
+    if not all(index in ids.time for index in index_list):
+        raise RuntimeError("A provided index is out of bounds.")
     # Convert a single time step
     for index in index_list:
         logger.info(f"Converting time step {ids.time[index]}...")

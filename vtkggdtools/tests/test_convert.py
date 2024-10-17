@@ -2,7 +2,7 @@ import imaspy
 import pytest
 from imaspy.ids_path import IDSPath
 
-from vtkggdtools.convert import _get_nearest_time_idx, convert_to_xml, ggd_to_vtk
+from vtkggdtools.convert import convert_to_xml, ggd_to_vtk
 from vtkggdtools.io.read_ps import PlasmaStateReader
 from vtkggdtools.tests.fill_ggd import fill_ids
 from vtkggdtools.util import get_grid_ggd
@@ -83,71 +83,34 @@ def test_ggd_to_vtk_subset_time_index(dummy_ids_five_steps):
     assert vtk_object is None
 
 
-def test_convert_to_xml_no_time(dummy_ids_five_steps, tmp_path):
-    """Test if convert_to_xml raises an error if no time step is selected."""
-    output_file = tmp_path / "test_.vtpc"
-    with pytest.raises(RuntimeError):
-        convert_to_xml(dummy_ids_five_steps, output_file)
+def test_convert_to_xml(dummy_ids_five_steps, tmp_path):
+    """Test if convert_to_xml converts a single index."""
+    output_file = tmp_path / "test"
+    convert_to_xml(dummy_ids_five_steps, output_file)
+    assert_output_exists(dummy_ids_five_steps, 0, output_file)
 
 
 def test_convert_to_xml_out_of_bounds(dummy_ids_five_steps, tmp_path):
     """Test if convert_to_xml fails when given an index which is not in the IDS."""
     output_file = tmp_path / "test_.vtpc"
     with pytest.raises(RuntimeError):
-        convert_to_xml(dummy_ids_five_steps, output_file, index=6)
+        convert_to_xml(dummy_ids_five_steps, output_file, [6])
 
 
 def test_convert_to_xml_index(dummy_ids_five_steps, tmp_path):
     """Test if convert_to_xml converts a single index."""
     for time_idx in range(5):
         output_file = tmp_path / f"test_{time_idx}"
-        convert_to_xml(dummy_ids_five_steps, output_file, index=time_idx)
+        convert_to_xml(dummy_ids_five_steps, output_file, [time_idx])
         assert_output_exists(dummy_ids_five_steps, time_idx, output_file)
 
 
-def test_convert_to_xml_time(dummy_ids_five_steps, tmp_path):
-    """Test if convert_to_xml converts a single time value."""
-    for time in range(5):
-        output_file = tmp_path / f"test_{time}"
-        convert_to_xml(dummy_ids_five_steps, output_file, time=time)
-
-        time_idx = _get_nearest_time_idx(dummy_ids_five_steps, time)
-        assert_output_exists(dummy_ids_five_steps, time_idx, output_file)
-
-
-def test_convert_to_xml_index_range(dummy_ids_five_steps, tmp_path):
-    """Test if convert_to_xml converts a range of indices."""
-    min_index = 1
-    max_index = 3
+def test_convert_to_xml_index_list(dummy_ids_five_steps, tmp_path):
+    """Test if convert_to_xml converts an index list."""
 
     output_file = tmp_path / "test"
-    convert_to_xml(
-        dummy_ids_five_steps, output_file, index_range=[min_index, max_index]
-    )
-
-    for time_idx in range(min_index, max_index + 1):
-        assert_output_exists(dummy_ids_five_steps, time_idx, output_file)
-
-
-def test_convert_to_xml_time_range(dummy_ids_five_steps, tmp_path):
-    """Test if convert_to_xml converts a range of time steps."""
-    min_time = 1.1
-    max_time = 3.2
-
-    output_file = tmp_path / "test"
-    convert_to_xml(dummy_ids_five_steps, output_file, time_range=[min_time, max_time])
-
-    for time in range(int(min_time), int(max_time) + 1):
-        time_idx = _get_nearest_time_idx(dummy_ids_five_steps, time)
-        assert_output_exists(dummy_ids_five_steps, time_idx, output_file)
-
-
-def test_convert_to_xml_all_times(dummy_ids_five_steps, tmp_path):
-    """Test if convert_to_xml converts all times in the IDS."""
-
-    output_file = tmp_path / "test"
-    convert_to_xml(dummy_ids_five_steps, output_file, all_times=True)
-
+    time_idx = [0, 1, 2, 3, 4]
+    convert_to_xml(dummy_ids_five_steps, output_file, time_idx)
     for time_idx in range(5):
         assert_output_exists(dummy_ids_five_steps, time_idx, output_file)
 
