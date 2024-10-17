@@ -1,10 +1,12 @@
 import logging
 import sys
+from collections import OrderedDict
 from pathlib import Path
 
 import click
 import imaspy
 import imaspy.backends.imas_core.imas_interface
+import numpy as np
 from imaspy.backends.imas_core.imas_interface import ll_interface
 from rich import box, console, traceback
 from rich.table import Table
@@ -73,19 +75,8 @@ def print_version():
     type=int,
     default=0,
 )
-@click.option("--index", "-i", type=int, help="Specify a single index to convert.")
-@click.option(
-    "--index-range", "-ir", type=str, help="Specify a range of indices as 'start:end'."
-)
-@click.option(
-    "--time", "-t", type=float, help="Specify a specific time step in seconds."
-)
-@click.option(
-    "--time-range",
-    "-tr",
-    type=str,
-    help="Specify a time range as 'start:end' in seconds.",
-)
+@click.option("--index", "-i", type=str, help="Specify a single index to convert.")
+@click.option("--time", "-t", type=str, help="Specify a specific time step in seconds.")
 @click.option(
     "--all-times", "-a", is_flag=True, help="Convert all available time steps."
 )
@@ -103,9 +94,7 @@ def convert_ggd_to_vtk(
     output,
     occurrence,
     index,
-    index_range,
     time,
-    time_range,
     all_times,
     format,
 ):
@@ -117,80 +106,179 @@ def convert_ggd_to_vtk(
     output      Name of the output VTK file/directory.
     occurrence  Which occurrence to print (defaults to 0).
     """
-    index, index_range, time, time_range, all_times = validate_time_options(
-        index, index_range, time, time_range, all_times
-    )
+
     click.echo(f"Loading {ids} from {uri}...")
     entry = imaspy.DBEntry(uri, "r")
     ids = entry.get(ids, occurrence=occurrence, autoconvert=False)
+    index_list = parse_time_options(ids, index, time, all_times)
 
     click.echo("Converting GGD to a VTK file...")
 
     # TODO: Add time-dependent VTKHDF conversion
     if format == "xml":
-        convert_to_xml(ids, output, index, index_range, time, time_range, all_times)
+        convert_to_xml(ids, output, index_list)
 
     elif format == "vtkhdf":
         click.echo("vtkhdf format is not yet implemented.")
 
 
-def validate_time_options(index, index_range, time, time_range, all_times):
+def parse_time_options(ids, index, time, all_times):
     """_summary_
 
     Args:
+        index: _description_
         time: _description_
-        time_range: _description_
         all_times: _description_
-        time_mode: _description_
-    """
-    # Check if at most one of the time options are provided
-    if (
-        sum(param is not None for param in [index, index_range, time, time_range])
-        + all_times
-        > 1
-    ):
-        raise click.UsageError(
-            "You must provide only one of --time, --time-range, or --all-times."
-        )
 
-    if all_times:
+    Returns:
+        _description_
+    """
+    # Check if more than a single time option is provided
+    if sum([index is not None, time is not None, all_times]) > 1:
+        raise click.UsageError(
+            "You can only provide one time-related argument: either --time, --index, "
+            "or --all-times."
+        )
+    if index:
+        index_list = parse_index(index)
+    elif time:
+        index_list = parse_time(ids.time, time)
+    elif all_times:
+        index_list = list(range(len(ids.time)))
         click.echo(
             "Converting all time steps in the IDS. Depending on the number of time "
-            "steps, this could take a while."
+            f"steps, this could take a while. Converting a total of {len(index_list)} "
+            "time steps."
         )
-    elif time_range:
-        try:
-            start, end = map(float, time_range.split(":"))
-            click.echo(f"Converting time steps between {start} and {end}")
-            if end < start:
-                raise click.UsageError("The final time must be greater than the first.")
-            time_range = [start, end]
-        except Exception:
-            raise click.UsageError(
-                "Time range must be in the format 'start:end' with valid numbers."
-            )
-    elif index_range:
-        try:
-            start, end = map(int, index_range.split(":"))
-            click.echo(f"Converting time indices {list(range(start, end+1))}")
-            if end < start:
-                raise click.UsageError(
-                    "The final time index must be greater than the first."
-                )
-            index_range = [start, end]
-        except Exception:
-            raise click.UsageError(
-                "Time range must be in the format 'start:end' with valid integers."
-            )
-    elif time is not None:
-        click.echo(f"Converting time {time}")
-    elif index is not None:
-        click.echo(f"Converting time at index {index}")
     else:
-        click.echo("No time options were set, so only converting the first time step.")
-        index = 0
+        index = len(ids.time) // 2
+        middle_time = ids.time[index]
+        click.echo(
+            "No time options were set, so only converting the middle time step: "
+            f"t = {middle_time}  at index {index}"
+        )
+        index_list = [index]
 
-    return index, index_range, time, time_range, all_times
+    return index_list
+
+
+def parse_index(index):
+    """_summary_
+
+    Args:
+        index: _description_
+
+    Returns:
+        _description_
+    """
+    # Single index
+    if index.isdigit():
+        index_list = [int(index)]
+    # List of indices
+    elif "," in index:
+        for input_index in index.split(","):
+            if not input_index.strip().isdigit():
+                raise click.UsageError("All indices in given list must be integers.")
+        index_list = [int(x.strip()) for x in index.split(",")]
+        indices_dict = OrderedDict.fromkeys(index_list)
+        if len(index_list) != len(indices_dict):
+            click.echo(
+                "Duplicate time steps were detected. Note that provided time steps "
+                "will be rounded down to the nearest found time in the IDS. All "
+                "duplicates time steps will be ignored."
+            )
+            index_list = list(indices_dict)
+    # Range of indices
+    elif ":" in index:
+        start_str, end_str = index.split(":")
+        if not start_str.strip().isdigit() or not end_str.strip().isdigit():
+            raise click.UsageError(
+                "The lower and upper bound of indices must be " "integers."
+            )
+        start = int(start_str)
+        end = int(end_str)
+        if end < start:
+            raise click.UsageError(
+                "The final time index in range must be greater than the first."
+            )
+        index_list = list(range(start, end + 1))
+    else:
+        raise click.UsageError(
+            "Could not determine which indices should be converted.\n"
+            "Provide either a single integer ('-i 5'), "
+            "a list of integers ('-i 2,3,4') or "
+            "a range of integers ('-i 2:4')"
+        )
+    click.echo(f"Converting the following indices: {index_list}")
+    return index_list
+
+
+def parse_time(ids_times, time):
+    # List of time steps
+    if "," in time:
+        for input_time in time.split(","):
+            try:
+                float(input_time)
+            except ValueError:
+                raise click.UsageError(
+                    "All time steps in given list must be valid floats."
+                )
+        time_list = [float(x.strip()) for x in time.split(",")]
+        index_list = find_closest_indices(time_list, ids_times)
+        indices_dict = OrderedDict.fromkeys(index_list)
+        if len(index_list) != len(indices_dict):
+            click.echo(
+                "Duplicate time steps were detected. Note that provided time steps "
+                "will be rounded down to the nearest found time in the IDS. All "
+                "duplicates time steps will be ignored."
+            )
+            index_list = list(indices_dict)
+    # Range of time steps
+    elif ":" in time:
+        start_str, end_str = time.split(":")
+        try:
+            start = float(start_str)
+            end = float(end_str)
+        except ValueError:
+            raise click.UsageError(
+                "The minimum and maximum range values must be valid floats."
+            )
+        if end < start:
+            raise click.UsageError(
+                "The final time index in range must be greater than the first."
+            )
+        index_list = [
+            index for index, value in enumerate(ids_times) if start <= value <= end
+        ]
+        if index_list == []:
+            raise click.UsageError(
+                "Could not find any time steps between in provided range."
+            )
+    # Single time step
+    else:
+        try:
+            time_list = [float(time)]
+            index_list = find_closest_indices(time_list, ids_times)
+        except ValueError:
+            raise click.UsageError(
+                "Could not determine which time steps should be converted.\n"
+                "Provide either a single float ('-t 5.0'), "
+                "a list of floats ('-t 2.1,3.5,4') or "
+                "a range of floats ('-t 2.2:4.4')"
+            )
+    click.echo(f"Converting the following time steps: {ids_times[index_list]}")
+    return index_list
+
+
+def find_closest_indices(values_to_extract, source_array):
+    closest_indices = []
+    for value in values_to_extract:
+        candidates = source_array[source_array <= value]
+        if candidates.size > 0:
+            closest_value = candidates.max()
+            closest_index = np.where(source_array == closest_value)[0][0]
+            closest_indices.append(closest_index)
+    return closest_indices
 
 
 if __name__ == "__main__":
