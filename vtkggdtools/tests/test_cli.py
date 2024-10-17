@@ -30,7 +30,8 @@ def test_ggd2vtk(tmp_path, dummy_ids):
     ids_name = dummy_ids.metadata.name
     output_str = str(output_path)
     occurrence = "0"
-    args = [uri, ids_name, output_str, occurrence]
+    uri_in = f"{uri}#{ids_name}:{occurrence}"
+    args = [uri_in, output_str]
     result = runner.invoke(convert_ggd_to_vtk, args)
     assert result.exit_code == 0
 

@@ -68,13 +68,7 @@ def print_version():
 
 @cli.command("ggd2vtk")
 @click.argument("uri", type=str)
-@click.argument("ids", type=str)
 @click.argument("output", type=Path)
-@click.argument(
-    "occurrence",
-    type=int,
-    default=0,
-)
 @click.option("--index", "-i", type=str, help="Specify a single index to convert.")
 @click.option("--time", "-t", type=str, help="Specify a specific time step in seconds.")
 @click.option(
@@ -90,9 +84,7 @@ def print_version():
 )
 def convert_ggd_to_vtk(
     uri,
-    ids,
     output,
-    occurrence,
     index,
     time,
     all_times,
@@ -102,14 +94,12 @@ def convert_ggd_to_vtk(
 
     \b
     uri         URI of the Data Entry (e.g. "imas:mdsplus?path=testdb").
-    ids         Name of the IDS to print (e.g. "edge_profiles").
-    output      Name of the output VTK file/directory.
-    occurrence  Which occurrence to print (defaults to 0).
+    output      Name of the output VTK directory.
     """
-
-    click.echo(f"Loading {ids} from {uri}...")
+    uri, ids_name, occurrence = parse_uri(uri)
+    click.echo(f"Loading {ids_name} from {uri} with occurrence {occurrence}...")
     entry = imaspy.DBEntry(uri, "r")
-    ids = entry.get(ids, occurrence=occurrence, autoconvert=False)
+    ids = entry.get(ids_name, occurrence=occurrence, autoconvert=False)
     index_list = parse_time_options(ids.time, index, time, all_times)
 
     click.echo("Converting GGD to a VTK file...")
@@ -120,6 +110,39 @@ def convert_ggd_to_vtk(
 
     elif format == "vtkhdf":
         click.echo("vtkhdf format is not yet implemented.")
+
+
+def parse_uri(uri):
+    """_summary_
+
+    Args:
+        uri: _description_
+
+    Returns:
+        _description_
+    """
+    if "#" in uri:
+        split_uri = uri.split("#")
+        uri_path = split_uri[0]
+        fragment = split_uri[1]
+        if "/" in fragment:
+            raise click.UsageError(
+                "It is currently not possible to select an IDS subset for conversion."
+                "It is only possible to convert the entire IDS."
+            )
+        elif ":" in fragment:
+            split_fragment = fragment.split(":")
+            ids_name = split_fragment[0]
+            occurrence = split_fragment[1]
+        else:
+            ids_name = fragment
+            occurrence = 0
+    else:
+        raise click.UsageError(
+            "The IDS must be provided as a fragment to the URI. For example: "
+            'uri = "imas:hdf5?path=testdb#edge_profiles"'
+        )
+    return uri_path, ids_name, occurrence
 
 
 def parse_time_options(ids_time, index, time, all_times):
