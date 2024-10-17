@@ -35,7 +35,7 @@ def convert_to_xml(
 
     Args:
         ids: The IDS to be converted.
-        output: The name of the output files/directory.
+        output: The name of the output directory.
         index: The time index to be converted. Defaults to None.
         index_range: The range of indices to be converted, including bounds. For
             example, the index range [2,4] converts the indices [2, 3, 4]. Defaults to
@@ -62,7 +62,7 @@ def convert_to_xml(
     # Create parent directory and point output path there
     logger.info(f"Creating a output directory at {output}")
     output.mkdir(parents=True, exist_ok=True)
-    output = output / output.stem
+    output = output / ids.metadata.name
 
     # Convert a single time step
     if time is not None:
