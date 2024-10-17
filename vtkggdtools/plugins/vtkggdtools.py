@@ -509,16 +509,15 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         name = " ".join(path_list)
 
-        # If GGDs are not filled in the first time step, add (?) to their name and add
-        # zero-width space to move them to the bottom of the list. This notifies that
-        # the GGD array is not filled and will most likely not contain any data. We do
-        # not remove these GGD arrays from the selector window entirely, because later
-        # time steps could still contain data.
+        # If GGDs are not filled in the first time step, add (?) to their name. This
+        # notifies that the GGD array is not filled and will most likely not contain
+        # any data. We do not remove these GGD arrays from the selector window entirely,
+        # because later time steps could still contain data.
         if (
             path not in self._filled_scalar_paths
             and path not in self._filled_vector_paths
         ):
-            name = f"\u200B{name} (?)"
+            name = f"{name} (?)"
         return name
 
     def _get_selected_ggd_paths(self):
