@@ -133,7 +133,7 @@ def parse_uri(uri):
         elif ":" in fragment:
             split_fragment = fragment.split(":")
             ids_name = split_fragment[0]
-            occurrence = split_fragment[1]
+            occurrence = int(split_fragment[1])
         else:
             ids_name = fragment
             occurrence = 0

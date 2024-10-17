@@ -4,7 +4,7 @@ import pytest
 from click import UsageError
 from click.testing import CliRunner
 
-from vtkggdtools.cli import cli, convert_ggd_to_vtk, parse_index, parse_time
+from vtkggdtools.cli import cli, convert_ggd_to_vtk, parse_index, parse_time, parse_uri
 
 
 def test_version():
@@ -56,6 +56,19 @@ def test_ggd2vtk(tmp_path, dummy_ids):
         for i in range(3):
             vtu_file = output_dir / f"{ids_name}_0_{i}_0.vtu"
             assert vtu_file.exists()
+
+
+def test_parse_uri():
+    uri_path, ids, occurrence = parse_uri("imas:hdf5?path=testdb#edge_profiles")
+    assert uri_path == "imas:hdf5?path=testdb"
+    assert ids == "edge_profiles"
+    assert occurrence == 0
+    uri_path, ids, occurrence = parse_uri("imas:hdf5?path=testdb2#edge_sources:1")
+    assert uri_path == "imas:hdf5?path=testdb2"
+    assert ids == "edge_sources"
+    assert occurrence == 1
+    with pytest.raises(UsageError):
+        parse_uri("imas:hdf5?path=testdb")
 
 
 def test_parse_index():
