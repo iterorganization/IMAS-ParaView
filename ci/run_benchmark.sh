@@ -41,8 +41,8 @@ python ./vtkggdtools/tmp.py
 asv machine --yes
 
 # Run ASV for the current commit, develop and main
-asv run -v --skip-existing-successful HEAD^!
-asv run -v --skip-existing-successful develop^!
+asv run -v --show-stderr --skip-existing-successful HEAD^!
+asv run -v --show-stderr --skip-existing-successful develop^!
 
 # TODO: Turn on benchmarking for master branch as well. Currently there is an 
 # issue with the master branch, where it is unable to find the 
