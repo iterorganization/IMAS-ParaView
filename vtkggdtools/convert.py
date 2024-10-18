@@ -72,18 +72,21 @@ def ggd_to_vtk(
     Returns:
         vtkPartitionedDataSetCollection containing the converted GGD data.
     """
-    if time and time_idx:
+    if time is not None and time_idx is not None:
         logger.error("The time and time index can not be provided at the same time.")
         return None
-    elif time_idx:
+    elif time_idx is not None:
         if time_idx >= len(ids.time):
             logger.error("The requested index can not be found in the IDS.")
             return None
-    elif time:
+    elif time is not None:
         time_idx = _get_nearest_time_idx(ids, time)
     else:
-        logger.info(f"Converting first timestep: t = {ids.time[0]}")
-        time_idx = 0
+        time_idx = len(ids.time) // 2
+        logger.info(
+            "No time or time index provided, so converting the middle time "
+            f"step: t = {ids.time[time_idx]} at index {time_idx}."
+        )
 
     # Retrieve GGD grid from IDS
     grid_ggd = get_grid_ggd(ids, time_idx)
@@ -185,8 +188,8 @@ def _write_vtk_to_xml(vtk_object, output):
 
 
 def _get_nearest_time_idx(ids, time):
-    """Finds the index of the nearest time step in the IDS time array to the provided
-    time value.
+    """Finds the index of the nearest time step in the IDS time array that is less than
+    or equal to the provided time value.
 
     Args:
         ds: The IDS object.
@@ -195,7 +198,17 @@ def _get_nearest_time_idx(ids, time):
     Returns:
         Index of the nearest time step
     """
-    time_idx = np.argmin(np.abs(ids.time - time))
+    candidates = ids.time[ids.time <= time]
+
+    if candidates.size == 0:
+        logger.warning(
+            "No time steps found that are less than or equal to the provided time. "
+            "Instead, converting the first time step."
+        )
+        return 0
+
+    nearest_time = candidates.max()
+    time_idx = np.where(ids.time == nearest_time)[0][0]
     logger.info(f"Converting timestep: t = {ids.time[time_idx]} at index = {time_idx}")
     return time_idx
 

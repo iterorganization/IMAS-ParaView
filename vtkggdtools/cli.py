@@ -68,9 +68,20 @@ def print_version():
 
 @cli.command("ggd2vtk")
 @click.argument("uri", type=str)
-@click.argument("output", type=Path)
-@click.option("--index", "-i", type=str, help="Specify a single index to convert.")
-@click.option("--time", "-t", type=str, help="Specify a specific time step in seconds.")
+@click.argument("output_dir", type=Path)
+@click.option(
+    "--index",
+    "-i",
+    type=str,
+    help="Specify an index, a list of indices or a range of indices to convert.",
+)
+@click.option(
+    "--time",
+    "-t",
+    type=str,
+    help="Specify a time step, a list of time steps or a time step range in seconds to "
+    "convert.",
+)
 @click.option(
     "--all-times", "-a", is_flag=True, help="Convert all available time steps."
 )
@@ -84,17 +95,63 @@ def print_version():
 )
 def convert_ggd_to_vtk(
     uri,
-    output,
+    output_dir,
     index,
     time,
     all_times,
     format,
 ):
-    """Convert a GGD structure in an IDS to a VTK file.
+    """
+    Convert a GGD structure in an IDS and write the converted VTK file to disk.
+    Optionally, specific time values or time indices can be specified to be converted.
 
     \b
-    uri         URI of the Data Entry (e.g. "imas:hdf5?path=testdb#edge_profiles").
-    output      Name of the output VTK directory.
+    Arguments:
+    \b
+    uri             URI of the Data Entry. This should contain the IDS and its fragment.
+    output_dir      Output directory to store the VTK files.
+
+    ------------------------ Examples ------------------------
+
+    Without time slicing:
+
+     \b
+     To convert the middle time step (default), no time options need to be given:
+         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir
+     \b
+     To convert all time slices in the IDS:
+         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -a
+     \b
+     To convert occurrence number 1 (default=0):
+         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles:1 test_dir
+
+    Index-based slicing:
+
+     \b
+     To convert index 5:
+         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 5
+     \b
+     To convert indices 5, 8, and 9:
+         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 5,8,9
+     \b
+     To convert a range of indices, such as 2,3,4,5,6:
+         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 2:6
+
+    Time-based slicing:
+
+     \b
+     To convert time step at 5.5s:
+         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 5.5
+     \b
+     To convert time steps 5.5s, 8s, and 9.1s:
+         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 5.5,8,9.1
+     \b
+     To convert all time steps that fall between 2.2s and 6.6s:
+         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 2.2:6.6
+
+        \b
+        Note: If the specified time step is not found in the IDS, the closest earlier
+        time step will be used by default.
     """
     uri, ids_name, occurrence = parse_uri(uri)
     click.echo(f"Loading {ids_name} from {uri} with occurrence {occurrence}...")
@@ -106,24 +163,36 @@ def convert_ggd_to_vtk(
 
     # TODO: Add time-dependent VTKHDF conversion
     if format == "xml":
-        convert_to_xml(ids, output, index_list)
+        convert_to_xml(ids, output_dir, index_list)
 
     elif format == "vtkhdf":
         click.echo("vtkhdf format is not yet implemented.")
 
 
 def parse_uri(uri):
-    """_summary_
+    """Parses the URI according to the IMAS URI Scheme Documentation v0.3.
+    Parses the URI and extracts the fragment part of the URI.
+
+    Example:
+        Given the URI:
+            uri = "imas:hdf5?path=testdb#edge_profiles:1"
+
+        Returns:
+            uri_no_frag = "imas:hdf5?path=testdb"
+            ids_name = "edge_profiles"
+            occurrence = 1
 
     Args:
-        uri: _description_
+        uri: URI to parse, should contain a fragment denoting the IDS name.
 
     Returns:
-        _description_
+        uri_no_frag: URI without fragment part
+        ids_name: Name of the IDS.
+        occurrence: Occurrence number of the IDS.
     """
     if "#" in uri:
         split_uri = uri.split("#")
-        uri_path = split_uri[0]
+        uri_no_frag = split_uri[0]
         fragment = split_uri[1]
         if "/" in fragment:
             raise click.UsageError(
@@ -142,19 +211,23 @@ def parse_uri(uri):
             "The IDS must be provided as a fragment to the URI. For example: "
             'uri = "imas:hdf5?path=testdb#edge_profiles"'
         )
-    return uri_path, ids_name, occurrence
+    return uri_no_frag, ids_name, occurrence
 
 
 def parse_time_options(ids_time, index, time, all_times):
-    """_summary_
+    """Parses the provided time options. Only a single time option (index, time or
+    all_times) may be used. Either a single value ("5"), a list of values ("2,3,4") or
+    a range of values ("2:4") may be provided for the index or time parameters.
 
     Args:
-        index: _description_
-        time: _description_
-        all_times: _description_
+        index: String containing either a single index, a list of indices or a range of
+            indices. Alternatively, it can be None.
+        time: String containing either a single time step, a list of time steps or a
+            range of time steps. Alternatively, it can be None.
+        all_times: Boolean to convert all time steps
 
     Returns:
-        _description_
+        A list containing the time indices to convert.
     """
     # Check if more than a single time option is provided
     if sum([index is not None, time is not None, all_times]) > 1:
@@ -182,17 +255,24 @@ def parse_time_options(ids_time, index, time, all_times):
         )
         index_list = [index]
 
+    if index_list == []:
+        raise click.UsageError(
+            "Could not find any time steps for the provided time steps."
+        )
     return index_list
 
 
 def parse_index(index):
-    """_summary_
+    """Parses the index parameter and returns a list of IDS time indices to convert.
+    Either a single integer ("5"), a list of integers ("2,3,4") or a range of integers
+    ("2:4") may be provided.
 
     Args:
-        index: _description_
+        index: String containing either a single index, a list of indices or a range of
+            indices.
 
     Returns:
-        _description_
+        A list containing the time indices to convert.
     """
     # Single index
     if index.isdigit():
@@ -239,6 +319,18 @@ def parse_index(index):
 
 
 def parse_time(ids_times, time):
+    """Parses the time parameter and returns a list of IDS time indices to convert.
+    Either a single float ("5.0"), a list of integers ("2.0,3,4.4") or a range of
+    floats ("2.3:4.3") may be provided. If the specified time step is not found in the
+    IDS, the closest earlier time step will be converted instead.
+
+    Args:
+        time: String containing either a single time step, a list of time steps or a
+            range of time steps.
+
+    Returns:
+        A list containing the time indices to convert.
+    """
     # List of time steps
     if "," in time:
         for input_time in time.split(","):
@@ -277,10 +369,6 @@ def parse_time(ids_times, time):
         index_list = [
             index for index, value in enumerate(ids_times) if start <= value <= end
         ]
-        if index_list == []:
-            raise click.UsageError(
-                "Could not find any time steps between in provided range."
-            )
     # Single time step
     else:
         try:
@@ -298,6 +386,17 @@ def parse_time(ids_times, time):
 
 
 def find_closest_indices(values_to_extract, source_array):
+    """Find indices of the closest values in source_array that are less than or equal
+    to each value in values_to_extract.
+
+    Args:
+        values_to_extract: Values to find in the source array.
+        source_array: Array to search for closest values.
+
+    Returns:
+        closest_indices: Indices of closest values in source_array for each value in
+            values_to_extract.
+    """
     closest_indices = []
     for value in values_to_extract:
         candidates = source_array[source_array <= value]
