@@ -33,10 +33,6 @@ mkdir -p /mnt/bamboo_deploy/vtkggdtools/benchmarks/results
 mkdir -p .asv
 cp -rf /mnt/bamboo_deploy/vtkggdtools/benchmarks/results .asv/
 
-# TODO: REMOVE
-# test benchmark
-python ./vtkggdtools/tmp.py
-
 # Ensure there is a machine configuration
 asv machine --yes
 
