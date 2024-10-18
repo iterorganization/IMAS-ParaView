@@ -192,7 +192,7 @@ def _get_nearest_time_idx(ids, time):
     or equal to the provided time value.
 
     Args:
-        ds: The IDS object.
+        ids: The IDS object.
         time: Timestep to retrieve. If it is None, the first time step is retrieved.
 
     Returns:
