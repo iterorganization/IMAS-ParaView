@@ -102,7 +102,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         self._selectable_vector_paths = []
         self._selectable_scalar_paths = []
 
-        self.ugrids = None
+        # Cache grids if they have been loaded before
+        self.grid_cache = {}
 
     def _update_property(self, name, value, callback=None):
         """Convenience method to update a property when value changed."""
@@ -445,16 +446,27 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         plane_config = InterpSettings(
             n_plane=self._n_plane, phi_start=self._phi_start, phi_end=self._phi_end
         )
-        output, self.ugrids = converter.ggd_to_vtk(
+
+        # Load grids from cache
+        if time in self.grid_cache:
+            logger.info("Using a previously loaded, cached GGD grid.")
+            cached_ugrids = self.grid_cache[time]
+        else:
+            cached_ugrids = None
+
+        output, ugrids = converter.ggd_to_vtk(
             time=time,
             scalar_paths=selected_scalar_paths,
             vector_paths=selected_vector_paths,
             plane_config=plane_config,
             outInfo=outInfo,
             progress=progress,
-            ugrids=self.ugrids,
+            ugrids=cached_ugrids,
         )
 
+        # Add grids to cache
+        if time not in self.grid_cache:
+            self.grid_cache[time] = ugrids
         if output is None:
             logger.warning("Could not convert GGD to VTK.")
         return 1
