@@ -2,7 +2,7 @@ import imaspy
 import pytest
 from imaspy.ids_path import IDSPath
 
-from vtkggdtools.converter import Converter
+from vtkggdtools.convert import Converter
 from vtkggdtools.io.read_ps import PlasmaStateReader
 from vtkggdtools.tests.fill_ggd import fill_ids
 from vtkggdtools.util import get_grid_ggd

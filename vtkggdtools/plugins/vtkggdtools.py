@@ -20,7 +20,7 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from vtkggdtools._version import get_versions
-from vtkggdtools.converter import Converter, InterpSettings
+from vtkggdtools.convert import Converter, InterpSettings
 from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
 from vtkggdtools.io import read_ps, write_geom, write_ps
 from vtkggdtools.io.representables import GridSubsetRepresentable

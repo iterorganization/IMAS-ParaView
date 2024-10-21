@@ -12,7 +12,7 @@ from rich import box, console, traceback
 from rich.table import Table
 
 import vtkggdtools
-from vtkggdtools.converter import Converter
+from vtkggdtools.convert import Converter
 
 logger = logging.getLogger(__name__)
 
