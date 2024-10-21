@@ -29,8 +29,7 @@ def convert_to_xml(ids, output, index_list=[0]):
     logger.info(f"Creating a output directory at {output}")
     output.mkdir(parents=True, exist_ok=True)
     output = output / ids.metadata.name
-
-    if not all(index in ids.time for index in index_list):
+    if any(index >= len(ids.time) for index in index_list):
         raise RuntimeError("A provided index is out of bounds.")
     # Convert a single time step
     for index in index_list:
