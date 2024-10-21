@@ -53,7 +53,7 @@ class Converter:
 
         for index in index_list:
             logger.info(f"Converting time step {self.ids.time[index]}...")
-            vtk_object = self.ggd_to_vtk(time_idx=index)
+            vtk_object, _ = self.ggd_to_vtk(time_idx=index)
             self._write_vtk_to_xml(vtk_object, Path(f"{output_path}_{index}"))
 
     def ggd_to_vtk(

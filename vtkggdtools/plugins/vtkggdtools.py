@@ -441,12 +441,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         # Create progress object to advance Paraview progress bar
         progress = Progress(self.UpdateProgress, self.GetProgress)
 
-        # Convert GGD of IDS to VTK format
-        converter = Converter(self._ids)
-        plane_config = InterpSettings(
-            n_plane=self._n_plane, phi_start=self._phi_start, phi_end=self._phi_end
-        )
-
         # Load grids from cache
         if time in self.grid_cache:
             logger.info("Using a previously loaded, cached GGD grid.")
@@ -454,6 +448,11 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         else:
             cached_ugrids = None
 
+        # Convert GGD of IDS to VTK format
+        converter = Converter(self._ids)
+        plane_config = InterpSettings(
+            n_plane=self._n_plane, phi_start=self._phi_start, phi_end=self._phi_end
+        )
         output, ugrids = converter.ggd_to_vtk(
             time=time,
             scalar_paths=selected_scalar_paths,

@@ -16,7 +16,7 @@ def test_ggd_to_vtk(dummy_ids):
 
     # Check if names of VTK object match the GGD array names
     converter = Converter(dummy_ids)
-    vtk_object = converter.ggd_to_vtk()
+    vtk_object, _ = converter.ggd_to_vtk()
 
     vtk_array_names = names_from_vtk(vtk_object)
     assert vtk_array_names == ggd_names
@@ -31,7 +31,7 @@ def test_ggd_to_vtk_index(dummy_ids_five_steps):
     converter = Converter(dummy_ids_five_steps)
     # Check if names of VTK object match the GGD array names
     for time_idx in range(5):
-        vtk_object = converter.ggd_to_vtk(time_idx=time_idx)
+        vtk_object, _ = converter.ggd_to_vtk(time_idx=time_idx)
         vtk_array_names = names_from_vtk(vtk_object)
         assert vtk_array_names == ggd_names
 
@@ -45,7 +45,7 @@ def test_ggd_to_vtk_time(dummy_ids_five_steps):
     converter = Converter(dummy_ids_five_steps)
     # Check if names of VTK object match the GGD array names
     for time in range(5):
-        vtk_object = converter.ggd_to_vtk(time=time)
+        vtk_object, _ = converter.ggd_to_vtk(time=time)
         vtk_array_names = names_from_vtk(vtk_object)
         assert vtk_array_names == ggd_names
 
@@ -54,7 +54,7 @@ def test_ggd_to_vtk_out_of_bounds(dummy_ids_five_steps):
     """Test if ggd_to_vtk fails when given an index which is not in the IDS."""
     time_idx = 6
     converter = Converter(dummy_ids_five_steps)
-    vtk_object = converter.ggd_to_vtk(time_idx=time_idx)
+    vtk_object, _ = converter.ggd_to_vtk(time_idx=time_idx)
     assert vtk_object is None
 
 
@@ -75,7 +75,7 @@ def test_ggd_to_vtk_subset():
         IDSPath("ggd/e_field"),
     ]
     converter = Converter(ids)
-    vtk_object = converter.ggd_to_vtk(
+    vtk_object, _ = converter.ggd_to_vtk(
         scalar_paths=es_scalar_paths, vector_paths=es_vector_paths
     )
     vtk_array_names = names_from_vtk(vtk_object)
@@ -86,7 +86,7 @@ def test_ggd_to_vtk_subset():
 def test_ggd_to_vtk_subset_time_index(dummy_ids_five_steps):
     """Test if ggd_to_vtk returns None when given time and index values."""
     converter = Converter(dummy_ids_five_steps)
-    vtk_object = converter.ggd_to_vtk(time=5, time_idx=6)
+    vtk_object, _ = converter.ggd_to_vtk(time=5, time_idx=6)
     assert vtk_object is None
 
 
