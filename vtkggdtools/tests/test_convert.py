@@ -2,7 +2,7 @@ import imaspy
 import pytest
 from imaspy.ids_path import IDSPath
 
-from vtkggdtools.convert import convert_to_xml, ggd_to_vtk
+from vtkggdtools.converter import Converter
 from vtkggdtools.io.read_ps import PlasmaStateReader
 from vtkggdtools.tests.fill_ggd import fill_ids
 from vtkggdtools.util import get_grid_ggd
@@ -15,7 +15,9 @@ def test_ggd_to_vtk(dummy_ids):
     ggd_names = names_from_ids(dummy_ids, scalar_paths, vector_paths)
 
     # Check if names of VTK object match the GGD array names
-    vtk_object = ggd_to_vtk(dummy_ids)
+    converter = Converter(dummy_ids)
+    vtk_object = converter.ggd_to_vtk()
+
     vtk_array_names = names_from_vtk(vtk_object)
     assert vtk_array_names == ggd_names
 
@@ -26,9 +28,10 @@ def test_ggd_to_vtk_index(dummy_ids_five_steps):
     scalar_paths, vector_paths, _, _ = ps.load_paths_from_ids(return_empty=True)
     ggd_names = names_from_ids(dummy_ids_five_steps, scalar_paths, vector_paths)
 
+    converter = Converter(dummy_ids_five_steps)
     # Check if names of VTK object match the GGD array names
     for time_idx in range(5):
-        vtk_object = ggd_to_vtk(dummy_ids_five_steps, time_idx=time_idx)
+        vtk_object = converter.ggd_to_vtk(time_idx=time_idx)
         vtk_array_names = names_from_vtk(vtk_object)
         assert vtk_array_names == ggd_names
 
@@ -39,9 +42,10 @@ def test_ggd_to_vtk_time(dummy_ids_five_steps):
     scalar_paths, vector_paths, _, _ = ps.load_paths_from_ids(return_empty=True)
     ggd_names = names_from_ids(dummy_ids_five_steps, scalar_paths, vector_paths)
 
+    converter = Converter(dummy_ids_five_steps)
     # Check if names of VTK object match the GGD array names
     for time in range(5):
-        vtk_object = ggd_to_vtk(dummy_ids_five_steps, time=time)
+        vtk_object = converter.ggd_to_vtk(time=time)
         vtk_array_names = names_from_vtk(vtk_object)
         assert vtk_array_names == ggd_names
 
@@ -49,7 +53,8 @@ def test_ggd_to_vtk_time(dummy_ids_five_steps):
 def test_ggd_to_vtk_out_of_bounds(dummy_ids_five_steps):
     """Test if ggd_to_vtk fails when given an index which is not in the IDS."""
     time_idx = 6
-    vtk_object = ggd_to_vtk(dummy_ids_five_steps, time_idx=time_idx)
+    converter = Converter(dummy_ids_five_steps)
+    vtk_object = converter.ggd_to_vtk(time_idx=time_idx)
     assert vtk_object is None
 
 
@@ -69,8 +74,9 @@ def test_ggd_to_vtk_subset():
         IDSPath("ggd/ion/velocity"),
         IDSPath("ggd/e_field"),
     ]
-    vtk_object = ggd_to_vtk(
-        ids, scalar_paths=es_scalar_paths, vector_paths=es_vector_paths
+    converter = Converter(ids)
+    vtk_object = converter.ggd_to_vtk(
+        scalar_paths=es_scalar_paths, vector_paths=es_vector_paths
     )
     vtk_array_names = names_from_vtk(vtk_object)
     ggd_names = names_from_ids(ids, es_scalar_paths, es_vector_paths)
@@ -79,29 +85,34 @@ def test_ggd_to_vtk_subset():
 
 def test_ggd_to_vtk_subset_time_index(dummy_ids_five_steps):
     """Test if ggd_to_vtk returns None when given time and index values."""
-    vtk_object = ggd_to_vtk(dummy_ids_five_steps, time=5, time_idx=6)
+    converter = Converter(dummy_ids_five_steps)
+    vtk_object = converter.ggd_to_vtk(time=5, time_idx=6)
     assert vtk_object is None
 
 
 def test_convert_to_xml(dummy_ids_five_steps, tmp_path):
     """Test if convert_to_xml converts a single index."""
     output_file = tmp_path / "test"
-    convert_to_xml(dummy_ids_five_steps, output_file)
+    converter = Converter(dummy_ids_five_steps)
+    converter.write_to_xml(output_file)
     assert_output_exists(dummy_ids_five_steps, 0, output_file)
 
 
 def test_convert_to_xml_out_of_bounds(dummy_ids_five_steps, tmp_path):
     """Test if convert_to_xml fails when given an index which is not in the IDS."""
     output_file = tmp_path / "test_.vtpc"
+    converter = Converter(dummy_ids_five_steps)
     with pytest.raises(RuntimeError):
-        convert_to_xml(dummy_ids_five_steps, output_file, [6])
+        converter.write_to_xml(output_file, [6])
 
 
 def test_convert_to_xml_index(dummy_ids_five_steps, tmp_path):
     """Test if convert_to_xml converts a single index."""
+    converter = Converter(dummy_ids_five_steps)
+
     for time_idx in range(5):
         output_file = tmp_path / f"test_{time_idx}"
-        convert_to_xml(dummy_ids_five_steps, output_file, [time_idx])
+        converter.write_to_xml(output_file, [time_idx])
         assert_output_exists(dummy_ids_five_steps, time_idx, output_file)
 
 
@@ -110,7 +121,8 @@ def test_convert_to_xml_index_list(dummy_ids_five_steps, tmp_path):
 
     output_file = tmp_path / "test"
     time_idx = [0, 1, 2, 3, 4]
-    convert_to_xml(dummy_ids_five_steps, output_file, time_idx)
+    converter = Converter(dummy_ids_five_steps)
+    converter.write_to_xml(output_file, time_idx)
     for time_idx in range(5):
         assert_output_exists(dummy_ids_five_steps, time_idx, output_file)
 

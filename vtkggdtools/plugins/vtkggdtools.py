@@ -20,7 +20,7 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from vtkggdtools._version import get_versions
-from vtkggdtools.convert import ggd_to_vtk
+from vtkggdtools.converter import Converter, InterpSettings
 from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
 from vtkggdtools.io import read_ps, write_geom, write_ps
 from vtkggdtools.io.representables import GridSubsetRepresentable
@@ -442,14 +442,15 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         progress = Progress(self.UpdateProgress, self.GetProgress)
 
         # Convert GGD of IDS to VTK format
-        output = ggd_to_vtk(
-            self._ids,
+        converter = Converter(self._ids)
+        plane_config = InterpSettings(
+            n_plane=self._n_plane, phi_start=self._phi_start, phi_end=self._phi_end
+        )
+        output = converter.ggd_to_vtk(
             time=time,
             scalar_paths=selected_scalar_paths,
             vector_paths=selected_vector_paths,
-            n_plane=self._n_plane,
-            phi_start=self._phi_start,
-            phi_end=self._phi_end,
+            plane_config=plane_config,
             outInfo=outInfo,
             progress=progress,
         )

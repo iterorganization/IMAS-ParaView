@@ -2,7 +2,7 @@ from pathlib import Path
 
 import imaspy
 
-from vtkggdtools.convert import ggd_to_vtk
+from vtkggdtools.converter import ggd_to_vtk
 from vtkggdtools.tests.fill_ggd import fill_ids
 
 SIZE_GRID = 10
