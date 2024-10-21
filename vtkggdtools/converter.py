@@ -32,9 +32,8 @@ class Converter:
         self.time_idx = None
         self.grid_ggd = None
         self.output = None
-        self.points = vtkPoints()
-        self.assembly = vtkDataAssembly()
         self.ps_reader = None
+        self.ugrids = []
 
     def write_to_xml(self, output_path: Path, index_list=[0]):
         """Convert an IDS to VTK format and write it to disk using the XML output
@@ -85,6 +84,8 @@ class Converter:
         Returns:
             vtkPartitionedDataSetCollection containing the converted GGD data.
         """
+        self.points = vtkPoints()
+        self.assembly = vtkDataAssembly()
         self.time_idx = self._resolve_time_idx(time_idx, time)
         if self.time_idx is None:
             return None
@@ -104,7 +105,7 @@ class Converter:
         self.ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
         self._fill_grid_and_plasma_state(ugrids, progress)
 
-        return self.output
+        return self.output, self.ugrids
 
     def _resolve_time_idx(self, time_idx, time):
         if time is not None and time_idx is not None:
@@ -223,18 +224,21 @@ class Converter:
                 if ugrids is None:
                     ugrid = self._fill_grid(subset_idx, subset_idx)
                 else:
-                    ugrid = ugrids[subset_idx]
-
+                    ugrid = self._fill_grid(
+                        subset_idx, subset_idx, ugrid=ugrids[subset_idx]
+                    )
+                self.ugrids.append(ugrid)
                 self.ps_reader.read_plasma_state(subset_idx, ugrid)
                 if progress:
                     progress.increment(1.0 / num_subsets)
 
-    def _fill_grid(self, subset_idx, partition):
+    def _fill_grid(self, subset_idx, partition, ugrid=None):
         """Read GGD data from the IDS and convert it to VTK data."""
         subset = None if subset_idx < 0 else self.grid_ggd.grid_subset[subset_idx]
-        ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
-            self.grid_ggd, subset_idx, self.points
-        )
+        if ugrid is None:
+            ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
+                self.grid_ggd, subset_idx, self.points
+            )
         self.output.SetPartition(partition, 0, ugrid)
         label = str(subset.identifier.name) if subset else self.ids.metadata.name
         child = self.assembly.AddNode(label.replace(" ", "_"), 0)

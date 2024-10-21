@@ -445,7 +445,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         plane_config = InterpSettings(
             n_plane=self._n_plane, phi_start=self._phi_start, phi_end=self._phi_end
         )
-        output = converter.ggd_to_vtk(
+        output, self.ugrids = converter.ggd_to_vtk(
             time=time,
             scalar_paths=selected_scalar_paths,
             vector_paths=selected_vector_paths,
@@ -455,13 +455,6 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             ugrids=self.ugrids,
         )
 
-        n_partds = output.GetNumberOfPartitionedDataSets()
-        self.ugrids = [None] * n_partds
-        for i in range(n_partds):
-            partitioned_ds = output.GetPartitionedDataSet(i)
-            if partitioned_ds.GetNumberOfPartitions() > 1:
-                raise Exception
-            self.ugrids[i] = partitioned_ds.GetPartition(0)
         if output is None:
             logger.warning("Could not convert GGD to VTK.")
         return 1
