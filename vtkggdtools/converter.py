@@ -87,23 +87,24 @@ class Converter:
         self.points = vtkPoints()
         self.assembly = vtkDataAssembly()
         self.time_idx = self._resolve_time_idx(time_idx, time)
+        self.input_ugrids = ugrids
         if self.time_idx is None:
-            return None
+            return None, None
 
         self.grid_ggd = get_grid_ggd(self.ids, self.time_idx)
 
         if not self._is_grid_valid():
-            return None
+            return None, None
 
         self._setup_vtk_context(outInfo)
 
         if plane_config.n_plane != 0:
             self._interpolate_jorek(plane_config)
-            return self.output
+            return self.output, None
 
         self.ps_reader = read_ps.PlasmaStateReader(self.ids)
         self.ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
-        self._fill_grid_and_plasma_state(ugrids, progress)
+        self._fill_grid_and_plasma_state(progress)
 
         return self.output, self.ugrids
 
@@ -197,23 +198,23 @@ class Converter:
         else:
             logger.error("Invalid plane configuration for the given IDS type.")
 
-    def _fill_grid_and_plasma_state(self, ugrids, progress):
+    def _fill_grid_and_plasma_state(self, progress):
         """Fill grid and plasma state data."""
         num_subsets = len(self.grid_ggd.grid_subset)
 
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             self.output.SetNumberOfPartitionedDataSets(1)
-            ugrid = self._fill_grid(-1, 0)
+            ugrid = self._get_ugrid(-1, 0)
             self.ps_reader.read_plasma_state(-1, ugrid)
         elif self.ids.metadata.name == "wall":
             # FIXME: what if num_subsets is 2 or 3?
             self.output.SetNumberOfPartitionedDataSets(num_subsets - 3)
-            ugrid = self._fill_grid(-1, 0)
+            ugrid = self._get_ugrid(-1, 0)
             self.ps_reader.read_plasma_state(-1, ugrid)
 
             for subset_idx in range(4, num_subsets):
-                ugrid = self._fill_grid(subset_idx, subset_idx - 3)
+                ugrid = self._get_ugrid(subset_idx, subset_idx - 3)
                 self.ps_reader.read_plasma_state(subset_idx, ugrid)
 
                 if progress:
@@ -221,16 +222,20 @@ class Converter:
         else:
             self.output.SetNumberOfPartitionedDataSets(num_subsets)
             for subset_idx in range(num_subsets):
-                if ugrids is None:
-                    ugrid = self._fill_grid(subset_idx, subset_idx)
-                else:
-                    ugrid = self._fill_grid(
-                        subset_idx, subset_idx, ugrid=ugrids[subset_idx]
-                    )
-                self.ugrids.append(ugrid)
+                ugrid = self._get_ugrid(subset_idx, subset_idx)
                 self.ps_reader.read_plasma_state(subset_idx, ugrid)
                 if progress:
                     progress.increment(1.0 / num_subsets)
+
+    def _get_ugrid(self, subset_idx, partition):
+        if self.input_ugrids is None:
+            ugrid = self._fill_grid(subset_idx, partition)
+        else:
+            ugrid = self._fill_grid(
+                subset_idx, partition, ugrid=self.input_ugrids[subset_idx]
+            )
+        self.ugrids.append(ugrid)
+        return ugrid
 
     def _fill_grid(self, subset_idx, partition, ugrid=None):
         """Read GGD data from the IDS and convert it to VTK data."""
