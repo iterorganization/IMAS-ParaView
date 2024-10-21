@@ -102,8 +102,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         self._selectable_vector_paths = []
         self._selectable_scalar_paths = []
 
-        self.grid_ggd = None
-        self.ps_reader = None
+        self.ugrids = None
 
     def _update_property(self, name, value, callback=None):
         """Convenience method to update a property when value changed."""
@@ -453,7 +452,16 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             plane_config=plane_config,
             outInfo=outInfo,
             progress=progress,
+            ugrids=self.ugrids,
         )
+
+        n_partds = output.GetNumberOfPartitionedDataSets()
+        self.ugrids = [None] * n_partds
+        for i in range(n_partds):
+            partitioned_ds = output.GetPartitionedDataSet(i)
+            if partitioned_ds.GetNumberOfPartitions() > 1:
+                raise Exception
+            self.ugrids[i] = partitioned_ds.GetPartition(0)
         if output is None:
             logger.warning("Could not convert GGD to VTK.")
         return 1
@@ -477,13 +485,13 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             )
 
             # Load paths from IDS
-            self.ps_reader = read_ps.PlasmaStateReader(self._ids)
+            ps_reader = read_ps.PlasmaStateReader(self._ids)
             (
                 self._selectable_scalar_paths,
                 self._selectable_vector_paths,
                 self._filled_scalar_paths,
                 self._filled_vector_paths,
-            ) = self.ps_reader.load_paths_from_ids()
+            ) = ps_reader.load_paths_from_ids()
             self._selectable_paths = (
                 self._selectable_vector_paths + self._selectable_scalar_paths
             )

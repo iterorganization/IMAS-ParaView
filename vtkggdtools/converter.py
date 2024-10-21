@@ -34,6 +34,7 @@ class Converter:
         self.output = None
         self.points = vtkPoints()
         self.assembly = vtkDataAssembly()
+        self.ps_reader = None
 
     def write_to_xml(self, output_path: Path, index_list=[0]):
         """Convert an IDS to VTK format and write it to disk using the XML output
@@ -65,6 +66,7 @@ class Converter:
         plane_config: InterpSettings = InterpSettings(),
         outInfo=None,
         progress=None,
+        ugrids=None,
     ):
         """Converts the GGD of an IDS to VTK format.
 
@@ -98,9 +100,9 @@ class Converter:
             self._interpolate_jorek(plane_config)
             return self.output
 
-        ps_reader = read_ps.PlasmaStateReader(self.ids)
-        ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
-        self._fill_grid_and_plasma_state(ps_reader, progress)
+        self.ps_reader = read_ps.PlasmaStateReader(self.ids)
+        self.ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
+        self._fill_grid_and_plasma_state(ugrids, progress)
 
         return self.output
 
@@ -194,7 +196,7 @@ class Converter:
         else:
             logger.error("Invalid plane configuration for the given IDS type.")
 
-    def _fill_grid_and_plasma_state(self, ps_reader, progress):
+    def _fill_grid_and_plasma_state(self, ugrids, progress):
         """Fill grid and plasma state data."""
         num_subsets = len(self.grid_ggd.grid_subset)
 
@@ -202,24 +204,28 @@ class Converter:
             logger.info("No subsets to read from grid_ggd")
             self.output.SetNumberOfPartitionedDataSets(1)
             ugrid = self._fill_grid(-1, 0)
-            ps_reader.read_plasma_state(-1, ugrid)
+            self.ps_reader.read_plasma_state(-1, ugrid)
         elif self.ids.metadata.name == "wall":
             # FIXME: what if num_subsets is 2 or 3?
             self.output.SetNumberOfPartitionedDataSets(num_subsets - 3)
             ugrid = self._fill_grid(-1, 0)
-            ps_reader.read_plasma_state(-1, ugrid)
+            self.ps_reader.read_plasma_state(-1, ugrid)
 
             for subset_idx in range(4, num_subsets):
                 ugrid = self._fill_grid(subset_idx, subset_idx - 3)
-                ps_reader.read_plasma_state(subset_idx, ugrid)
+                self.ps_reader.read_plasma_state(subset_idx, ugrid)
 
                 if progress:
                     progress.increment(1.0 / num_subsets)
         else:
             self.output.SetNumberOfPartitionedDataSets(num_subsets)
             for subset_idx in range(num_subsets):
-                ugrid = self._fill_grid(subset_idx, subset_idx)
-                ps_reader.read_plasma_state(subset_idx, ugrid)
+                if ugrids is None:
+                    ugrid = self._fill_grid(subset_idx, subset_idx)
+                else:
+                    ugrid = ugrids[subset_idx]
+
+                self.ps_reader.read_plasma_state(subset_idx, ugrid)
                 if progress:
                     progress.increment(1.0 / num_subsets)
 
