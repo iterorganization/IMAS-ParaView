@@ -499,6 +499,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             self._selectable_paths = (
                 self._selectable_vector_paths + self._selectable_scalar_paths
             )
+            # Clear grid cache when loading new IDS
+            self.grid_cache = {}
 
     def _name_from_idspath(self, path):
         """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part

@@ -19,7 +19,7 @@ logger = logging.getLogger("vtkggdtools")
 
 @dataclass
 class InterpSettings:
-    """Helper data class containing Bezier interpolation settings."""
+    """Data class containing Bezier interpolation settings."""
 
     n_plane: int = 0
     phi_start: float = 0.0
@@ -40,8 +40,7 @@ class Converter:
         writer.
 
         Args:
-        ids: The IDS to be converted.
-        output: The name of the output directory.
+        output_path: Path for the output directory.
         index_list: A list of time indices to convert. By default only the first time
             step is converted.
         """
@@ -70,7 +69,6 @@ class Converter:
         """Converts the GGD of an IDS to VTK format.
 
         Args:
-
             time: Time step to convert. Defaults to converting the first time step.
             time_idx: Time index to convert. Defaults to converting the first time step.
             scalar_paths: A list of IDSPaths of GGD scalar arrays to convert. Defaults
@@ -78,8 +76,9 @@ class Converter:
             vector_paths: A list of IDSPaths of GGD vector arrays to convert. Defaults
                 to None, in which case all vectors arrays are converted.
             plane_config: Data class containing the interpolation settings.
-            outInfo: Source outInfo information object. Defaults to None.
+            outInfo: Paraview's Source outInfo information object. Defaults to None.
             progress: Progress indicator for Paraview. Defaults to None.
+            ugrids: List of ugrids to use instead of reading grids from IDS.
 
         Returns:
             vtkPartitionedDataSetCollection containing the converted GGD data.
@@ -96,7 +95,7 @@ class Converter:
         if not self._is_grid_valid():
             return None, None
 
-        self._setup_vtk_context(outInfo)
+        self._setup_vtk_object(outInfo)
 
         if plane_config.n_plane != 0:
             self._interpolate_jorek(plane_config)
@@ -109,6 +108,16 @@ class Converter:
         return self.output, self.ugrids
 
     def _resolve_time_idx(self, time_idx, time):
+        """Resolves the appropriate time index based on the given time index or time
+        value.
+
+        Args:
+            time_idx: The index of the time step to convert.
+            time: The time value to convert.
+
+        Returns:
+            The resolved time index, or None if an error occurs.
+        """
         if time is not None and time_idx is not None:
             logger.error("The time and time index cannot be provided at the same time.")
             return None
@@ -152,8 +161,12 @@ class Converter:
         )
         return time_idx
 
-    def _setup_vtk_context(self, outInfo):
-        """Setup the VTK context with output and assembly."""
+    def _setup_vtk_object(self, outInfo):
+        """Setup the partitioned dataset collection VTK object and its data assembly.
+
+        Args:
+            outInfo: Paraview's Source outInfo information object.
+        """
         if outInfo is None:
             self.output = vtkPartitionedDataSetCollection()
         else:
@@ -199,7 +212,11 @@ class Converter:
             logger.error("Invalid plane configuration for the given IDS type.")
 
     def _fill_grid_and_plasma_state(self, progress):
-        """Fill grid and plasma state data."""
+        """Fills the VTK output object with the GGD grid and GGD array values.
+
+        Args:
+            progress: Progress indicator for Paraview.
+        """
         num_subsets = len(self.grid_ggd.grid_subset)
 
         if num_subsets <= 1:
@@ -216,7 +233,6 @@ class Converter:
             for subset_idx in range(4, num_subsets):
                 ugrid = self._get_ugrid(subset_idx, subset_idx - 3)
                 self.ps_reader.read_plasma_state(subset_idx, ugrid)
-
                 if progress:
                     progress.increment(1.0 / num_subsets)
         else:
@@ -228,6 +244,16 @@ class Converter:
                     progress.increment(1.0 / num_subsets)
 
     def _get_ugrid(self, subset_idx, partition):
+        """Retrieves or generates an unstructured grid for the specified subset and
+        partition.
+
+        Args:
+            subset_idx: Index of the subset to retrieve or fill.
+            partition: Partition index for the partitioned dataset.
+
+        Returns:
+            The unstructured grid for the given subset and partition.
+        """
         if self.input_ugrids is None:
             ugrid = self._fill_grid(subset_idx, partition)
         else:
@@ -238,7 +264,17 @@ class Converter:
         return ugrid
 
     def _fill_grid(self, subset_idx, partition, ugrid=None):
-        """Read GGD data from the IDS and convert it to VTK data."""
+        """Converts grid data into a VTK unstructured grid and associates it with the
+        partition.
+
+        Args:
+            subset_idx: Index of the subset to convert.
+            partition: Partition index for the partitioned dataset.
+            ugrid: Pre-existing ugrid to use. Defaults to None.
+
+        Returns:
+            The unstructured grid for the given subset and partition.
+        """
         subset = None if subset_idx < 0 else self.grid_ggd.grid_subset[subset_idx]
         if ugrid is None:
             ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
@@ -251,15 +287,28 @@ class Converter:
         self.output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
         return ugrid
 
-    def _write_vtk_to_xml(self, vtk_object, output_file):
-        """Writes the VTK object to disk."""
+    def _write_vtk_to_xml(self, vtk_object, output_path):
+        """Writes a VTK object to XML file, and a directory containing files for each
+        grid subset. The directory structure looks as follows:
+        .
+        ├── test
+        |   ├── test_0_0.vtu
+        |   ├── test_1_0.vtu
+        |   ├── test_2_0.vtu
+        |   ├── ...
+        └── test.vtpc
+
+        Args:
+            vtk_object: The VTK object to be written to disk.
+            output_path: The output file path where the VTK objects will be saved.
+        """
         if vtk_object is None:
             logger.error("Could not convert GGD to VTK file.")
             raise RuntimeError
 
-        logger.info(f"Writing VTK file to {output_file}...")
+        logger.info(f"Writing VTK file to {output_path}...")
         writer = vtkXMLPartitionedDataSetCollectionWriter()
         writer.SetInputData(vtk_object)
-        writer.SetFileName(output_file.with_suffix(".vtpc"))
+        writer.SetFileName(output_path.with_suffix(".vtpc"))
         writer.Write()
-        logger.info(f"Successfully wrote VTK object to {output_file}")
+        logger.info(f"Successfully wrote VTK object to {output_path}")
