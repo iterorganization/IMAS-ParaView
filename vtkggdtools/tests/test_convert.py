@@ -90,6 +90,13 @@ def test_ggd_to_vtk_subset_time_index(dummy_ids_five_steps):
     assert vtk_object is None
 
 
+def test_ggd_to_vtk_grid_caching(dummy_ids):
+    converter = Converter(dummy_ids)
+    vtk_object, cached_grid = converter.ggd_to_vtk()
+    vtk_object2, _ = converter.ggd_to_vtk(ugrids=cached_grid)
+    assert names_from_vtk(vtk_object) == names_from_vtk(vtk_object2)
+
+
 def test_convert_to_xml(dummy_ids_five_steps, tmp_path):
     """Test if convert_to_xml converts a single index."""
     output_file = tmp_path / "test"
