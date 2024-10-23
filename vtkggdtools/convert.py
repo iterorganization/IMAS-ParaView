@@ -33,7 +33,6 @@ class Converter:
         self.grid_ggd = None
         self.output = None
         self.ps_reader = None
-        self.ugrids = []
 
     def write_to_xml(self, output_path: Path, index_list=[0]):
         """Convert an IDS to VTK format and write it to disk using the XML output
@@ -52,7 +51,7 @@ class Converter:
 
         for index in index_list:
             logger.info(f"Converting time step {self.ids.time[index]}...")
-            vtk_object, _ = self.ggd_to_vtk(time_idx=index)
+            vtk_object = self.ggd_to_vtk(time_idx=index)
             self._write_vtk_to_xml(vtk_object, Path(f"{output_path}_{index}"))
 
     def ggd_to_vtk(
@@ -87,25 +86,34 @@ class Converter:
         self.assembly = vtkDataAssembly()
         self.time_idx = self._resolve_time_idx(time_idx, time)
         self.input_ugrids = ugrids
+        self.ugrids = []
+
         if self.time_idx is None:
-            return None, None
+            return None
 
         self.grid_ggd = get_grid_ggd(self.ids, self.time_idx)
 
         if not self._is_grid_valid():
-            return None, None
+            return None
 
         self._setup_vtk_object(outInfo)
 
         if plane_config.n_plane != 0:
             self._interpolate_jorek(plane_config)
-            return self.output, None
+            return self.output
 
         self.ps_reader = read_ps.PlasmaStateReader(self.ids)
         self.ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
         self._fill_grid_and_plasma_state(progress)
 
-        return self.output, self.ugrids
+        return self.output
+
+    def get_ugrids(self):
+        """Retrieve the list of VTK unstructured grids."""
+        if self.output is not None and self.ugrids is not []:
+            return self.ugrids
+        else:
+            return None
 
     def _resolve_time_idx(self, time_idx, time):
         """Resolves the appropriate time index based on the given time index or time

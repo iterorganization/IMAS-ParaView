@@ -453,7 +453,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         plane_config = InterpSettings(
             n_plane=self._n_plane, phi_start=self._phi_start, phi_end=self._phi_end
         )
-        output, ugrids = converter.ggd_to_vtk(
+        output = converter.ggd_to_vtk(
             time=time,
             scalar_paths=selected_scalar_paths,
             vector_paths=selected_vector_paths,
@@ -462,6 +462,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             progress=progress,
             ugrids=cached_ugrids,
         )
+
+        ugrids = converter.get_ugrids()
 
         # Add grids to cache
         if time not in self.grid_cache:
