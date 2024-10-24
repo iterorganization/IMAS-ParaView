@@ -180,7 +180,10 @@ class Converter:
         else:
             self.output = vtkPartitionedDataSetCollection.GetData(outInfo)
 
-        read_geom.fill_vtk_points(self.grid_ggd, 0, self.points, self.ids.metadata.name)
+        if self.input_ugrids is None:
+            read_geom.fill_vtk_points(
+                self.grid_ggd, 0, self.points, self.ids.metadata.name
+            )
         self.output.SetDataAssembly(self.assembly)
 
     def _is_grid_valid(self):
