@@ -24,7 +24,7 @@ logger = logging.getLogger("vtkggdtools")
 
 
 def convert_grid_subset_geometry_to_unstructured_grid(
-    grid_ggd, subset_idx: int, vtk_grid_points
+    grid_ggd, subset_idx: int, vtk_grid_points, progress=None
 ) -> vtkUnstructuredGrid:
     """
     Copy the elements found in given grid_ggd/grid_subset IDS node into a
@@ -39,13 +39,15 @@ def convert_grid_subset_geometry_to_unstructured_grid(
     grid = vtkUnstructuredGrid()
     grid.SetPoints(vtk_grid_points)
     if subset_idx >= 0:
-        _fill_vtk_cell_array_from_gs(grid_ggd, subset_idx, grid)
+        _fill_vtk_cell_array_from_gs(grid_ggd, subset_idx, grid, progress)
     else:
-        _fill_vtk_cell_array_from_gs2(grid_ggd, subset_idx, grid)
+        _fill_vtk_cell_array_from_gs2(grid_ggd, subset_idx, grid, progress)
     return grid
 
 
-def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints, ids_name: str) -> None:
+def fill_vtk_points(
+    grid_ggd, space_idx: int, points: vtkPoints, ids_name: str, progress=None
+) -> None:
     """
     Populate the vtkPoints data structure with coordinates from the grid_ggd/space IDS
     node.
@@ -73,7 +75,10 @@ def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints, ids_name: str) 
     else:
         third_dim: Callable[[Any], int] = lambda e: 0
 
-    for obj in grid_ggd.space[space_idx].objects_per_dimension[0].object:
+    objects = grid_ggd.space[space_idx].objects_per_dimension[0].object
+    for obj in objects:
+        if progress:
+            progress.increment(0.5 / len(objects))
         if ids_name == "wall":
             points.InsertNextPoint(
                 (obj.geometry[0] * s, obj.geometry[1] * s, third_dim(obj) * s)
@@ -88,7 +93,7 @@ def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints, ids_name: str) 
 
 
 def _fill_vtk_cell_array_from_gs2(
-    grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid
+    grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid, progress=None
 ) -> None:
     """
     _fill_vtk_cell_array_from_gs() for wall IDS.
@@ -103,6 +108,8 @@ def _fill_vtk_cell_array_from_gs2(
 
     # Uses only 2d cells.
     for j in range(len(grid[2].object)):
+        if progress:
+            progress.increment(0.5 / num_cell)
         obj = grid[2].object[j]
         obj_nodes = obj.nodes
         obj_dimension = 2
@@ -118,7 +125,7 @@ def _fill_vtk_cell_array_from_gs2(
 
 
 def _fill_vtk_cell_array_from_gs(
-    grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid
+    grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid, progress=None
 ) -> None:
     """
     Populate the cells in the vtk unstructured grid instance with elements from the
@@ -142,6 +149,8 @@ def _fill_vtk_cell_array_from_gs(
     object_3d_pt_ids = vtkIdList()
 
     for element in grid_subset.element:
+        if progress:
+            progress.increment(0.5 / num_gs_el)
         for object_ in element.object:
             obj_space = object_.space - 1
             obj_index = object_.index - 1

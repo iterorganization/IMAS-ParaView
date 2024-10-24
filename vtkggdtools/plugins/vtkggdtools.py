@@ -439,7 +439,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             return 1
 
         # Create progress object to advance Paraview progress bar
-        progress = Progress(self.UpdateProgress, self.GetProgress)
+        progress = Progress(self.UpdateProgress)
 
         # Load grids from cache
         if time in self.grid_cache:

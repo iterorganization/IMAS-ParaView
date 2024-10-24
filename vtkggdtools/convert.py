@@ -87,6 +87,7 @@ class Converter:
         self.time_idx = self._resolve_time_idx(time_idx, time)
         self.input_ugrids = ugrids
         self.ugrids = []
+        self.progress = progress
 
         if self.time_idx is None:
             return None
@@ -104,7 +105,7 @@ class Converter:
 
         self.ps_reader = read_ps.PlasmaStateReader(self.ids)
         self.ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
-        self._fill_grid_and_plasma_state(progress)
+        self._fill_grid_and_plasma_state()
 
         return self.output
 
@@ -182,7 +183,7 @@ class Converter:
 
         if self.input_ugrids is None:
             read_geom.fill_vtk_points(
-                self.grid_ggd, 0, self.points, self.ids.metadata.name
+                self.grid_ggd, 0, self.points, self.ids.metadata.name, self.progress
             )
         self.output.SetDataAssembly(self.assembly)
 
@@ -222,18 +223,14 @@ class Converter:
         else:
             logger.error("Invalid plane configuration for the given IDS type.")
 
-    def _fill_grid_and_plasma_state(self, progress):
-        """Fills the VTK output object with the GGD grid and GGD array values.
-
-        Args:
-            progress: Progress indicator for Paraview.
-        """
+    def _fill_grid_and_plasma_state(self):
+        """Fills the VTK output object with the GGD grid and GGD array values."""
         num_subsets = len(self.grid_ggd.grid_subset)
 
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             self.output.SetNumberOfPartitionedDataSets(1)
-            ugrid = self._get_ugrid(-1, 0)
+            ugrid = self._get_ugrid(-1, 0, progress=self.progress)
             self.ps_reader.read_plasma_state(-1, ugrid)
         elif self.ids.metadata.name == "wall":
             # FIXME: what if num_subsets is 2 or 3?
@@ -244,17 +241,17 @@ class Converter:
             for subset_idx in range(4, num_subsets):
                 ugrid = self._get_ugrid(subset_idx, subset_idx - 3)
                 self.ps_reader.read_plasma_state(subset_idx, ugrid)
-                if progress:
-                    progress.increment(1.0 / num_subsets)
+                if self.progress:
+                    self.progress.increment(1.0 / num_subsets)
         else:
             self.output.SetNumberOfPartitionedDataSets(num_subsets)
             for subset_idx in range(num_subsets):
                 ugrid = self._get_ugrid(subset_idx, subset_idx)
                 self.ps_reader.read_plasma_state(subset_idx, ugrid)
-                if progress:
-                    progress.increment(1.0 / num_subsets)
+                if self.progress:
+                    self.progress.increment(1.0 / num_subsets)
 
-    def _get_ugrid(self, subset_idx, partition):
+    def _get_ugrid(self, subset_idx, partition, progress=None):
         """Retrieves or generates an unstructured grid for the specified subset and
         partition.
 
@@ -266,7 +263,7 @@ class Converter:
             The unstructured grid for the given subset and partition.
         """
         if self.input_ugrids is None:
-            ugrid = self._fill_grid(subset_idx, partition)
+            ugrid = self._fill_grid(subset_idx, partition, progress=progress)
         else:
             ugrid = self._fill_grid(
                 subset_idx, partition, ugrid=self.input_ugrids[subset_idx]
@@ -274,7 +271,7 @@ class Converter:
         self.ugrids.append(ugrid)
         return ugrid
 
-    def _fill_grid(self, subset_idx, partition, ugrid=None):
+    def _fill_grid(self, subset_idx, partition, ugrid=None, progress=None):
         """Converts grid data into a VTK unstructured grid and associates it with the
         partition.
 
@@ -289,7 +286,7 @@ class Converter:
         subset = None if subset_idx < 0 else self.grid_ggd.grid_subset[subset_idx]
         if ugrid is None:
             ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
-                self.grid_ggd, subset_idx, self.points
+                self.grid_ggd, subset_idx, self.points, progress
             )
         self.output.SetPartition(partition, 0, ugrid)
         label = str(subset.identifier.name) if subset else self.ids.metadata.name
