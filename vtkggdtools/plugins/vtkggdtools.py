@@ -521,6 +521,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         path_list = list(path.parts)
         if "ggd" in path_list:
             path_list.remove("ggd")
+        if "description_ggd" in path_list:
+            path_list.remove("description_ggd")
         for i in range(len(path_list)):
             path_list[i] = path_list[i].capitalize()
 
