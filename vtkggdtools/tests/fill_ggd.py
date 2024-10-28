@@ -28,9 +28,7 @@ def fill_NxN_grid(grid_ggd, N):
     # Set grid
     grid_ggd.identifier.name = "linear"
     grid_ggd.identifier.index = 1
-    grid_ggd.identifier.description = (
-        "A simple 2x3 grid consisting of 6 vertices, 7 edges and 2 faces"
-    )
+    grid_ggd.identifier.description = f"A simple {N} x {N} rectangular grid"
 
     # Set space
     grid_ggd.space.resize(1)
