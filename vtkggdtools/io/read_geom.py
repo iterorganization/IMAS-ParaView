@@ -53,8 +53,7 @@ def fill_vtk_points(
     grid_ggd, space_idx: int, points: vtkPoints, ids_name: str, progress=None
 ) -> None:
     """Populate the vtkPoints data structure with coordinates from the grid_ggd/space
-    IDS
-    node.
+    IDS node.
 
     Args:
         grid_ggd: a grid_ggd ids node.
