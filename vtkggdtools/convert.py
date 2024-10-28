@@ -186,7 +186,8 @@ class Converter:
                 self.grid_ggd, 0, self.points, self.ids.metadata.name, self.progress
             )
         else:
-            self.progress.set(0.5)
+            if self.progress:
+                self.progress.set(0.5)
         self.output.SetDataAssembly(self.assembly)
 
     def _is_grid_valid(self):
