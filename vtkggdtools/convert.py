@@ -185,6 +185,8 @@ class Converter:
             read_geom.fill_vtk_points(
                 self.grid_ggd, 0, self.points, self.ids.metadata.name, self.progress
             )
+        else:
+            self.progress.set(0.5)
         self.output.SetDataAssembly(self.assembly)
 
     def _is_grid_valid(self):
@@ -242,14 +244,14 @@ class Converter:
                 ugrid = self._get_ugrid(subset_idx, subset_idx - 3)
                 self.ps_reader.read_plasma_state(subset_idx, ugrid)
                 if self.progress:
-                    self.progress.increment(1.0 / num_subsets)
+                    self.progress.increment(0.5 / num_subsets)
         else:
             self.output.SetNumberOfPartitionedDataSets(num_subsets)
             for subset_idx in range(num_subsets):
                 ugrid = self._get_ugrid(subset_idx, subset_idx)
                 self.ps_reader.read_plasma_state(subset_idx, ugrid)
                 if self.progress:
-                    self.progress.increment(1.0 / num_subsets)
+                    self.progress.increment(0.5 / num_subsets)
 
     def _get_ugrid(self, subset_idx, partition, progress=None):
         """Retrieves or generates an unstructured grid for the specified subset and

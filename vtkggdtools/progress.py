@@ -18,4 +18,5 @@ class Progress:
         Args:
             value: specific value to set the progress to
         """
+        self.progress = value
         self.update_progress(value)
