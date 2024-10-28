@@ -402,7 +402,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         idsname, _, _ = self._ids_and_occurrence.partition("/")
         if idsname not in self._ids_list:
             logger.warning("Could not find the selected IDS.")
-            self._selectable_arrays = []
+            self._selectable_paths = []
             return 1
         self._ensure_ids()
         if (
