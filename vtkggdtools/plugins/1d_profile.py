@@ -46,7 +46,7 @@ DEFAULT_BACKEND = imaspy.ids_defs.MDSPLUS_BACKEND
 NON_GGD_IDS_NAMES = ["core_profiles", "core_sources"]
 
 
-@smproxy.source(label="IMASPy NonGGDReader")
+@smproxy.source(label="Profiles_1d Reader")
 @smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
 class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
     """GGD Reader based on IMASPy"""
