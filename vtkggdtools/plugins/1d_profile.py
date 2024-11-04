@@ -9,6 +9,7 @@ import imaspy.ids_defs
 import numpy as np
 from imaspy.ids_struct_array import IDSStructArray
 from imaspy.ids_structure import IDSStructure
+from imaspy.ids_toplevel import IDSToplevel
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonCore import vtkFloatArray, vtkPoints, vtkStringArray
@@ -20,6 +21,7 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
+from vtkggdtools.io.read_ps import PlasmaStateReader
 from vtkggdtools.paraview_support.servermanager_tools import (
     arrayselectiondomain,
     arrayselectionstringvector,
@@ -46,7 +48,7 @@ DEFAULT_BACKEND = imaspy.ids_defs.MDSPLUS_BACKEND
 NON_GGD_IDS_NAMES = ["core_profiles", "core_sources"]
 
 
-@smproxy.source(label="Profiles_1d Reader")
+@smproxy.source(label="profiles_1d Reader")
 @smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
 class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
     """GGD Reader based on IMASPy"""
@@ -81,8 +83,10 @@ class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
 
         # Load ggd_idx from paraview UI
         self._time_steps = []
-        self._selected_paths = []
-        self._selectable_paths = []
+        self._selected_profiles = []
+        self._selectable_profiles = []
+
+        self.ps_reader = PlasmaStateReader()
 
     def _update_property(self, name, value, callback=None):
         """Convenience method to update a property when value changed."""
@@ -129,7 +133,7 @@ class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
                     self._dbentry = imaspy.DBEntry(self._uri, "r")
                 except Exception as exc:
                     self._uri_error = str(exc)
-                    self._selectable_paths = []
+                    self._selectable_profiles = []
                     self._ids_list = []
             self._update_ids_list()
             self.Modified()
@@ -263,13 +267,13 @@ class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
     def P12_SetGGDArray(self, array, status):
         """Select all or a subset of available GGD arrays to load."""
         # Add a GGD array to selected list
-        if status == 1 and array not in self._selected_paths:
-            self._selected_paths.append(array)
+        if status == 1 and array not in self._selected_profiles:
+            self._selected_profiles.append(array)
             self.Modified()
 
         # Remove a GGD array from selected list
-        if status == 0 and array in self._selected_paths:
-            self._selected_paths.remove(array)
+        if status == 0 and array in self._selected_profiles:
+            self._selected_profiles.remove(array)
             self.Modified()
 
     @arrayselectionstringvector(property_name="GGDArray", attribute_name="GGD")
@@ -277,10 +281,10 @@ class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
         pass
 
     def GetNumberOfGGDArrays(self):
-        return len(self._selectable_paths)
+        return len(self._selectable_profiles)
 
     def GetGGDArrayName(self, idx):
-        return self._name_from_idspath(self._selectable_paths[idx])
+        return self.ps_reader._create_name_recursive(self._selectable_profiles[idx])
 
     def GetGGDArrayStatus(self, *args):
         return 1
@@ -403,15 +407,18 @@ class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
             logger.warning("Selected invalid time step")
             return 1
 
-        filled_paths = [
-            self._name_from_idspath(path.metadata.path) for path in self.filled_nodes
+        profiles_names = [
+            self.ps_reader._create_name_recursive(node) for node in self.filled_profiles
         ]
-        if self._selected_paths:
-            index = filled_paths.index(self._selected_paths[0])
-            y = self.filled_nodes[index]
+
+        if self._selected_profiles:
+            index = profiles_names.index(self._selected_profiles[0])
+            y = self.filled_profiles[index]
             x = self.coordinates[index]
-            assert len(x) == len(y)
-            print(x, y)
+            if len(x) != len(y):
+                raise RuntimeError(
+                    "The length of the linked coordinate array does not match."
+                )
 
             # Create VTK points and cells for line plot
             points = vtkPoints()
@@ -448,52 +455,21 @@ class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
                 lazy=self.lazy,
                 ignore_unknown_dd_version=True,
             )
-            self.filled_nodes = []
+            self.filled_profiles = []
             self.coordinates = []
             time_idx = 0
             for node in self._ids.profiles_1d[time_idx]:
                 self.recursive_node_traverse(node)
 
-            self._selectable_paths = []
-            for filled_node in self.filled_nodes:
-                self._selectable_paths.append(filled_node.metadata.path)
+            self._selectable_profiles = []
+            for filled_node in self.filled_profiles:
+                self._selectable_profiles.append(filled_node)
                 if filled_node.metadata.coordinate1.references:
                     path = filled_node.metadata.coordinate1.references[0]
                     coordinates = path.goto(self._ids.profiles_1d[time_idx])
                     self.coordinates.append(coordinates)
                 else:
                     self.coordinates.append(None)
-
-    def _name_from_idspath(self, path):
-        """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part
-        of the path, with the parts separated by spaces.
-
-        Example:
-            If path is IDSPath('ggd/electrons/pressure'), the function returns
-            "Electrons Pressure"
-
-        Args:
-            path: The IDSPath object to convert into a formatted string
-
-        Returns:
-            A formatted string of the IDSPath
-        """
-        path_list = list(path.parts)
-        if "ggd" in path_list:
-            path_list.remove("ggd")
-        for i in range(len(path_list)):
-            path_list[i] = path_list[i].capitalize()
-
-        name = " ".join(path_list)
-
-        # If GGDs are not filled in the first time step, add (?) to their name and add
-        # zero-width space to move them to the bottom of the list. This notifies that
-        # the GGD array is not filled and will most likely not contain any data. We do
-        # not remove these GGD arrays from the selector window entirely, because later
-        # time steps could still contain data.
-        if path not in self._selectable_paths:
-            name = f"\u200B{name} (?)"
-        return name
 
     def _get_selected_time_step(self, outInfo):
         """Retrieves the selected time step index based on the time selection widget in
@@ -539,6 +515,6 @@ class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
         else:
             try:
                 if len(node) > 0 and hasattr(node.metadata, "coordinate1"):
-                    self.filled_nodes.append(node)
+                    self.filled_profiles.append(node)
             except TypeError:
                 pass

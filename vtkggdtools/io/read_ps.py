@@ -36,7 +36,7 @@ SUPPORTED_IDS_NAMES = [
 
 
 class PlasmaStateReader:
-    def __init__(self, ids):
+    def __init__(self, ids=None):
         """Initializes plasma state reader and retrieves all filled GGD scalar and
         vector arrays from the IDS.
 
@@ -50,6 +50,11 @@ class PlasmaStateReader:
         # a node's name is already cached before generating it, speeding up the process
         # and ensuring names are computed only once.
         self._cache = {}
+        if ids is None:
+            logger.warning(
+                "No IDS was provided to the Plasma State Reader, some "
+                "functionality will be unavailable."
+            )
         self._ids = ids
         self.scalar_array_list = []
         self.vector_array_list = []
@@ -67,6 +72,9 @@ class PlasmaStateReader:
             scalar_array_paths: A list of paths of GGD scalar arrays in the IDS
             vector_array_paths: A list of paths of GGD vector arrays in the IDS
         """
+        if self._ids is None:
+            raise RuntimeError("The IDS was not specified.")
+
         logger.debug("Retrieving GGD paths from IDS metadata")
         all_scalar_paths = []
         all_vector_paths = []
@@ -103,6 +111,9 @@ class PlasmaStateReader:
             scalar_array_paths: A list of paths of GGD scalar arrays in the IDS
             vector_array_paths: A list of paths of GGD vector arrays in the IDS
         """
+
+        if self._ids is None:
+            raise RuntimeError("The IDS was not specified.")
         logger.debug("Retrieving GGD arrays from IDS")
         self.scalar_array_list, self.vector_array_list = get_arrays_from_ids(
             self._ids,
