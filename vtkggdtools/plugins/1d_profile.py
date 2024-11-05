@@ -459,12 +459,14 @@ class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
             self.coordinates = []
             time_idx = 0
             if self._ids.metadata.name == "core_profiles":
-                for node in self._ids.profiles_1d[time_idx]:
-                    self.recursive_node_traverse(node)
+                if time_idx < len(self._ids.profiles_1d):
+                    for node in self._ids.profiles_1d[time_idx]:
+                        self.recursive_node_traverse(node)
             elif self._ids.metadata.name == "core_sources":
                 for source in self._ids.source:
-                    for node in source.profiles_1d[time_idx]:
-                        self.recursive_node_traverse(node)
+                    if time_idx < len(source.profiles_1d):
+                        for node in source.profiles_1d[time_idx]:
+                            self.recursive_node_traverse(node)
             else:
                 raise NotImplementedError(
                     "Currently only the 1D profiles of the 'core_profiles' and "
@@ -473,13 +475,11 @@ class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
 
             self._selectable_profiles = []
             for filled_node in self.filled_profiles:
-                self._selectable_profiles.append(filled_node)
                 if filled_node.metadata.coordinate1.references:
                     path = filled_node.metadata.coordinate1.references[0]
-                    coordinates = path.goto(self._ids.profiles_1d[time_idx])
+                    coordinates = path.goto(filled_node)
+                    self._selectable_profiles.append(filled_node)
                     self.coordinates.append(coordinates)
-                else:
-                    self.coordinates.append(None)
 
     def _get_selected_time_step(self, outInfo):
         """Retrieves the selected time step index based on the time selection widget in
