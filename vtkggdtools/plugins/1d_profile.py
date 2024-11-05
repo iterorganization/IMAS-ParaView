@@ -458,8 +458,18 @@ class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
             self.filled_profiles = []
             self.coordinates = []
             time_idx = 0
-            for node in self._ids.profiles_1d[time_idx]:
-                self.recursive_node_traverse(node)
+            if self._ids.metadata.name == "core_profiles":
+                for node in self._ids.profiles_1d[time_idx]:
+                    self.recursive_node_traverse(node)
+            elif self._ids.metadata.name == "core_sources":
+                for source in self._ids.source:
+                    for node in source.profiles_1d[time_idx]:
+                        self.recursive_node_traverse(node)
+            else:
+                raise NotImplementedError(
+                    "Currently only the 1D profiles of the 'core_profiles' and "
+                    "'core_sources' are supported"
+                )
 
             self._selectable_profiles = []
             for filled_node in self.filled_profiles:
