@@ -166,7 +166,7 @@ def convert_ggd_to_vtk(
         convert_to_xml(ids, output_dir, index_list)
 
     elif format == "vtkhdf":
-        click.echo("vtkhdf format is not yet implemented.")
+        raise NotImplementedError("vtkhdf format is not yet implemented.")
 
 
 def parse_uri(uri):
@@ -287,8 +287,11 @@ def parse_index(index):
         if len(index_list) != len(indices_dict):
             click.echo(
                 "Duplicate time steps were detected. Note that provided time steps "
-                "will be rounded down to the nearest found time in the IDS. All "
-                "duplicates time steps will be ignored."
+                "will be rounded down to a time in the IDS, and the duplicate time "
+                "steps will be ignored. For example, if the IDS contains times "
+                "[1.0, 2.0] and the provided time steps are t=1.1,1.8 both are rounded "
+                "down to time step 1.0, and as a result only the time step at t=1.0 is "
+                "converted."
             )
             index_list = list(indices_dict)
     # Range of indices
