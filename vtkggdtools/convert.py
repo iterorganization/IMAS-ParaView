@@ -2,7 +2,6 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-import numpy as np
 from vtk import vtkXMLPartitionedDataSetCollectionWriter
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
@@ -12,7 +11,7 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from vtkggdtools.io import read_bezier, read_geom, read_ps
-from vtkggdtools.util import FauxIndexMap, get_grid_ggd
+from vtkggdtools.util import FauxIndexMap, find_closest_indices, get_grid_ggd
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -136,7 +135,20 @@ class Converter:
                 return None
             return time_idx
         elif time is not None:
-            return self._get_nearest_time_idx(time)
+            indices = find_closest_indices([time], self.ids.time)
+            if len(indices) == 0:
+                logger.warning(
+                    "No time steps found that are less than or equal to the provided "
+                    "time. Converting the first time step instead."
+                )
+                time_idx = 0
+            else:
+                time_idx = indices[0]
+            logger.info(
+                f"Converting timestep: t = {self.ids.time[time_idx]} at index = "
+                f"{time_idx}"
+            )
+            return time_idx
         else:
             time_idx = len(self.ids.time) // 2
             logger.info(
@@ -144,31 +156,6 @@ class Converter:
                 f"step: t = {self.ids.time[time_idx]} at index {time_idx}."
             )
             return time_idx
-
-    def _get_nearest_time_idx(self, time):
-        """Finds the index of the nearest time step in the IDS time array that is less
-        than or equal to the provided time value.
-
-        Args:
-            time: Timestep to retrieve. If it is None, the first time step is retrieved.
-
-        Returns:
-            Index of the nearest time step
-        """
-        candidates = self.ids.time[self.ids.time <= time]
-        if candidates.size == 0:
-            logger.warning(
-                "No time steps found that are less than or equal to the provided time."
-                " Converting the first time step instead."
-            )
-            return 0
-
-        nearest_time = candidates.max()
-        time_idx = np.where(self.ids.time == nearest_time)[0][0]
-        logger.info(
-            f"Converting timestep: t = {self.ids.time[time_idx]} at index = {time_idx}"
-        )
-        return time_idx
 
     def _setup_vtk_object(self, outInfo):
         """Setup the partitioned dataset collection VTK object and its data assembly.
