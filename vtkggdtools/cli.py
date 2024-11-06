@@ -402,11 +402,11 @@ def find_closest_indices(values_to_extract, source_array):
     """
     closest_indices = []
     for value in values_to_extract:
-        candidates = source_array[source_array <= value]
-        if candidates.size > 0:
-            closest_value = candidates.max()
-            closest_index = np.where(source_array == closest_value)[0][0]
-            closest_indices.append(closest_index)
+        index = np.searchsorted(source_array, value)
+        if value not in source_array:
+            index = index - 1
+        if index >= 0:
+            closest_indices.append(index)
     return closest_indices
 
 
