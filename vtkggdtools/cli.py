@@ -6,13 +6,13 @@ from pathlib import Path
 import click
 import imaspy
 import imaspy.backends.imas_core.imas_interface
-import numpy as np
 from imaspy.backends.imas_core.imas_interface import ll_interface
 from rich import box, console, traceback
 from rich.table import Table
 
 import vtkggdtools
 from vtkggdtools.convert import convert_to_xml
+from vtkggdtools.util import find_closest_indices
 
 logger = logging.getLogger(__name__)
 
@@ -286,13 +286,10 @@ def parse_index(index):
         indices_dict = OrderedDict.fromkeys(index_list)
         if len(index_list) != len(indices_dict):
             click.echo(
-                "Duplicate time steps were detected. Note that provided time steps "
-                "will be rounded down to a time in the IDS, and the duplicate time "
-                "steps will be ignored. For example, if the IDS contains times "
-                "[1.0, 2.0] and the provided time steps are t=1.1,1.8 both are rounded "
-                "down to time step 1.0, and as a result only the time step at t=1.0 is "
-                "converted."
+                "Duplicate time step indices were detected. Any duplicate indices will "
+                "be ignored."
             )
+
             index_list = list(indices_dict)
     # Range of indices
     elif ":" in index:
@@ -349,8 +346,11 @@ def parse_time(ids_times, time):
         if len(index_list) != len(indices_dict):
             click.echo(
                 "Duplicate time steps were detected. Note that provided time steps "
-                "will be rounded down to the nearest found time in the IDS. All "
-                "duplicates time steps will be ignored."
+                "will be rounded down to a time in the IDS, and the duplicate time "
+                "steps will be ignored. For example, if the IDS contains times "
+                "[1.0, 2.0] and the provided time steps are t=1.1,1.8 both are rounded "
+                "down to time step 1.0, and as a result only the time step at t=1.0 is "
+                "converted."
             )
             index_list = list(indices_dict)
     # Range of time steps
@@ -386,28 +386,6 @@ def parse_time(ids_times, time):
             )
     click.echo(f"Converting the following time steps: {ids_times[index_list]}")
     return index_list
-
-
-def find_closest_indices(values_to_extract, source_array):
-    """Find indices of the closest values in source_array that are less than or equal
-    to each value in values_to_extract.
-
-    Args:
-        values_to_extract: Values to find in the source array.
-        source_array: Array to search for closest values.
-
-    Returns:
-        closest_indices: Indices of closest values in source_array for each value in
-            values_to_extract.
-    """
-    closest_indices = []
-    for value in values_to_extract:
-        index = np.searchsorted(source_array, value)
-        if value not in source_array:
-            index = index - 1
-        if index >= 0:
-            closest_indices.append(index)
-    return closest_indices
 
 
 if __name__ == "__main__":

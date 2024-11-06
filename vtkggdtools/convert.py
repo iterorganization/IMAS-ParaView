@@ -1,7 +1,6 @@
 import logging
 from pathlib import Path
 
-import numpy as np
 from vtk import vtkXMLPartitionedDataSetCollectionWriter
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
@@ -11,7 +10,7 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from vtkggdtools.io import read_bezier, read_geom, read_ps
-from vtkggdtools.util import FauxIndexMap, get_grid_ggd
+from vtkggdtools.util import FauxIndexMap, find_closest_indices, get_grid_ggd
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -79,7 +78,18 @@ def ggd_to_vtk(
             logger.error("The requested index can not be found in the IDS.")
             return None
     elif time is not None:
-        time_idx = _get_nearest_time_idx(ids, time)
+        indices = find_closest_indices([time], ids.time)
+        if len(indices) == 0:
+            logger.warning(
+                "No time steps found that are less than or equal to the provided "
+                "time. Converting the first time step instead."
+            )
+            time_idx = 0
+        else:
+            time_idx = indices[0]
+        logger.info(
+            f"Converting timestep: t = {ids.time[time_idx]} at index = {time_idx}"
+        )
     else:
         time_idx = len(ids.time) // 2
         logger.info(
@@ -184,32 +194,6 @@ def _write_vtk_to_xml(vtk_object, output):
     writer.SetFileName(output_file)
     writer.Write()
     logger.info(f"Successfully wrote VTK object to {output_file}.")
-
-
-def _get_nearest_time_idx(ids, time):
-    """Finds the index of the nearest time step in the IDS time array that is less than
-    or equal to the provided time value.
-
-    Args:
-        ids: The IDS object.
-        time: Timestep to retrieve. If it is None, the first time step is retrieved.
-
-    Returns:
-        Index of the nearest time step
-    """
-    candidates = ids.time[ids.time <= time]
-
-    if candidates.size == 0:
-        logger.warning(
-            "No time steps found that are less than or equal to the provided time. "
-            "Instead, converting the first time step."
-        )
-        return 0
-
-    nearest_time = candidates.max()
-    time_idx = np.where(ids.time == nearest_time)[0][0]
-    logger.info(f"Converting timestep: t = {ids.time[time_idx]} at index = {time_idx}")
-    return time_idx
 
 
 def _interpolate_jorek(ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly):

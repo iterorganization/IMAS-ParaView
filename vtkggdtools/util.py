@@ -191,3 +191,25 @@ def int32array(int_list):
         List of converted int32s
     """
     return np.array(int_list, dtype=np.int32)
+
+
+def find_closest_indices(values_to_extract, source_array):
+    """Find indices of the closest values in source_array that are less than or equal
+    to each value in values_to_extract.
+
+    Args:
+        values_to_extract: Values to find in the source array.
+        source_array: Array to search for closest values.
+
+    Returns:
+        closest_indices: Indices of closest values in source_array for each value in
+            values_to_extract.
+    """
+    closest_indices = []
+    for value in values_to_extract:
+        index = np.searchsorted(source_array, value)
+        if value not in source_array:
+            index = index - 1
+        if index >= 0:
+            closest_indices.append(index)
+    return closest_indices
