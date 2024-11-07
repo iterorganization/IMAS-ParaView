@@ -39,7 +39,9 @@ def fill_NxN_grid(grid_ggd, N):
     space.identifier.index = 1
     space.identifier.description = "Primary space defining the standard grid"
     space.geometry_type.index = 0
-    space.coordinates_type = int32array([1, 2])
+    space.coordinates_type.resize(2)
+    space.coordinates_type[0] = 1
+    space.coordinates_type[1] = 2
 
     space.objects_per_dimension.resize(3)
     num_vertices, num_edges, num_faces = build_grid(N, space)
@@ -207,23 +209,21 @@ def fill_vector_quantity(vector_quantity, num_vertices, num_edges, num_faces):
     # Fill values for vertices
     vector_quantity[0].grid_index = 1
     vector_quantity[0].grid_subset_index = 1
-    vector_quantity[0].radial = np.random.rand(num_vertices)
-    vector_quantity[0].poloidal = np.random.rand(num_vertices)
-    vector_quantity[0].toroidal = np.random.rand(num_vertices)
+
+    vector_quantity[0].r = np.random.rand(num_vertices)
+    vector_quantity[0].z = np.random.rand(num_vertices)
 
     # Fill values for edges
     vector_quantity[1].grid_index = 1
     vector_quantity[1].grid_subset_index = 2
-    vector_quantity[1].radial = np.random.rand(num_edges)
-    vector_quantity[1].poloidal = np.random.rand(num_edges)
-    vector_quantity[1].toroidal = np.random.rand(num_edges)
+    vector_quantity[1].r = np.random.rand(num_edges)
+    vector_quantity[1].z = np.random.rand(num_edges)
 
     # Fill values for faces
     vector_quantity[2].grid_index = 1
     vector_quantity[2].grid_subset_index = 5
-    vector_quantity[2].radial = np.random.rand(num_faces)
-    vector_quantity[2].poloidal = np.random.rand(num_faces)
-    vector_quantity[2].toroidal = np.random.rand(num_faces)
+    vector_quantity[2].r = np.random.rand(num_faces)
+    vector_quantity[2].z = np.random.rand(num_faces)
 
 
 def fill_vector_rzphi_quantity(vector_quantity, num_vertices, num_edges, num_faces):
@@ -244,21 +244,18 @@ def fill_vector_rzphi_quantity(vector_quantity, num_vertices, num_edges, num_fac
     vector_quantity[0].grid_subset_index = 1
     vector_quantity[0].r = np.random.rand(num_vertices)
     vector_quantity[0].z = np.random.rand(num_vertices)
-    vector_quantity[0].toroidal = np.random.rand(num_vertices)
 
     # Fill values for edges
     vector_quantity[1].grid_index = 1
     vector_quantity[1].grid_subset_index = 2
     vector_quantity[1].r = np.random.rand(num_edges)
     vector_quantity[1].z = np.random.rand(num_edges)
-    vector_quantity[1].toroidal = np.random.rand(num_edges)
 
     # Fill values for faces
     vector_quantity[2].grid_index = 1
     vector_quantity[2].grid_subset_index = 5
     vector_quantity[2].r = np.random.rand(num_faces)
     vector_quantity[2].z = np.random.rand(num_faces)
-    vector_quantity[2].toroidal = np.random.rand(num_faces)
 
 
 def fill_scalar_quantity(scalar_quantity, num_vertices, num_edges, num_faces):
