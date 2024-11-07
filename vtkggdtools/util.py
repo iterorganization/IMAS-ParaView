@@ -9,18 +9,25 @@ SUPPORTED_IDS_NAMES = [
     "edge_profiles",
     "edge_sources",
     "edge_transport",
-    "equilibrium",
     "mhd",
     "radiation",
     "runaway_electrons",
     "wall",
 ]
 
-# FIXME: Some IDSs do not have the structure as described by the GGD guidelines. e.g.
-# waves has its grid defined under coherent_wave/full_wave/grid instead of in a
-# dedicated grid_ggd. They are for now denoted as experimental IDS, as they are
-# currently not covered by the unit tests.
+# FIXME: Some IDSs do not have the grid structure in a separate `grid_ggd` object, as
+# described by the GGD guidelines. They are for now denoted as experimental IDS, as they
+# are currently not covered by the unit tests. If the DD for these stays like this, they
+# will need to be handled separately. GGD grid locations for each IDS:
+# equilibrium (grids_ggd/grid)
+# distribution_sources (source/ggd/grid)
+# distributions (distribution/ggd/grid)
+# tf (field_map/grid)
+# transport_solver_numerics (boundary_conditions_ggd/grid)
+# waves (coherent_wave/full_wave/grid)
+
 EXPERIMENTAL_IDS_NAMES = [
+    "equilibrium",
     "distribution_sources",
     "distributions",
     "tf",
@@ -202,14 +209,7 @@ def find_closest_indices(values_to_extract, source_array):
         source_array: Array to search for closest values.
 
     Returns:
-        closest_indices: Indices of closest values in source_array for each value in
-            values_to_extract.
+        Indices of closest values in source_array for each value in values_to_extract.
     """
-    closest_indices = []
-    for value in values_to_extract:
-        index = np.searchsorted(source_array, value)
-        if value not in source_array:
-            index = index - 1
-        if index >= 0:
-            closest_indices.append(index)
-    return closest_indices
+    indices = np.searchsorted(source_array, values_to_extract, side="right") - 1
+    return list(indices[indices >= 0])
