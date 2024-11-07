@@ -19,6 +19,7 @@ def dummy_ids(ids_name):
 
     ids = imaspy.IDSFactory().new(ids_name)
     fill_ids(ids)
+    ids.validate()
     return ids
 
 
