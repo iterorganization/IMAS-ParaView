@@ -30,4 +30,5 @@ def dummy_ids_five_steps(ids_name):
 
     ids = imaspy.IDSFactory().new(ids_name)
     fill_ids(ids, time_steps=5)
+    ids.validate()
     return ids
