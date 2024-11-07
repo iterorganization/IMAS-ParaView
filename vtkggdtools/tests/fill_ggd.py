@@ -403,3 +403,18 @@ def fill_ids(ids, time_steps=1, grid_size=2):
             )
             logger.debug(f"filled grid_ggd at index {i}.")
         fill_ggd_data(ids, num_vertices, num_edges, num_faces)
+
+    fill_ids_specific(ids)
+
+
+def fill_ids_specific(ids):
+    """Fill IDS-specific nodes such that these pass the IDS validation check.
+
+    Args:
+        ids: IDS to be filled.
+    """
+    ids_name = ids.metadata.name
+    if ids_name == "wall":
+        ids.description_ggd[0].thickness.resize(len(ids.time))
+    elif ids_name == "runaway_electrons":
+        ids.ggd_fluid.resize(len(ids.time))
