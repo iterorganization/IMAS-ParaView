@@ -210,19 +210,19 @@ def fill_vector_quantity(vector_quantity, num_vertices, num_edges, num_faces):
     vector_quantity[0].grid_index = 1
     vector_quantity[0].grid_subset_index = 1
 
-    vector_quantity[0].r = np.random.rand(num_vertices)
+    vector_quantity[0].radial = np.random.rand(num_vertices)
     vector_quantity[0].z = np.random.rand(num_vertices)
 
     # Fill values for edges
     vector_quantity[1].grid_index = 1
     vector_quantity[1].grid_subset_index = 2
-    vector_quantity[1].r = np.random.rand(num_edges)
+    vector_quantity[1].radial = np.random.rand(num_edges)
     vector_quantity[1].z = np.random.rand(num_edges)
 
     # Fill values for faces
     vector_quantity[2].grid_index = 1
     vector_quantity[2].grid_subset_index = 5
-    vector_quantity[2].r = np.random.rand(num_faces)
+    vector_quantity[2].radial = np.random.rand(num_faces)
     vector_quantity[2].z = np.random.rand(num_faces)
 
 
