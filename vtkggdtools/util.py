@@ -202,14 +202,7 @@ def find_closest_indices(values_to_extract, source_array):
         source_array: Array to search for closest values.
 
     Returns:
-        closest_indices: Indices of closest values in source_array for each value in
-            values_to_extract.
+        Indices of closest values in source_array for each value in values_to_extract.
     """
-    closest_indices = []
-    for value in values_to_extract:
-        index = np.searchsorted(source_array, value)
-        if value not in source_array:
-            index = index - 1
-        if index >= 0:
-            closest_indices.append(index)
-    return closest_indices
+    indices = np.searchsorted(source_array, values_to_extract, side="right") - 1
+    return list(indices[indices >= 0])
