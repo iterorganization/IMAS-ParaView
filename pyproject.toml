@@ -25,6 +25,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+all = [
+    "vtkggdtools[test,linting,benchmark]"
+]
 linting = [
     "black>=24,<25",
     "flake8",
