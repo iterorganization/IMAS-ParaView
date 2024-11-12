@@ -18,7 +18,7 @@ logger = logging.getLogger("vtkggdtools")
 
 @dataclass
 class InterpSettings:
-    """Data class containing Bezier interpolation settings."""
+    """Data class containing Fourier interpolation settings."""
 
     n_plane: int = 0
     phi_start: float = 0.0
