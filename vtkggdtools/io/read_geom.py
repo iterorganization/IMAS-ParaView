@@ -34,7 +34,7 @@ def convert_grid_subset_geometry_to_unstructured_grid(
         subset_idx: an index into grid_ggd/grid_subset
         vtk_grid_points: the point coordinates corresponding to 1d objects in
         the subset elements.
-        progress: Progress indicator for Paraview. Defaults to None.
+        progress: Progress indicator for Paraview.
 
 
     Returns:
