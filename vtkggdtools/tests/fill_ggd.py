@@ -371,7 +371,7 @@ def fill_ids(ids, time_steps=1, grid_size=2):
 
     Args:
         ids: IDS to be filled.
-        time_steps: Number of time steps to create in the IDS. Defaults to 1.
+        time_steps: Number of time steps to create in the IDS.
         grid_size: Size of the N x N grid. Defaults to 2, meaning a 2 x 2 grid.
     """
 

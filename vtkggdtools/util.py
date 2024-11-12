@@ -96,7 +96,7 @@ def get_grid_ggd(ids, ggd_idx=0):
 
     Args:
         ids: The IDS for which to return the first grid_gdd.
-        ggd_idx: Time index for which to load the grid. Defaults to 0.
+        ggd_idx: Time index for which to load the grid.
 
     Returns:
         The first grid_ggd node found, or None if not found.
