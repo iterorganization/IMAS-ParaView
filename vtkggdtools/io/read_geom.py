@@ -60,7 +60,7 @@ def fill_vtk_points(
         space_idx: an index into the grid_ggd/space AoS.
         points: the vtk points instance.
         ids_name: The name of the IDS.
-        progress: Progress indicator for Paraview. Defaults to None.
+        progress: Progress indicator for Paraview.
     """
     num_objects0d = len(grid_ggd.space[space_idx].objects_per_dimension[0].object)
     logger.info(f"Reading {num_objects0d} points from grid_ggd/space[{space_idx}]")
@@ -107,7 +107,7 @@ def _fill_vtk_cell_array_from_gs2(
         grid_ggd: a grid_ggd ids node.
         subset_idx: -1
         ugrid: the vtk unstructured grid instance.
-        progress: Progress indicator for Paraview. Defaults to None.
+        progress: Progress indicator for Paraview.
     """
     grid = grid_ggd.space[0].objects_per_dimension
     num_cell = len(grid[2].object)  # 4- 0D, 1D, 2D, 3D objects
@@ -141,7 +141,7 @@ def _fill_vtk_cell_array_from_gs(
         grid_ggd: a grid_ggd ids node.
         subset_idx: an index into the grid_ggd/grid_subset AoS.
         ugrid: the vtk unstructured grid instance.
-        progress: Progress indicator for Paraview. Defaults to None.
+        progress: Progress indicator for Paraview.
     """
     grid_subset = grid_ggd.grid_subset[subset_idx]
     num_gs_el = len(grid_subset.element)

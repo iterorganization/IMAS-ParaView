@@ -74,8 +74,8 @@ class Converter:
             vector_paths: A list of IDSPaths of GGD vector arrays to convert. Defaults
                 to None, in which case all vectors arrays are converted.
             plane_config: Data class containing the interpolation settings.
-            outInfo: Paraview's Source outInfo information object. Defaults to None.
-            progress: Progress indicator for Paraview. Defaults to None.
+            outInfo: Paraview's Source outInfo information object.
+            progress: Progress indicator for Paraview.
             ugrids: List of ugrids to use instead of reading grids from IDS.
 
         Returns:
@@ -268,7 +268,7 @@ class Converter:
         Args:
             subset_idx: Index of the subset to convert.
             partition: Partition index for the partitioned dataset.
-            ugrid: Pre-existing ugrid to use. Defaults to None.
+            ugrid: Pre-existing ugrid to use.
 
         Returns:
             The unstructured grid for the given subset and partition.
