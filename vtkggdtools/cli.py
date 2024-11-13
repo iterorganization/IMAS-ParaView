@@ -191,16 +191,17 @@ def is_lazy(all_times, lazy_flag, no_lazy_flag):
     use_lazy_loading = True
     if all_times:
         use_lazy_loading = False
-    if lazy_flag:
-        use_lazy_loading = True
-    if no_lazy_flag:
-        use_lazy_loading = False
+
     if lazy_flag and no_lazy_flag:
         click.echo(
             "Both --lazy and --no-lazy flag were provided. Defaulting to "
             "having lazy loading enabled."
         )
         use_lazy_loading = True
+    elif lazy_flag:
+        use_lazy_loading = True
+    elif no_lazy_flag:
+        use_lazy_loading = False
 
     if use_lazy_loading:
         click.echo("Lazy loading is enabled.")
