@@ -198,7 +198,7 @@ def is_lazy(all_times, lazy_flag, no_lazy_flag):
     if all_times:
         use_lazy_loading = False
 
-    # Override default is flag is provided
+    # Override default if flag is provided
     if lazy_flag:
         use_lazy_loading = True
     elif no_lazy_flag:
