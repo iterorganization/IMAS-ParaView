@@ -185,8 +185,8 @@ def _write_vtk_to_xml(vtk_object, output):
         output: The name of the output file.
     """
     if vtk_object is None:
-        logger.info("Could not convert GGD to VTK file.")
-        raise RuntimeError
+        logger.error("Could not convert GGD to VTK file.")
+        return
     logger.info("Writing VTK file to disk...")
     writer = vtkXMLPartitionedDataSetCollectionWriter()
     writer.SetInputData(vtk_object)
