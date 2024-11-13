@@ -35,6 +35,15 @@ module load IMASPy/1.1.0-foss-2023b IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 Pa
 export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH PYTHONPATH=$PWD:$PYTHONPATH
 # Use LD_PRELOAD to work around a VTK bug: https://gitlab.kitware.com/vtk/vtk/-/issues/19373
 export LD_PRELOAD=$HDF5_DIR/lib/libhdf5.so.310
+# Run paraview
+paraview
+# Or open up your IDE/code editor and begin development.
+```
+
+Use the following instructions to run the command line interface:
+```bash
+# Load compatible IMASPy, IMAS and ParaView modules, like:
+module load IMASPy/1.1.0-foss-2023b IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
 # create virtual environment and install dependencies
 python3 -m venv ./venv
 . venv/bin/activate
@@ -44,9 +53,6 @@ pip install --upgrade wheel setuptools
 pip install -e .[all]
 # Run CLI with help information
 vtkggdtools --help
-# Run paraview
-paraview
-# Or open up your IDE/code editor and begin development.
 ```
 
 # The old readme is kept below for reference
