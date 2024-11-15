@@ -34,24 +34,17 @@ from vtkggdtools.paraview_support.servermanager_tools import (
     stringlistdomain,
     stringvector,
 )
+from vtkggdtools.plugins.vtkggdtools import BACKENDS, DEFAULT_BACKEND
 
 logger = logging.getLogger("vtkggdtools")
 
-BACKENDS = {
-    "MDSplus": imaspy.ids_defs.MDSPLUS_BACKEND,
-    "HDF5": imaspy.ids_defs.HDF5_BACKEND,
-    "ASCII": imaspy.ids_defs.ASCII_BACKEND,
-}
-"""Mapping of UI labels for each backend and their ID, used for the Backend dropdown."""
-DEFAULT_BACKEND = imaspy.ids_defs.MDSPLUS_BACKEND
-"""Default backend selected in the UI."""
-NON_GGD_IDS_NAMES = ["core_profiles", "core_sources"]
+PROFILES_1D_IDS_NAMES = ["core_profiles", "core_sources"]
 
 
 @smproxy.source(label="profiles_1d Reader")
 @smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
-class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
-    """GGD Reader based on IMASPy"""
+class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
+    """profiles_1d reader based on IMASPy"""
 
     def __init__(self):
         super().__init__(nInputPorts=0, nOutputPorts=1)
@@ -142,7 +135,7 @@ class IMASPyNonGGDReader(VTKPythonAlgorithmBase):
         """Update the list of available IDSs in the selected Data Entry."""
         self._ids_list = []
         if self._dbentry is not None:
-            for ids_name in NON_GGD_IDS_NAMES:
+            for ids_name in PROFILES_1D_IDS_NAMES:
                 for occurrence in self._dbentry.list_all_occurrences(ids_name):
                     val = ids_name if occurrence == 0 else f"{ids_name}/{occurrence}"
                     self._ids_list.append(val)
