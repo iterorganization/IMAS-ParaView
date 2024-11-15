@@ -9,16 +9,10 @@ import imaspy.ids_defs
 import numpy as np
 from imaspy.ids_struct_array import IDSStructArray
 from imaspy.ids_structure import IDSStructure
-from imaspy.ids_toplevel import IDSToplevel
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
-from vtkmodules.vtkCommonCore import vtkFloatArray, vtkPoints, vtkStringArray
-from vtkmodules.vtkCommonDataModel import (
-    vtkCellArray,
-    vtkDataObject,
-    vtkPartitionedDataSetCollection,
-    vtkPolyData,
-)
+from vtkmodules.vtkCommonCore import vtkPoints, vtkStringArray
+from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkPolyData
 
 from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
 from vtkggdtools.io.read_ps import PlasmaStateReader
@@ -126,7 +120,7 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
                     self._dbentry = imaspy.DBEntry(self._uri, "r")
                 except Exception as exc:
                     self._uri_error = str(exc)
-                    self._selectable_profiles = []
+                    self._selectable_paths = []
                     self._ids_list = []
             self._update_ids_list()
             self.Modified()
@@ -252,35 +246,49 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
             arr.InsertNextValue(val)
         return arr
 
-    @arrayselectiondomain(
-        property_name="GGDArray",
-        name="GGDArraySelector",
-        label="Select GGD Arrays",
+    @smproperty.xml(
+        """
+        <StringVectorProperty information_only="1" name="IDSInfo">
+            <ArraySelectionInformationHelper attribute_name="IDS" />
+        </StringVectorProperty>
+        <StringVectorProperty
+                command="SetIDSName"
+                name="IDSArrayStatus"
+                number_of_elements="0"
+                number_of_elements_per_command="2"
+                repeat_command="1">
+        <ArrayListDomain name="array_list"
+                attribute_type="Scalars"
+                input_domain_name="inputs_array">
+        <RequiredProperties>
+                <Property name="IDSArray"
+                function="Input" />
+        </RequiredProperties>
+        </ArrayListDomain>
+        </StringVectorProperty>
+        """
     )
-    def P12_SetGGDArray(self, array, status):
-        """Select all or a subset of available GGD arrays to load."""
-        # Add a GGD array to selected list
-        if status == 1 and array not in self._selected_profiles:
-            self._selected_profiles.append(array)
-            self.Modified()
+    def SetIDSName(self, IDSarray, status):
+        print("Selected array:", IDSarray, status)
 
-        # Remove a GGD array from selected list
-        if status == 0 and array in self._selected_profiles:
-            self._selected_profiles.remove(array)
-            self.Modified()
-
-    @arrayselectionstringvector(property_name="GGDArray", attribute_name="GGD")
-    def _GGDArraySelector(self):
-        pass
-
-    def GetNumberOfGGDArrays(self):
+    def GetNumberOfIDSArrays(self):
         return len(self._selectable_profiles)
 
-    def GetGGDArrayName(self, idx):
+    def GetIDSArrayName(self, idx):
         return self.ps_reader._create_name_recursive(self._selectable_profiles[idx])
 
-    def GetGGDArrayStatus(self, *args):
+    def GetIDSArrayStatus(self, *args):
         return 1
+ 
+    @smproperty.xml(
+        """
+        <StringVectorProperty
+        information_only="1" name="IDSArray">
+            <ArraySelectionInformationHelper attribute_name="IDS" />
+        </StringVectorProperty>
+        """)
+    def _GGDArraySelector(self):
+        pass
 
     @checkbox(
         name="LazyLoading",
@@ -345,7 +353,7 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         """Dummy function to define a PropertyGroup."""
 
     @propertygroup(
-        "Select IDS", ["IDSAndOccurrence", "IDSList", "GGDArraySelector", "LazyLoading"]
+        "Select IDS", ["IDSAndOccurrence", "IDSList", "LazyLoading"]
     )
     def PG1_IDSGroup(self):
         """Dummy function to define a PropertyGroup."""
@@ -362,12 +370,13 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
             return 1
 
         # Load IDS and available time steps
-        # TODO: Add support for IDSs with heterogeneous time mode
         idsname, _, _ = self._ids_and_occurrence.partition("/")
         if idsname not in self._ids_list:
             logger.warning("Could not find the selected IDS.")
             return 1
         self._ensure_ids()
+
+        # TODO: Add support for IDSs with heterogeneous time mode
         if (
             self._ids.ids_properties.homogeneous_time
             != imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
@@ -403,7 +412,9 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         profiles_names = [
             self.ps_reader._create_name_recursive(node) for node in self.filled_profiles
         ]
-
+        print(self.filled_profiles)
+        print(profiles_names)
+        print(self._selectable_profiles)
         if self._selected_profiles:
             index = profiles_names.index(self._selected_profiles[0])
             y = self.filled_profiles[index]
@@ -509,10 +520,7 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         return time_step_idx
 
     def recursive_node_traverse(self, node):
-        if isinstance(node, IDSStructure):
-            for subnode in node:
-                self.recursive_node_traverse(subnode)
-        elif isinstance(node, IDSStructArray):
+        if isinstance(node, IDSStructure) or isinstance(node, IDSStructArray):
             for subnode in node:
                 self.recursive_node_traverse(subnode)
         else:
