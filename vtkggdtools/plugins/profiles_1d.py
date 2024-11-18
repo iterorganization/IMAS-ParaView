@@ -398,10 +398,7 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         if time_idx is None:
             logger.warning("Selected invalid time step")
             return 1
-        if len(self._selected_profiles) > 1:
-            logger.warning("Only a single 1D profile may be selected at a time.")
-            return 1
-        if len(self._selected_profiles) == 1:
+        if len(self._selected_profiles) > 0:
             output = vtkTable.GetData(outInfo)
             self._load_profile(output)
         return 1
@@ -416,21 +413,31 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         profiles_names = [
             self.ps_reader._create_name_recursive(node) for node in self.filled_profiles
         ]
-        selected_profile = self._selected_profiles[0]
-        index = profiles_names.index(selected_profile)
-        logger.info(f"selected {selected_profile}")
-        y = self.filled_profiles[index]
-        x = self.coordinates[index]
+        prev_x = None
+        for selected_profile in self._selected_profiles:
+            index = profiles_names.index(selected_profile)
+            logger.info(f"selected {selected_profile}")
+            y = self.filled_profiles[index]
+            x = self.coordinates[index]
 
-        if len(x) != len(y):
-            raise RuntimeError(
-                "The length of the linked coordinate array does not match."
-            )
+            if len(x) != len(y):
+                raise RuntimeError(
+                    "The length of the linked coordinate array does not match."
+                )
 
-        x_values = self._create_vtk_double_array(x, x.metadata.name)
-        y_values = self._create_vtk_double_array(y, selected_profile)
-        output.AddColumn(x_values)
-        output.AddColumn(y_values)
+            y_values = self._create_vtk_double_array(y, selected_profile)
+            output.AddColumn(y_values)
+
+            if prev_x is None:
+                x_values = self._create_vtk_double_array(x, x.metadata.name)
+                output.AddColumn(x_values)
+            else:
+                if x is not prev_x:
+                    raise RuntimeError(
+                        "The X values for the selected profiles do not match. "
+                        "Select the profiles one by one instead."
+                    )
+            prev_x = x
 
     def _create_vtk_double_array(self, values, name):
         """Creates a vtkPoints and vtkCellArrays for the nodes and edges of the 1D
