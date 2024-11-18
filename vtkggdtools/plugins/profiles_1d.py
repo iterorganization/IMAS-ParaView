@@ -11,7 +11,7 @@ from imaspy.ids_struct_array import IDSStructArray
 from imaspy.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
-from vtkmodules.vtkCommonCore import vtkPoints, vtkStringArray
+from vtkmodules.vtkCommonCore import vtkDoubleArray, vtkPoints, vtkStringArray
 from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkPolyData
 
 from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
@@ -407,8 +407,8 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         return 1
 
     def _create_profiles(self, output):
-        """Creates a vtkPoints and vtkCellArrays for the nodes and edges of the 1d
-        profiles and stores these to the output vtkPolyData.
+        """Creates a vtkPoints and vtkCellArrays for the nodes and edges of the 1D
+        profiles and stores these in the output vtkPolyData as 2D data.
 
         Args:
             output: vtkPolyData output of the plugin
@@ -416,28 +416,42 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         profiles_names = [
             self.ps_reader._create_name_recursive(node) for node in self.filled_profiles
         ]
-        index = profiles_names.index(self._selected_profiles[0])
-        logger.info(f"selected {self._selected_profiles[0]}")
+        selected_profile = self._selected_profiles[0]
+        index = profiles_names.index(selected_profile)
+        logger.info(f"selected {selected_profile}")
         y = self.filled_profiles[index]
         x = self.coordinates[index]
+
         if len(x) != len(y):
             raise RuntimeError(
                 "The length of the linked coordinate array does not match."
             )
 
         points = vtkPoints()
-        line_cells = vtkCellArray()
-
-        # Add each point and define the line cells
         for i in range(len(x)):
             points.InsertNextPoint(x[i], y[i], 0)
-            if i > 0:
-                line_cells.InsertNextCell(2)
-                line_cells.InsertCellPoint(i - 1)
-                line_cells.InsertCellPoint(i)
 
+        line_cells = vtkCellArray()
+        for i in range(len(x) - 1):
+            line_cells.InsertNextCell(2)
+            line_cells.InsertCellPoint(i)
+            line_cells.InsertCellPoint(i + 1)
+
+        # Assign names and scalars
+        x_values = vtkDoubleArray()
+        x_values.SetName(x.metadata.name)
+        for value in x:
+            x_values.InsertNextValue(value)
+        y_values = vtkDoubleArray()
+        y_values.SetName(selected_profile)
+        for value in y:
+            y_values.InsertNextValue(value)
+
+        # Set points, lines, and scalars in the output
         output.SetPoints(points)
         output.SetLines(line_cells)
+        output.GetPointData().AddArray(x_values)
+        output.GetPointData().AddArray(y_values)
 
     def _ensure_ids(self):
         """
