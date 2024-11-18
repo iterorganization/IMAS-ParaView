@@ -51,7 +51,7 @@ class PlasmaStateReader:
         # and ensuring names are computed only once.
         self._cache = {}
         if ids is None:
-            logger.warning(
+            logger.debug(
                 "No IDS was provided to the Plasma State Reader, some "
                 "functionality will be unavailable."
             )

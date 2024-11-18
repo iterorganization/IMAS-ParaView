@@ -107,6 +107,38 @@ def arrayselectiondomain(property_name, **kwargs):
     return decorator
 
 
+def arraylistdomain(property_name, **kwargs):
+    """Convenience decorator to add an ArrayListDomain to a property."""
+
+    def decorator(func):
+        args = " ".join(f'{key}="{value}"' for key, value in kwargs.items())
+
+        xml = f"""
+        <StringVectorProperty
+            {args}
+            command="{func.__name__}"
+            number_of_elements="0"
+            number_of_elements_per_command="2"
+            panel_visibility="default"
+            element_types="2 0"
+            repeat_command="1">
+        <ArrayListDomain name="array_list"
+            attribute_type="Scalars"
+            input_domain_name="inputs_array">
+            <RequiredProperties>
+                <Property name="{property_name}"
+                    function="Input" />
+            </RequiredProperties>
+        </ArrayListDomain>
+        <Documentation>{func.__doc__}</Documentation>
+            </StringVectorProperty>
+        """
+
+        return smproperty.xml(xml)(func)
+
+    return decorator
+
+
 def checkbox(**kwargs):
     """Convenience decorator for creating a simple boolean checkbox."""
 
