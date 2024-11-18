@@ -241,7 +241,11 @@ class PlasmaStateReader:
             return self._cache[node_id]
         name_current_node = node.metadata.name
         name = ""
-        if "ggd" != name_current_node and "time_slice" not in name_current_node:
+        if (
+            "ggd" != name_current_node
+            and "profiles_1d" != name_current_node
+            and "time_slice" not in name_current_node
+        ):
             name_appendix = ""
 
             # Check if node has an identifier.name
