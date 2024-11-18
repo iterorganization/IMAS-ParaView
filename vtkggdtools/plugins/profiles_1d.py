@@ -11,8 +11,8 @@ from imaspy.ids_struct_array import IDSStructArray
 from imaspy.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
-from vtkmodules.vtkCommonCore import vtkDoubleArray, vtkPoints, vtkStringArray
-from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkPolyData
+from vtkmodules.vtkCommonCore import vtkDoubleArray, vtkStringArray
+from vtkmodules.vtkCommonDataModel import vtkTable
 
 from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
 from vtkggdtools.io.read_ps import PlasmaStateReader
@@ -41,7 +41,7 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
     """profiles_1d reader based on IMASPy"""
 
     def __init__(self):
-        super().__init__(nInputPorts=0, nOutputPorts=1, outputType="vtkPolyData")
+        super().__init__(nInputPorts=0, nOutputPorts=1, outputType="vtkTable")
         # URI properties
         self._uri_selection_mode = 1
         self._uri_input = ""
@@ -402,16 +402,16 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
             logger.warning("Only a single 1D profile may be selected at a time.")
             return 1
         if len(self._selected_profiles) == 1:
-            output = vtkPolyData.GetData(outInfo)
-            self._create_profiles(output)
+            output = vtkTable.GetData(outInfo)
+            self._load_profile(output)
         return 1
 
-    def _create_profiles(self, output):
-        """Creates a vtkPoints and vtkCellArrays for the nodes and edges of the 1D
-        profiles and stores these in the output vtkPolyData as 2D data.
+    def _load_profile(self, output):
+        """Creates a vtkDoubleArrays for the selected profile and stores them into
+        a vtkTable.
 
         Args:
-            output: vtkPolyData output of the plugin
+            output: vtkTable output of the plugin
         """
         profiles_names = [
             self.ps_reader._create_name_recursive(node) for node in self.filled_profiles
@@ -427,31 +427,22 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
                 "The length of the linked coordinate array does not match."
             )
 
-        points = vtkPoints()
-        for i in range(len(x)):
-            points.InsertNextPoint(x[i], y[i], 0)
+        x_values = self._create_vtk_double_array(x, x.metadata.name)
+        y_values = self._create_vtk_double_array(y, selected_profile)
+        output.AddColumn(x_values)
+        output.AddColumn(y_values)
 
-        line_cells = vtkCellArray()
-        for i in range(len(x) - 1):
-            line_cells.InsertNextCell(2)
-            line_cells.InsertCellPoint(i)
-            line_cells.InsertCellPoint(i + 1)
+    def _create_vtk_double_array(self, values, name):
+        """Creates a vtkPoints and vtkCellArrays for the nodes and edges of the 1D
+        profiles and stores these in the output vtkPolyData as 2D data.
 
-        # Assign names and scalars
-        x_values = vtkDoubleArray()
-        x_values.SetName(x.metadata.name)
-        for value in x:
-            x_values.InsertNextValue(value)
-        y_values = vtkDoubleArray()
-        y_values.SetName(selected_profile)
-        for value in y:
-            y_values.InsertNextValue(value)
-
-        # Set points, lines, and scalars in the output
-        output.SetPoints(points)
-        output.SetLines(line_cells)
-        output.GetPointData().AddArray(x_values)
-        output.GetPointData().AddArray(y_values)
+        Args:
+            output: vtkPolyData output of the plugin
+        """
+        array = vtkDoubleArray()
+        array.SetName(name)
+        for value in values:
+            array.InsertNextValue(value)
 
     def _ensure_ids(self):
         """
