@@ -438,11 +438,15 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
 
         Args:
             output: vtkPolyData output of the plugin
+
+        Returns:
+            vtkDoubleArray with given name and values
         """
         array = vtkDoubleArray()
         array.SetName(name)
         for value in values:
             array.InsertNextValue(value)
+        return array
 
     def _ensure_ids(self):
         """
