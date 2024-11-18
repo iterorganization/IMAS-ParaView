@@ -1,4 +1,4 @@
-"""IMASPy version of the paraview plugin classes.
+"""IMASPy plugin to view profiles_1D nodes in IDSs
 """
 
 import getpass
@@ -41,7 +41,7 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
     """profiles_1d reader based on IMASPy"""
 
     def __init__(self):
-        super().__init__(nInputPorts=0, nOutputPorts=1)
+        super().__init__(nInputPorts=0, nOutputPorts=1, outputType="vtkPolyData")
         # URI properties
         self._uri_selection_mode = 1
         self._uri_input = ""
@@ -70,9 +70,10 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
 
         # Load ggd_idx from paraview UI
         self._time_steps = []
+
+        # Lists to store which 1d profile are available and selected
         self._selected_profiles = []
         self._selectable_profiles = []
-
         self.ps_reader = PlasmaStateReader()
 
     def _update_property(self, name, value, callback=None):
@@ -246,49 +247,37 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
             arr.InsertNextValue(val)
         return arr
 
-    @smproperty.xml(
-        """
-        <StringVectorProperty information_only="1" name="IDSInfo">
-            <ArraySelectionInformationHelper attribute_name="IDS" />
-        </StringVectorProperty>
-        <StringVectorProperty
-                command="SetIDSName"
-                name="IDSArrayStatus"
-                number_of_elements="0"
-                number_of_elements_per_command="2"
-                repeat_command="1">
-        <ArrayListDomain name="array_list"
-                attribute_type="Scalars"
-                input_domain_name="inputs_array">
-        <RequiredProperties>
-                <Property name="IDSArray"
-                function="Input" />
-        </RequiredProperties>
-        </ArrayListDomain>
-        </StringVectorProperty>
-        """
+    # TODO: use arraylistdomain instead of array selection domain, as we can only choose
+    # a single profile at a time.
+    @arrayselectiondomain(
+        property_name="ProfileArray",
+        name="ProfileSelector",
+        label="Select 1d profiles",
     )
-    def SetIDSName(self, IDSarray, status):
-        print("Selected array:", IDSarray, status)
+    def P12_SetProfileArray(self, array, status):
+        """Select all or a subset of available profiles to load."""
+        # Add a GGD array to selected list
+        if status == 1 and array not in self._selected_profiles:
+            self._selected_profiles.append(array)
+            self.Modified()
 
-    def GetNumberOfIDSArrays(self):
+        # Remove a GGD array from selected list
+        if status == 0 and array in self._selected_profiles:
+            self._selected_profiles.remove(array)
+            self.Modified()
+
+    @arrayselectionstringvector(property_name="ProfileArray", attribute_name="Profile")
+    def _ProfileArraySelector(self):
+        pass
+
+    def GetNumberOfProfileArrays(self):
         return len(self._selectable_profiles)
 
-    def GetIDSArrayName(self, idx):
+    def GetProfileArrayName(self, idx):
         return self.ps_reader._create_name_recursive(self._selectable_profiles[idx])
 
-    def GetIDSArrayStatus(self, *args):
+    def GetProfileArrayStatus(self, *args):
         return 1
- 
-    @smproperty.xml(
-        """
-        <StringVectorProperty
-        information_only="1" name="IDSArray">
-            <ArraySelectionInformationHelper attribute_name="IDS" />
-        </StringVectorProperty>
-        """)
-    def _GGDArraySelector(self):
-        pass
 
     @checkbox(
         name="LazyLoading",
@@ -353,7 +342,7 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         """Dummy function to define a PropertyGroup."""
 
     @propertygroup(
-        "Select IDS", ["IDSAndOccurrence", "IDSList", "LazyLoading"]
+        "Select IDS", ["IDSAndOccurrence", "IDSList", "ProfileSelector", "LazyLoading"]
     )
     def PG1_IDSGroup(self):
         """Dummy function to define a PropertyGroup."""
@@ -373,6 +362,7 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         idsname, _, _ = self._ids_and_occurrence.partition("/")
         if idsname not in self._ids_list:
             logger.warning("Could not find the selected IDS.")
+            self._selectable_profiles = []
             return 1
         self._ensure_ids()
 
@@ -408,39 +398,46 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         if time_idx is None:
             logger.warning("Selected invalid time step")
             return 1
+        if len(self._selected_profiles) > 1:
+            logger.warning("Only a single 1D profile may be selected at a time.")
+            return 1
+        if len(self._selected_profiles) == 1:
+            output = vtkPolyData.GetData(outInfo)
+            self._create_profiles(output)
+        return 1
 
+    def _create_profiles(self, output):
+        """Creates a vtkPoints and vtkCellArrays for the nodes and edges of the 1d
+        profiles and stores these to the output vtkPolyData.
+
+        Args:
+            output: vtkPolyData output of the plugin
+        """
         profiles_names = [
             self.ps_reader._create_name_recursive(node) for node in self.filled_profiles
         ]
-        print(self.filled_profiles)
-        print(profiles_names)
-        print(self._selectable_profiles)
-        if self._selected_profiles:
-            index = profiles_names.index(self._selected_profiles[0])
-            y = self.filled_profiles[index]
-            x = self.coordinates[index]
-            if len(x) != len(y):
-                raise RuntimeError(
-                    "The length of the linked coordinate array does not match."
-                )
+        index = profiles_names.index(self._selected_profiles[0])
+        logger.info(f"selected {self._selected_profiles[0]}")
+        y = self.filled_profiles[index]
+        x = self.coordinates[index]
+        if len(x) != len(y):
+            raise RuntimeError(
+                "The length of the linked coordinate array does not match."
+            )
 
-            # Create VTK points and cells for line plot
-            points = vtkPoints()
-            line_cells = vtkCellArray()
+        points = vtkPoints()
+        line_cells = vtkCellArray()
 
-            # Add each point and define the line cells
-            for i in range(len(x)):
-                points.InsertNextPoint(x[i], y[i], 0)
-                if i > 0:
-                    line_cells.InsertNextCell(2)  # Line between two points
-                    line_cells.InsertCellPoint(i - 1)
-                    line_cells.InsertCellPoint(i)
+        # Add each point and define the line cells
+        for i in range(len(x)):
+            points.InsertNextPoint(x[i], y[i], 0)
+            if i > 0:
+                line_cells.InsertNextCell(2)
+                line_cells.InsertCellPoint(i - 1)
+                line_cells.InsertCellPoint(i)
 
-            # Create VTKPolyData to store points and lines
-            output = vtkPolyData.GetData(outInfo)
-            output.SetPoints(points)
-            output.SetLines(line_cells)
-        return 1
+        output.SetPoints(points)
+        output.SetLines(line_cells)
 
     def _ensure_ids(self):
         """

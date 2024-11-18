@@ -117,11 +117,9 @@ def arraylistdomain(property_name, **kwargs):
         <StringVectorProperty
             {args}
             command="{func.__name__}"
-            number_of_elements="0"
-            number_of_elements_per_command="2"
-            panel_visibility="default"
-            element_types="2 0"
-            repeat_command="1">
+            number_of_elements="5"
+            element_types="0 0 0 0 2"
+            animateable="0">
         <ArrayListDomain name="array_list"
             attribute_type="Scalars"
             input_domain_name="inputs_array">
