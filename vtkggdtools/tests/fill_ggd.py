@@ -28,9 +28,7 @@ def fill_NxN_grid(grid_ggd, N):
     # Set grid
     grid_ggd.identifier.name = "linear"
     grid_ggd.identifier.index = 1
-    grid_ggd.identifier.description = (
-        "A simple 2x3 grid consisting of 6 vertices, 7 edges and 2 faces"
-    )
+    grid_ggd.identifier.description = f"A simple {N} x {N} rectangular grid"
 
     # Set space
     grid_ggd.space.resize(1)
@@ -39,7 +37,9 @@ def fill_NxN_grid(grid_ggd, N):
     space.identifier.index = 1
     space.identifier.description = "Primary space defining the standard grid"
     space.geometry_type.index = 0
-    space.coordinates_type = int32array([1, 2])
+    space.coordinates_type.resize(2)
+    space.coordinates_type[0] = 1
+    space.coordinates_type[1] = 2
 
     space.objects_per_dimension.resize(3)
     num_vertices, num_edges, num_faces = build_grid(N, space)
@@ -207,23 +207,21 @@ def fill_vector_quantity(vector_quantity, num_vertices, num_edges, num_faces):
     # Fill values for vertices
     vector_quantity[0].grid_index = 1
     vector_quantity[0].grid_subset_index = 1
+
     vector_quantity[0].radial = np.random.rand(num_vertices)
-    vector_quantity[0].poloidal = np.random.rand(num_vertices)
-    vector_quantity[0].toroidal = np.random.rand(num_vertices)
+    vector_quantity[0].z = np.random.rand(num_vertices)
 
     # Fill values for edges
     vector_quantity[1].grid_index = 1
     vector_quantity[1].grid_subset_index = 2
     vector_quantity[1].radial = np.random.rand(num_edges)
-    vector_quantity[1].poloidal = np.random.rand(num_edges)
-    vector_quantity[1].toroidal = np.random.rand(num_edges)
+    vector_quantity[1].z = np.random.rand(num_edges)
 
     # Fill values for faces
     vector_quantity[2].grid_index = 1
     vector_quantity[2].grid_subset_index = 5
     vector_quantity[2].radial = np.random.rand(num_faces)
-    vector_quantity[2].poloidal = np.random.rand(num_faces)
-    vector_quantity[2].toroidal = np.random.rand(num_faces)
+    vector_quantity[2].z = np.random.rand(num_faces)
 
 
 def fill_vector_rzphi_quantity(vector_quantity, num_vertices, num_edges, num_faces):
@@ -244,21 +242,18 @@ def fill_vector_rzphi_quantity(vector_quantity, num_vertices, num_edges, num_fac
     vector_quantity[0].grid_subset_index = 1
     vector_quantity[0].r = np.random.rand(num_vertices)
     vector_quantity[0].z = np.random.rand(num_vertices)
-    vector_quantity[0].toroidal = np.random.rand(num_vertices)
 
     # Fill values for edges
     vector_quantity[1].grid_index = 1
     vector_quantity[1].grid_subset_index = 2
     vector_quantity[1].r = np.random.rand(num_edges)
     vector_quantity[1].z = np.random.rand(num_edges)
-    vector_quantity[1].toroidal = np.random.rand(num_edges)
 
     # Fill values for faces
     vector_quantity[2].grid_index = 1
     vector_quantity[2].grid_subset_index = 5
     vector_quantity[2].r = np.random.rand(num_faces)
     vector_quantity[2].z = np.random.rand(num_faces)
-    vector_quantity[2].toroidal = np.random.rand(num_faces)
 
 
 def fill_scalar_quantity(scalar_quantity, num_vertices, num_edges, num_faces):
@@ -315,17 +310,17 @@ def fill_complex_scalar_quantity(
     # Allocate memory for 3 entries: vertices, edges and faces
     complex_scalar_quantity.resize(3)
 
-    # Set 6 vertices
+    # Set vertices
     complex_scalar_quantity[0].grid_index = 1
     complex_scalar_quantity[0].grid_subset_index = 1
     complex_scalar_quantity[0].values = _generate_random_complex(num_vertices)
 
-    # Set 7 edges
+    # Set edges
     complex_scalar_quantity[1].grid_index = 1
     complex_scalar_quantity[1].grid_subset_index = 2
     complex_scalar_quantity[1].values = _generate_random_complex(num_edges)
 
-    # Set 2 faces
+    # Set faces
     complex_scalar_quantity[2].grid_index = 1
     complex_scalar_quantity[2].grid_subset_index = 5
     complex_scalar_quantity[2].values = _generate_random_complex(num_faces)
@@ -344,7 +339,7 @@ def fill_ggd_data(ids, num_vertices, num_edges, num_faces):
 
     # Fill IDS structure with random values
     scalar_array_list, vector_array_list = get_arrays_from_ids(
-        ids, get_empty_arrays=True
+        ids, get_empty_arrays=True, create_empty_structs=True
     )
 
     # Read scalar arrays
@@ -370,13 +365,14 @@ def fill_ggd_data(ids, num_vertices, num_edges, num_faces):
             fill_vector_rzphi_quantity(vector_array, num_vertices, num_edges, num_faces)
 
 
-def fill_ids(ids, N=2):
-    """Fills the IDS with an N x N GGD grid and fills all available GGD arrays on this
+def fill_ids(ids, time_steps=1, grid_size=2):
+    """Fills the IDS with an N x N uniform GGD grid and fills all GGD arrays on this
     grid with random values.
 
     Args:
-        ids: IDS that will be filled
-        N: Size of the N x N grid
+        ids: IDS to be filled.
+        time_steps: Number of time steps to create in the IDS.
+        grid_size: Size of the N x N grid. Defaults to 2, meaning a 2 x 2 grid.
     """
 
     # Create an empty grid_ggd
@@ -384,16 +380,39 @@ def fill_ids(ids, N=2):
 
     # Skip filling grid_ggd if it does not exist
     if grid_ggd is None:
-        logger.debug(f"{ids.metadata.name} has no grid_ggd")
+        logger.warning(f"{ids.metadata.name} has no grid_ggd")
     else:
-        # Create time step
-        ids.time.resize(1)
+        # Create time steps
+        ids.time = [float(t) for t in range(time_steps)]
         ids.ids_properties.homogeneous_time = imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
 
-        # Fill GGD grid with a simple 2x3 grid
-        num_vertices, num_edges, num_faces = fill_NxN_grid(grid_ggd, N)
-        logger.debug(f"filled grid_ggd for {ids.metadata.name}")
+        # Create grid and GGD AoS
+        grid_ggd_aos = imaspy.util.get_parent(grid_ggd)
 
-    # Create an empty GGD
-    create_first_ggd(ids)
-    fill_ggd_data(ids, num_vertices, num_edges, num_faces)
+        grid_ggd_aos.resize(time_steps)
+        ggd = create_first_ggd(ids)
+        ggd_aos = imaspy.util.get_parent(ggd)
+        ggd_aos.resize(time_steps)
+
+        # Create uniform grids and fill them with random GGD data
+        for i in range(time_steps):
+            num_vertices, num_edges, num_faces = fill_NxN_grid(
+                grid_ggd_aos[i], grid_size
+            )
+            logger.debug(f"filled grid_ggd at index {i}.")
+        fill_ggd_data(ids, num_vertices, num_edges, num_faces)
+
+    fill_ids_specific(ids)
+
+
+def fill_ids_specific(ids):
+    """Fill IDS-specific nodes such that these pass the IDS validation check.
+
+    Args:
+        ids: IDS to be filled.
+    """
+    ids_name = ids.metadata.name
+    if ids_name == "wall":
+        ids.description_ggd[0].thickness.resize(len(ids.time))
+    elif ids_name == "runaway_electrons":
+        ids.ggd_fluid.resize(len(ids.time))

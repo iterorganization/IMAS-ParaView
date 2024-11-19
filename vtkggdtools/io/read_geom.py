@@ -24,35 +24,43 @@ logger = logging.getLogger("vtkggdtools")
 
 
 def convert_grid_subset_geometry_to_unstructured_grid(
-    grid_ggd, subset_idx: int, vtk_grid_points
+    grid_ggd, subset_idx: int, vtk_grid_points, progress=None
 ) -> vtkUnstructuredGrid:
-    """
-    Copy the elements found in given grid_ggd/grid_subset IDS node into a
-    vtkUnstructuredGrid instance.
-    This method uses the supplied point coordinates in the form of a vtkPoints instance.
-    :param grid_ggd: a grid_ggd ids node
-    :param subset_idx: an index into grid_ggd/grid_subset
-    :param vtk_grid_points: the point coordinates corresponding to 1d objects in
+    """Copy the elements found in given grid_ggd/grid_subset IDS node into a
+    vtkUnstructuredGrid instance. This method uses the supplied point coordinates in
+    the form of a vtkPoints instance.
+    Args:
+        grid_ggd: a grid_ggd ids node
+        subset_idx: an index into grid_ggd/grid_subset
+        vtk_grid_points: the point coordinates corresponding to 1d objects in
         the subset elements.
-    :return:
+        progress: Progress indicator for Paraview.
+
+
+    Returns:
+        The vtkUnstructuredGrid containing the given points.
     """
     grid = vtkUnstructuredGrid()
     grid.SetPoints(vtk_grid_points)
     if subset_idx >= 0:
-        _fill_vtk_cell_array_from_gs(grid_ggd, subset_idx, grid)
+        _fill_vtk_cell_array_from_gs(grid_ggd, subset_idx, grid, progress)
     else:
-        _fill_vtk_cell_array_from_gs2(grid_ggd, subset_idx, grid)
+        _fill_vtk_cell_array_from_gs2(grid_ggd, subset_idx, grid, progress)
     return grid
 
 
-def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints, ids_name: str) -> None:
-    """
-    Populate the vtkPoints data structure with coordinates from the grid_ggd/space IDS
-    node.
-    :param grid_ggd: a grid_ggd ids node.
-    :param space_idx: an index into the grid_ggd/space AoS.
-    :param points: the vtk points instance.
-    :return: None
+def fill_vtk_points(
+    grid_ggd, space_idx: int, points: vtkPoints, ids_name: str, progress=None
+) -> None:
+    """Populate the vtkPoints data structure with coordinates from the grid_ggd/space
+    IDS node.
+
+    Args:
+        grid_ggd: a grid_ggd ids node.
+        space_idx: an index into the grid_ggd/space AoS.
+        points: the vtk points instance.
+        ids_name: The name of the IDS.
+        progress: Progress indicator for Paraview.
     """
     num_objects0d = len(grid_ggd.space[space_idx].objects_per_dimension[0].object)
     logger.info(f"Reading {num_objects0d} points from grid_ggd/space[{space_idx}]")
@@ -73,7 +81,10 @@ def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints, ids_name: str) 
     else:
         third_dim: Callable[[Any], int] = lambda e: 0
 
-    for obj in grid_ggd.space[space_idx].objects_per_dimension[0].object:
+    objects = grid_ggd.space[space_idx].objects_per_dimension[0].object
+    for obj in objects:
+        if progress:
+            progress.increment(0.5 / len(objects))
         if ids_name == "wall":
             points.InsertNextPoint(
                 (obj.geometry[0] * s, obj.geometry[1] * s, third_dim(obj) * s)
@@ -88,14 +99,15 @@ def fill_vtk_points(grid_ggd, space_idx: int, points: vtkPoints, ids_name: str) 
 
 
 def _fill_vtk_cell_array_from_gs2(
-    grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid
+    grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid, progress=None
 ) -> None:
-    """
-    _fill_vtk_cell_array_from_gs() for wall IDS.
-    :param grid_ggd: a grid_ggd ids node.
-    :param subset_idx: -1
-    :param ugrid: the vtk unstructured grid instance.
-    :return: None
+    """_fill_vtk_cell_array_from_gs() for wall IDS.
+
+    Args:
+        grid_ggd: a grid_ggd ids node.
+        subset_idx: -1
+        ugrid: the vtk unstructured grid instance.
+        progress: Progress indicator for Paraview.
     """
     grid = grid_ggd.space[0].objects_per_dimension
     num_cell = len(grid[2].object)  # 4- 0D, 1D, 2D, 3D objects
@@ -103,6 +115,8 @@ def _fill_vtk_cell_array_from_gs2(
 
     # Uses only 2d cells.
     for j in range(len(grid[2].object)):
+        if progress:
+            progress.increment(0.5 / num_cell)
         obj = grid[2].object[j]
         obj_nodes = obj.nodes
         obj_dimension = 2
@@ -118,15 +132,16 @@ def _fill_vtk_cell_array_from_gs2(
 
 
 def _fill_vtk_cell_array_from_gs(
-    grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid
+    grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid, progress=None
 ) -> None:
-    """
-    Populate the cells in the vtk unstructured grid instance with elements from the
+    """Populate the cells in the vtk unstructured grid instance with elements from the
     grid_ggd/grid_subset IDS node.
-    :param grid_ggd: a grid_ggd ids node.
-    :param subset_idx: an index into the grid_ggd/grid_subset AoS.
-    :param ugrid: the vtk unstructured grid instance.
-    :return: None
+
+    Args:
+        grid_ggd: a grid_ggd ids node.
+        subset_idx: an index into the grid_ggd/grid_subset AoS.
+        ugrid: the vtk unstructured grid instance.
+        progress: Progress indicator for Paraview.
     """
     grid_subset = grid_ggd.grid_subset[subset_idx]
     num_gs_el = len(grid_subset.element)
@@ -142,6 +157,8 @@ def _fill_vtk_cell_array_from_gs(
     object_3d_pt_ids = vtkIdList()
 
     for element in grid_subset.element:
+        if progress:
+            progress.increment(0.5 / num_gs_el)
         for object_ in element.object:
             obj_space = object_.space - 1
             obj_index = object_.index - 1
@@ -198,12 +215,15 @@ def _fill_vtk_cell_array_from_gs(
 
 
 def _get_vtk_cell_type(dimension: int, npts: int) -> int:
-    """
-    Determines a suitable VTK cell type from given cell dimensionality and number of
+    """Determines a suitable VTK cell type from given cell dimensionality and number of
     points for that cell.
-    :param dimension: the number of dimensions for a cell.
-    :param npts: the number of points for a cell.
-    :return: VTK Cell Type
+
+    Args:
+        dimension: the number of dimensions for a cell.
+        npts: the number of points for a cell.
+
+    Returns:
+        VTK Cell Type
     """
     if dimension == 0:
         return VTK_VERTEX

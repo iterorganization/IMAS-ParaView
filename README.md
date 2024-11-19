@@ -40,6 +40,21 @@ paraview
 # Or open up your IDE/code editor and begin development.
 ```
 
+Use the following instructions to run the command line interface:
+```bash
+# Load compatible IMASPy, IMAS and ParaView modules, like:
+module load IMASPy/1.1.0-foss-2023b IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
+# create virtual environment and install dependencies
+python3 -m venv ./venv
+. venv/bin/activate
+pip install --upgrade pip
+pip install --upgrade wheel setuptools
+# For development install in editable mode
+pip install -e .[all]
+# Run CLI with help information
+vtkggdtools --help
+```
+
 # The old readme is kept below for reference
 
 ## How to use

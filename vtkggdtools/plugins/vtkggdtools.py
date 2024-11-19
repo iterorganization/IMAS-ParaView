@@ -20,7 +20,7 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from vtkggdtools._version import get_versions
-from vtkggdtools.convert import ggd_to_vtk
+from vtkggdtools.convert import Converter, InterpSettings
 from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
 from vtkggdtools.io import read_ps, write_geom, write_ps
 from vtkggdtools.io.representables import GridSubsetRepresentable
@@ -37,7 +37,12 @@ from vtkggdtools.paraview_support.servermanager_tools import (
     stringvector,
 )
 from vtkggdtools.progress import Progress
-from vtkggdtools.util import FauxIndexMap, create_first_grid
+from vtkggdtools.util import (
+    EXPERIMENTAL_IDS_NAMES,
+    SUPPORTED_IDS_NAMES,
+    FauxIndexMap,
+    create_first_grid,
+)
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -97,8 +102,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         self._selectable_vector_paths = []
         self._selectable_scalar_paths = []
 
-        self.grid_ggd = None
-        self.ps_reader = None
+        # Cache grids if they have been loaded before
+        self.grid_cache = {}
 
     def _update_property(self, name, value, callback=None):
         """Convenience method to update a property when value changed."""
@@ -154,7 +159,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         """Update the list of available IDSs in the selected Data Entry."""
         self._ids_list = []
         if self._dbentry is not None:
-            for ids_name in read_ps.SUPPORTED_IDS_NAMES:
+            for ids_name in SUPPORTED_IDS_NAMES + EXPERIMENTAL_IDS_NAMES:
                 for occurrence in self._dbentry.list_all_occurrences(ids_name):
                     val = ids_name if occurrence == 0 else f"{ids_name}/{occurrence}"
                     self._ids_list.append(val)
@@ -397,7 +402,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         idsname, _, _ = self._ids_and_occurrence.partition("/")
         if idsname not in self._ids_list:
             logger.warning("Could not find the selected IDS.")
-            self._selectable_arrays = []
+            self._selectable_paths = []
             return 1
         self._ensure_ids()
         if (
@@ -428,26 +433,41 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
 
         # Retrieve the selected time step and GGD arrays
         selected_scalar_paths, selected_vector_paths = self._get_selected_ggd_paths()
-        time_idx = self._get_selected_time_step(outInfo)
-        if time_idx is None:
+        time = self._get_selected_time_step(outInfo)
+        if time is None:
             logger.warning("Selected invalid time step")
             return 1
 
         # Create progress object to advance Paraview progress bar
-        progress = Progress(self.UpdateProgress, self.GetProgress)
+        progress = Progress(self.UpdateProgress)
+
+        # Load grids from cache
+        if time in self.grid_cache:
+            logger.info("Using a previously loaded, cached GGD grid.")
+            cached_ugrids = self.grid_cache[time]
+        else:
+            cached_ugrids = None
 
         # Convert GGD of IDS to VTK format
-        output = ggd_to_vtk(
-            self._ids,
-            time_idx=time_idx,
+        converter = Converter(self._ids)
+        plane_config = InterpSettings(
+            n_plane=self._n_plane, phi_start=self._phi_start, phi_end=self._phi_end
+        )
+        output = converter.ggd_to_vtk(
+            time=time,
             scalar_paths=selected_scalar_paths,
             vector_paths=selected_vector_paths,
-            n_plane=self._n_plane,
-            phi_start=self._phi_start,
-            phi_end=self._phi_end,
+            plane_config=plane_config,
             outInfo=outInfo,
             progress=progress,
+            ugrids=cached_ugrids,
         )
+
+        ugrids = converter.get_ugrids()
+
+        # Add grids to cache
+        if time not in self.grid_cache:
+            self.grid_cache[time] = ugrids
         if output is None:
             logger.warning("Could not convert GGD to VTK.")
         return 1
@@ -471,16 +491,18 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             )
 
             # Load paths from IDS
-            self.ps_reader = read_ps.PlasmaStateReader(self._ids)
+            ps_reader = read_ps.PlasmaStateReader(self._ids)
             (
                 self._selectable_scalar_paths,
                 self._selectable_vector_paths,
                 self._filled_scalar_paths,
                 self._filled_vector_paths,
-            ) = self.ps_reader.load_paths_from_ids()
+            ) = ps_reader.load_paths_from_ids()
             self._selectable_paths = (
                 self._selectable_vector_paths + self._selectable_scalar_paths
             )
+            # Clear grid cache when loading new IDS
+            self.grid_cache = {}
 
     def _name_from_idspath(self, path):
         """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part
@@ -499,21 +521,22 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         path_list = list(path.parts)
         if "ggd" in path_list:
             path_list.remove("ggd")
+        if "description_ggd" in path_list:
+            path_list.remove("description_ggd")
         for i in range(len(path_list)):
             path_list[i] = path_list[i].capitalize()
 
         name = " ".join(path_list)
 
-        # If GGDs are not filled in the first time step, add (?) to their name and add
-        # zero-width space to move them to the bottom of the list. This notifies that
-        # the GGD array is not filled and will most likely not contain any data. We do
-        # not remove these GGD arrays from the selector window entirely, because later
-        # time steps could still contain data.
+        # If GGDs are not filled in the first time step, add (?) to their name. This
+        # notifies that the GGD array is not filled and will most likely not contain
+        # any data. We do not remove these GGD arrays from the selector window entirely,
+        # because later time steps could still contain data.
         if (
             path not in self._filled_scalar_paths
             and path not in self._filled_vector_paths
         ):
-            name = f"\u200B{name} (?)"
+            name = f"{name} (?)"
         return name
 
     def _get_selected_ggd_paths(self):
@@ -538,21 +561,20 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         return selected_scalar_paths, selected_vector_paths
 
     def _get_selected_time_step(self, outInfo):
-        """Retrieves the selected time step index based on the time selection widget in
+        """Retrieves the selected time step based on the time selection widget in
         the ParaView UI.
 
         Args:
             outInfo: An information object that holds details about the update request
 
         Returns:
-            time_step_idx: The index of the selected time step. If the selected time
-            step cannot be found in the IDS, returns None.
+            time_step: The selected time step. If the selected time step cannot be found
+            in the IDS, returns None.
         """
         # Retrieve time step from time selection widget in Paraview UI
         executive = self.GetExecutive()
         outInfo = outInfo.GetInformationObject(0)
         time_step = outInfo.Get(executive.UPDATE_TIME_STEP())
-        time_step_idx = np.where(self._time_steps == time_step)[0]
 
         # Paraview (v5.12.1) contains a bug where, if you load a dataset with only a
         # single timestep, it automatically loads 10 synthetic timesteps ranging from
@@ -563,13 +585,13 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         # 2. open "View > Time Manager"
         # 3. uncheck and check again the checkbox "Time Sources"
         # For now, return None if such a timestep is chosen
-        if len(time_step_idx) == 0:
-            return None
-        else:
-            time_step_idx = time_step_idx[0]
-            logger.debug(f"Selected time step: {self._time_steps[time_step_idx]}")
 
-        return time_step_idx
+        # Check if it exists in list of time steps
+        if time_step in self._time_steps:
+            logger.debug(f"Selected time step in Paraview: {time_step}")
+            return time_step
+        else:
+            return None
 
 
 _ggd_types_xml = "".join(

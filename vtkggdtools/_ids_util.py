@@ -1,7 +1,9 @@
 from imaspy.ids_struct_array import IDSStructArray
 
 
-def _get_nodes_from_path(node, path, get_empty_arrays, ggd_idx=None):
+def _get_nodes_from_path(
+    node, path, get_empty_arrays, ggd_idx=None, create_empty_structs=False
+):
     """Retrieve a list of nodes from a given IDSPath.
 
     Args:
@@ -10,14 +12,22 @@ def _get_nodes_from_path(node, path, get_empty_arrays, ggd_idx=None):
         get_empty_arrays (bool): Whether to return empty GGD arrays
         ggd_idx: The GGD time step to load. Defaults to None, which corresponds with
         loading all timesteps.
+        create_empty_structs: If required to traverse through an empty structure to
+            reach a GGD array, resize this structure to have length 1.
 
     Returns:
         A list of nodes obtained from the specified path.
     """
-    return list(_iter_nodes_from_path(node, path.parts, get_empty_arrays, ggd_idx))
+    return list(
+        _iter_nodes_from_path(
+            node, path.parts, get_empty_arrays, ggd_idx, create_empty_structs
+        )
+    )
 
 
-def _iter_nodes_from_path(node, path_parts, get_empty_arrays, ggd_idx):
+def _iter_nodes_from_path(
+    node, path_parts, get_empty_arrays, ggd_idx, create_empty_structs
+):
     """Recursively iterate through nodes of an IDS node based on path parts.
 
     Args:
@@ -25,6 +35,8 @@ def _iter_nodes_from_path(node, path_parts, get_empty_arrays, ggd_idx):
         path_parts: A list of IDSPath segments (parts).
         get_empty_arrays (bool): Whether to return empty GGD arrays
         ggd_idx: The GGD time step to load.
+        create_empty_structs: If required to traverse through an empty structure to
+            reach a GGD array, resize this structure to have length 1.
 
     Yields:
         The next node in the structure corresponding to the current path part.
@@ -41,14 +53,27 @@ def _iter_nodes_from_path(node, path_parts, get_empty_arrays, ggd_idx):
             if len(child_node) > ggd_idx:
                 structure = child_node[ggd_idx]
                 yield from _iter_nodes_from_path(
-                    structure, path_parts[1:], get_empty_arrays, ggd_idx
+                    structure,
+                    path_parts[1:],
+                    get_empty_arrays,
+                    ggd_idx,
+                    create_empty_structs,
                 )
         else:
+            # If the structure is empty, we cannot traverse to the GGD arrays which are
+            # (grand)children of this node. Therefore, we need to resize it.
+            if len(child_node) == 0 and create_empty_structs:
+                child_node.resize(1)
+
             for structure in child_node:
                 yield from _iter_nodes_from_path(
-                    structure, path_parts[1:], get_empty_arrays, ggd_idx
+                    structure,
+                    path_parts[1:],
+                    get_empty_arrays,
+                    ggd_idx,
+                    create_empty_structs,
                 )
     else:
         yield from _iter_nodes_from_path(
-            child_node, path_parts[1:], get_empty_arrays, ggd_idx
+            child_node, path_parts[1:], get_empty_arrays, ggd_idx, create_empty_structs
         )
