@@ -3,6 +3,8 @@
 
 import getpass
 import logging
+from dataclasses import dataclass
+from typing import List
 
 import imaspy
 import imaspy.ids_defs
@@ -33,6 +35,13 @@ from vtkggdtools.plugins.vtkggdtools import BACKENDS, DEFAULT_BACKEND
 logger = logging.getLogger("vtkggdtools")
 
 PROFILES_1D_IDS_NAMES = ["core_profiles", "core_sources"]
+
+
+@dataclass
+class Profile_1d:
+    name: str
+    coordinates: np.ndarray
+    data: np.ndarray
 
 
 @smproxy.source(label="profiles_1d Reader")
@@ -72,8 +81,8 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         self._time_steps = []
 
         # Lists to store which 1d profile are available and selected
-        self._selected_profiles = []
-        self._selectable_profiles = []
+        self._selected_profile_names: List[str] = []
+        self._selectable_profiles: List[Profile_1d] = []
         self.ps_reader = PlasmaStateReader()
 
     def _update_property(self, name, value, callback=None):
@@ -254,16 +263,16 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         name="ProfileSelector",
         label="Select 1d profiles",
     )
-    def P12_SetProfileArray(self, array, status):
+    def P12_SetProfileArray(self, profile_name, status):
         """Select all or a subset of available profiles to load."""
         # Add a GGD array to selected list
-        if status == 1 and array not in self._selected_profiles:
-            self._selected_profiles.append(array)
+        if status == 1 and profile_name not in self._selected_profile_names:
+            self._selected_profile_names.append(profile_name)
             self.Modified()
 
         # Remove a GGD array from selected list
-        if status == 0 and array in self._selected_profiles:
-            self._selected_profiles.remove(array)
+        if status == 0 and profile_name in self._selected_profile_names:
+            self._selected_profile_names.remove(profile_name)
             self.Modified()
 
     @arrayselectionstringvector(property_name="ProfileArray", attribute_name="Profile")
@@ -274,7 +283,7 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         return len(self._selectable_profiles)
 
     def GetProfileArrayName(self, idx):
-        return self.ps_reader._create_name_recursive(self._selectable_profiles[idx])
+        return self._selectable_profiles[idx].name
 
     def GetProfileArrayStatus(self, *args):
         return 1
@@ -398,7 +407,7 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         if time_idx is None:
             logger.warning("Selected invalid time step")
             return 1
-        if len(self._selected_profiles) > 0:
+        if len(self._selected_profile_names) > 0:
             output = vtkTable.GetData(outInfo)
             self._load_profile(output)
         return 1
@@ -410,34 +419,45 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         Args:
             output: vtkTable output of the plugin
         """
-        profiles_names = [
-            self.ps_reader._create_name_recursive(node) for node in self.filled_profiles
-        ]
         prev_x = None
-        for selected_profile in self._selected_profiles:
-            index = profiles_names.index(selected_profile)
-            logger.info(f"selected {selected_profile}")
-            y = self.filled_profiles[index]
-            x = self.coordinates[index]
+        for profile_name in self._selected_profile_names:
+            profile = self.find_profile_by_name(profile_name)
+            if profile is None:
+                raise RuntimeError(
+                    f"Could not find a matching profile with name {profile_name}"
+                )
 
-            if len(x) != len(y):
+            logger.info(f"selected {profile_name}")
+
+            if len(profile.coordinates) != len(profile.data):
                 raise RuntimeError(
                     "The length of the linked coordinate array does not match."
                 )
 
-            y_values = self._create_vtk_double_array(y, selected_profile)
+            y_values = self._create_vtk_double_array(profile.data, profile.name)
             output.AddColumn(y_values)
 
             if prev_x is None:
-                x_values = self._create_vtk_double_array(x, x.metadata.name)
+                x_values = self._create_vtk_double_array(
+                    profile.coordinates, profile.coordinates.metadata.name
+                )
                 output.AddColumn(x_values)
             else:
-                if x is not prev_x:
+                if profile.coordinates is not prev_x:
                     raise RuntimeError(
                         "The X values for the selected profiles do not match. "
                         "Select the profiles one by one instead."
                     )
-            prev_x = x
+            prev_x = profile.coordinates
+
+    def find_profile_by_name(self, name):
+        for profile in self._selectable_profiles:
+            if profile.name == name:
+                return profile
+        return None
+
+    def _is_name_in_profiles(self, name):
+        return any
 
     def _create_vtk_double_array(self, values, name):
         """Creates a vtkPoints and vtkCellArrays for the nodes and edges of the 1D
@@ -473,7 +493,6 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
                 ignore_unknown_dd_version=True,
             )
             self.filled_profiles = []
-            self.coordinates = []
             time_idx = 0
             if self._ids.metadata.name == "core_profiles":
                 if time_idx < len(self._ids.profiles_1d):
@@ -495,8 +514,9 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
                 if filled_node.metadata.coordinate1.references:
                     path = filled_node.metadata.coordinate1.references[0]
                     coordinates = path.goto(filled_node)
-                    self._selectable_profiles.append(filled_node)
-                    self.coordinates.append(coordinates)
+                    name = self.ps_reader._create_name_recursive(filled_node)
+                    profile = Profile_1d(name, coordinates, filled_node)
+                    self._selectable_profiles.append(profile)
 
     def _get_selected_time_step(self, outInfo):
         """Retrieves the selected time step index based on the time selection widget in
