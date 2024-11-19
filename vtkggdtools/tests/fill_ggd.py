@@ -28,9 +28,7 @@ def fill_NxN_grid(grid_ggd, N):
     # Set grid
     grid_ggd.identifier.name = "linear"
     grid_ggd.identifier.index = 1
-    grid_ggd.identifier.description = (
-        "A simple 2x3 grid consisting of 6 vertices, 7 edges and 2 faces"
-    )
+    grid_ggd.identifier.description = f"A simple {N} x {N} rectangular grid"
 
     # Set space
     grid_ggd.space.resize(1)
@@ -312,17 +310,17 @@ def fill_complex_scalar_quantity(
     # Allocate memory for 3 entries: vertices, edges and faces
     complex_scalar_quantity.resize(3)
 
-    # Set 6 vertices
+    # Set vertices
     complex_scalar_quantity[0].grid_index = 1
     complex_scalar_quantity[0].grid_subset_index = 1
     complex_scalar_quantity[0].values = _generate_random_complex(num_vertices)
 
-    # Set 7 edges
+    # Set edges
     complex_scalar_quantity[1].grid_index = 1
     complex_scalar_quantity[1].grid_subset_index = 2
     complex_scalar_quantity[1].values = _generate_random_complex(num_edges)
 
-    # Set 2 faces
+    # Set faces
     complex_scalar_quantity[2].grid_index = 1
     complex_scalar_quantity[2].grid_subset_index = 5
     complex_scalar_quantity[2].values = _generate_random_complex(num_faces)
@@ -373,7 +371,7 @@ def fill_ids(ids, time_steps=1, grid_size=2):
 
     Args:
         ids: IDS to be filled.
-        time_steps: Number of time steps to create in the IDS. Defaults to 1.
+        time_steps: Number of time steps to create in the IDS.
         grid_size: Size of the N x N grid. Defaults to 2, meaning a 2 x 2 grid.
     """
 

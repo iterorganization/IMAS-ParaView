@@ -20,7 +20,7 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from vtkggdtools._version import get_versions
-from vtkggdtools.convert import ggd_to_vtk
+from vtkggdtools.convert import Converter, InterpSettings
 from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
 from vtkggdtools.io import read_ps, write_geom, write_ps
 from vtkggdtools.io.representables import GridSubsetRepresentable
@@ -102,8 +102,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         self._selectable_vector_paths = []
         self._selectable_scalar_paths = []
 
-        self.grid_ggd = None
-        self.ps_reader = None
+        # Cache grids if they have been loaded before
+        self.grid_cache = {}
 
     def _update_property(self, name, value, callback=None):
         """Convenience method to update a property when value changed."""
@@ -402,7 +402,7 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         idsname, _, _ = self._ids_and_occurrence.partition("/")
         if idsname not in self._ids_list:
             logger.warning("Could not find the selected IDS.")
-            self._selectable_arrays = []
+            self._selectable_paths = []
             return 1
         self._ensure_ids()
         if (
@@ -439,20 +439,35 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             return 1
 
         # Create progress object to advance Paraview progress bar
-        progress = Progress(self.UpdateProgress, self.GetProgress)
+        progress = Progress(self.UpdateProgress)
+
+        # Load grids from cache
+        if time in self.grid_cache:
+            logger.info("Using a previously loaded, cached GGD grid.")
+            cached_ugrids = self.grid_cache[time]
+        else:
+            cached_ugrids = None
 
         # Convert GGD of IDS to VTK format
-        output = ggd_to_vtk(
-            self._ids,
+        converter = Converter(self._ids)
+        plane_config = InterpSettings(
+            n_plane=self._n_plane, phi_start=self._phi_start, phi_end=self._phi_end
+        )
+        output = converter.ggd_to_vtk(
             time=time,
             scalar_paths=selected_scalar_paths,
             vector_paths=selected_vector_paths,
-            n_plane=self._n_plane,
-            phi_start=self._phi_start,
-            phi_end=self._phi_end,
+            plane_config=plane_config,
             outInfo=outInfo,
             progress=progress,
+            ugrids=cached_ugrids,
         )
+
+        ugrids = converter.get_ugrids()
+
+        # Add grids to cache
+        if time not in self.grid_cache:
+            self.grid_cache[time] = ugrids
         if output is None:
             logger.warning("Could not convert GGD to VTK.")
         return 1
@@ -476,16 +491,18 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
             )
 
             # Load paths from IDS
-            self.ps_reader = read_ps.PlasmaStateReader(self._ids)
+            ps_reader = read_ps.PlasmaStateReader(self._ids)
             (
                 self._selectable_scalar_paths,
                 self._selectable_vector_paths,
                 self._filled_scalar_paths,
                 self._filled_vector_paths,
-            ) = self.ps_reader.load_paths_from_ids()
+            ) = ps_reader.load_paths_from_ids()
             self._selectable_paths = (
                 self._selectable_vector_paths + self._selectable_scalar_paths
             )
+            # Clear grid cache when loading new IDS
+            self.grid_cache = {}
 
     def _name_from_idspath(self, path):
         """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part
@@ -504,6 +521,8 @@ class IMASPyGGDReader(VTKPythonAlgorithmBase):
         path_list = list(path.parts)
         if "ggd" in path_list:
             path_list.remove("ggd")
+        if "description_ggd" in path_list:
+            path_list.remove("description_ggd")
         for i in range(len(path_list)):
             path_list[i] = path_list[i].capitalize()
 

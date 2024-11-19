@@ -11,7 +11,7 @@ from rich import box, console, traceback
 from rich.table import Table
 
 import vtkggdtools
-from vtkggdtools.convert import convert_to_xml
+from vtkggdtools.convert import Converter
 from vtkggdtools.util import find_closest_indices
 
 logger = logging.getLogger(__name__)
@@ -173,7 +173,8 @@ def convert_ggd_to_vtk(
 
     # TODO: Add time-dependent VTKHDF conversion
     if format == "xml":
-        convert_to_xml(ids, output_dir, index_list)
+        converter = Converter(ids)
+        converter.write_to_xml(output_dir, index_list)
 
     elif format == "vtkhdf":
         raise NotImplementedError("vtkhdf format is not yet implemented.")

@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 
 from vtk import vtkXMLPartitionedDataSetCollectionWriter
@@ -15,269 +16,300 @@ from vtkggdtools.util import FauxIndexMap, find_closest_indices, get_grid_ggd
 logger = logging.getLogger("vtkggdtools")
 
 
-def convert_to_xml(ids, output, index_list=[0]):
-    """Convert an IDS to VTK format and write it to disk using the XML output writer.
+@dataclass
+class InterpSettings:
+    """Data class containing Fourier interpolation settings."""
 
-    Args:
-    ids: The IDS to be converted.
-    output: The name of the output directory.
-    index_list: A list of time indices to convert. By default only the first time step
-        is converted.
-    """
-    # Create parent directory and point output path there
-    logger.info(f"Creating a output directory at {output}")
-    output.mkdir(parents=True, exist_ok=True)
-    output = output / ids.metadata.name
-    if any(index >= len(ids.time) for index in index_list):
-        raise RuntimeError("A provided index is out of bounds.")
-    # Convert a single time step
-    for index in index_list:
-        logger.info(f"Converting time step {ids.time[index]}...")
-        vtk_object = ggd_to_vtk(ids, time_idx=index)
-        if vtk_object is None:
-            logger.warning(f"Could not convert GGD at time index {index} to VTK.")
-            continue
-        _write_vtk_to_xml(vtk_object, Path(f"{output}_{index}"))
+    n_plane: int = 0
+    phi_start: float = 0.0
+    phi_end: float = 0.0
 
 
-def ggd_to_vtk(
-    ids,
-    *,
-    time=None,
-    time_idx=None,
-    scalar_paths=None,
-    vector_paths=None,
-    n_plane=0,
-    phi_start=0,
-    phi_end=0,
-    outInfo=None,
-    progress=None,
-):
-    """Converts the GGD of an IDS to VTK format.
+class Converter:
+    def __init__(self, ids):
+        self.ids = ids
+        self.time_idx = None
+        self.grid_ggd = None
+        self.output = None
+        self.ps_reader = None
 
-    Args:
-        ids: The IDS to convert to VTK.
-        time: Time step to convert. Defaults to converting the first time step.
-        time_idx: Time index to convert. Defaults to converting the first time step.
-        scalar_paths: A list of IDSPaths of GGD scalar arrays to convert. Defaults
-            to None, in which case all scalar arrays are converted.
-        vector_paths: A list of IDSPaths of GGD vector arrays to convert. Defaults
-            to None, in which case all vectors arrays are converted.
-        n_plane: Number of toroidal planes to be generated if 3D axysimetric. Defaults
-            to 0.
-        phi_start: Start phi plane in degrees. Defaults to 0.
-        phi_end: End plane at phi in degrees. Defaults to 0.
-        outInfo: Source outInfo information object. Defaults to None.
-        progress: Progress indicator for Paraview. Defaults to None.
+    def write_to_xml(self, output_path: Path, index_list=[0]):
+        """Convert an IDS to VTK format and write it to disk using the XML output
+        writer.
 
-    Returns:
-        vtkPartitionedDataSetCollection containing the converted GGD data.
-    """
-    if time is not None and time_idx is not None:
-        logger.error("The time and time index can not be provided at the same time.")
-        return None
-    elif time_idx is not None:
-        if time_idx >= len(ids.time):
-            logger.error("The requested index can not be found in the IDS.")
+        Args:
+        output_path: Path for the output directory.
+        index_list: A list of time indices to convert. By default only the first time
+            step is converted.
+        """
+        logger.info(f"Creating a output directory at {output_path}")
+        output_path.mkdir(parents=True, exist_ok=True)
+        output_path = output_path / self.ids.metadata.name
+        if any(index >= len(self.ids.time) for index in index_list):
+            raise RuntimeError("A provided index is out of bounds.")
+
+        for index in index_list:
+            logger.info(f"Converting time step {self.ids.time[index]}...")
+            vtk_object = self.ggd_to_vtk(time_idx=index)
+            if vtk_object is None:
+                logger.warning(f"Could not convert GGD at time index {index} to VTK.")
+                continue
+            self._write_vtk_to_xml(vtk_object, Path(f"{output_path}_{index}"))
+
+    def ggd_to_vtk(
+        self,
+        time=None,
+        time_idx=None,
+        scalar_paths=None,
+        vector_paths=None,
+        plane_config: InterpSettings = InterpSettings(),
+        outInfo=None,
+        progress=None,
+        ugrids=None,
+    ):
+        """Converts the GGD of an IDS to VTK format.
+
+        Args:
+            time: Time step to convert. Defaults to converting the first time step.
+            time_idx: Time index to convert. Defaults to converting the first time step.
+            scalar_paths: A list of IDSPaths of GGD scalar arrays to convert. Defaults
+                to None, in which case all scalar arrays are converted.
+            vector_paths: A list of IDSPaths of GGD vector arrays to convert. Defaults
+                to None, in which case all vectors arrays are converted.
+            plane_config: Data class containing the interpolation settings.
+            outInfo: Paraview's Source outInfo information object.
+            progress: Progress indicator for Paraview.
+            ugrids: List of ugrids to use instead of reading grids from IDS.
+
+        Returns:
+            vtkPartitionedDataSetCollection containing the converted GGD data.
+        """
+        self.points = vtkPoints()
+        self.assembly = vtkDataAssembly()
+        self.time_idx = self._resolve_time_idx(time_idx, time)
+        self.input_ugrids = ugrids
+        self.ugrids = []
+        self.progress = progress
+
+        if self.time_idx is None:
             return None
-    elif time is not None:
-        indices = find_closest_indices([time], ids.time)
-        if len(indices) == 0:
-            logger.warning(
-                "No time steps found that are less than or equal to the provided "
-                "time. Converting the first time step instead."
-            )
-            time_idx = 0
+
+        self.grid_ggd = get_grid_ggd(self.ids, self.time_idx)
+
+        if not self._is_grid_valid():
+            return None
+
+        self._setup_vtk_object(outInfo)
+
+        if plane_config.n_plane != 0:
+            self._interpolate_jorek(plane_config)
+            return self.output
+
+        self.ps_reader = read_ps.PlasmaStateReader(self.ids)
+        self.ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
+        self._fill_grid_and_plasma_state()
+
+        return self.output
+
+    def get_ugrids(self):
+        """Retrieve the list of VTK unstructured grids."""
+        if self.output is not None and self.ugrids is not []:
+            return self.ugrids
         else:
-            time_idx = indices[0]
-        logger.info(
-            f"Converting timestep: t = {ids.time[time_idx]} at index = {time_idx}"
-        )
-    else:
-        time_idx = len(ids.time) // 2
-        logger.info(
-            "No time or time index provided, so converting the middle time "
-            f"step: t = {ids.time[time_idx]} at index {time_idx}."
-        )
+            return None
 
-    # Retrieve GGD grid from IDS
-    grid_ggd = get_grid_ggd(ids, time_idx)
+    def _resolve_time_idx(self, time_idx, time):
+        """Resolves the appropriate time index based on the given time index or time
+        value.
 
-    # Check if grid is valid
-    if grid_ggd is None:
-        logger.warning("Could not load a valid GGD grid.")
-        return None
-    if not hasattr(grid_ggd, "space") or len(grid_ggd.space) < 1:
-        logger.warning("The grid_ggd does not contain a space.")
-        return None
-    num_subsets = len(grid_ggd.grid_subset)
+        Args:
+            time_idx: The index of the time step to convert.
+            time: The time value to convert.
 
-    # Create output VTK object
-    if outInfo is None:
-        output = vtkPartitionedDataSetCollection()
-    else:
-        output = vtkPartitionedDataSetCollection.GetData(outInfo)
-
-    points = vtkPoints()
-    space_idx = 0
-    ids_name = ids.metadata.name
-
-    read_geom.fill_vtk_points(grid_ggd, space_idx, points, ids_name)
-    assembly = vtkDataAssembly()
-    output.SetDataAssembly(assembly)
-
-    if n_plane != 0:
-        _interpolate_jorek(ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly)
-        return output
-
-    # Load the GGD arrays from the selected GGD paths
-    ps_reader = read_ps.PlasmaStateReader(ids)
-    ps_reader.load_arrays_from_path(time_idx, scalar_paths, vector_paths)
-
-    if num_subsets <= 1:
-        logger.info("No subsets to read from grid_ggd")
-        output.SetNumberOfPartitionedDataSets(1)
-        _fill_grid_and_plasma_state(
-            ids_name, grid_ggd, ps_reader, -1, 0, points, output, assembly
-        )
-    elif ids_name == "wall":
-        # FIXME: what if num_subsets is 2 or 3?
-        output.SetNumberOfPartitionedDataSets(num_subsets - 3)
-        _fill_grid_and_plasma_state(
-            ids_name, grid_ggd, ps_reader, -1, 0, points, output, assembly
-        )
-        for subset_idx in range(4, num_subsets):
-            _fill_grid_and_plasma_state(
-                ids_name,
-                grid_ggd,
-                ps_reader,
-                subset_idx,
-                subset_idx - 3,
-                points,
-                output,
-                assembly,
+        Returns:
+            The resolved time index, or None if an error occurs.
+        """
+        if time is not None and time_idx is not None:
+            logger.error("The time and time index cannot be provided at the same time.")
+            return None
+        elif time_idx is not None:
+            if time_idx >= len(self.ids.time):
+                logger.error("The requested index cannot be found in the IDS.")
+                return None
+            return time_idx
+        elif time is not None:
+            indices = find_closest_indices([time], self.ids.time)
+            if len(indices) == 0:
+                logger.warning(
+                    "No time steps found that are less than or equal to the provided "
+                    "time. Converting the first time step instead."
+                )
+                time_idx = 0
+            else:
+                time_idx = indices[0]
+            logger.info(
+                f"Converting timestep: t = {self.ids.time[time_idx]} at index = "
+                f"{time_idx}"
             )
-            if progress:
-                progress.increment(1.0 / num_subsets)
-    else:
-        output.SetNumberOfPartitionedDataSets(num_subsets)
-        for subset_idx in range(num_subsets):
-            _fill_grid_and_plasma_state(
-                ids_name,
-                grid_ggd,
-                ps_reader,
-                subset_idx,
-                subset_idx,
-                points,
-                output,
-                assembly,
+            return time_idx
+        else:
+            time_idx = len(self.ids.time) // 2
+            logger.info(
+                "No time or time index provided, so converting the middle time "
+                f"step: t = {self.ids.time[time_idx]} at index {time_idx}."
             )
-            if progress:
-                progress.increment(1.0 / num_subsets)
+            return time_idx
 
-    logger.info("Finished loading IDS.")
-    return output
+    def _setup_vtk_object(self, outInfo):
+        """Setup the partitioned dataset collection VTK object and its data assembly.
 
+        Args:
+            outInfo: Paraview's Source outInfo information object.
+        """
+        if outInfo is None:
+            self.output = vtkPartitionedDataSetCollection()
+        else:
+            self.output = vtkPartitionedDataSetCollection.GetData(outInfo)
 
-def _write_vtk_to_xml(vtk_object, output):
-    """Writes the VTK object to disk using the XML partitioned dataset collection
-    writer.
+        if self.input_ugrids is None:
+            read_geom.fill_vtk_points(
+                self.grid_ggd, 0, self.points, self.ids.metadata.name, self.progress
+            )
+        else:
+            if self.progress:
+                self.progress.set(0.5)
+        self.output.SetDataAssembly(self.assembly)
 
-    Args:
-        vtk_object: The VTK object to write to disk.
-        output: The name of the output file.
-    """
-    if vtk_object is None:
-        logger.error("Cannot write None object to XML.")
-        return
-    logger.info("Writing VTK file to disk...")
-    writer = vtkXMLPartitionedDataSetCollectionWriter()
-    writer.SetInputData(vtk_object)
-    output_file = output.with_suffix(".vtpc")
-    writer.SetFileName(output_file)
-    writer.Write()
-    logger.info(f"Successfully wrote VTK object to {output_file}.")
+    def _is_grid_valid(self):
+        """Validates if the grid is properly loaded."""
+        if self.grid_ggd is None:
+            logger.warning("Could not load a valid GGD grid.")
+            return False
+        if not hasattr(self.grid_ggd, "space") or len(self.grid_ggd.space) < 1:
+            logger.warning("The grid_ggd does not contain a space.")
+            return False
+        return True
 
+    def _interpolate_jorek(self, plane_config: InterpSettings):
+        """Interpolate JOREK Fourier space.
 
-def _interpolate_jorek(ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly):
-    """Interpolate JOREK Fourier space.
-
-    Args:
-        ids: The IDS object.
-        grid_ggd: The grid_ggd IDS node.
-        n_plane: Number of toroidal planes to be generated if 3D axysimetric.
-        phi_start: Start phi plane.
-        phi_end: End plane at phi in degrees.
-        output: vtkPartitionedDataSetCollection containing the converted GGD data.
-        assembly: vtkDataAssembly containing the hierarchical hierarchical organization
-            of items in the vtkPartitionedDataSetCollection.
-    """
-    # TODO: allow selecting other grids for Bezier
-    aos_index_values = FauxIndexMap()
-    # Interpolate JOREK Fourier space
-    # TODO: figure out if we can put this functionality in a post-processing step?
-    ids_name = ids.metadata.name
-    number_of_spaces = len(grid_ggd.space)
-    if number_of_spaces > 1 and len(grid_ggd.space[0].coordinates_type) == 2:
-        n_period = grid_ggd.space[1].geometry_type.index
-        if n_period > 0:  # Fourier space with periodicity (JOREK)
-            logger.info(f"Reading Bezier mesh with Fourier periodiciy {n_period}")
+        Args:
+            plane_config: Data class containing the interpolation settings.
+        """
+        aos_index_values = FauxIndexMap()
+        n_period = self.grid_ggd.space[1].geometry_type.index
+        if n_period > 0:
             ugrid = read_bezier.convert_grid_subset_to_unstructured_grid(
-                ids_name,
-                ids,
+                self.ids.metadata.name,
+                self.ids,
                 aos_index_values,
-                n_plane,
-                phi_start,
-                phi_end,
+                plane_config.n_plane,
+                plane_config.phi_start,
+                plane_config.phi_end,
             )
-            output.SetPartition(0, 0, ugrid)
-            child = assembly.AddNode(ids_name, 0)
-            assembly.AddDataSetIndex(child, 0)
-            output.GetMetaData(0).Set(vtkCompositeDataSet.NAME(), ids_name)
+            self.output.SetPartition(0, 0, ugrid)
+            child = self.assembly.AddNode(self.ids.metadata.name, 0)
+            self.assembly.AddDataSetIndex(child, 0)
+            self.output.GetMetaData(0).Set(
+                vtkCompositeDataSet.NAME(), self.ids.metadata.name
+            )
         else:
-            logger.error(
-                f"Number of planes {n_plane} invalid for this "
-                f"{number_of_spaces} number of spaces"
+            logger.error("Invalid plane configuration for the given IDS type.")
+
+    def _fill_grid_and_plasma_state(self):
+        """Fills the VTK output object with the GGD grid and GGD array values."""
+        num_subsets = len(self.grid_ggd.grid_subset)
+
+        if num_subsets <= 1:
+            logger.info("No subsets to read from grid_ggd")
+            self.output.SetNumberOfPartitionedDataSets(1)
+            ugrid = self._get_ugrid(-1, 0, progress=self.progress)
+            self.ps_reader.read_plasma_state(-1, ugrid)
+        elif self.ids.metadata.name == "wall":
+            # FIXME: what if num_subsets is 2 or 3?
+            self.output.SetNumberOfPartitionedDataSets(num_subsets - 3)
+            ugrid = self._get_ugrid(-1, 0)
+            self.ps_reader.read_plasma_state(-1, ugrid)
+
+            for subset_idx in range(4, num_subsets):
+                ugrid = self._get_ugrid(subset_idx, subset_idx - 3)
+                self.ps_reader.read_plasma_state(subset_idx, ugrid)
+                if self.progress:
+                    self.progress.increment(0.5 / num_subsets)
+        else:
+            self.output.SetNumberOfPartitionedDataSets(num_subsets)
+            for subset_idx in range(num_subsets):
+                ugrid = self._get_ugrid(subset_idx, subset_idx)
+                self.ps_reader.read_plasma_state(subset_idx, ugrid)
+                if self.progress:
+                    self.progress.increment(0.5 / num_subsets)
+
+    def _get_ugrid(self, subset_idx, partition, progress=None):
+        """Retrieves or generates an unstructured grid for the specified subset and
+        partition.
+
+        Args:
+            subset_idx: Index of the subset to retrieve or fill.
+            partition: Partition index for the partitioned dataset.
+
+        Returns:
+            The unstructured grid for the given subset and partition.
+        """
+        if self.input_ugrids is None:
+            ugrid = self._fill_grid(subset_idx, partition, progress=progress)
+        else:
+            ugrid = self._fill_grid(
+                subset_idx, partition, ugrid=self.input_ugrids[subset_idx]
             )
-            output = None
-    else:
-        logger.error(
-            f"Number of planes {n_plane} invalid for this IDS type." " Try using N = 0"
-        )
-        output = None
+        self.ugrids.append(ugrid)
+        return ugrid
 
+    def _fill_grid(self, subset_idx, partition, ugrid=None, progress=None):
+        """Converts grid data into a VTK unstructured grid and associates it with the
+        partition.
 
-def _fill_grid_and_plasma_state(
-    ids_name,
-    grid_ggd,
-    ps_reader,
-    subset_idx,
-    partition,
-    vtk_grid_points,
-    output,
-    assembly,
-):
-    """Read GGD data from the IDS and convert it to VTK data.
+        Args:
+            subset_idx: Index of the subset to convert.
+            partition: Partition index for the partitioned dataset.
+            ugrid: Pre-existing ugrid to use.
 
-    Args:
-        ids_name: Name of the IDS object.
-        grid_ggd: The grid_ggd IDS node.
-        ps_reader: Plasmastate reader class responsible for reading the IDS data.
-        subset_idx: Index of the grid subset.
-        partition: Index of the VTK partition.
-        vtk_grid_points: The point coordinates corresponding to 1d objects in
-            the subset elements.
-        output: vtkPartitionedDataSetCollection containing the converted GGD data.
-        assembly: vtkDataAssembly containing the hierarchical hierarchical organization
-            of items in the vtkPartitionedDataSetCollection.
-    """
-    subset = None if subset_idx < 0 else grid_ggd.grid_subset[subset_idx]
-    ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
-        grid_ggd, subset_idx, vtk_grid_points
-    )
-    ps_reader.read_plasma_state(subset_idx, ugrid)
-    output.SetPartition(partition, 0, ugrid)
-    label = str(subset.identifier.name) if subset else ids_name
-    child = assembly.AddNode(label.replace(" ", "_"), 0)
-    assembly.AddDataSetIndex(child, partition)
-    output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
+        Returns:
+            The unstructured grid for the given subset and partition.
+        """
+        subset = None if subset_idx < 0 else self.grid_ggd.grid_subset[subset_idx]
+        if ugrid is None:
+            ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
+                self.grid_ggd, subset_idx, self.points, progress
+            )
+        self.output.SetPartition(partition, 0, ugrid)
+        label = str(subset.identifier.name) if subset else self.ids.metadata.name
+        child = self.assembly.AddNode(label.replace(" ", "_"), 0)
+        self.assembly.AddDataSetIndex(child, partition)
+        self.output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
+        return ugrid
+
+    def _write_vtk_to_xml(self, vtk_object, output_path):
+        """Writes a VTK object to XML file, and a directory containing files for each
+        grid subset. The directory structure looks as follows:
+        .
+        ├── test
+        |   ├── test_0_0.vtu
+        |   ├── test_1_0.vtu
+        |   ├── test_2_0.vtu
+        |   ├── ...
+        └── test.vtpc
+
+        Args:
+            vtk_object: The VTK object to be written to disk.
+            output_path: The output file path where the VTK objects will be saved.
+        """
+        if vtk_object is None:
+            logger.error("Cannot write None object to XML.")
+            return
+
+        logger.info(f"Writing VTK file to {output_path}...")
+        writer = vtkXMLPartitionedDataSetCollectionWriter()
+        writer.SetInputData(vtk_object)
+        writer.SetFileName(output_path.with_suffix(".vtpc"))
+        writer.Write()
+        logger.info(f"Successfully wrote VTK object to {output_path}")
