@@ -51,6 +51,9 @@ class Converter:
         for index in index_list:
             logger.info(f"Converting time step {self.ids.time[index]}...")
             vtk_object = self.ggd_to_vtk(time_idx=index)
+            if vtk_object is None:
+                logger.warning(f"Could not convert GGD at time index {index} to VTK.")
+                continue
             self._write_vtk_to_xml(vtk_object, Path(f"{output_path}_{index}"))
 
     def ggd_to_vtk(
@@ -301,8 +304,8 @@ class Converter:
             output_path: The output file path where the VTK objects will be saved.
         """
         if vtk_object is None:
-            logger.error("Could not convert GGD to VTK file.")
-            raise RuntimeError
+            logger.error("Cannot write None object to XML.")
+            return
 
         logger.info(f"Writing VTK file to {output_path}...")
         writer = vtkXMLPartitionedDataSetCollectionWriter()

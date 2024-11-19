@@ -93,6 +93,8 @@ def print_version():
     help="VTK output format: 'xml' (default) for standard VTK XML files, "
     "or 'vtkhdf' for VTK files using HDF5 format.",
 )
+@click.option("--lazy", is_flag=True, help="Enable lazy loading.")
+@click.option("--no-lazy", is_flag=True, help="Disable lazy loading.")
 def convert_ggd_to_vtk(
     uri,
     output_dir,
@@ -100,6 +102,8 @@ def convert_ggd_to_vtk(
     time,
     all_times,
     format,
+    lazy,
+    no_lazy,
 ):
     """
     Convert a GGD structure in an IDS and write the converted VTK file to disk.
@@ -156,7 +160,13 @@ def convert_ggd_to_vtk(
     uri, ids_name, occurrence = parse_uri(uri)
     click.echo(f"Loading {ids_name} from {uri} with occurrence {occurrence}...")
     entry = imaspy.DBEntry(uri, "r")
-    ids = entry.get(ids_name, occurrence=occurrence, autoconvert=False)
+    click.echo("Loading IDS...")
+    ids = entry.get(
+        ids_name,
+        lazy=is_lazy(all_times, lazy, no_lazy),
+        occurrence=occurrence,
+        autoconvert=False,
+    )
     index_list = parse_time_options(ids.time, index, time, all_times)
 
     click.echo("Converting GGD to a VTK file...")
@@ -168,6 +178,38 @@ def convert_ggd_to_vtk(
 
     elif format == "vtkhdf":
         raise NotImplementedError("vtkhdf format is not yet implemented.")
+
+
+def is_lazy(all_times, lazy_flag, no_lazy_flag):
+    """Determine whether to enable or disable lazy loading, based on
+    if the all_times flag is enabled. Optionally, the default behaviour can be
+    overridden by using the --lazy or --no-lazy flag.
+    Args:
+        all_times: Flag to convert all time steps in an IDS.
+        lazy_flag: Flag to enable lazy loading.
+        no_lazy_flag: Flag to disable lazy loading.
+    """
+    if lazy_flag and no_lazy_flag:
+        click.echo("Both --lazy and --no-lazy flag were provided. Ignoring...")
+        lazy_flag = None
+        no_lazy_flag = None
+
+    # Lazy loading is enabled by default
+    use_lazy_loading = True
+    if all_times:
+        use_lazy_loading = False
+
+    # Override default if flag is provided
+    if lazy_flag:
+        use_lazy_loading = True
+    elif no_lazy_flag:
+        use_lazy_loading = False
+
+    if use_lazy_loading:
+        click.echo("Lazy loading is enabled.")
+    else:
+        click.echo("Lazy loading is disabled.")
+    return use_lazy_loading
 
 
 def parse_uri(uri):
