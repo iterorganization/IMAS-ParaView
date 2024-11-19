@@ -1,4 +1,4 @@
-"""IMASPy plugin to view profiles_1D nodes in IDSs
+"""IMASPy plugin to view profiles_1D nodes
 """
 
 import getpass
@@ -22,7 +22,6 @@ from vtkggdtools.paraview_support.servermanager_tools import (
     arrayselectiondomain,
     arrayselectionstringvector,
     checkbox,
-    doublevector,
     enumeration,
     genericdecorator,
     intvector,
@@ -39,9 +38,11 @@ PROFILES_1D_IDS_NAMES = ["core_profiles", "core_sources"]
 
 @dataclass
 class Profile_1d:
+    """Data class that stores 1d profiles, along with its name and coordinate array."""
+
     name: str
     coordinates: np.ndarray
-    data: np.ndarray
+    profile: np.ndarray
 
 
 @smproxy.source(label="profiles_1d Reader")
@@ -63,10 +64,6 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         self._uri_version = "3"
         # IDS properties
         self._ids_and_occurrence = ""
-        # Bezier interpolation properties
-        self._n_plane = 0
-        self._phi_start = 0
-        self._phi_end = 0
 
         # URI is calculated from the possible inputs
         self._uri = ""
@@ -83,7 +80,7 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         # Lists to store which 1d profile are available and selected
         self._selected_profile_names: List[str] = []
         self._selectable_profiles: List[Profile_1d] = []
-        self.ps_reader = PlasmaStateReader()
+        self._ps_reader = PlasmaStateReader()
 
     def _update_property(self, name, value, callback=None):
         """Convenience method to update a property when value changed."""
@@ -256,15 +253,15 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
             arr.InsertNextValue(val)
         return arr
 
-    # TODO: use arraylistdomain instead of array selection domain, as we can only choose
-    # a single profile at a time.
     @arrayselectiondomain(
         property_name="ProfileArray",
         name="ProfileSelector",
         label="Select 1d profiles",
     )
     def P12_SetProfileArray(self, profile_name, status):
-        """Select all or a subset of available profiles to load."""
+        """Select which 1d profiles to load. If multiple profiles are select, their
+        coordinates must match."""
+
         # Add a GGD array to selected list
         if status == 1 and profile_name not in self._selected_profile_names:
             self._selected_profile_names.append(profile_name)
@@ -316,19 +313,6 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
     def GetTimestepValues(self):
         return self._time_steps
 
-    # Properties for Bezier interpolation
-    ####################################################################################
-
-    @intvector(name="N plane", default_values=0)
-    def P20_SetNPlane(self, val):
-        self._update_property("_n_plane", val)
-
-    @doublevector(name="Phi range", default_values=[0, 0])
-    @smdomain.doublerange(min=0, max=360.0)
-    def P21_SetPhiRange(self, val, val2):
-        self._update_property("_phi_start", val)
-        self._update_property("_phi_end", val2)
-
     # Property groups: sorted by name and must be alphabetically after the properties
     ####################################################################################
 
@@ -354,10 +338,6 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         "Select IDS", ["IDSAndOccurrence", "IDSList", "ProfileSelector", "LazyLoading"]
     )
     def PG1_IDSGroup(self):
-        """Dummy function to define a PropertyGroup."""
-
-    @propertygroup("Bezier interpolation settings", ["N plane", "Phi range"])
-    def PG2_BezierGroup(self):
         """Dummy function to define a PropertyGroup."""
 
     # Implement VTK algorithm
@@ -407,36 +387,40 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
         if time_idx is None:
             logger.warning("Selected invalid time step")
             return 1
+
         if len(self._selected_profile_names) > 0:
             output = vtkTable.GetData(outInfo)
             self._load_profile(output)
         return 1
 
     def _load_profile(self, output):
-        """Creates a vtkDoubleArrays for the selected profile and stores them into
-        a vtkTable.
+        """Creates vtkDoubleArrays for the selected profiles and stores them into
+        a vtkTable. If multiple profiles are selected, it is checked if their
+        coordinates match, if they do they can be plotted in the same 1d plot.
 
         Args:
-            output: vtkTable output of the plugin
+            output: vtkTable output of the plugin containing the profiles and their
+                coordinates as columns.
         """
         prev_x = None
         for profile_name in self._selected_profile_names:
-            profile = self.find_profile_by_name(profile_name)
+            profile = self.find_profile_by_name(profile_name, self._selectable_profiles)
             if profile is None:
                 raise RuntimeError(
                     f"Could not find a matching profile with name {profile_name}"
                 )
 
-            logger.info(f"selected {profile_name}")
+            logger.info(f"Selected {profile_name}.")
 
-            if len(profile.coordinates) != len(profile.data):
+            if len(profile.coordinates) != len(profile.profile):
                 raise RuntimeError(
                     "The length of the linked coordinate array does not match."
                 )
 
-            y_values = self._create_vtk_double_array(profile.data, profile.name)
+            y_values = self._create_vtk_double_array(profile.profile, profile.name)
             output.AddColumn(y_values)
 
+            # If multiple profiles are selected, check if their coordinates match
             if prev_x is None:
                 x_values = self._create_vtk_double_array(
                     profile.coordinates, profile.coordinates.metadata.name
@@ -450,21 +434,28 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
                     )
             prev_x = profile.coordinates
 
-    def find_profile_by_name(self, name):
-        for profile in self._selectable_profiles:
+    def find_profile_by_name(self, name, profiles_list):
+        """Return the profile in the list that has the provided name.
+        If no match is found, None is returned instead.
+
+        Args:
+            name: Name of the 1d profile to search for
+            profiles_list: list of Profile_1d dataclasses to search through
+
+        Returns:
+            Profile_1d dataclass containing the given name
+        """
+        for profile in profiles_list:
             if profile.name == name:
                 return profile
         return None
 
-    def _is_name_in_profiles(self, name):
-        return any
-
     def _create_vtk_double_array(self, values, name):
-        """Creates a vtkPoints and vtkCellArrays for the nodes and edges of the 1D
-        profiles and stores these in the output vtkPolyData as 2D data.
+        """Creates a vtkDoubleArray with the given name and values.
 
         Args:
-            output: vtkPolyData output of the plugin
+            values: values to store in the array
+            name: name to give to the array
 
         Returns:
             vtkDoubleArray with given name and values
@@ -492,17 +483,17 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
                 lazy=self.lazy,
                 ignore_unknown_dd_version=True,
             )
-            self.filled_profiles = []
+            self._filled_profiles = []
             time_idx = 0
             if self._ids.metadata.name == "core_profiles":
                 if time_idx < len(self._ids.profiles_1d):
-                    for node in self._ids.profiles_1d[time_idx]:
-                        self.recursive_node_traverse(node)
+                    for profile_node in self._ids.profiles_1d[time_idx]:
+                        self._recursive_find_profiles(profile_node)
             elif self._ids.metadata.name == "core_sources":
                 for source in self._ids.source:
                     if time_idx < len(source.profiles_1d):
-                        for node in source.profiles_1d[time_idx]:
-                            self.recursive_node_traverse(node)
+                        for profile_node in source.profiles_1d[time_idx]:
+                            self._recursive_find_profiles(profile_node)
             else:
                 raise NotImplementedError(
                     "Currently only the 1D profiles of the 'core_profiles' and "
@@ -510,11 +501,13 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
                 )
 
             self._selectable_profiles = []
-            for filled_node in self.filled_profiles:
+            for filled_node in self._filled_profiles:
+
+                # Only store the profile if it contains coordinates
                 if filled_node.metadata.coordinate1.references:
                     path = filled_node.metadata.coordinate1.references[0]
                     coordinates = path.goto(filled_node)
-                    name = self.ps_reader._create_name_recursive(filled_node)
+                    name = self._ps_reader._create_name_recursive(filled_node)
                     profile = Profile_1d(name, coordinates, filled_node)
                     self._selectable_profiles.append(profile)
 
@@ -552,13 +545,19 @@ class IMASPyProfiles1DReader(VTKPythonAlgorithmBase):
 
         return time_step_idx
 
-    def recursive_node_traverse(self, node):
+    def _recursive_find_profiles(self, node):
+        """Recursively traverses through the IDS node searching for filled 1d profiles.
+        If a filled profile is found, it is appended to self._filled_profiles.
+
+        Args:
+            node: the node to search through.
+        """
         if isinstance(node, IDSStructure) or isinstance(node, IDSStructArray):
             for subnode in node:
-                self.recursive_node_traverse(subnode)
+                self._recursive_find_profiles(subnode)
         else:
             try:
                 if len(node) > 0 and hasattr(node.metadata, "coordinate1"):
-                    self.filled_profiles.append(node)
+                    self._filled_profiles.append(node)
             except TypeError:
                 pass
