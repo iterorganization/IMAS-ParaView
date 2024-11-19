@@ -5,6 +5,36 @@ import numpy as np
 
 logger = logging.getLogger("vtkggdtools")
 
+SUPPORTED_IDS_NAMES = [
+    "edge_profiles",
+    "edge_sources",
+    "edge_transport",
+    "mhd",
+    "radiation",
+    "runaway_electrons",
+    "wall",
+]
+
+# FIXME: Some IDSs do not have the grid structure in a separate `grid_ggd` object, as
+# described by the GGD guidelines. They are for now denoted as experimental IDS, as they
+# are currently not covered by the unit tests. If the DD for these stays like this, they
+# will need to be handled separately. GGD grid locations for each IDS:
+# equilibrium (grids_ggd/grid)
+# distribution_sources (source/ggd/grid)
+# distributions (distribution/ggd/grid)
+# tf (field_map/grid)
+# transport_solver_numerics (boundary_conditions_ggd/grid)
+# waves (coherent_wave/full_wave/grid)
+
+EXPERIMENTAL_IDS_NAMES = [
+    "equilibrium",
+    "distribution_sources",
+    "distributions",
+    "tf",
+    "transport_solver_numerics",
+    "waves",
+]
+
 
 class FauxIndexMap:
     def __getitem__(self, item):
@@ -168,3 +198,18 @@ def int32array(int_list):
         List of converted int32s
     """
     return np.array(int_list, dtype=np.int32)
+
+
+def find_closest_indices(values_to_extract, source_array):
+    """Find indices of the closest values in source_array that are less than or equal
+    to each value in values_to_extract.
+
+    Args:
+        values_to_extract: Values to find in the source array.
+        source_array: Array to search for closest values.
+
+    Returns:
+        Indices of closest values in source_array for each value in values_to_extract.
+    """
+    indices = np.searchsorted(source_array, values_to_extract, side="right") - 1
+    return list(indices[indices >= 0])

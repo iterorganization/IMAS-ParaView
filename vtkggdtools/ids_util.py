@@ -9,6 +9,7 @@ def get_arrays_from_ids(
     get_empty_arrays=False,
     scalar_array_paths=None,
     vector_array_paths=None,
+    create_empty_structs=False,
 ):
     """Fetches GGD scalar and vector arrays that reside in the IDS. If lists of
     IDSPaths of GGD arrays are provided through scalar_array_paths or
@@ -22,6 +23,9 @@ def get_arrays_from_ids(
         get_empty_arrays (bool): Whether to return empty GGD arrays
         scalar_array_paths: A list of IDSPaths of GGD scalar arrays to search through.
         vector_array_paths: A list of IDSPaths of GGD vector arrays to search through.
+        create_empty_structs: If this flag is enabled and an empty structure is
+            encountered through which has to be traversed to reach a GGD array, said
+            structure is resized to have length 1.
     Returns:
         scalar_array_list: The GGD scalar arrays (real & complex)
         vector_array_list: The GGD vector arrays (normal & rphiz)
@@ -41,12 +45,16 @@ def get_arrays_from_ids(
     vector_array_list = []
     for scalar_path in scalar_array_paths:
         scalar_array_list.extend(
-            _get_nodes_from_path(ids, scalar_path, get_empty_arrays, ggd_idx)
+            _get_nodes_from_path(
+                ids, scalar_path, get_empty_arrays, ggd_idx, create_empty_structs
+            )
         )
 
     for vector_path in vector_array_paths:
         vector_array_list.extend(
-            _get_nodes_from_path(ids, vector_path, get_empty_arrays, ggd_idx)
+            _get_nodes_from_path(
+                ids, vector_path, get_empty_arrays, ggd_idx, create_empty_structs
+            )
         )
 
     return scalar_array_list, vector_array_list

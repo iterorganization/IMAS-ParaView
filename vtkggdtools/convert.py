@@ -1,5 +1,7 @@
 import logging
+from pathlib import Path
 
+from vtk import vtkXMLPartitionedDataSetCollectionWriter
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     vtkCompositeDataSet,
@@ -8,15 +10,41 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from vtkggdtools.io import read_bezier, read_geom, read_ps
-from vtkggdtools.util import FauxIndexMap, get_grid_ggd
+from vtkggdtools.util import FauxIndexMap, find_closest_indices, get_grid_ggd
 
 logger = logging.getLogger("vtkggdtools")
 
 
+def convert_to_xml(ids, output, index_list=[0]):
+    """Convert an IDS to VTK format and write it to disk using the XML output writer.
+
+    Args:
+    ids: The IDS to be converted.
+    output: The name of the output directory.
+    index_list: A list of time indices to convert. By default only the first time step
+        is converted.
+    """
+    # Create parent directory and point output path there
+    logger.info(f"Creating a output directory at {output}")
+    output.mkdir(parents=True, exist_ok=True)
+    output = output / ids.metadata.name
+    if any(index >= len(ids.time) for index in index_list):
+        raise RuntimeError("A provided index is out of bounds.")
+    # Convert a single time step
+    for index in index_list:
+        logger.info(f"Converting time step {ids.time[index]}...")
+        vtk_object = ggd_to_vtk(ids, time_idx=index)
+        if vtk_object is None:
+            logger.warning(f"Could not convert GGD at time index {index} to VTK.")
+            continue
+        _write_vtk_to_xml(vtk_object, Path(f"{output}_{index}"))
+
+
 def ggd_to_vtk(
     ids,
-    time_idx,
     *,
+    time=None,
+    time_idx=None,
     scalar_paths=None,
     vector_paths=None,
     n_plane=0,
@@ -29,7 +57,8 @@ def ggd_to_vtk(
 
     Args:
         ids: The IDS to convert to VTK.
-        time_idx: Index of the time step.
+        time: Time step to convert. Defaults to converting the first time step.
+        time_idx: Time index to convert. Defaults to converting the first time step.
         scalar_paths: A list of IDSPaths of GGD scalar arrays to convert. Defaults
             to None, in which case all scalar arrays are converted.
         vector_paths: A list of IDSPaths of GGD vector arrays to convert. Defaults
@@ -44,7 +73,34 @@ def ggd_to_vtk(
     Returns:
         vtkPartitionedDataSetCollection containing the converted GGD data.
     """
-    ps_reader = read_ps.PlasmaStateReader(ids)
+    if time is not None and time_idx is not None:
+        logger.error("The time and time index can not be provided at the same time.")
+        return None
+    elif time_idx is not None:
+        if time_idx >= len(ids.time):
+            logger.error("The requested index can not be found in the IDS.")
+            return None
+    elif time is not None:
+        indices = find_closest_indices([time], ids.time)
+        if len(indices) == 0:
+            logger.warning(
+                "No time steps found that are less than or equal to the provided "
+                "time. Converting the first time step instead."
+            )
+            time_idx = 0
+        else:
+            time_idx = indices[0]
+        logger.info(
+            f"Converting timestep: t = {ids.time[time_idx]} at index = {time_idx}"
+        )
+    else:
+        time_idx = len(ids.time) // 2
+        logger.info(
+            "No time or time index provided, so converting the middle time "
+            f"step: t = {ids.time[time_idx]} at index {time_idx}."
+        )
+
+    # Retrieve GGD grid from IDS
     grid_ggd = get_grid_ggd(ids, time_idx)
 
     # Check if grid is valid
@@ -54,13 +110,14 @@ def ggd_to_vtk(
     if not hasattr(grid_ggd, "space") or len(grid_ggd.space) < 1:
         logger.warning("The grid_ggd does not contain a space.")
         return None
+    num_subsets = len(grid_ggd.grid_subset)
 
+    # Create output VTK object
     if outInfo is None:
         output = vtkPartitionedDataSetCollection()
     else:
         output = vtkPartitionedDataSetCollection.GetData(outInfo)
 
-    num_subsets = len(grid_ggd.grid_subset)
     points = vtkPoints()
     space_idx = 0
     ids_name = ids.metadata.name
@@ -74,6 +131,7 @@ def ggd_to_vtk(
         return output
 
     # Load the GGD arrays from the selected GGD paths
+    ps_reader = read_ps.PlasmaStateReader(ids)
     ps_reader.load_arrays_from_path(time_idx, scalar_paths, vector_paths)
 
     if num_subsets <= 1:
@@ -119,6 +177,26 @@ def ggd_to_vtk(
 
     logger.info("Finished loading IDS.")
     return output
+
+
+def _write_vtk_to_xml(vtk_object, output):
+    """Writes the VTK object to disk using the XML partitioned dataset collection
+    writer.
+
+    Args:
+        vtk_object: The VTK object to write to disk.
+        output: The name of the output file.
+    """
+    if vtk_object is None:
+        logger.error("Cannot write None object to XML.")
+        return
+    logger.info("Writing VTK file to disk...")
+    writer = vtkXMLPartitionedDataSetCollectionWriter()
+    writer.SetInputData(vtk_object)
+    output_file = output.with_suffix(".vtpc")
+    writer.SetFileName(output_file)
+    writer.Write()
+    logger.info(f"Successfully wrote VTK object to {output_file}.")
 
 
 def _interpolate_jorek(ids, grid_ggd, n_plane, phi_start, phi_end, output, assembly):

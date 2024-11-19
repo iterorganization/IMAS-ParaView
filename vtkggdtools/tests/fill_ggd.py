@@ -341,7 +341,7 @@ def fill_ggd_data(ids, num_vertices, num_edges, num_faces):
 
     # Fill IDS structure with random values
     scalar_array_list, vector_array_list = get_arrays_from_ids(
-        ids, get_empty_arrays=True
+        ids, get_empty_arrays=True, create_empty_structs=True
     )
 
     # Read scalar arrays
@@ -367,13 +367,14 @@ def fill_ggd_data(ids, num_vertices, num_edges, num_faces):
             fill_vector_rzphi_quantity(vector_array, num_vertices, num_edges, num_faces)
 
 
-def fill_ids(ids, N=2):
-    """Fills the IDS with an N x N GGD grid and fills all available GGD arrays on this
+def fill_ids(ids, time_steps=1, grid_size=2):
+    """Fills the IDS with an N x N uniform GGD grid and fills all GGD arrays on this
     grid with random values.
 
     Args:
-        ids: IDS that will be filled
-        N: Size of the N x N grid
+        ids: IDS to be filled.
+        time_steps: Number of time steps to create in the IDS. Defaults to 1.
+        grid_size: Size of the N x N grid. Defaults to 2, meaning a 2 x 2 grid.
     """
 
     # Create an empty grid_ggd
@@ -381,16 +382,39 @@ def fill_ids(ids, N=2):
 
     # Skip filling grid_ggd if it does not exist
     if grid_ggd is None:
-        logger.debug(f"{ids.metadata.name} has no grid_ggd")
+        logger.warning(f"{ids.metadata.name} has no grid_ggd")
     else:
-        # Create time step
-        ids.time.resize(1)
+        # Create time steps
+        ids.time = [float(t) for t in range(time_steps)]
         ids.ids_properties.homogeneous_time = imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
 
-        # Fill GGD grid with a simple 2x3 grid
-        num_vertices, num_edges, num_faces = fill_NxN_grid(grid_ggd, N)
-        logger.debug(f"filled grid_ggd for {ids.metadata.name}")
+        # Create grid and GGD AoS
+        grid_ggd_aos = imaspy.util.get_parent(grid_ggd)
 
-    # Create an empty GGD
-    create_first_ggd(ids)
-    fill_ggd_data(ids, num_vertices, num_edges, num_faces)
+        grid_ggd_aos.resize(time_steps)
+        ggd = create_first_ggd(ids)
+        ggd_aos = imaspy.util.get_parent(ggd)
+        ggd_aos.resize(time_steps)
+
+        # Create uniform grids and fill them with random GGD data
+        for i in range(time_steps):
+            num_vertices, num_edges, num_faces = fill_NxN_grid(
+                grid_ggd_aos[i], grid_size
+            )
+            logger.debug(f"filled grid_ggd at index {i}.")
+        fill_ggd_data(ids, num_vertices, num_edges, num_faces)
+
+    fill_ids_specific(ids)
+
+
+def fill_ids_specific(ids):
+    """Fill IDS-specific nodes such that these pass the IDS validation check.
+
+    Args:
+        ids: IDS to be filled.
+    """
+    ids_name = ids.metadata.name
+    if ids_name == "wall":
+        ids.description_ggd[0].thickness.resize(len(ids.time))
+    elif ids_name == "runaway_electrons":
+        ids.ggd_fluid.resize(len(ids.time))
