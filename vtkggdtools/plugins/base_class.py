@@ -3,17 +3,16 @@
 
 import getpass
 import logging
+from abc import ABC, abstractmethod
 
 import imaspy
 import imaspy.ids_defs
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonCore import vtkStringArray
-from vtkmodules.vtkCommonDataModel import vtkDataObject, vtkPartitionedDataSetCollection
+from vtkmodules.vtkCommonDataModel import vtkDataObject
 
-from vtkggdtools.convert import Converter, InterpSettings
 from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
-from vtkggdtools.io import read_ps
 from vtkggdtools.paraview_support.servermanager_tools import (
     arrayselectiondomain,
     arrayselectionstringvector,
@@ -26,8 +25,6 @@ from vtkggdtools.paraview_support.servermanager_tools import (
     stringlistdomain,
     stringvector,
 )
-from vtkggdtools.progress import Progress
-from vtkggdtools.util import EXPERIMENTAL_IDS_NAMES, SUPPORTED_IDS_NAMES
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -41,14 +38,27 @@ DEFAULT_BACKEND = imaspy.ids_defs.MDSPLUS_BACKEND
 """Default backend selected in the UI."""
 
 
-class GGDVTKPluginBase(VTKPythonAlgorithmBase):
+class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     """GGD Reader based on IMASPy"""
 
-    def __init__(self):
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        # Copy all function definitions to the subclass
+        # This allows paraview to see that they are properties that should be exposed
+        for name, value in vars(GGDVTKPluginBase).items():
+            if (
+                callable(value)
+                and not name.startswith("__")
+                and not name == "GetAttributeArrayName"
+                and not name == "_ensure_ids"
+            ):
+                setattr(cls, name, value)
+
+    def __init__(self, output_type, supported_ids):
         super().__init__(
             nInputPorts=0,
             nOutputPorts=1,
-            outputType="vtkPartitionedDataSetCollection",
+            outputType=output_type,
         )
         # URI properties
         self._uri_selection_mode = 1
@@ -60,8 +70,11 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase):
         self._uri_database = "ITER"
         self._uri_user = "public"
         self._uri_version = "3"
+
         # IDS properties
         self._ids_and_occurrence = ""
+        self._supported_ids = supported_ids
+
         # Bezier interpolation properties
         self._n_plane = 0
         self._phi_start = 0
@@ -79,22 +92,9 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase):
         # Load ggd_idx from paraview UI
         self._time_steps = []
 
-        # GGD arrays to load
-        self._selected_paths = []
-        self._selectable_paths = []
-        self._selectable_vector_paths = []
-        self._selectable_scalar_paths = []
-
-        # Cache grids if they have been loaded before
-        self.grid_cache = {}
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        # Copy all function definitions to the subclass
-        # This allows paraview to see that they are properties that should be exposed
-        for name, value in vars(GGDVTKPluginBase).items():
-            if callable(value) and not name.startswith("__"):
-                setattr(cls, name, value)
+        # Values to fill the array selector with
+        self._selectable = []
+        self._selected = []
 
     def _update_property(self, name, value, callback=None):
         """Convenience method to update a property when value changed."""
@@ -141,7 +141,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase):
                     self._dbentry = imaspy.DBEntry(self._uri, "r")
                 except Exception as exc:
                     self._uri_error = str(exc)
-                    self._selectable_paths = []
+                    self._selectable = []
                     self._ids_list = []
             self._update_ids_list()
             self.Modified()
@@ -150,7 +150,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase):
         """Update the list of available IDSs in the selected Data Entry."""
         self._ids_list = []
         if self._dbentry is not None:
-            for ids_name in SUPPORTED_IDS_NAMES + EXPERIMENTAL_IDS_NAMES:
+            for ids_name in self._supported_ids:
                 for occurrence in self._dbentry.list_all_occurrences(ids_name):
                     val = ids_name if occurrence == 0 else f"{ids_name}/{occurrence}"
                     self._ids_list.append(val)
@@ -268,33 +268,36 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase):
         return arr
 
     @arrayselectiondomain(
-        property_name="GGDArray",
-        name="GGDArraySelector",
-        label="Select GGD Arrays",
+        property_name="AttributeArray",
+        name="AttributeArraySelector",
+        label="Select attribute Arrays",
     )
-    def P12_SetGGDArray(self, array, status):
+    def P12_SetAttributeArray(self, array, status):
         """Select all or a subset of available GGD arrays to load."""
-        # Add a GGD array to selected list
-        if status == 1 and array not in self._selected_paths:
-            self._selected_paths.append(array)
+        # Add an array to selected list
+        if status == 1 and array not in self._selected:
+            self._selected.append(array)
             self.Modified()
 
-        # Remove a GGD array from selected list
-        if status == 0 and array in self._selected_paths:
-            self._selected_paths.remove(array)
+        # Remove an array from selected list
+        if status == 0 and array in self._selected:
+            self._selected.remove(array)
             self.Modified()
 
-    @arrayselectionstringvector(property_name="GGDArray", attribute_name="GGD")
-    def _GGDArraySelector(self):
+    @arrayselectionstringvector(
+        property_name="AttributeArray", attribute_name="Attribute"
+    )
+    def _AttributeArraySelector(self):
         pass
 
-    def GetNumberOfGGDArrays(self):
-        return len(self._selectable_paths)
+    def GetNumberOfAttributeArrays(self):
+        return len(self._selectable)
 
-    def GetGGDArrayName(self, idx):
-        return self._name_from_idspath(self._selectable_paths[idx])
+    @abstractmethod
+    def GetAttributeArrayName(self, idx) -> str:
+        pass
 
-    def GetGGDArrayStatus(self, *args):
+    def GetAttributeArrayStatus(self, *args):
         return 1
 
     @checkbox(
@@ -360,7 +363,8 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase):
         """Dummy function to define a PropertyGroup."""
 
     @propertygroup(
-        "Select IDS", ["IDSAndOccurrence", "IDSList", "GGDArraySelector", "LazyLoading"]
+        "Select IDS",
+        ["IDSAndOccurrence", "IDSList", "AttributeArraySelector", "LazyLoading"],
     )
     def PG1_IDSGroup(self):
         """Dummy function to define a PropertyGroup."""
@@ -376,26 +380,19 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase):
         info.Set(vtkDataObject.DATA_TYPE_NAME(), "vtkPartitionedDataSetCollection")
         return 1
 
-    def RequestDataObject(self, request, inInfo, outInfo):
-        output = vtkPartitionedDataSetCollection()
-        outInfo.GetInformationObject(0).Set(vtkDataObject.DATA_OBJECT(), output)
-        outInfo.GetInformationObject(0).Set(
-            vtkDataObject.DATA_EXTENT_TYPE(), output.GetExtentType()
-        )
-        return 1
-
     def RequestInformation(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence:
             return 1
 
         # Load IDS and available time steps
-        # TODO: Add support for IDSs with heterogeneous time mode
         idsname, _, _ = self._ids_and_occurrence.partition("/")
         if idsname not in self._ids_list:
             logger.warning("Could not find the selected IDS.")
-            self._selectable_paths = []
+            self._selectable = []
             return 1
         self._ensure_ids()
+
+        # TODO: Add support for IDSs with heterogeneous time mode
         if (
             self._ids.ids_properties.homogeneous_time
             != imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
@@ -418,138 +415,9 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase):
         outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
         return 1
 
-    def RequestData(self, request, inInfo, outInfo):
-        if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
-            return 1
-
-        # Retrieve the selected time step and GGD arrays
-        selected_scalar_paths, selected_vector_paths = self._get_selected_ggd_paths()
-        time = self._get_selected_time_step(outInfo)
-        if time is None:
-            logger.warning("Selected invalid time step")
-            return 1
-
-        # Create progress object to advance Paraview progress bar
-        progress = Progress(self.UpdateProgress)
-
-        # Load grids from cache
-        if time in self.grid_cache:
-            logger.info("Using a previously loaded, cached GGD grid.")
-            cached_ugrids = self.grid_cache[time]
-        else:
-            cached_ugrids = None
-
-        # Convert GGD of IDS to VTK format
-        converter = Converter(self._ids)
-        plane_config = InterpSettings(
-            n_plane=self._n_plane, phi_start=self._phi_start, phi_end=self._phi_end
-        )
-        output = converter.ggd_to_vtk(
-            time=time,
-            scalar_paths=selected_scalar_paths,
-            vector_paths=selected_vector_paths,
-            plane_config=plane_config,
-            outInfo=outInfo,
-            progress=progress,
-            ugrids=cached_ugrids,
-        )
-
-        ugrids = converter.get_ugrids()
-
-        # Add grids to cache
-        if time not in self.grid_cache:
-            self.grid_cache[time] = ugrids
-        if output is None:
-            logger.warning("Could not convert GGD to VTK.")
-        return 1
-
+    @abstractmethod
     def _ensure_ids(self):
-        """
-        Loads the IDS if not already loaded. Once loaded, initializes plasma state
-        reader and populates scalar and vector paths for selection.
-        """
-        if self._ids is None:
-            idsname, _, occurrence = self._ids_and_occurrence.partition("/")
-            occurrence = int(occurrence or 0)
-            logger.info("Loading IDS %s/%d ...", idsname, occurrence)
-
-            self._ids = self._dbentry.get(
-                idsname,
-                occurrence,
-                autoconvert=False,
-                lazy=self.lazy,
-                ignore_unknown_dd_version=True,
-            )
-
-            # Load paths from IDS
-            ps_reader = read_ps.PlasmaStateReader(self._ids)
-            (
-                self._selectable_scalar_paths,
-                self._selectable_vector_paths,
-                self._filled_scalar_paths,
-                self._filled_vector_paths,
-            ) = ps_reader.load_paths_from_ids()
-            self._selectable_paths = (
-                self._selectable_vector_paths + self._selectable_scalar_paths
-            )
-            # Clear grid cache when loading new IDS
-            self.grid_cache = {}
-
-    def _name_from_idspath(self, path):
-        """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part
-        of the path, with the parts separated by spaces.
-
-        Example:
-            If path is IDSPath('ggd/electrons/pressure'), the function returns
-            "Electrons Pressure"
-
-        Args:
-            path: The IDSPath object to convert into a formatted string
-
-        Returns:
-            A formatted string of the IDSPath
-        """
-        path_list = list(path.parts)
-        if "ggd" in path_list:
-            path_list.remove("ggd")
-        if "description_ggd" in path_list:
-            path_list.remove("description_ggd")
-        for i in range(len(path_list)):
-            path_list[i] = path_list[i].capitalize()
-
-        name = " ".join(path_list)
-
-        # If GGDs are not filled in the first time step, add (?) to their name. This
-        # notifies that the GGD array is not filled and will most likely not contain
-        # any data. We do not remove these GGD arrays from the selector window entirely,
-        # because later time steps could still contain data.
-        if (
-            path not in self._filled_scalar_paths
-            and path not in self._filled_vector_paths
-        ):
-            name = f"{name} (?)"
-        return name
-
-    def _get_selected_ggd_paths(self):
-        """Retrieve the IDSPaths of the selected scalar and vector GGD arrays.
-
-        Returns:
-            selected_scalar_paths: List of IDSPaths of selected scalar GGD arrays
-            selected_vector_paths: List of IDSPaths of selected vector GGD arrays
-        """
-
-        # Determine if selected GGD arrays are scalar or vector arrays
-        selected_scalar_paths = [
-            obj
-            for obj in self._selectable_scalar_paths
-            if self._name_from_idspath(obj) in self._selected_paths
-        ]
-        selected_vector_paths = [
-            obj
-            for obj in self._selectable_vector_paths
-            if self._name_from_idspath(obj) in self._selected_paths
-        ]
-        return selected_scalar_paths, selected_vector_paths
+        pass
 
     def _get_selected_time_step(self, outInfo):
         """Retrieves the selected time step based on the time selection widget in

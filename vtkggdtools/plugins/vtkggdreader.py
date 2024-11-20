@@ -4,8 +4,13 @@
 import logging
 
 from paraview.util.vtkAlgorithm import smhint, smproxy
+from vtkmodules.vtkCommonDataModel import vtkDataObject, vtkPartitionedDataSetCollection
 
+from vtkggdtools.convert import Converter, InterpSettings
+from vtkggdtools.io import read_ps
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
+from vtkggdtools.progress import Progress
+from vtkggdtools.util import EXPERIMENTAL_IDS_NAMES, SUPPORTED_IDS_NAMES
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -13,4 +18,157 @@ logger = logging.getLogger("vtkggdtools")
 @smproxy.source(label="IMASPy GGDReader")
 @smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
 class IMASPyGGDReader(GGDVTKPluginBase):
-    pass
+    def __init__(self):
+        supported_ids = EXPERIMENTAL_IDS_NAMES + SUPPORTED_IDS_NAMES
+        super().__init__("vtkPartitionedDataSetCollection", supported_ids)
+        # GGD arrays to load
+        self._selectable_vector_paths = []
+        self._selectable_scalar_paths = []
+
+        # Cache grids if they have been loaded before
+        self.grid_cache = {}
+
+    def GetAttributeArrayName(self, idx) -> str:
+        return self._name_from_idspath(self._selectable[idx])
+
+    def RequestDataObject(self, request, inInfo, outInfo):
+        output = vtkPartitionedDataSetCollection()
+        outInfo.GetInformationObject(0).Set(vtkDataObject.DATA_OBJECT(), output)
+        outInfo.GetInformationObject(0).Set(
+            vtkDataObject.DATA_EXTENT_TYPE(), output.GetExtentType()
+        )
+        return 1
+
+    def RequestData(self, request, inInfo, outInfo):
+        if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
+            return 1
+
+        # Retrieve the selected time step and GGD arrays
+        selected_scalar_paths, selected_vector_paths = self._get_selected_ggd_paths()
+        time = self._get_selected_time_step(outInfo)
+        if time is None:
+            logger.warning("Selected invalid time step")
+            return 1
+
+        # Create progress object to advance Paraview progress bar
+        progress = Progress(self.UpdateProgress)
+
+        # Load grids from cache
+        if time in self.grid_cache:
+            logger.info("Using a previously loaded, cached GGD grid.")
+            cached_ugrids = self.grid_cache[time]
+        else:
+            cached_ugrids = None
+
+        # Convert GGD of IDS to VTK format
+        converter = Converter(self._ids)
+        plane_config = InterpSettings(
+            n_plane=self._n_plane, phi_start=self._phi_start, phi_end=self._phi_end
+        )
+        output = converter.ggd_to_vtk(
+            time=time,
+            scalar_paths=selected_scalar_paths,
+            vector_paths=selected_vector_paths,
+            plane_config=plane_config,
+            outInfo=outInfo,
+            progress=progress,
+            ugrids=cached_ugrids,
+        )
+
+        ugrids = converter.get_ugrids()
+
+        # Add grids to cache
+        if time not in self.grid_cache:
+            self.grid_cache[time] = ugrids
+        if output is None:
+            logger.warning("Could not convert GGD to VTK.")
+        return 1
+
+    def _ensure_ids(self):
+        """
+        Loads the IDS if not already loaded. Once loaded, initializes plasma state
+        reader and populates scalar and vector paths for selection.
+        """
+        if self._ids is None:
+            idsname, _, occurrence = self._ids_and_occurrence.partition("/")
+            occurrence = int(occurrence or 0)
+            logger.info("Loading IDS %s/%d ...", idsname, occurrence)
+
+            self._ids = self._dbentry.get(
+                idsname,
+                occurrence,
+                autoconvert=False,
+                lazy=self.lazy,
+                ignore_unknown_dd_version=True,
+            )
+
+            # Load paths from IDS
+            ps_reader = read_ps.PlasmaStateReader(self._ids)
+            (
+                self._selectable_scalar_paths,
+                self._selectable_vector_paths,
+                self._filled_scalar_paths,
+                self._filled_vector_paths,
+            ) = ps_reader.load_paths_from_ids()
+            self._selectable = (
+                self._selectable_vector_paths + self._selectable_scalar_paths
+            )
+            # Clear grid cache when loading new IDS
+            self.grid_cache = {}
+        print(f"SELECTED IDS: {self._ids}")
+
+    def _name_from_idspath(self, path):
+        """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part
+        of the path, with the parts separated by spaces.
+
+        Example:
+            If path is IDSPath('ggd/electrons/pressure'), the function returns
+            "Electrons Pressure"
+
+        Args:
+            path: The IDSPath object to convert into a formatted string
+
+        Returns:
+            A formatted string of the IDSPath
+        """
+        path_list = list(path.parts)
+        if "ggd" in path_list:
+            path_list.remove("ggd")
+        if "description_ggd" in path_list:
+            path_list.remove("description_ggd")
+        for i in range(len(path_list)):
+            path_list[i] = path_list[i].capitalize()
+
+        name = " ".join(path_list)
+
+        # If GGDs are not filled in the first time step, add (?) to their name. This
+        # notifies that the GGD array is not filled and will most likely not contain
+        # any data. We do not remove these GGD arrays from the selector window entirely,
+        # because later time steps could still contain data.
+        if (
+            path not in self._filled_scalar_paths
+            and path not in self._filled_vector_paths
+        ):
+            name = f"{name} (?)"
+        return name
+
+    def _get_selected_ggd_paths(self):
+        """Retrieve the IDSPaths of the selected scalar and vector GGD arrays.
+
+        Returns:
+            selected_scalar_paths: List of IDSPaths of selected scalar GGD arrays
+            selected_vector_paths: List of IDSPaths of selected vector GGD arrays
+        """
+
+        # Determine if selected GGD arrays are scalar or vector arrays
+        selected_scalar_paths = [
+            obj
+            for obj in self._selectable_scalar_paths
+            if self._name_from_idspath(obj) in self._selected
+        ]
+        selected_vector_paths = [
+            obj
+            for obj in self._selectable_vector_paths
+            if self._name_from_idspath(obj) in self._selected
+        ]
+        return selected_scalar_paths, selected_vector_paths
