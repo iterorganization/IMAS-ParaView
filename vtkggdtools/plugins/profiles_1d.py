@@ -29,7 +29,7 @@ from vtkggdtools.paraview_support.servermanager_tools import (
     stringlistdomain,
     stringvector,
 )
-from vtkggdtools.plugins.vtkggdtools import BACKENDS, DEFAULT_BACKEND
+from vtkggdtools.plugins.base_class import BACKENDS, DEFAULT_BACKEND
 
 logger = logging.getLogger("vtkggdtools")
 
