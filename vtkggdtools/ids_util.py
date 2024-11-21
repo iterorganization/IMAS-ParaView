@@ -1,4 +1,6 @@
+import imaspy
 from imaspy.ids_data_type import IDSDataType
+from imaspy.ids_toplevel import IDSToplevel
 
 from vtkggdtools._ids_util import _get_nodes_from_path
 
@@ -96,3 +98,52 @@ def recursive_ggd_path_search(
             scalar_array_paths,
             vector_array_paths,
         )
+
+
+def create_name_recursive(node):
+    """Generates a name for an IDS node. The parents of the node are
+    searched recursively until the IDS toplevel is reached. The name of the metadata
+    of each parent node is stored as well as the identifier, name or labels of the
+    node, which are added in brackets, if applicable.
+
+    Args:
+        node: The IDS node
+
+    Returns:
+        Name of the IDS node
+    """
+    name_current_node = node.metadata.name
+    name = ""
+    if (
+        "ggd" != name_current_node
+        and "profiles_1d" != name_current_node
+        and "time_slice" not in name_current_node
+    ):
+        name_appendix = ""
+
+        # Check if node has an identifier.name
+        if hasattr(node, "identifier") and hasattr(node.identifier, "name"):
+            name_appendix = str(node.identifier.name).strip()
+
+        # Check if node has a name
+        elif hasattr(node, "name"):
+            name_appendix = str(node.name).strip()
+
+        # Check if node has a label
+        elif hasattr(node, "label"):
+            name_appendix = str(node.label.value).strip()
+
+        # Add identifier/name/label in between brackets to the full name
+        if name_appendix != "":
+            name = f"{name_current_node.capitalize()} ({name_appendix.capitalize()})"
+        else:
+            name = name_current_node.capitalize()
+
+    parent = imaspy.util.get_parent(node)
+    if parent.metadata is node.metadata:
+        parent = imaspy.util.get_parent(parent)
+    if not isinstance(parent, IDSToplevel):
+        name = f"{create_name_recursive(parent)} {name}"
+
+    name = name.strip()
+    return name

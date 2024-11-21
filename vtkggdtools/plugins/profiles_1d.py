@@ -11,7 +11,7 @@ from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkTable
 
-from vtkggdtools.io.read_ps import PlasmaStateReader
+from vtkggdtools.ids_util import create_name_recursive
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
 
 logger = logging.getLogger("vtkggdtools")
@@ -35,9 +35,6 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
 
     def __init__(self):
         super().__init__("vtkTable", PROFILES_1D_IDS_NAMES)
-
-        # Lists to store which 1d profile are available and selected
-        self._ps_reader = PlasmaStateReader()
 
     def GetAttributeArrayName(self, idx) -> str:
         return self._selectable[idx].name
@@ -171,7 +168,7 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
                 if filled_node.metadata.coordinate1.references:
                     path = filled_node.metadata.coordinate1.references[0]
                     coordinates = path.goto(filled_node)
-                    name = self._ps_reader._create_name_recursive(filled_node)
+                    name = create_name_recursive(filled_node)
                     profile = Profile_1d(name, coordinates, filled_node)
                     self._selectable.append(profile)
 
