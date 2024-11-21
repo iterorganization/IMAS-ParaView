@@ -48,8 +48,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             if (
                 callable(value)
                 and not name.startswith("__")
-                and not name == "GetAttributeArrayName"
-                and not name == "_ensure_ids"
+                and not getattr(value, "__isabstractmethod__", False)
             ):
                 setattr(cls, name, value)
 
