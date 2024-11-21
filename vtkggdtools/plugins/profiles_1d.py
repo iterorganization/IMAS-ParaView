@@ -8,7 +8,7 @@ import numpy as np
 from imaspy.ids_struct_array import IDSStructArray
 from imaspy.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
-from vtkmodules.vtkCommonCore import vtkDoubleArray
+from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules.vtkCommonDataModel import vtkTable
 
 from vtkggdtools.ids_util import create_name_recursive
@@ -121,11 +121,9 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
         Returns:
             vtkDoubleArray with given name and values
         """
-        array = vtkDoubleArray()
-        array.SetName(name)
-        for value in values:
-            array.InsertNextValue(value)
-        return array
+        vtk_array = numpy_to_vtk(values, deep=1)
+        vtk_array.SetName(name)
+        return vtk_array
 
     def request_information(self):
         """
