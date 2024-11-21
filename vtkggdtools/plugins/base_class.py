@@ -10,7 +10,6 @@ import imaspy.ids_defs
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonCore import vtkStringArray
-from vtkmodules.vtkCommonDataModel import vtkDataObject
 
 from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
 from vtkggdtools.paraview_support.servermanager_tools import (
@@ -375,10 +374,6 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
 
     # Implement VTK algorithm
     ####################################################################################
-
-    def FillOutputPortInformation(self, port, info):
-        info.Set(vtkDataObject.DATA_TYPE_NAME(), "vtkPartitionedDataSetCollection")
-        return 1
 
     def RequestInformation(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence:
