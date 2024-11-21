@@ -22,8 +22,8 @@ class IMASPyGGDReader(GGDVTKPluginBase):
         supported_ids = EXPERIMENTAL_IDS_NAMES + SUPPORTED_IDS_NAMES
         super().__init__("vtkPartitionedDataSetCollection", supported_ids)
         # GGD arrays to load
-        self._selectable_vector_paths = []
-        self._selectable_scalar_paths = []
+        self._all_vector_paths = []
+        self._all_scalar_paths = []
 
         # Cache grids if they have been loaded before
         self.grid_cache = {}
@@ -93,9 +93,7 @@ class IMASPyGGDReader(GGDVTKPluginBase):
         """
         if self._ids is not None:
             if self.show_all:
-                self._selectable = (
-                    self._selectable_vector_paths + self._selectable_scalar_paths
-                )
+                self._selectable = self._all_vector_paths + self._all_scalar_paths
             else:
                 self._selectable = self._filled_vector_paths + self._filled_scalar_paths
         pass
@@ -109,8 +107,8 @@ class IMASPyGGDReader(GGDVTKPluginBase):
             # Load paths from IDS
             ps_reader = read_ps.PlasmaStateReader(self._ids)
             (
-                self._selectable_scalar_paths,
-                self._selectable_vector_paths,
+                self._all_scalar_paths,
+                self._all_vector_paths,
                 self._filled_scalar_paths,
                 self._filled_vector_paths,
             ) = ps_reader.load_paths_from_ids()
@@ -164,12 +162,12 @@ class IMASPyGGDReader(GGDVTKPluginBase):
         # Determine if selected GGD arrays are scalar or vector arrays
         selected_scalar_paths = [
             obj
-            for obj in self._selectable_scalar_paths
+            for obj in self._all_scalar_paths
             if self._name_from_idspath(obj) in self._selected
         ]
         selected_vector_paths = [
             obj
-            for obj in self._selectable_vector_paths
+            for obj in self._all_vector_paths
             if self._name_from_idspath(obj) in self._selected
         ]
         return selected_scalar_paths, selected_vector_paths

@@ -72,7 +72,8 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
                 )
 
             logger.info(f"Selected {profile_name}.")
-
+            if len(profile.profile) == 0:
+                raise RuntimeError("The selected profile is empty.")
             if len(profile.coordinates) != len(profile.profile):
                 raise RuntimeError(
                     "The length of the linked coordinate array does not match."
@@ -129,7 +130,10 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
         """
         Placeholder for actions during the RequestInformation stage, intentionally left empty.
         """
-        pass
+        if self.show_all:
+            self._selectable = self._get_profiles(self._all_profiles)
+        else:
+            self._selectable = self._get_profiles(self._filled_profiles)
 
     def setup_ids(self):
         """
@@ -137,32 +141,37 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
         """
         if self._ids is not None:
             self._filled_profiles = []
+            self._all_profiles = []
             time_idx = 0
             if self._ids.metadata.name == "core_profiles":
-                if time_idx < len(self._ids.profiles_1d):
-                    for profile_node in self._ids.profiles_1d[time_idx]:
-                        self._recursive_find_profiles(profile_node)
+                for profile_node in self._ids.profiles_1d[time_idx]:
+                    self._recursive_find_profiles(profile_node)
             elif self._ids.metadata.name == "core_sources":
                 for source in self._ids.source:
-                    if time_idx < len(source.profiles_1d):
-                        for profile_node in source.profiles_1d[time_idx]:
-                            self._recursive_find_profiles(profile_node)
+                    for profile_node in source.profiles_1d[time_idx]:
+                        self._recursive_find_profiles(profile_node)
             else:
                 raise NotImplementedError(
                     "Currently only the 1D profiles of the 'core_profiles' and "
                     "'core_sources' are supported"
                 )
 
-            self._selectable = []
-            for filled_node in self._filled_profiles:
-
-                # Only store the profile if it contains coordinates
-                if filled_node.metadata.coordinate1.references:
-                    path = filled_node.metadata.coordinate1.references[0]
-                    coordinates = path.goto(filled_node)
-                    name = create_name_recursive(filled_node)
-                    profile = Profile_1d(name, coordinates, filled_node)
-                    self._selectable.append(profile)
+    def _get_profiles(self, profiles):
+        profile_list = []
+        for profile in profiles:
+            # Only store the profile if it contains coordinates
+            if profile.metadata.coordinate1.references:
+                path = profile.metadata.coordinate1.references[0]
+                coordinates = path.goto(profile)
+                name = create_name_recursive(profile)
+                if not any(
+                    profile is filled_profile
+                    for filled_profile in self._filled_profiles
+                ):
+                    name = name + " (?)"
+                profile = Profile_1d(name, coordinates, profile)
+                profile_list.append(profile)
+        return profile_list
 
     def _recursive_find_profiles(self, node):
         """Recursively traverses through the IDS node searching for filled 1d profiles.
@@ -176,7 +185,9 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
                 self._recursive_find_profiles(subnode)
         else:
             try:
-                if len(node) > 0 and hasattr(node.metadata, "coordinate1"):
-                    self._filled_profiles.append(node)
+                if hasattr(node.metadata, "coordinate1"):
+                    if len(node) > 0:
+                        self._filled_profiles.append(node)
+                    self._all_profiles.append(node)
             except TypeError:
                 pass
