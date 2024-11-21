@@ -84,24 +84,18 @@ class IMASPyGGDReader(GGDVTKPluginBase):
             logger.warning("Could not convert GGD to VTK.")
         return 1
 
-    def _ensure_ids(self):
+    def request_information(self):
         """
-        Loads the IDS if not already loaded. Once loaded, initializes plasma state
-        reader and populates scalar and vector paths for selection.
+        Placeholder for actions during the RequestInformation stage, intentionally left empty.
         """
-        if self._ids is None:
-            idsname, _, occurrence = self._ids_and_occurrence.partition("/")
-            occurrence = int(occurrence or 0)
-            logger.info("Loading IDS %s/%d ...", idsname, occurrence)
+        pass
 
-            self._ids = self._dbentry.get(
-                idsname,
-                occurrence,
-                autoconvert=False,
-                lazy=self.lazy,
-                ignore_unknown_dd_version=True,
-            )
-
+    def setup_ids(self):
+        """
+        Initializes plasma state reader and populates scalar and vector paths for
+        the array selection domaindomain selection.
+        """
+        if self._ids is not None:
             # Load paths from IDS
             ps_reader = read_ps.PlasmaStateReader(self._ids)
             (
@@ -115,7 +109,6 @@ class IMASPyGGDReader(GGDVTKPluginBase):
             )
             # Clear grid cache when loading new IDS
             self.grid_cache = {}
-        print(f"SELECTED IDS: {self._ids}")
 
     def _name_from_idspath(self, path):
         """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part

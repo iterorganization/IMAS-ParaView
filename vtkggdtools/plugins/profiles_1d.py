@@ -127,23 +127,17 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
             array.InsertNextValue(value)
         return array
 
-    def _ensure_ids(self):
+    def request_information(self):
         """
-        Loads the IDS if not already loaded. Once loaded, initializes plasma state
-        reader and populates scalar and vector paths for selection.
+        Placeholder for actions during the RequestInformation stage, intentionally left empty.
         """
-        if self._ids is None:
-            idsname, _, occurrence = self._ids_and_occurrence.partition("/")
-            occurrence = int(occurrence or 0)
-            logger.info("Loading IDS %s/%d ...", idsname, occurrence)
+        pass
 
-            self._ids = self._dbentry.get(
-                idsname,
-                occurrence,
-                autoconvert=False,
-                lazy=self.lazy,
-                ignore_unknown_dd_version=True,
-            )
+    def setup_ids(self):
+        """
+        Populates list of selectable profiles for the array selection domain.
+        """
+        if self._ids is not None:
             self._filled_profiles = []
             time_idx = 0
             if self._ids.metadata.name == "core_profiles":

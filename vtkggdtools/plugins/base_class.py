@@ -394,7 +394,9 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             logger.warning("Could not find the selected IDS.")
             self._selectable = []
             return 1
-        self._ensure_ids()
+
+        self._load_ids_from_backend()
+        self.request_information()
 
         # TODO: Add support for IDSs with heterogeneous time mode
         if (
@@ -419,8 +421,46 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
         return 1
 
+    def _load_ids_from_backend(self):
+        """If the IDS is None, it will load the selected IDS from the backend. If lazy
+        loading is disabled, the entire IDS will be loaded during this step.
+        """
+        if self._ids is None:
+            idsname, _, occurrence = self._ids_and_occurrence.partition("/")
+            occurrence = int(occurrence or 0)
+            logger.info("Loading IDS %s/%d ...", idsname, occurrence)
+
+            if self._dbentry is None:
+                raise RuntimeError(
+                    "Could not fetch IDS from the database entry, "
+                    "as the entry is empty"
+                )
+            self._ids = self._dbentry.get(
+                idsname,
+                occurrence,
+                autoconvert=False,
+                lazy=self.lazy,
+                ignore_unknown_dd_version=True,
+            )
+            self.setup_ids()
+
     @abstractmethod
-    def _ensure_ids(self):
+    def request_information(self):
+        """
+        Called during the RequestInformation stage in ParaView.
+        Subclasses should implement this method to define actions or
+        operations that need to occur during the RequestInformation stage
+        of the pipeline.
+        """
+        pass
+
+    @abstractmethod
+    def setup_ids(self):
+        """
+        Called after an IDS is loaded for the first time. Subclasses should implement
+        this method to define any initialization or setup processes that should only
+        run once after the IDS is loaded.
+        """
         pass
 
     def _get_selected_time_step(self, outInfo):
