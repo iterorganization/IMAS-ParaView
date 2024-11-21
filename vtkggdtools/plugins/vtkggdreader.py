@@ -29,6 +29,8 @@ class IMASPyGGDReader(GGDVTKPluginBase):
         self.grid_cache = {}
 
     def GetAttributeArrayName(self, idx) -> str:
+        print(self._name_from_idspath(self._selectable[idx]))
+
         return self._name_from_idspath(self._selectable[idx])
 
     def RequestDataObject(self, request, inInfo, outInfo):
@@ -40,6 +42,7 @@ class IMASPyGGDReader(GGDVTKPluginBase):
         return 1
 
     def RequestData(self, request, inInfo, outInfo):
+        print("requestdata")
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
             return 1
 
@@ -88,6 +91,13 @@ class IMASPyGGDReader(GGDVTKPluginBase):
         """
         Placeholder for actions during the RequestInformation stage, intentionally left empty.
         """
+        if self._ids is not None:
+            if self.show_all:
+                self._selectable = (
+                    self._selectable_vector_paths + self._selectable_scalar_paths
+                )
+            else:
+                self._selectable = self._filled_vector_paths + self._filled_scalar_paths
         pass
 
     def setup_ids(self):
@@ -104,9 +114,7 @@ class IMASPyGGDReader(GGDVTKPluginBase):
                 self._filled_scalar_paths,
                 self._filled_vector_paths,
             ) = ps_reader.load_paths_from_ids()
-            self._selectable = (
-                self._selectable_vector_paths + self._selectable_scalar_paths
-            )
+
             # Clear grid cache when loading new IDS
             self.grid_cache = {}
 
