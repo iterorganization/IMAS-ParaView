@@ -293,6 +293,16 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
 
     @abstractmethod
     def GetAttributeArrayName(self, idx) -> str:
+        """Retrieve the name of the attribute array at a specified index.
+        This method should be implemented by subclasses to return the name
+        of an attribute array based on its index.
+
+        Args:
+            idx: The index of the attribute array.
+
+        Returns:
+            The name of the attribute array corresponding to the given index.
+        """
         pass
 
     def GetAttributeArrayStatus(self, *args):
