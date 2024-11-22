@@ -28,8 +28,6 @@ class IMASPyGGDReader(GGDVTKPluginBase):
         self.grid_cache = {}
 
     def GetAttributeArrayName(self, idx) -> str:
-        print(self._name_from_idspath(self._selectable[idx]))
-
         return self._name_from_idspath(self._selectable[idx])
 
     def RequestDataObject(self, request, inInfo, outInfo):
@@ -41,7 +39,6 @@ class IMASPyGGDReader(GGDVTKPluginBase):
         return 1
 
     def RequestData(self, request, inInfo, outInfo):
-        print("requestdata")
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
             return 1
 

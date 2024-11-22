@@ -12,6 +12,7 @@ from vtkmodules.vtkCommonDataModel import vtkTable
 
 from vtkggdtools.ids_util import create_name_recursive
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
+from vtkggdtools.util import find_closest_indices
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -42,18 +43,42 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
             return 1
 
-        # Retrieve the selected time step and GGD arrays
-        time_idx = self._get_selected_time_step(outInfo)
-        if time_idx is None:
+        # Retrieve the selected time step and profiles
+        time = self._get_selected_time_step(outInfo)
+        if time is None:
             logger.warning("Selected invalid time step")
             return 1
 
+        index_list = find_closest_indices([time], self._ids.time)
+        time_idx = index_list[0]
+
+        if self._ids is not None:
+            self._filled_profiles = []
+            self._all_profiles = []
+            if self._ids.metadata.name == "core_profiles":
+                for profile_node in self._ids.profiles_1d[time_idx]:
+                    self._recursive_find_profiles(profile_node)
+            elif self._ids.metadata.name == "core_sources":
+                for source in self._ids.source:
+                    for profile_node in source.profiles_1d[time_idx]:
+                        self._recursive_find_profiles(profile_node)
+            else:
+                raise NotImplementedError(
+                    "Currently only the 1D profiles of the 'core_profiles' and "
+                    "'core_sources' are supported"
+                )
+
+        if self.show_all:
+            self._selectable = self._get_profiles(self._all_profiles)
+        else:
+            self._selectable = self._get_profiles(self._filled_profiles)
+
         if len(self._selected) > 0:
             output = vtkTable.GetData(outInfo)
-            self._load_profile(output)
+            self._load_profiles(output)
         return 1
 
-    def _load_profile(self, output):
+    def _load_profiles(self, output):
         """Creates vtkDoubleArrays for the selected profiles and stores them into
         a vtkTable. If multiple profiles are selected, it is checked if their
         coordinates match, if they do they can be plotted in the same 1d plot.
@@ -64,7 +89,7 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
         """
         prev_x = None
         for profile_name in self._selected:
-            profile = self.find_profile_by_name(profile_name, self._selectable)
+            profile = self.find_profile(profile_name, self._selectable)
             if profile is None:
                 raise RuntimeError(
                     f"Could not find a matching profile with name {profile_name}"
@@ -95,7 +120,7 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
                     )
             prev_x = profile.coordinates
 
-    def find_profile_by_name(self, name, profiles_list):
+    def find_profile(self, name, profiles_list):
         """Return the profile in the list that has the provided name.
         If no match is found, None is returned instead.
 
@@ -130,15 +155,6 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
         Select which profiles to show in the array domain selector, based
         on whether the "Show All" checkbox is enabled.
         """
-        if self.show_all:
-            self._selectable = self._get_profiles(self._all_profiles)
-        else:
-            self._selectable = self._get_profiles(self._filled_profiles)
-
-    def setup_ids(self):
-        """
-        Populates list of selectable profiles for the array selection domain.
-        """
         if self._ids is not None:
             self._filled_profiles = []
             self._all_profiles = []
@@ -155,8 +171,28 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
                     "Currently only the 1D profiles of the 'core_profiles' and "
                     "'core_sources' are supported"
                 )
+        if self.show_all:
+            self._selectable = self._get_profiles(self._all_profiles)
+        else:
+            self._selectable = self._get_profiles(self._filled_profiles)
+
+    def setup_ids(self):
+        """
+        Populates list of selectable profiles for the array selection domain.
+        """
+        pass
 
     def _get_profiles(self, profiles):
+        """Filters and processes a list of profiles to extract those containing coordinates and
+        creates a list of Profile_1d objects with generated names.
+
+        Args:
+            profiles: A list of profile objects to be processed.
+
+        Returns:
+            A list of `Profile_1d` objects created from the provided profiles that
+                  contain valid coordinates.
+        """
         profile_list = []
         for profile in profiles:
             # Only store the profile if it contains coordinates
