@@ -1,5 +1,4 @@
-"""IMASPy plugin to view profiles_1D nodes
-"""
+"""IMASPy plugin to view profiles_1D nodes"""
 
 import logging
 from dataclasses import dataclass
@@ -128,7 +127,8 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
 
     def request_information(self):
         """
-        Placeholder for actions during the RequestInformation stage, intentionally left empty.
+        Select which profiles to show in the array domain selector, based
+        on whether the "Show All" checkbox is enabled.
         """
         if self.show_all:
             self._selectable = self._get_profiles(self._all_profiles)
