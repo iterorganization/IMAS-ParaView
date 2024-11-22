@@ -126,7 +126,8 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
 
     def request_information(self):
         """
-        Placeholder for actions during the RequestInformation stage, intentionally left empty.
+        Placeholder for actions during the RequestInformation stage,
+        intentionally left empty.
         """
         pass
 

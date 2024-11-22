@@ -1,5 +1,4 @@
-"""IMASPy version of the paraview plugin classes.
-"""
+"""IMASPy version of the paraview plugin classes."""
 
 import logging
 
@@ -86,7 +85,8 @@ class IMASPyGGDReader(GGDVTKPluginBase):
 
     def request_information(self):
         """
-        Placeholder for actions during the RequestInformation stage, intentionally left empty.
+        Placeholder for actions during the RequestInformation stage,
+        intentionally left empty.
         """
         pass
 
