@@ -1,8 +1,13 @@
 import imaspy
 import pytest
+from imaspy.backends.imas_core.db_entry_helpers import put_children
 from imaspy.ids_path import IDSPath
 
-from vtkggdtools.ids_util import get_arrays_from_ids, recursive_ggd_path_search
+from vtkggdtools.ids_util import (
+    create_name_recursive,
+    get_arrays_from_ids,
+    recursive_ggd_path_search,
+)
 from vtkggdtools.tests.fill_ggd import fill_scalar_quantity, fill_vector_quantity
 
 
@@ -117,3 +122,40 @@ def test_recursive_ggd_path_search():
     recursive_ggd_path_search(ids.metadata, scalar_arrays, vector_arrays)
     assert set(scalar_arrays) == set(es_scalar_v3_41)
     assert set(vector_arrays) == set(es_vector_v3_41)
+
+
+def test_create_name_recursive_ggd():
+    ids = imaspy.IDSFactory(version="3.40.0").new("edge_sources")
+
+    # Resize relevant structures
+    ids.source.resize(1)
+    ids.source[0].ggd.resize(1)
+    ids.source[0].ggd[0].ion.resize(1)
+    ids.source[0].ggd[0].ion[0].state.resize(1)
+    array = ids.source[0].ggd[0].ion[0].state[0].energy
+
+    # Set identifier name and labels
+    ids.source[0].identifier.name = "Charge exchange"
+    ids.source[0].ggd[0].ion[0].label = "Ar"
+    ids.source[0].ggd[0].ion[0].state[0].label = "Ar+14"
+
+    name = create_name_recursive(array)
+    assert name == "Source (Charge exchange) Ion (Ar) State (Ar+14) Energy"
+
+
+def test_create_name_recursive_profiles():
+    ids = imaspy.IDSFactory(version="3.40.0").new("core_profiles")
+
+    ids.profiles_1d.resize(1)
+    phi_potential = ids.profiles_1d[0].phi_potential
+    electrons_pressure = ids.profiles_1d[0].electrons.pressure
+    ids.profiles_1d[0].ion.resize(2)
+    ids.profiles_1d[0].ion[0].label = "D"
+    temperature = ids.profiles_1d[0].ion[0].temperature
+    ids.profiles_1d[0].ion[1].label = "T"
+    density = ids.profiles_1d[0].ion[1].density
+
+    assert create_name_recursive(phi_potential) == "Phi_potential"
+    assert create_name_recursive(electrons_pressure) == "Electrons Pressure"
+    assert create_name_recursive(temperature) == "Ion (D) Temperature"
+    assert create_name_recursive(density) == "Ion (T) Density"
