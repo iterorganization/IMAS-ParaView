@@ -91,18 +91,21 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
         for profile_name in self._selected:
             profile = self.find_profile(profile_name, self._selectable)
             if profile is None:
-                raise RuntimeError(
+                logger.warning(
                     f"Could not find a matching profile with name {profile_name}"
                 )
+                continue
 
-            logger.info(f"Selected {profile_name}.")
             if len(profile.profile) == 0:
-                raise RuntimeError("The selected profile is empty.")
+                logger.warning(f"The selected profile {profile.name} is empty.")
+                continue
             if len(profile.coordinates) != len(profile.profile):
-                raise RuntimeError(
+                logger.warning(
                     "The length of the linked coordinate array does not match."
                 )
+                continue
 
+            logger.info(f"Selected {profile_name}.")
             y_values = self._create_vtk_double_array(profile.profile, profile.name)
             output.AddColumn(y_values)
 
@@ -200,11 +203,7 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
                 path = profile.metadata.coordinate1.references[0]
                 coordinates = path.goto(profile)
                 name = create_name_recursive(profile)
-                if not any(
-                    profile is filled_profile
-                    for filled_profile in self._filled_profiles
-                ):
-                    name = name + " (?)"
+
                 profile = Profile_1d(name, coordinates, profile)
                 profile_list.append(profile)
         return profile_list
