@@ -51,27 +51,7 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
 
         index_list = find_closest_indices([time], self._ids.time)
         time_idx = index_list[0]
-
-        if self._ids is not None:
-            self._filled_profiles = []
-            self._all_profiles = []
-            if self._ids.metadata.name == "core_profiles":
-                for profile_node in self._ids.profiles_1d[time_idx]:
-                    self._recursive_find_profiles(profile_node)
-            elif self._ids.metadata.name == "core_sources":
-                for source in self._ids.source:
-                    for profile_node in source.profiles_1d[time_idx]:
-                        self._recursive_find_profiles(profile_node)
-            else:
-                raise NotImplementedError(
-                    "Currently only the 1D profiles of the 'core_profiles' and "
-                    "'core_sources' are supported"
-                )
-
-        if self.show_all:
-            self._selectable = self._get_profiles(self._all_profiles)
-        else:
-            self._selectable = self._get_profiles(self._filled_profiles)
+        self.update_available_profiles(time_idx)
 
         if len(self._selected) > 0:
             output = vtkTable.GetData(outInfo)
@@ -158,10 +138,17 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
         Select which profiles to show in the array domain selector, based
         on whether the "Show All" checkbox is enabled.
         """
+
+    def update_available_profiles(self, time_idx):
+        """
+        Searches through the profiles_1d node at the current time step for
+        available profiles to select. Which profiles show in the array domain selector
+        is based on whether the "Show All" checkbox is enabled.
+        """
+
         if self._ids is not None:
             self._filled_profiles = []
             self._all_profiles = []
-            time_idx = 0
             if self._ids.metadata.name == "core_profiles":
                 for profile_node in self._ids.profiles_1d[time_idx]:
                     self._recursive_find_profiles(profile_node)
@@ -181,13 +168,26 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
 
     def setup_ids(self):
         """
-        Called after an IDS is loaded for the first time. Intentionally left empty.
+        Select which profiles to show in the array domain selector, based
+        on whether the "Show All" checkbox is enabled.
         """
-        pass
+        # WARN: The selected time cannot be fetched during the RequestInformation
+        # step, so we take the first time index here to update the domain selection
+        # array. This causes some issues if there are profiles in the IDS which are
+        # not filled in later time steps. For example, if the ion for
+        # profiles_1d[0]/ion[0].density has name "A", but for
+        # profiles_1d[1]/ion[0].density the ion has the name "B", this profile is
+        # lost. To mitigate this, ensure that the ions which will be used are
+        # all defined at the first time step. Alternatively, a current workaround
+        # for this is to press the "Show All" checkbox twice (i.e. enable and then
+        # disable), when a later time step is selected. This will cause the UI
+        # to update and show the available profiles at the selected time step.
+        time_idx = 0
+        self.update_available_profiles(time_idx)
 
     def _get_profiles(self, profiles):
-        """Filters and processes a list of profiles to extract those containing coordinates and
-        creates a list of Profile_1d objects with generated names.
+        """Filters and processes a list of profiles to extract those containing
+        coordinates and creates a list of Profile_1d objects with generated names.
 
         Args:
             profiles: A list of profile objects to be processed.
