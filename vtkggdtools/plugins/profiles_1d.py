@@ -1,5 +1,4 @@
-"""IMASPy plugin to view profiles_1D nodes
-"""
+"""IMASPy plugin to view profiles_1D nodes"""
 
 import logging
 from dataclasses import dataclass
@@ -155,7 +154,6 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
 
             self._selectable = []
             for filled_node in self._filled_profiles:
-
                 # Only store the profile if it contains coordinates
                 if filled_node.metadata.coordinate1.references:
                     path = filled_node.metadata.coordinate1.references[0]
@@ -175,8 +173,5 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
             for subnode in node:
                 self._recursive_find_profiles(subnode)
         else:
-            try:
-                if len(node) > 0 and hasattr(node.metadata, "coordinate1"):
-                    self._filled_profiles.append(node)
-            except TypeError:
-                pass
+            if node.metadata.ndim == 1 and node.has_value:
+                self._filled_profiles.append(node)
