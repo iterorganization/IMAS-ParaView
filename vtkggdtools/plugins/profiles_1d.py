@@ -181,7 +181,7 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
 
     def setup_ids(self):
         """
-        Populates list of selectable profiles for the array selection domain.
+        Called after an IDS is loaded for the first time. Intentionally left empty.
         """
         pass
 
@@ -219,10 +219,7 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
             for subnode in node:
                 self._recursive_find_profiles(subnode)
         else:
-            try:
-                if hasattr(node.metadata, "coordinate1"):
-                    if len(node) > 0:
-                        self._filled_profiles.append(node)
-                    self._all_profiles.append(node)
-            except TypeError:
-                pass
+            if node.metadata.ndim == 1:
+                if node.has_value:
+                    self._filled_profiles.append(node)
+                self._all_profiles.append(node)
