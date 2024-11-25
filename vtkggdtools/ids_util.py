@@ -19,7 +19,7 @@ def get_arrays_from_ids(
     Args:
         ids: The IDS from which to fetch GGD arrays
         ggd_idx: The GGD time step to load. Defaults to None, which corresponds with
-        loading all timesteps.
+            loading all timesteps.
         get_empty_arrays (bool): Whether to return empty GGD arrays
         scalar_array_paths: A list of IDSPaths of GGD scalar arrays to search through.
         vector_array_paths: A list of IDSPaths of GGD vector arrays to search through.

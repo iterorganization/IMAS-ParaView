@@ -38,9 +38,9 @@ class Converter:
         writer.
 
         Args:
-        output_path: Path for the output directory.
-        index_list: A list of time indices to convert. By default only the first time
-            step is converted.
+            output_path: Path for the output directory.
+            index_list: A list of time indices to convert. By default only the first
+                time step is converted.
         """
         logger.info(f"Creating a output directory at {output_path}")
         output_path.mkdir(parents=True, exist_ok=True)
