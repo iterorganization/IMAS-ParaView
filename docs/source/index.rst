@@ -28,12 +28,11 @@ Manual
    installing
    usage
 
-.. FIXME: errors on paraview import
-.. .. toctree::
-..    :caption: API docs
-..    :maxdepth: 1
-..
-..    api
+.. toctree::
+   :caption: API docs
+   :maxdepth: 1
+
+   api
 
 .. toctree::
    :caption: Development
