@@ -29,16 +29,17 @@ def fill_grid_ggd_basic_geometry(
     dataset: vtkPointSet, space_idx: int, grid_ggd
 ) -> GridGGDRepresentable:
     """
-    Copy the basic geometry objects (0d, 1d, 2d, 3d) and space coordinates into a
-    grid_ggd.
-    The points for the dataset go into the grid_ggd/space[space_idx] AoS element.
-    :param dataset: can be any derived instance of a vtkPointSet.
-        converted into a vtkUnstructuredGrid for convenience.
-    :param space_idx: an index into the grid_ggd/space AoS.
-        This space will be populated with the dataset's points.
-    :param grid_ggd: the grid_ggd IDS node.
-    :return: an instance of GridGGDRepresentable that helps go from vtk point ids to
-        indices into grid_ggd/**/object.
+    Copy the basic geometry objects (0D, 1D, 2D, 3D) and space coordinates into a grid_ggd.
+
+    The points for the dataset are stored in the `grid_ggd/space[space_idx]` AoS element.
+
+    Args:
+        dataset: Any derived instance of a vtkPointSet, which is converted into a vtkUnstructuredGrid for convenience.
+        space_idx: An index into the `grid_ggd/space` AoS. This space will be populated with the dataset's points.
+        grid_ggd: The grid_ggd IDS node.
+
+    Returns:
+        An instance of `GridGGDRepresentable` that facilitates mapping from VTK point IDs to indices in `grid_ggd/**/object`.
     """
     # Convert input dataset into a vtkUnstructuredGrid
     append_filter = vtkAppendDataSets()
@@ -72,16 +73,18 @@ def convert_vtk_dataset_to_grid_subset_geometry(
     grid_ggd,
 ) -> None:
     """
-    Populate the grid_ggd/grid_subset IDS node with the elements which have a >0 value
-    for the cell data 'name'd array.
-    :param representable: A GridGGDRepresentable.
-    :param subset_rep: A GridSubsetRepresentable.
-    :param space_idx: an index into the grid_ggd/space AoS.
-    :param subset_idx: an index into the grid_ggd/grid_subset AoS.
-    :param name: the name of the cell data array. All cells with array value >0 will
-        go into the grid_subset with name.
-    :param grid_ggd: the grid_ggd IDS node.
-    :return: None
+    Populate the `grid_ggd/grid_subset` IDS node with elements that have a >0 value in the specified cell data array.
+
+    Args:
+        representable: A `GridGGDRepresentable`.
+        subset_rep: A `GridSubsetRepresentable`.
+        space_idx: An index into the `grid_ggd/space` AoS.
+        subset_idx: An index into the `grid_ggd/grid_subset` AoS.
+        name: The name of the cell data array. All cells with an array value >0 will be added to the grid_subset with this name.
+        grid_ggd: The `grid_ggd` IDS node.
+
+    Returns:
+        None
     """
 
     is_custom_subset = name not in imaspy.identifiers.ggd_subset_identifier.__members__
@@ -91,9 +94,9 @@ def convert_vtk_dataset_to_grid_subset_geometry(
     if not is_custom_subset:
         grid_ggd.grid_subset[subset_idx].identifier.name = name
         grid_ggd.grid_subset[subset_idx].identifier.index = subset_enum.index
-        grid_ggd.grid_subset[subset_idx].identifier.description = (
-            subset_enum.description
-        )
+        grid_ggd.grid_subset[
+            subset_idx
+        ].identifier.description = subset_enum.description
     else:
         grid_ggd.grid_subset[subset_idx].identifier.name = name
         grid_ggd.grid_subset[subset_idx].identifier.index = -subset_idx
@@ -196,14 +199,19 @@ def __add_unique_edge(
     object1d_idx: int,
 ) -> int:
     """
-    A convenient function to add unique edge.
-    (p1, p2) is treated the same as (p2, p1).
-    :param cell: a vtkCell whose edges we shall add into edges map.
-    :param etbl: a vtkEdgeTable to keep track of inserted edges.
-    :param edges: an edge map (go from edge point ids to 1d object index in grid_ggd).
-    :param pts: a working list of points.
-    :param object1d_idx: the current 1d object index.
-    :return: the no. of edges that were inserted.
+    A convenient function to add a unique edge.
+
+    Edges are treated as undirected, meaning (p1, p2) is equivalent to (p2, p1).
+
+    Args:
+        cell: A `vtkCell` whose edges will be added to the edges map.
+        etbl: A `vtkEdgeTable` to track inserted edges.
+        edges: An edge map that maps edge point IDs to the 1D object index in `grid_ggd`.
+        pts: A working list of points.
+        object1d_idx: The current 1D object index.
+
+    Returns:
+        The number of edges that were inserted.
     """
     num_pts = cell.GetNumberOfPoints()
     edge_added = 0
@@ -220,13 +228,19 @@ def __add_unique_edge(
 
 def __add_unique_face(cell: vtkCell, faces: OrderedDict, object2d_idx: int) -> bool:
     """
-    A convenient function to add unique face.
-    (p1, p2, p3, p4) is treated the same as (p4, p3, p2, p1).
-    :param cell: a vtkCell representing a face which we shall add into faces map.
-    :param faces: a face map (go from face point ids to 2d object index in grid_ggd).
-    :param object2d_idx: the current 2d object index.
-    :return: True if the face was added, else False.
+    A convenient function to add a unique face.
+
+    Faces are treated as undirected, meaning (p1, p2, p3, p4) is equivalent to (p4, p3, p2, p1).
+
+    Args:
+        cell: A `vtkCell` representing a face to be added to the faces map.
+        faces: A face map that maps face point IDs to the 2D object index in `grid_ggd`.
+        object2d_idx: The current 2D object index.
+
+    Returns:
+        bool: `True` if the face was added, otherwise `False`.
     """
+
     num_pts = cell.GetNumberOfPoints()
     face = []
 
@@ -242,13 +256,17 @@ def __add_unique_face(cell: vtkCell, faces: OrderedDict, object2d_idx: int) -> b
 
 
 def _fill_0d_objects(dataset: vtkUnstructuredGrid, space_idx: int, grid_ggd) -> None:
+    """Fill all the 0D objects in the grid_ggd IDS node.
+
+    Args:
+        dataset: A vtkUnstructuredGrid instance.
+        space_idx: An index into the grid_ggd/space AoS.
+        grid_ggd: The grid_ggd IDS node.
+
+    Returns:
+        None
     """
-    Fill all the 0D objects in the grid_ggd IDS node.
-    :param dataset: a vtkUnstructuredGrid instance.
-    :param space_idx: an index into the grid_ggd/space AoS.
-    :param grid_ggd: the grid_ggd IDS node.
-    :return: None
-    """
+
     # Determine the size of space/objects_per_dim[0]/object/geometry node.
     geom_size = 3
     points = dataset.GetPoints()
@@ -291,12 +309,15 @@ def _fill_0d_objects(dataset: vtkUnstructuredGrid, space_idx: int, grid_ggd) -> 
 
 
 def _fill_1d_objects(dataset: vtkUnstructuredGrid, space_idx: int, grid_ggd):
-    """
-    Fill all the 1D objects in the grid_ggd IDS node.
-    :param dataset: a vtkUnstructuredGrid instance.
-    :param space_idx: an index into the grid_ggd/space AoS.
-    :param grid_ggd: the grid_ggd IDS node.
-    :return: None
+    """Fill all the 1D objects in the grid_ggd IDS node.
+
+    Args:
+        dataset: A vtkUnstructuredGrid instance.
+        space_idx: An index into the grid_ggd/space AoS.
+        grid_ggd: The grid_ggd IDS node.
+
+    Returns:
+        None
     """
     points = dataset.GetPoints()
     space = grid_ggd.space[space_idx]
@@ -379,15 +400,19 @@ def _fill_2d_objects(
     edges: Dict[Tuple[int, int], int],
     grid_ggd,
 ) -> OrderedDict:
+    """Fill all the 2D objects in the grid_ggd IDS node.
+
+    Args:
+        dataset: A vtkUnstructuredGrid instance.
+        space_idx: An index into the grid_ggd/space AoS.
+        edges: An edge map to go from edge point ids to the 1D object index under
+            grid_ggd.
+        grid_ggd: The grid_ggd IDS node.
+
+    Returns:
+        face map
     """
-    Fill all the 2D objects in the grid_ggd IDS node.
-    :param dataset: a vtkUnstructuredGrid instance.
-    :param space_idx: an index into the grid_ggd/space AoS.
-    :param edges: an edge map to go from edge point ids to the 1d object index under
-        grid_ggd.
-    :param grid_ggd: the grid_ggd IDS node.
-    :return: face map
-    """
+
     points = dataset.GetPoints()
     space = grid_ggd.space[space_idx]
     objects_per_dim = space.objects_per_dimension
@@ -479,14 +504,17 @@ def _fill_2d_objects(
 def _fill_3d_objects(
     dataset: vtkUnstructuredGrid, space_idx: int, faces: OrderedDict, grid_ggd
 ) -> OrderedDict:
-    """
-    Fill all the 3D objects in the grid_ggd IDS node.
-    :param dataset: a vtkUnstructuredGrid instance.
-    :param space_idx: an index into the grid_ggd/space AoS.
-    :param faces: an face map to go from face point ids to the 2d object index under
-        grid_ggd.
-    :param grid_ggd: the grid_ggd IDS node.
-    :return: volume map
+    """Fill all the 3D objects in the grid_ggd IDS node.
+
+    Args:
+        dataset: A vtkUnstructuredGrid instance.
+        space_idx: An index into the grid_ggd/space AoS.
+        faces: A face map to go from face point ids to the 2D object index under
+            grid_ggd.
+        grid_ggd: The grid_ggd IDS node.
+
+    Returns:
+        volume map
     """
     space = grid_ggd.space[space_idx]
     objects_per_dim = space.objects_per_dimension
@@ -569,12 +597,16 @@ def _fill_3d_objects(
 
 
 def _fill_implicit_grid_subsets(space_idx: int, grid_ggd):
+    """Fill up the implicit grid subsets for 0D, 1D, 2D, 3D objects.
+
+    Args:
+        space_idx: An index into the grid_ggd/space AoS.
+        grid_ggd: The grid_ggd IDS node.
+
+    Returns:
+        None
     """
-    Fill up the implicit grid subsets for 0D, 1D, 2D, 3D objects.
-    :param space_idx: an index into the grid_ggd/space AoS.
-    :param grid_ggd: the grid_ggd IDS node.
-    :return:
-    """
+
     grid_subset_id_name = ["nodes", "edges", "cells", "volumes"]
     # Populate grid_subset and space.
     for i in range(4):
@@ -582,12 +614,14 @@ def _fill_implicit_grid_subsets(space_idx: int, grid_ggd):
         dim = i
         name = grid_subset_id_name[dim]
         grid_ggd.grid_subset[subset_idx].identifier.name = name
-        grid_ggd.grid_subset[subset_idx].identifier.index = (
-            imaspy.identifiers.ggd_subset_identifier[name].index
-        )
-        grid_ggd.grid_subset[subset_idx].identifier.description = (
-            imaspy.identifiers.ggd_subset_identifier[name].description
-        )
+        grid_ggd.grid_subset[
+            subset_idx
+        ].identifier.index = imaspy.identifiers.ggd_subset_identifier[name].index
+        grid_ggd.grid_subset[
+            subset_idx
+        ].identifier.description = imaspy.identifiers.ggd_subset_identifier[
+            name
+        ].description
         grid_ggd.grid_subset[subset_idx].dimension = dim + 1
         num_elements = len(grid_ggd.space[space_idx].objects_per_dimension[dim].object)
         grid_ggd.grid_subset[subset_idx].element.resize(num_elements)

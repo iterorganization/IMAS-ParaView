@@ -10,7 +10,7 @@ class GridGGDRepresentable:
     A representation of the index transforms required to go from point and cell IDS
     in the VTK unstructured grid to the object indices in a grid_ggd IDS node.
     The indices are stored in C/python index convention (0, ... n)
-    Prior to assigning these indices to a grid_ggd/**/attribute, increment by 1.
+    Prior to assigning these indices to a grid_ggd/.../attribute, increment by 1.
     """
 
     ugrid: vtkUnstructuredGrid = None
