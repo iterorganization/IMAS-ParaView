@@ -1,5 +1,4 @@
-"""IMASPy version of the paraview plugin classes.
-"""
+"""IMASPy version of the paraview plugin classes."""
 
 import getpass
 import logging
@@ -310,7 +309,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
 
     @checkbox(
         name="ShowAll",
-        label="Show All",
+        label="Show All Attribute Arrays",
         default_values="0",
     )
     def P13_SetShowEmpty(self, val):
