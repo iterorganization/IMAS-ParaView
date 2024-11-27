@@ -47,7 +47,7 @@ Deployment projects
 -------------------
 
 TODO
-.. There is currently one Bamboo deployment project for IDS-validator:
+.. There is currently one Bamboo deployment project for GGD-VTK:
 ..
 .. `Deploy IDS-Validator-Doc <https://ci.iter.org/deploy/viewDeploymentProjectEnvironments.action?id=1908899843>`_
 ..     Deploy the documentation created in the `Build docs` job to `Sharepoint

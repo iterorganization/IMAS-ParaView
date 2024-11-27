@@ -31,7 +31,7 @@ clean: Makefile
 # Seems to overwrite autosummary documentation though! So not using this rn
 MODULE_EXCLUDE="../tests/**"
 apidocs: Makefile
-	sphinx-apidoc --implicit-namespaces -o "$(GENERATEDDIR)" "$(PROJECT_ROOT)/ids_validator/" $(MODULE_EXCLUDE)
+	sphinx-apidoc --implicit-namespaces -o "$(GENERATEDDIR)" "$(PROJECT_ROOT)/vtkggdtools/" $(MODULE_EXCLUDE)
 
 # Sphinx will run this automatically
 autogen: Makefile
