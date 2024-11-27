@@ -28,18 +28,20 @@ from vtkggdtools.io.representables import GridGGDRepresentable, GridSubsetRepres
 def fill_grid_ggd_basic_geometry(
     dataset: vtkPointSet, space_idx: int, grid_ggd
 ) -> GridGGDRepresentable:
-    """
-    Copy the basic geometry objects (0D, 1D, 2D, 3D) and space coordinates into a grid_ggd.
-
-    The points for the dataset are stored in the `grid_ggd/space[space_idx]` AoS element.
+    """Copy the basic geometry objects (0D, 1D, 2D, 3D) and space coordinates into a
+    grid_ggd. The points for the dataset are stored in the `grid_ggd/space[space_idx]`
+    AoS element.
 
     Args:
-        dataset: Any derived instance of a vtkPointSet, which is converted into a vtkUnstructuredGrid for convenience.
-        space_idx: An index into the `grid_ggd/space` AoS. This space will be populated with the dataset's points.
+        dataset: Any derived instance of a vtkPointSet, which is converted into a
+            vtkUnstructuredGrid for convenience.
+        space_idx: An index into the `grid_ggd/space` AoS. This space will be
+            populated with the dataset's points.
         grid_ggd: The grid_ggd IDS node.
 
     Returns:
-        An instance of `GridGGDRepresentable` that facilitates mapping from VTK point IDs to indices in `grid_ggd/**/object`.
+        An instance of `GridGGDRepresentable` that facilitates mapping from VTK
+            point IDs to indices in `grid_ggd/**/object`.
     """
     # Convert input dataset into a vtkUnstructuredGrid
     append_filter = vtkAppendDataSets()
@@ -73,14 +75,16 @@ def convert_vtk_dataset_to_grid_subset_geometry(
     grid_ggd,
 ) -> None:
     """
-    Populate the `grid_ggd/grid_subset` IDS node with elements that have a >0 value in the specified cell data array.
+    Populate the `grid_ggd/grid_subset` IDS node with elements that have a >0 value in
+    the specified cell data array.
 
     Args:
         representable: A `GridGGDRepresentable`.
         subset_rep: A `GridSubsetRepresentable`.
         space_idx: An index into the `grid_ggd/space` AoS.
         subset_idx: An index into the `grid_ggd/grid_subset` AoS.
-        name: The name of the cell data array. All cells with an array value >0 will be added to the grid_subset with this name.
+        name: The name of the cell data array. All cells with an array value >0 will be
+            added to the grid_subset with this name.
         grid_ggd: The `grid_ggd` IDS node.
 
     Returns:
@@ -94,9 +98,9 @@ def convert_vtk_dataset_to_grid_subset_geometry(
     if not is_custom_subset:
         grid_ggd.grid_subset[subset_idx].identifier.name = name
         grid_ggd.grid_subset[subset_idx].identifier.index = subset_enum.index
-        grid_ggd.grid_subset[
-            subset_idx
-        ].identifier.description = subset_enum.description
+        grid_ggd.grid_subset[subset_idx].identifier.description = (
+            subset_enum.description
+        )
     else:
         grid_ggd.grid_subset[subset_idx].identifier.name = name
         grid_ggd.grid_subset[subset_idx].identifier.index = -subset_idx
@@ -206,7 +210,8 @@ def __add_unique_edge(
     Args:
         cell: A `vtkCell` whose edges will be added to the edges map.
         etbl: A `vtkEdgeTable` to track inserted edges.
-        edges: An edge map that maps edge point IDs to the 1D object index in `grid_ggd`.
+        edges: An edge map that maps edge point IDs to the 1D object index in
+            `grid_ggd`.
         pts: A working list of points.
         object1d_idx: The current 1D object index.
 
@@ -228,9 +233,8 @@ def __add_unique_edge(
 
 def __add_unique_face(cell: vtkCell, faces: OrderedDict, object2d_idx: int) -> bool:
     """
-    A convenient function to add a unique face.
-
-    Faces are treated as undirected, meaning (p1, p2, p3, p4) is equivalent to (p4, p3, p2, p1).
+    A convenient function to add a unique face. Faces are treated as undirected,
+    meaning (p1, p2, p3, p4) is equivalent to (p4, p3, p2, p1)
 
     Args:
         cell: A `vtkCell` representing a face to be added to the faces map.
@@ -614,14 +618,12 @@ def _fill_implicit_grid_subsets(space_idx: int, grid_ggd):
         dim = i
         name = grid_subset_id_name[dim]
         grid_ggd.grid_subset[subset_idx].identifier.name = name
-        grid_ggd.grid_subset[
-            subset_idx
-        ].identifier.index = imaspy.identifiers.ggd_subset_identifier[name].index
-        grid_ggd.grid_subset[
-            subset_idx
-        ].identifier.description = imaspy.identifiers.ggd_subset_identifier[
-            name
-        ].description
+        grid_ggd.grid_subset[subset_idx].identifier.index = (
+            imaspy.identifiers.ggd_subset_identifier[name].index
+        )
+        grid_ggd.grid_subset[subset_idx].identifier.description = (
+            imaspy.identifiers.ggd_subset_identifier[name].description
+        )
         grid_ggd.grid_subset[subset_idx].dimension = dim + 1
         num_elements = len(grid_ggd.space[space_idx].objects_per_dimension[dim].object)
         grid_ggd.grid_subset[subset_idx].element.resize(num_elements)

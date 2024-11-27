@@ -23,7 +23,8 @@ def convert_grid_subset_to_unstructured_grid(
 ) -> vtkUnstructuredGrid:
     """
     Copy the elements found in given grid_ggd/grid_subset IDS node into a
-    vtkUnstructuredGrid instance. This method uses the supplied point coordinates in the form of a vtkPoints instance.
+    vtkUnstructuredGrid instance. This method uses the supplied point coordinates in
+    the form of a vtkPoints instance.
 
     Args:
         ids_name: Name of the IDS.
