@@ -26,7 +26,13 @@ dependencies = [
 
 [project.optional-dependencies]
 all = [
-    "vtkggdtools[test,linting,benchmark]"
+    "vtkggdtools[docs,test,linting,benchmark]"
+]
+docs = [
+    "sphinx>=6.0.0,<7.0.0",
+    "sphinx-autosummary-accessors>=0.1.2",
+    "sphinx_immaterial>=0.11.0,<0.12",
+    "recommonmark>=0.6",
 ]
 linting = [
     "black>=24,<25",
