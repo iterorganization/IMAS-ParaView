@@ -4,6 +4,9 @@ Using GGD-VTK
 =============
 This page will go over how to use the Paraview plugins, as well as the CLI interface.
 
+.. tip:: More information about the usage of specific plugin UI elements can be obtained by hovering
+   the mouse over the element.
+
 Visualize GGD in Paraview
 -------------------------
 If Paraview is correctly installed according to the :ref:`installation docs <installing>`, you should
@@ -32,9 +35,6 @@ These are shown in the figure below:
      - .. figure:: images/input_legacy.png
 
          3\. Manual input.
-
-.. tip:: More information about the usage of specific plugin UI elements can be obtained by hovering
-   the mouse over the element.
 
 When the URI is loaded, an IDS can be selected from the drop-down list. The reader automatically
 detects which IDS is available for the given URI, and only shows applicable IDSs for this plugin.
