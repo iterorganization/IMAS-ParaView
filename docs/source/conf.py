@@ -254,6 +254,8 @@ htmlhelp_basename = "ggd_vtk_doc"
 # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 autodoc_typehints = "signature"
 
+# The documentation for these external import give errors, so we mock them 
+autodoc_mock_imports = ["vtkmodules", "paraview","vtk"]
 
 # Configuration of sphinx.ext.autosummary
 # https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html
