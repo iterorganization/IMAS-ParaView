@@ -68,9 +68,16 @@ class IMASPyDescription2DReader(GGDVTKPluginBase):
         self._selectable = []
 
         for i, description in enumerate(descriptions):
+            description_name = description.type.name
+            if description_name == "":
+                description_name = f"description {i}"
+                logger.warning(
+                    "Found a limiter without a description name, "
+                    f"it will be loaded as {description_name}"
+                )
+
             limiter = description.limiter
             type_name = limiter.type.name
-
             if type_name == "":
                 type_name = f"type {i}"
                 logger.warning(
@@ -86,7 +93,9 @@ class IMASPyDescription2DReader(GGDVTKPluginBase):
                         "Found a limiter unit without a name, "
                         f"it will be loaded as {unit_name}"
                     )
-                name = " / ".join([str(type_name), str(unit_name)])
+                name = " / ".join(
+                    [str(description_name), str(type_name), str(unit_name)]
+                )
                 selectable = Limiter(name, unit)
                 self._selectable.append(selectable)
 
