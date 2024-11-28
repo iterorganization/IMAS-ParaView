@@ -8,12 +8,9 @@ from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     vtkCellArray,
-    vtkDataObject,
     vtkLine,
     vtkMultiBlockDataSet,
-    vtkPartitionedDataSetCollection,
     vtkPolyData,
-    vtkPolyDataCollection,
 )
 
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
@@ -32,7 +29,7 @@ class Limiter:
 @smproxy.source(label="description_2d Reader")
 @smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
 class IMASPyDescription2DReader(GGDVTKPluginBase):
-    """Wall descriptions reader based on IMASPy"""
+    """2D wall descriptions reader based on IMASPy"""
 
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", ["wall"])
@@ -45,21 +42,22 @@ class IMASPyDescription2DReader(GGDVTKPluginBase):
             return 1
 
         if len(self._selected) > 0:
-            print(self._selected)
             output = vtkMultiBlockDataSet.GetData(outInfo)
             self._load_limiters(output)
         return 1
 
     def request_information(self):
         """
-        AbstracSelect which profiles to show in the array domain selector, based
-        on whether the "Show All" checkbox is enabled.
+        Abstract method which is called during the RequestInformation pipeline step.
+        Intentionally left empty.
         """
 
     def setup_ids(self):
         """
-        Select which profiles to show in the array domain selector, based
-        on whether the "Show All" checkbox is enabled.
+        Select which limiters to show in the array domain selector. The description_2d
+        AoS is searched through for limiter structures. Their names are generated based
+        on the limiter type name and the limiter unit name, and added to the array
+        domain selector.
         """
         assert self._ids is not None, "IDS cannot be empty during setup."
 
@@ -78,22 +76,48 @@ class IMASPyDescription2DReader(GGDVTKPluginBase):
                 self._selectable.append(selectable)
 
     def _load_limiters(self, output):
+        """Go through the list of selected limiters, and load each of them in a
+        separate vtkPolyData object, which are all combined into a vtkMultiBlockDataSet.
+
+        Args:
+            output: The vtkMultiBlockDataSet containing the limiter contours.
+        """
         for i, limiter_name in enumerate(self._selected):
             limiter = self._get_limiter_by_name(limiter_name)
             if limiter is None:
                 raise ValueError(f"Could not find {limiter_name}")
 
             logger.info(f"Selected {limiter.name}")
-            vtk_poly = self._create_vtk_array(limiter)
+            vtk_poly = self._create_contour(limiter)
             output.SetBlock(i, vtk_poly)
 
     def _get_limiter_by_name(self, limiter_name):
+        """Search through to list of selectable attributes in the array selection domain
+        and return the limiter IDS structure which matches the selected limiter name.
+
+        Args:
+            limiter_name: Name of the limiter object to search for.
+
+        Returns:
+            limiter with the corresponding name, or None if no match is found
+        """
         for limiter in self._selectable:
             if limiter_name == limiter.name:
                 return limiter
         return None
 
-    def _create_vtk_array(self, limiter):
+    def _create_contour(self, limiter):
+        """Create a contour based on the r,z coordinates in the limiter.
+        The r,z-coordinates are stored as vtkPoints, and connected using vtkLines, which
+        are both stored in a vtkPolyData object. If the contour is closed, the start
+        and end points are connected.
+
+        Args:
+            limiter: limiter object containing contour
+
+        Returns:
+            vtkPolyData containing contour data
+        """
         if limiter.unit.closed == 0:
             is_closed = False
         else:
@@ -116,7 +140,7 @@ class IMASPyDescription2DReader(GGDVTKPluginBase):
             line.GetPointIds().SetId(1, i + 1)
             vtk_lines.InsertNextCell(line)
 
-        # Close loop if the unit is closed
+        # Close loop if the limiter unit is closed
         if is_closed:
             line = vtkLine()
             line.GetPointIds().SetId(0, len(r) - 1)
