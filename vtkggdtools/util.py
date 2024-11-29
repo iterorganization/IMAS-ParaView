@@ -107,7 +107,6 @@ def get_grid_ggd(ids, ggd_idx=0):
 
     node = ids
     for path in grid_path.split("/"):
-
         try:
             node = node[path]
         except ValueError:
@@ -213,3 +212,18 @@ def find_closest_indices(values_to_extract, source_array):
     """
     indices = np.searchsorted(source_array, values_to_extract, side="right") - 1
     return list(indices[indices >= 0])
+
+
+def pol_to_cart(rho, phi):
+    """Convert from polar (or cylindrical) coordinates to cartesian.
+
+    Args:
+        rho: the radial distance
+        phi: the azimuth angle in radians
+
+    Returns:
+        Tuple containing the x and y coordinates
+    """
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return (x, y)
