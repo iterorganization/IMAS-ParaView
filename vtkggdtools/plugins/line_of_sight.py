@@ -31,7 +31,6 @@ SUPPORTED_LINE_OF_SIGHT_IDS = [
     "soft_x_rays",
     "spectrometer_uv",
     "spectrometer_visible",
-    "spectrometer_visible",
 ]
 
 
