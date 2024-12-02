@@ -23,10 +23,6 @@ def test_load_limiters():
     unit2 = ids.description_2d[0].limiter.unit[1]
     name2 = f"{description_name} / {limiter_name} / {unit2.name}"
 
-    # No selection
-    output = vtkMultiBlockDataSet()
-    assert output.GetNumberOfBlocks() == 0
-
     # 1 selection
     output = vtkMultiBlockDataSet()
     reader._selected = [name1]
