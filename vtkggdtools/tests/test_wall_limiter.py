@@ -1,6 +1,7 @@
 from imaspy import DBEntry
+from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
-
+import numpy as np
 from vtkggdtools.plugins.wall_limiter import IMASPyWallLimiterReader
 
 
@@ -16,21 +17,34 @@ def test_load_limiters():
     reader.setup_ids()
     description_name = ids.description_2d[0].type.name
     limiter_name = ids.description_2d[0].limiter.type.name
-    unit_name1 = ids.description_2d[0].limiter.unit[0].name
-    unit_name2 = ids.description_2d[0].limiter.unit[0].name
 
+    unit1 = ids.description_2d[0].limiter.unit[0]
+    name1 = f"{description_name} / {limiter_name} / {unit1.name}"
+    unit2 = ids.description_2d[0].limiter.unit[1]
+    name2 = f"{description_name} / {limiter_name} / {unit2.name}"
+
+    # No selection
     output = vtkMultiBlockDataSet()
     assert output.GetNumberOfBlocks() == 0
-
+    
+    # 1 selection
     output = vtkMultiBlockDataSet()
-    reader._selected = [f"{description_name} / {limiter_name} / {unit_name1}"]
+    reader._selected = [name1]
     reader._load_limiters(output)
     assert output.GetNumberOfBlocks() == 1
+    assert_values_match(unit1, output.GetBlock(0))
 
+    # 2 selections
     output = vtkMultiBlockDataSet()
-    reader._selected = [
-        f"{description_name} / {limiter_name} / {unit_name1}",
-        f"{description_name} / {limiter_name} / {unit_name2}",
-    ]
+    reader._selected = [name1, name2]
     reader._load_limiters(output)
     assert output.GetNumberOfBlocks() == 2
+    assert_values_match(unit1, output.GetBlock(0))
+    assert_values_match(unit2, output.GetBlock(1))
+
+def assert_values_match(unit, block):
+    """Check if values in limiter unit match with the values in vtk block"""
+    vtk_points = block.GetPoints()
+    numpy_points = vtk_to_numpy(vtk_points.GetData())
+    assert np.all(np.isclose(unit.outline.r,numpy_points[:,0]))
+    assert np.all(np.isclose(unit.outline.z,numpy_points[:,2]))
