@@ -29,7 +29,7 @@ def fill_grid_ggd_basic_geometry(
     dataset: vtkPointSet, space_idx: int, grid_ggd
 ) -> GridGGDRepresentable:
     """Copy the basic geometry objects (0D, 1D, 2D, 3D) and space coordinates into a
-    grid_ggd. The points for the dataset are stored in the `grid_ggd/space[space_idx]`
+    grid_ggd. The points for the dataset are stored in the ``grid_ggd/space[space_idx]``
     AoS element.
 
     Args:
