@@ -150,7 +150,7 @@ def create_name_recursive(node):
 
 
 def get_object_by_name(selectable, obj_name):
-    """Search through to list of selectable attributes in the array selection domain
+    """Search through a list of selectable attributes in the array selection domain
     and return the object IDS structure which matches the selected object name.
 
     Args:
