@@ -22,10 +22,14 @@ SDCC installation
 
     # Load compatible IMASPy, IMAS and ParaView modules, like:
     # AL5 and ParaView 5.12 (recommended on RHEL9):
-    module load IMASPy/1.1.1-foss-2023b IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
-    # export environment variables, assumes the current working directory is the root of the repository
-    export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH PYTHONPATH=$PWD:$PYTHONPATH
-    # Use LD_PRELOAD to work around a VTK bug: https://gitlab.kitware.com/vtk/vtk/-/issues/19373
+    module load IMASPy/1.1.1-foss-2023b \
+    IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
+    # export environment variables, this assumes the current 
+    # working directory is the root of the repository
+    export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH 
+    export PYTHONPATH=$PWD:$PYTHONPATH
+    # Use LD_PRELOAD to work around a VTK bug:
+    # https://gitlab.kitware.com/vtk/vtk/-/issues/19373
     export LD_PRELOAD=$HDF5_DIR/lib/libhdf5.so.310
     # Run paraview
     paraview
