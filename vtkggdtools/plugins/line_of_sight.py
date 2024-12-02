@@ -3,7 +3,6 @@
 import logging
 from dataclasses import dataclass
 
-import imaspy
 from imaspy.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonCore import vtkPoints
@@ -14,6 +13,7 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPolyData,
 )
 
+from vtkggdtools.ids_util import get_object_by_name
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
 from vtkggdtools.util import pol_to_cart
 
@@ -109,7 +109,7 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
             output: The vtkMultiBlockDataSet containing the limiter contours.
         """
         for i, channel_name in enumerate(self._selected):
-            channel = self._get_los_by_name(channel_name)
+            channel = get_object_by_name(self._selectable, channel_name)
             if channel is None:
                 raise ValueError(f"Could not find {channel_name}")
 
@@ -176,18 +176,3 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
         vtk_poly.SetPoints(vtk_points)
         vtk_poly.SetLines(vtk_lines)
         return vtk_poly
-
-    def _get_los_by_name(self, los_name):
-        """Search through to list of selectable attributes in the array selection domain
-        and return the limiter IDS structure which matches the selected limiter name.
-
-        Args:
-            limiter_name: Name of the limiter object to search for.
-
-        Returns:
-            limiter with the corresponding name, or None if no match is found
-        """
-        for los in self._selectable:
-            if los_name == los.name:
-                return los
-        return None
