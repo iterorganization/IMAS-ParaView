@@ -26,7 +26,7 @@ def test_load_limiters():
     # No selection
     output = vtkMultiBlockDataSet()
     assert output.GetNumberOfBlocks() == 0
-    
+
     # 1 selection
     output = vtkMultiBlockDataSet()
     reader._selected = [name1]
@@ -42,9 +42,10 @@ def test_load_limiters():
     assert_values_match(unit1, output.GetBlock(0))
     assert_values_match(unit2, output.GetBlock(1))
 
+
 def assert_values_match(unit, block):
     """Check if values in limiter unit match with the values in vtk block"""
     vtk_points = block.GetPoints()
     numpy_points = vtk_to_numpy(vtk_points.GetData())
-    assert np.all(np.isclose(unit.outline.r,numpy_points[:,0]))
-    assert np.all(np.isclose(unit.outline.z,numpy_points[:,2]))
+    assert np.all(np.isclose(unit.outline.r, numpy_points[:, 0]))
+    assert np.all(np.isclose(unit.outline.z, numpy_points[:, 2]))
