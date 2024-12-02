@@ -142,7 +142,9 @@ class IMASPyDescription2DReader(GGDVTKPluginBase):
         Returns:
             vtkPolyData containing contour data
         """
-        if limiter.unit.closed == 0:
+        # closed was removed in DD4 - data providers need to repeat the first point
+        # for closed outlines, which Just Works with our is_closed=False logic
+        if getattr(limiter.unit, "closed", 0) == 0:
             is_closed = False
         else:
             is_closed = True
