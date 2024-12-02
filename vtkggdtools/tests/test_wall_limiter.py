@@ -1,7 +1,8 @@
+import numpy as np
 from imaspy import DBEntry
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
-import numpy as np
+
 from vtkggdtools.plugins.wall_limiter import IMASPyWallLimiterReader
 
 
