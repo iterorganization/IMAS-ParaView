@@ -10,7 +10,7 @@ from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules.vtkCommonDataModel import vtkTable
 
-from vtkggdtools.ids_util import create_name_recursive
+from vtkggdtools.ids_util import create_name_recursive, get_object_by_name
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
 
 logger = logging.getLogger("vtkggdtools")
@@ -64,7 +64,7 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
         """
         prev_x = None
         for profile_name in self._selected:
-            profile = self.find_profile_by_name(profile_name, self._selectable)
+            profile = get_object_by_name(self._selectable, profile_name)
             if profile is None:
                 raise RuntimeError(
                     f"Could not find a matching profile with name {profile_name}"
@@ -93,22 +93,6 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
                         "Select the profiles one by one instead."
                     )
             prev_x = profile.coordinates
-
-    def find_profile_by_name(self, name, profiles_list):
-        """Return the profile in the list that has the provided name.
-        If no match is found, None is returned instead.
-
-        Args:
-            name: Name of the 1d profile to search for
-            profiles_list: list of Profile_1d dataclasses to search through
-
-        Returns:
-            Profile_1d dataclass containing the given name
-        """
-        for profile in profiles_list:
-            if profile.name == name:
-                return profile
-        return None
 
     def _create_vtk_double_array(self, values, name):
         """Creates a vtkDoubleArray with the given name and values.

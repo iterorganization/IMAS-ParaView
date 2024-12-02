@@ -1,4 +1,4 @@
-"""IMASPy plugin to view wall description nodes"""
+"""IMASPy plugin to view limiter structures of 2d wall descriptions nodes"""
 
 import logging
 from dataclasses import dataclass
@@ -13,6 +13,7 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPolyData,
 )
 
+from vtkggdtools.ids_util import get_object_by_name
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
 
 logger = logging.getLogger("vtkggdtools")
@@ -26,10 +27,11 @@ class Limiter:
     unit: IDSStructure
 
 
-@smproxy.source(label="description_2d Reader")
+@smproxy.source(label="Wall Limiter Reader")
 @smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
-class IMASPyDescription2DReader(GGDVTKPluginBase):
-    """2D wall descriptions reader based on IMASPy"""
+class IMASPyWallLimiterReader(GGDVTKPluginBase):
+    """Imaspy-based reader that can load the limiter structures of 2D wall
+    descriptions"""
 
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", ["wall"])
@@ -107,28 +109,13 @@ class IMASPyDescription2DReader(GGDVTKPluginBase):
             output: The vtkMultiBlockDataSet containing the limiter contours.
         """
         for i, limiter_name in enumerate(self._selected):
-            limiter = self._get_limiter_by_name(limiter_name)
+            limiter = get_object_by_name(self._selectable, limiter_name)
             if limiter is None:
                 raise ValueError(f"Could not find {limiter_name}")
 
             logger.info(f"Selected {limiter.name}")
             vtk_poly = self._create_contour(limiter)
             output.SetBlock(i, vtk_poly)
-
-    def _get_limiter_by_name(self, limiter_name):
-        """Search through to list of selectable attributes in the array selection domain
-        and return the limiter IDS structure which matches the selected limiter name.
-
-        Args:
-            limiter_name: Name of the limiter object to search for.
-
-        Returns:
-            limiter with the corresponding name, or None if no match is found
-        """
-        for limiter in self._selectable:
-            if limiter_name == limiter.name:
-                return limiter
-        return None
 
     def _create_contour(self, limiter):
         """Create a contour based on the r,z coordinates in the limiter.
