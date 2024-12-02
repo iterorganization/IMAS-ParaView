@@ -91,7 +91,15 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
                     f"it will be loaded as {channel_name}."
                 )
 
-            selectable = LineOfSight(str(channel_name), channel.line_of_sight)
+            # If the channel does not have a line of sight, or it is empty, use the
+            # "global" line of sight instead
+            if self._ids.metadata.name == "ece" and (
+                not hasattr(channel, "line_of_sight")
+                or not channel.line_of_sight.first_point.r.has_value
+            ):
+                selectable = LineOfSight(str(channel_name), self._ids.line_of_sight)
+            else:
+                selectable = LineOfSight(str(channel_name), channel.line_of_sight)
             self._selectable.append(selectable)
 
     def _load_los(self, output):
