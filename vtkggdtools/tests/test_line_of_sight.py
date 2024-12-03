@@ -50,6 +50,50 @@ def test_load_los():
         assert_values_match(los, output.GetBlock(i))
 
 
+def test_load_los_ece():
+    """Test if line_of_sight structures in ece are loaded in the VTK
+    Multiblock Dataset."""
+    reader = IMASPyLineOfSightReader()
+    entry = DBEntry(
+        "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/3/150601/22",
+        "r",
+    )
+    ids = entry.get("ece", lazy=True, autoconvert=False)
+    reader._ids = ids
+    reader.setup_ids()
+
+    # this ece IDS does not have line_of_sight structures for each channel, instead the
+    # global line_of_sight is used
+    los = ids.line_of_sight
+    name1 = ids.channel[0].name
+    name2 = ids.channel[1].name
+
+    # 1 selection
+    output = vtkMultiBlockDataSet()
+    reader._selected = [name1]
+    reader._load_los(output)
+    assert output.GetNumberOfBlocks() == 1
+    assert_values_match(los, output.GetBlock(0))
+
+    # 2 selections
+    output = vtkMultiBlockDataSet()
+    reader._selected = [name1, name2]
+    reader._load_los(output)
+    assert output.GetNumberOfBlocks() == 2
+    assert_values_match(los, output.GetBlock(0))
+    assert_values_match(los, output.GetBlock(1))
+
+    # All selected
+    output = vtkMultiBlockDataSet()
+    reader._selected = []
+    for channel in ids.channel:
+        reader._selected.append(channel.name)
+    reader._load_los(output)
+    assert output.GetNumberOfBlocks() == len(ids.channel)
+    for i, channel in enumerate(ids.channel):
+        assert_values_match(los, output.GetBlock(i))
+
+
 def assert_values_match(los, block):
     """Check if points in the line_of_sight match with the values in vtk block"""
     vtk_points = block.GetPoints()
