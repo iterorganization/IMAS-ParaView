@@ -1,4 +1,4 @@
-"""IMASPy plugin to view line of sight nodes."""
+"""IMASPy plugin to view line of sight IDS structures in Paraview."""
 
 import logging
 from dataclasses import dataclass
