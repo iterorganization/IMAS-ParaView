@@ -36,7 +36,7 @@ SUPPORTED_LINE_OF_SIGHT_IDS = [
 
 @dataclass
 class LineOfSight:
-    """Data class that stores 1d profiles, along with its name and coordinate array."""
+    """Data class that stores ``line_of_sight`` IDS structures, along with its name."""
 
     name: str
     line_of_sight: IDSStructure
@@ -70,10 +70,9 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
 
     def setup_ids(self):
         """
-        Select which limiters to show in the array domain selector. The description_2d
-        AoS is searched through for limiter structures. Their names are generated based
-        on the limiter type name and the limiter unit name, and added to the array
-        domain selector.
+        Select which line_of_sights to show in the array domain selector. The
+        channel AoS is search through for line_of_sight structures. Their names are
+        generated based on the channel name, and added to the array domain selector.
         """
         assert self._ids is not None, "IDS cannot be empty during setup."
 
@@ -90,8 +89,8 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
                     f"it will be loaded as {channel_name}."
                 )
 
-            # If the channel does not have a line of sight, or it is empty, use the
-            # "global" line of sight instead
+            # For ece, if the channel does not have a line of sight, or it is empty,
+            # use the "global" line_of_sight instead
             if self._ids.metadata.name == "ece" and (
                 not hasattr(channel, "line_of_sight")
                 or not channel.line_of_sight.first_point.r.has_value
@@ -102,11 +101,11 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
             self._selectable.append(selectable)
 
     def _load_los(self, output):
-        """Go through the list of selected limiters, and load each of them in a
+        """Go through the list of selected line_of_sights, and load each of them in a
         separate vtkPolyData object, which are all combined into a vtkMultiBlockDataSet.
 
         Args:
-            output: The vtkMultiBlockDataSet containing the limiter contours.
+            output: The vtkMultiBlockDataSet containing the line_of_sights.
         """
         for i, channel_name in enumerate(self._selected):
             channel = get_object_by_name(self._selectable, channel_name)
@@ -118,16 +117,16 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
             output.SetBlock(i, vtk_poly)
 
     def _create_vtk_los(self, channel):
-        """Create a contour based on the r,z coordinates in the limiter.
-        The r,z-coordinates are stored as vtkPoints, and connected using vtkLines, which
-        are both stored in a vtkPolyData object. If the contour is closed, the start
-        and end points are connected.
+        """Create a vtkPolyData containing a line, based on the r, phi, and z
+        coordinates in the line of sight structures. The r,phi,z-coordinates are
+        converted to cartesian and stored as vtkPoints and connected using vtkLines,
+        which both stored in a vtkPolyData object.
 
         Args:
-            limiter: limiter object containing contour
+            channel containing a line_of_sight structure
 
         Returns:
-            vtkPolyData containing contour data
+            vtkPolyData containing line_of_sight data
         """
         los = channel.line_of_sight
 
