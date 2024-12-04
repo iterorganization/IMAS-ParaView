@@ -130,31 +130,7 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
         """
         los = channel.line_of_sight
 
-        first_point = los.first_point
-        second_point = los.second_point
-
-        first_point_cart = (*pol_to_cart(first_point.r, first_point.phi), first_point.z)
-        second_point_cart = (
-            *pol_to_cart(second_point.r, second_point.phi),
-            second_point.z,
-        )
-
-        # Fill points
-        vtk_points = vtkPoints()
-        vtk_points.InsertNextPoint(
-            first_point_cart[0], first_point_cart[1], float(first_point_cart[2])
-        )
-        vtk_points.InsertNextPoint(
-            second_point_cart[0], second_point_cart[1], float(second_point_cart[2])
-        )
-
-        # Fill lines
-        vtk_lines = vtkCellArray()
-        line = vtkLine()
-        line.GetPointIds().SetId(0, 0)
-        line.GetPointIds().SetId(1, 1)
-        vtk_lines.InsertNextCell(line)
-
+        points = [los.first_point, los.second_point]
         if hasattr(los, "third_point"):
             third_point = los.third_point
             if (
@@ -162,13 +138,17 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
                 and third_point.phi.has_value
                 and third_point.z.has_value
             ):
-                third_point_cart = (
-                    *pol_to_cart(third_point.r, third_point.phi),
-                    third_point.z,
-                )
-                vtk_points.InsertNextPoint(*third_point_cart)
-                line.GetPointIds().SetId(0, 1)
-                line.GetPointIds().SetId(1, 2)
+                points.append(third_point)
+
+        vtk_points = vtkPoints()
+        vtk_lines = vtkCellArray()
+        for i, point in enumerate(points):
+            vtk_points.InsertNextPoint(*pol_to_cart(point.r, point.phi), point.z)
+            line = vtkLine()
+
+            if i != len(points) - 1:
+                line.GetPointIds().SetId(0, i)
+                line.GetPointIds().SetId(1, i + 1)
                 vtk_lines.InsertNextCell(line)
 
         vtk_poly = vtkPolyData()
