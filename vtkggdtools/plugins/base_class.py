@@ -1,5 +1,4 @@
-"""IMASPy version of the paraview plugin classes.
-"""
+"""IMASPy version of the paraview plugin classes."""
 
 import getpass
 import logging
@@ -309,11 +308,33 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         return 1
 
     @checkbox(
+        name="ShowAll",
+        label="Show All Attribute Arrays",
+        default_values="0",
+    )
+    def P13_SetShowEmpty(self, val):
+        """Enable to show all possible attributes, even when they are empty. When
+        disabled, only the the attributes in the selector window which are filled
+        in the first time step are shown."""
+        if val == 1:
+            self.show_all = True
+            logger.info(
+                "Showing all attributes in selector window, including empty ones"
+            )
+        else:
+            self.show_all = False
+            logger.info(
+                "Showing only the attributes that are filled in the first time "
+                "step in selector window."
+            )
+        self.Modified()
+
+    @checkbox(
         name="LazyLoading",
         label="Preload Data",
         default_values="0",
     )
-    def P13_SetLazyLoading(self, val):
+    def P14_SetLazyLoading(self, val):
         """Turn on to preload the entire IDS beforehand, if this is left off, the data
         is loaded on-demand through lazy loading. It is recommended to leave this off
         if you are only loading a small subset of the data. If you want to load most of
@@ -372,7 +393,13 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
 
     @propertygroup(
         "Select IDS",
-        ["IDSAndOccurrence", "IDSList", "AttributeArraySelector", "LazyLoading"],
+        [
+            "IDSAndOccurrence",
+            "IDSList",
+            "AttributeArraySelector",
+            "ShowAll",
+            "LazyLoading",
+        ],
     )
     def PG1_IDSGroup(self):
         """Dummy function to define a PropertyGroup."""
