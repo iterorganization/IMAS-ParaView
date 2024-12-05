@@ -130,34 +130,22 @@ class IMASPyBeamReader(GGDVTKPluginBase):
 
 
 def get_points(launch_pos, steering_angle_pol, steering_angle_tor, distance):
-    """Apply the steering angles to the beam's position and calculate a point further along the direction.
+    """Apply the steering angles to the beam's position and calculate a point further along the direction."""
 
-    Args:
-        r: Radial distance of the beam's position
-        z: Z height of the beam's position
-        phi: Azimuthal angle of the beam's position
-        steering_angle_pol: Steering angle in the R,Z plane (radians)
-        steering_angle_tor: Steering angle away from the poloidal plane (radians)
-        distance: The distance along the beam's direction to the new point
-
-    Returns:
-        Adjusted Cartesian coordinates of the beam and the new position further along the direction.
-    """
     first_point = (*pol_to_cart(launch_pos.r[0], launch_pos.phi[0]), launch_pos.z[0])
 
-    x_pol = launch_pos.r[0] * np.cos(steering_angle_pol)
-    y_pol = launch_pos.r[0] * np.sin(steering_angle_pol)
+    k_r = -np.cos(steering_angle_pol) * np.cos(steering_angle_tor)
+    k_phi = np.cos(steering_angle_pol) * np.sin(steering_angle_tor)
 
-    x_tor = np.sin(steering_angle_tor)
-    y_tor = 0
-    z_tor = np.cos(steering_angle_tor)
+    k_x = k_r * np.cos(launch_pos.phi) - k_phi * np.sin(launch_pos.phi)
+    k_y = k_r * np.sin(launch_pos.phi) + k_phi * np.cos(launch_pos.phi)
+    k_z = -np.sin(steering_angle_pol)
 
-    direction_x = x_pol + x_tor
-    direction_y = y_pol + y_tor
-    direction_z = z_tor
+    # Calculate the end point after applying distance
+    second_point = (
+        first_point[0] + distance * k_x,
+        first_point[1] + distance * k_y,
+        first_point[2] + distance * k_z,
+    )
 
-    x_end = first_point[0] + distance * direction_x
-    y_end = first_point[1] + distance * direction_y
-    z_end = first_point[2] + distance * direction_z
-
-    return first_point, (x_end, y_end, z_end)
+    return first_point, second_point
