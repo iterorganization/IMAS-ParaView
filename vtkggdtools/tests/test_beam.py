@@ -8,7 +8,10 @@ def test_load_limiters():
     """Test if limiters are loaded in the VTK Multiblock Dataset."""
     reader = IMASPyBeamReader()
     entry = DBEntry(
-        "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/3/120000/1304/",
+        (
+            "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/"
+            "3/120000/1304/"
+        ),
         "r",
     )
     ids = entry.get("wall", lazy=True, autoconvert=False)
