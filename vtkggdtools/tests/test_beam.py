@@ -17,19 +17,20 @@ def test_load_beam():
     ids = entry.get("ec_launchers", lazy=True, autoconvert=False)
     reader._ids = ids
     reader.setup_ids()
+    time_idx = 0
     name1 = ids.beam[0].name
     name2 = ids.beam[1].name
 
     # 1 selection
     output = vtkMultiBlockDataSet()
     reader._selected = [name1]
-    reader._load_beam(output)
+    reader._load_beam(output, time_idx)
     assert output.GetNumberOfBlocks() == 1
 
     # 2 selections
     output = vtkMultiBlockDataSet()
     reader._selected = [name1, name2]
-    reader._load_beam(output)
+    reader._load_beam(output, time_idx)
     assert output.GetNumberOfBlocks() == 2
 
     # All selected
@@ -37,5 +38,5 @@ def test_load_beam():
     reader._selected = []
     for beam in ids.beam:
         reader._selected.append(beam.name)
-    reader._load_beam(output)
+    reader._load_beam(output, time_idx)
     assert output.GetNumberOfBlocks() == len(ids.beam)
