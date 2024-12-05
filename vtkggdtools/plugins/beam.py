@@ -46,7 +46,7 @@ class IMASPyBeamReader(GGDVTKPluginBase):
 
         if len(self._selected) > 0:
             output = vtkMultiBlockDataSet.GetData(outInfo)
-            self._load_los(output)
+            self._load_beam(output)
         return 1
 
     def request_information(self):
@@ -57,9 +57,8 @@ class IMASPyBeamReader(GGDVTKPluginBase):
 
     def setup_ids(self):
         """
-        Select which line_of_sights to show in the array domain selector. The
-        channel AoS is search through for line_of_sight structures. Their names are
-        generated based on the channel name, and added to the array domain selector.
+        Select which beams to show in the array domain selector. The IDS is is searched
+        for beam structures and their names are added to the array domain selector.
         """
         assert self._ids is not None, "IDS cannot be empty during setup."
 
@@ -79,12 +78,12 @@ class IMASPyBeamReader(GGDVTKPluginBase):
             selectable = Beam(str(beam_name), beam)
             self._selectable.append(selectable)
 
-    def _load_los(self, output):
-        """Go through the list of selected line_of_sights, and load each of them in a
+    def _load_beam(self, output):
+        """Go through the list of selected beams, and load each of them in a
         separate vtkPolyData object, which are all combined into a vtkMultiBlockDataSet.
 
         Args:
-            output: The vtkMultiBlockDataSet containing the line_of_sights.
+            output: The vtkMultiBlockDataSet containing the beams.
         """
         for i, beam_name in enumerate(self._selected):
             beam = get_object_by_name(self._selectable, beam_name)
@@ -96,23 +95,24 @@ class IMASPyBeamReader(GGDVTKPluginBase):
             output.SetBlock(i, vtk_poly)
 
     def _create_vtk_beam(self, beam):
-        """Create a vtkPolyData containing a line, based on the r, phi, and z
-        coordinates in the line of sight structures. The r,phi,z-coordinates are
-        converted to cartesian and stored as vtkPoints and connected using vtkLines,
-        which both stored in a vtkPolyData object.
+        """Create a vtkPolyData containing a two points from the beam's
+        launching_position to a point in the direction that the steering angles point
+        to, 10 meters from the launching position. For this, the points and direction
+        are converted to cartesian coordinates, and a vtkLine is created between
+        these two points.
 
         Args:
-            channel containing a line_of_sight structure
+            beam: the beam structure to create.
 
         Returns:
-            vtkPolyData containing line_of_sight data
+            vtkPolyData containing the beams
         """
 
-        first_point, second_point = get_points(
+        first_point, second_point = transform_points(
             beam.launching_position,
             beam.steering_angle_pol,
             beam.steering_angle_tor,
-            10,
+            distance=10,
         )
 
         vtk_points = vtkPoints()
@@ -129,19 +129,34 @@ class IMASPyBeamReader(GGDVTKPluginBase):
         return vtk_poly
 
 
-def get_points(launch_pos, steering_angle_pol, steering_angle_tor, distance):
-    """Apply the steering angles to the beam's position and calculate a point further along the direction."""
+def transform_points(launch_pos, steering_angle_pol, steering_angle_tor, distance):
+    """Transform the launching position and launching direction to cartesian
+    coordinates, creating two points that jj
+
+    Args:
+        launch_pos: Launching position of the beam in cylinderical coordinates
+        steering_angle_pol: Steering angle of the beam in the R,Z plane
+        steering_angle_tor: Steering angle of the beam away from the poloidal plane
+        distance: Distance along direction vector at which to place the second point
+
+    Returns:
+        tuple containing the launching position and a point into the direction of the
+        launch, in cartesian coordinates: ((x1,y1,z1),(x2,y2,z2))
+    """
 
     first_point = (*pol_to_cart(launch_pos.r[0], launch_pos.phi[0]), launch_pos.z[0])
 
+    # Calculate radial components of the wave vector (taking |k|=1)
     k_r = -np.cos(steering_angle_pol) * np.cos(steering_angle_tor)
     k_phi = np.cos(steering_angle_pol) * np.sin(steering_angle_tor)
 
+    # Convert to direction in cartesian coordinates
     k_x = k_r * np.cos(launch_pos.phi) - k_phi * np.sin(launch_pos.phi)
     k_y = k_r * np.sin(launch_pos.phi) + k_phi * np.cos(launch_pos.phi)
     k_z = -np.sin(steering_angle_pol)
 
-    # Calculate the end point after applying distance
+    # Calculate the end point from the launching position into the direction of the
+    # steerting angles
     second_point = (
         first_point[0] + distance * k_x,
         first_point[1] + distance * k_y,
