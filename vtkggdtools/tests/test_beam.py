@@ -4,7 +4,7 @@ from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 from vtkggdtools.plugins.beam import IMASPyBeamReader
 
 
-def test_load_limiters():
+def test_load_beam():
     """Test if limiters are loaded in the VTK Multiblock Dataset."""
     reader = IMASPyBeamReader()
     entry = DBEntry(
@@ -14,7 +14,7 @@ def test_load_limiters():
         ),
         "r",
     )
-    ids = entry.get("wall", lazy=True, autoconvert=False)
+    ids = entry.get("ec_launchers", lazy=True, autoconvert=False)
     reader._ids = ids
     reader.setup_ids()
     name1 = ids.beam[0].name
