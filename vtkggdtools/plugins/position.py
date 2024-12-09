@@ -87,13 +87,11 @@ class IMASPyPositionReader(GGDVTKPluginBase):
         points = vtkPoints()
         for name in self._selected:
             pos_struct = get_object_by_name(self._selectable, name)
-            if pos_struct is None:
-                continue
 
-            pos = pos_struct.position_structure.position
             if pos_struct is None:
                 raise ValueError(f"Could not find {name}")
 
+            pos = pos_struct.position_structure.position
             logger.info(f"Selected {pos_struct.name}")
             pos_cart = (*pol_to_cart(pos.r, pos.phi), pos.z)
             points.InsertNextPoint(*pos_cart)
