@@ -35,6 +35,7 @@ class IMASPyBeamReader(GGDVTKPluginBase):
 
     @doublevector(label="Beam Distance", name="beam_distance", default_values=10)
     def P99_SetDistance(self, val):
+        """Sets the beam's distance from the launching position."""
         self._update_property("distance", val)
 
     @propertygroup("Beam settings", ["beam_distance"])
