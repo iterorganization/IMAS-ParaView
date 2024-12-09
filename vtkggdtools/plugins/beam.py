@@ -71,7 +71,7 @@ class IMASPyBeamReader(GGDVTKPluginBase):
 
     def setup_ids(self):
         """
-        Select which beams to show in the array domain selector. The IDS is is searched
+        Select which beams to show in the array domain selector. The IDS is searched
         for beam structures and their names are added to the array domain selector.
         """
         assert self._ids is not None, "IDS cannot be empty during setup."
