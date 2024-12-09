@@ -31,7 +31,7 @@ class IMASPyBeamReader(GGDVTKPluginBase):
 
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", ["ec_launchers"])
-        self.distance = None
+        self.distance = 10
 
     @doublevector(label="Beam Distance", name="beam_distance", default_values=10)
     def P99_SetDistance(self, val):
@@ -169,7 +169,7 @@ class IMASPyBeamReader(GGDVTKPluginBase):
         k_z = -np.sin(steering_angle_pol)
 
         # Calculate the end point from the launching position into the direction of the
-        # steerting angles
+        # steering angles
         second_point = (
             first_point[0] + self.distance * k_x,
             first_point[1] + self.distance * k_y,
