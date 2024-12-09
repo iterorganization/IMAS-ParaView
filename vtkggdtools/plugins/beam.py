@@ -15,6 +15,7 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from vtkggdtools.ids_util import get_object_by_name
+from vtkggdtools.paraview_support.servermanager_tools import doublevector, propertygroup
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
 from vtkggdtools.util import find_closest_indices, pol_to_cart
 
@@ -36,6 +37,15 @@ class IMASPyBeamReader(GGDVTKPluginBase):
 
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", ["ec_launchers"])
+        self.distance = None
+
+    @doublevector(label="Beam Distance", name="beam_distance", default_values=10)
+    def P99_SetDistance(self, val):
+        self._update_property("distance", val)
+
+    @propertygroup("Beam settings", ["beam_distance"])
+    def PG3_BeamGroup(self):
+        """Dummy function to define a PropertyGroup."""
 
     def GetAttributeArrayName(self, idx) -> str:
         return self._selectable[idx].name
@@ -104,11 +114,11 @@ class IMASPyBeamReader(GGDVTKPluginBase):
             output.SetBlock(i, vtk_poly)
 
     def _create_vtk_beam(self, beam, time_idx):
-        """Create a vtkPolyData containing a two points from the beam's
+        """Create a vtkPolyData containing two points from the beam's
         launching_position to a point in the direction that the steering angles point
-        to, 10 meters from the launching position. For this, the points and direction
-        are converted to cartesian coordinates, and a vtkLine is created between
-        these two points.
+        to, at a distance from the launching position. For this, the points and
+        direction are converted to cartesian coordinates, and a vtkLine is created
+        between these two points.
 
         Args:
             beam: the beam structure to create.
@@ -116,15 +126,13 @@ class IMASPyBeamReader(GGDVTKPluginBase):
         Returns:
             vtkPolyData containing the beams
         """
-        distance = 10
 
-        first_point, second_point = transform_points(
+        first_point, second_point = self.transform_points(
             beam.launching_position.r[time_idx],
             beam.launching_position.phi[time_idx],
             beam.launching_position.z[time_idx],
             beam.steering_angle_pol[time_idx],
             beam.steering_angle_tor[time_idx],
-            distance,
         )
 
         vtk_points = vtkPoints()
@@ -140,48 +148,47 @@ class IMASPyBeamReader(GGDVTKPluginBase):
         vtk_poly.SetLines(vtk_lines)
         return vtk_poly
 
+    def transform_points(
+        self,
+        launch_pos_r,
+        launch_pos_phi,
+        launch_pos_z,
+        steering_angle_pol,
+        steering_angle_tor,
+    ):
+        """Transform the launching position and launching direction to cartesian
+        coordinates.
 
-def transform_points(
-    launch_pos_r,
-    launch_pos_phi,
-    launch_pos_z,
-    steering_angle_pol,
-    steering_angle_tor,
-    distance,
-):
-    """Transform the launching position and launching direction to cartesian
-    coordinates.
+        Args:
+            launch_pos_r: Radial distance of the launching position
+            launch_pos_phi: Azimuth angle of the launching position
+            launch_pos_z: Height of the launching position
+            steering_angle_pol: Steering angle of the beam in the R,Z plane
+            steering_angle_tor: Steering angle of the beam away from the poloidal plane
+            distance: Distance along direction vector at which to place the second point
 
-    Args:
-        launch_pos_r: Radial distance of the launching position
-        launch_pos_phi: Azimuth angle of the launching position
-        launch_pos_z: Height of the launching position
-        steering_angle_pol: Steering angle of the beam in the R,Z plane
-        steering_angle_tor: Steering angle of the beam away from the poloidal plane
-        distance: Distance along direction vector at which to place the second point
+        Returns:
+            tuple containing the launching position and a point into the direction of the
+            launch, in cartesian coordinates: ((x1,y1,z1),(x2,y2,z2))
+        """
 
-    Returns:
-        tuple containing the launching position and a point into the direction of the
-        launch, in cartesian coordinates: ((x1,y1,z1),(x2,y2,z2))
-    """
+        first_point = (*pol_to_cart(launch_pos_r, launch_pos_phi), launch_pos_z)
 
-    first_point = (*pol_to_cart(launch_pos_r, launch_pos_phi), launch_pos_z)
+        # Calculate radial components of the wave vector (taking |k|=1)
+        k_r = -np.cos(steering_angle_pol) * np.cos(steering_angle_tor)
+        k_phi = np.cos(steering_angle_pol) * np.sin(steering_angle_tor)
 
-    # Calculate radial components of the wave vector (taking |k|=1)
-    k_r = -np.cos(steering_angle_pol) * np.cos(steering_angle_tor)
-    k_phi = np.cos(steering_angle_pol) * np.sin(steering_angle_tor)
+        # Convert to direction in cartesian coordinates
+        k_x = k_r * np.cos(launch_pos_phi) - k_phi * np.sin(launch_pos_phi)
+        k_y = k_r * np.sin(launch_pos_phi) + k_phi * np.cos(launch_pos_phi)
+        k_z = -np.sin(steering_angle_pol)
 
-    # Convert to direction in cartesian coordinates
-    k_x = k_r * np.cos(launch_pos_phi) - k_phi * np.sin(launch_pos_phi)
-    k_y = k_r * np.sin(launch_pos_phi) + k_phi * np.cos(launch_pos_phi)
-    k_z = -np.sin(steering_angle_pol)
+        # Calculate the end point from the launching position into the direction of the
+        # steerting angles
+        second_point = (
+            first_point[0] + self.distance * k_x,
+            first_point[1] + self.distance * k_y,
+            first_point[2] + self.distance * k_z,
+        )
 
-    # Calculate the end point from the launching position into the direction of the
-    # steerting angles
-    second_point = (
-        first_point[0] + distance * k_x,
-        first_point[1] + distance * k_y,
-        first_point[2] + distance * k_z,
-    )
-
-    return first_point, second_point
+        return first_point, second_point
