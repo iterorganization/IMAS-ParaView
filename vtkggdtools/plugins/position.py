@@ -7,6 +7,7 @@ import numpy as np
 from imaspy.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonCore import vtkPoints
+from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkLine, vtkPolyData
 
 from vtkggdtools.ids_util import get_object_by_name
 from vtkggdtools.paraview_support.servermanager_tools import doublevector, propertygroup
@@ -26,23 +27,13 @@ class PositionStructure:
     position_structure: IDSStructure
 
 
-@smproxy.source(label="Beam Reader")
+@smproxy.source(label="Position Reader")
 @smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
-class IMASPyBeamReader(GGDVTKPluginBase):
+class IMASPyPositionReader(GGDVTKPluginBase):
     """Beam reader based on IMASPy"""
 
     def __init__(self):
-        super().__init__("vtkPoints", ["ec_launchers"])
-        self.distance = 10
-
-    @doublevector(label="Beam Distance", name="beam_distance", default_values=10)
-    def P99_SetDistance(self, val):
-        """Sets the beam's distance from the launching position."""
-        self._update_property("distance", val)
-
-    @propertygroup("Beam settings", ["beam_distance"])
-    def PG3_BeamGroup(self):
-        """Dummy function to define a PropertyGroup."""
+        super().__init__("vtkPolyData", SUPPORTED_IDS_NAMES)
 
     def GetAttributeArrayName(self, idx) -> str:
         return self._selectable[idx].name
@@ -58,7 +49,7 @@ class IMASPyBeamReader(GGDVTKPluginBase):
             return 1
 
         if len(self._selected) > 0:
-            output = vtkPoints.GetData(outInfo)
+            output = vtkPolyData.GetData(outInfo)
             self._load_position(output)
         return 1
 
@@ -78,9 +69,9 @@ class IMASPyBeamReader(GGDVTKPluginBase):
         self._selectable = []
 
         if self._ids.metadata.name == "barometry":
-            aos = self._ids.embedded
-        elif self._ids.metadata.name == "langmuir_probes":
             aos = self._ids.gauge
+        elif self._ids.metadata.name == "langmuir_probes":
+            aos = self._ids.embedded
         else:
             raise NotImplementedError(
                 f"Unable to find load position for {self._ids.metadata.name}."
@@ -89,7 +80,7 @@ class IMASPyBeamReader(GGDVTKPluginBase):
         for i, structure in enumerate(aos):
             name = structure.name
             if name == "":
-                name = f" {i}"
+                name = f"device {i}"
                 logger.warning(
                     "Found a channel without a name, " f"it will be loaded as {name}."
                 )
@@ -104,15 +95,18 @@ class IMASPyBeamReader(GGDVTKPluginBase):
         Args:
             output: The vtkMultiBlockDataSet containing the beams.
         """
+        points = vtkPoints()
         for name in self._selected:
             pos_struct = get_object_by_name(self._selectable, name)
             if pos_struct is None:
                 continue
 
-            pos = pos_struct.position
+            pos = pos_struct.position_structure.position
             if pos_struct is None:
                 raise ValueError(f"Could not find {name}")
 
             logger.info(f"Selected {pos_struct.name}")
             pos_cart = (*pol_to_cart(pos.r, pos.phi), pos.z)
-            output.InsertNextPoint(*pos_cart)
+            points.InsertNextPoint(*pos_cart)
+
+        output.SetPoints(points)
