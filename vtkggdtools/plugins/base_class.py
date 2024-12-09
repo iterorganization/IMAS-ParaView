@@ -48,6 +48,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 callable(value)
                 and not name.startswith("__")
                 and not getattr(value, "__isabstractmethod__", False)
+                and not name == "request_information"
             ):
                 setattr(cls, name, value)
 
@@ -471,7 +472,6 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             )
             self.setup_ids()
 
-    @abstractmethod
     def request_information(self):
         """
         Called during the RequestInformation stage in ParaView. Subclasses can implement
