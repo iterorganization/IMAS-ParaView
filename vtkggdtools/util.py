@@ -3,11 +3,7 @@ from typing import Optional
 
 import numpy as np
 from vtkmodules.vtkCommonCore import vtkPoints
-from vtkmodules.vtkCommonDataModel import (
-    vtkCellArray,
-    vtkLine,
-    vtkPolyData,
-)
+from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkLine, vtkPolyData
 
 logger = logging.getLogger("vtkggdtools")
 

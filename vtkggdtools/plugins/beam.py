@@ -6,9 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 from imaspy.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
-from vtkmodules.vtkCommonDataModel import (
-    vtkMultiBlockDataSet,
-)
+from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
 from vtkggdtools.ids_util import get_object_by_name
 from vtkggdtools.paraview_support.servermanager_tools import doublevector, propertygroup
