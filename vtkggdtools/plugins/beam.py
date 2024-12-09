@@ -6,18 +6,14 @@ from dataclasses import dataclass
 import numpy as np
 from imaspy.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
-from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
-    vtkCellArray,
-    vtkLine,
     vtkMultiBlockDataSet,
-    vtkPolyData,
 )
 
 from vtkggdtools.ids_util import get_object_by_name
 from vtkggdtools.paraview_support.servermanager_tools import doublevector, propertygroup
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
-from vtkggdtools.util import find_closest_indices, pol_to_cart
+from vtkggdtools.util import find_closest_indices, points_to_vtkpoly, pol_to_cart
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -135,17 +131,8 @@ class IMASPyBeamReader(GGDVTKPluginBase):
             beam.steering_angle_tor[time_idx],
         )
 
-        vtk_points = vtkPoints()
-        vtk_points.InsertNextPoint(*first_point)
-        vtk_points.InsertNextPoint(*second_point)
-        vtk_lines = vtkCellArray()
-        line = vtkLine()
-        line.GetPointIds().SetId(0, 0)
-        line.GetPointIds().SetId(1, 1)
-        vtk_lines.InsertNextCell(line)
-        vtk_poly = vtkPolyData()
-        vtk_poly.SetPoints(vtk_points)
-        vtk_poly.SetLines(vtk_lines)
+        points = [first_point, second_point]
+        vtk_poly = points_to_vtkpoly(points)
         return vtk_poly
 
     def transform_points(
@@ -168,8 +155,8 @@ class IMASPyBeamReader(GGDVTKPluginBase):
             distance: Distance along direction vector at which to place the second point
 
         Returns:
-            tuple containing the launching position and a point into the direction of the
-            launch, in cartesian coordinates: ((x1,y1,z1),(x2,y2,z2))
+            tuple containing the launching position and a point into the direction of
+            the launch, in cartesian coordinates: ((x1,y1,z1),(x2,y2,z2))
         """
 
         first_point = (*pol_to_cart(launch_pos_r, launch_pos_phi), launch_pos_z)

@@ -5,17 +5,11 @@ from dataclasses import dataclass
 
 from imaspy.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
-from vtkmodules.vtkCommonCore import vtkPoints
-from vtkmodules.vtkCommonDataModel import (
-    vtkCellArray,
-    vtkLine,
-    vtkMultiBlockDataSet,
-    vtkPolyData,
-)
+from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
 from vtkggdtools.ids_util import get_object_by_name
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
-from vtkggdtools.util import pol_to_cart
+from vtkggdtools.util import points_to_vtkpoly, pol_to_cart
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -140,18 +134,8 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
             ):
                 points.append(third_point)
 
-        vtk_points = vtkPoints()
-        vtk_lines = vtkCellArray()
-        for i, point in enumerate(points):
-            vtk_points.InsertNextPoint(*pol_to_cart(point.r, point.phi), point.z)
-            line = vtkLine()
-
-            if i != len(points) - 1:
-                line.GetPointIds().SetId(0, i)
-                line.GetPointIds().SetId(1, i + 1)
-                vtk_lines.InsertNextCell(line)
-
-        vtk_poly = vtkPolyData()
-        vtk_poly.SetPoints(vtk_points)
-        vtk_poly.SetLines(vtk_lines)
+        converted_points = [
+            (*pol_to_cart(point.r, point.phi), point.z) for point in points
+        ]
+        vtk_poly = points_to_vtkpoly(converted_points)
         return vtk_poly

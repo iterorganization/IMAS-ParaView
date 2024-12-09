@@ -2,8 +2,15 @@ import logging
 from typing import Optional
 
 import numpy as np
+from vtkmodules.vtkCommonCore import vtkPoints
+from vtkmodules.vtkCommonDataModel import (
+    vtkCellArray,
+    vtkLine,
+    vtkPolyData,
+)
 
 logger = logging.getLogger("vtkggdtools")
+
 
 SUPPORTED_IDS_NAMES = [
     "edge_profiles",
@@ -227,3 +234,41 @@ def pol_to_cart(rho, phi):
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
     return (x, y)
+
+
+def points_to_vtkpoly(points, is_closed=False):
+    """Convert a list of 3D points to a vtkPoints and vtkCellArray, which are combined
+    into a single VtkPolyData object. The expected format of the points is:
+    [(x1,y1,z1),(x2,y2,z2),...].
+
+    Args:
+        points: A list of 3D points, containing the X,Y,Z-coordinates in tuples of the
+            form (x,y,z).
+        is_closed: Boolean flag whether to close the contour. If set to true, the first
+            and last point are connected by a vtkLine.
+
+    Returns:
+        vtkPolyData containing the vtkPoints and vtkLines.
+    """
+    vtk_points = vtkPoints()
+    vtk_lines = vtkCellArray()
+    for i, point in enumerate(points):
+        vtk_points.InsertNextPoint(*point)
+        line = vtkLine()
+
+        if i != len(points) - 1:
+            line.GetPointIds().SetId(0, i)
+            line.GetPointIds().SetId(1, i + 1)
+            vtk_lines.InsertNextCell(line)
+
+    # Close loop if the points are closed
+    if is_closed:
+        line = vtkLine()
+        line.GetPointIds().SetId(0, len(points) - 1)
+        line.GetPointIds().SetId(1, 0)
+        vtk_lines.InsertNextCell(line)
+
+    vtk_poly = vtkPolyData()
+    vtk_poly.SetPoints(vtk_points)
+    vtk_poly.SetLines(vtk_lines)
+    return vtk_poly

@@ -5,16 +5,11 @@ from dataclasses import dataclass
 
 from imaspy.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
-from vtkmodules.vtkCommonCore import vtkPoints
-from vtkmodules.vtkCommonDataModel import (
-    vtkCellArray,
-    vtkLine,
-    vtkMultiBlockDataSet,
-    vtkPolyData,
-)
+from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
 from vtkggdtools.ids_util import get_object_by_name
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
+from vtkggdtools.util import points_to_vtkpoly
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -138,29 +133,9 @@ class IMASPyWallLimiterReader(GGDVTKPluginBase):
 
         r = limiter.unit.outline.r
         z = limiter.unit.outline.z
+        points = [(ri, 0.0, zi) for ri, zi in zip(r, z)]
+
         assert len(r) == len(z), "r and z must have the same length."
 
-        # Fill points
-        vtk_points = vtkPoints()
-        for i in range(len(r)):
-            vtk_points.InsertNextPoint(r[i], 0.0, z[i])
-
-        # Fill lines
-        vtk_lines = vtkCellArray()
-        for i in range(len(r) - 1):
-            line = vtkLine()
-            line.GetPointIds().SetId(0, i)
-            line.GetPointIds().SetId(1, i + 1)
-            vtk_lines.InsertNextCell(line)
-
-        # Close loop if the limiter unit is closed
-        if is_closed:
-            line = vtkLine()
-            line.GetPointIds().SetId(0, len(r) - 1)
-            line.GetPointIds().SetId(1, 0)
-            vtk_lines.InsertNextCell(line)
-
-        vtk_poly = vtkPolyData()
-        vtk_poly.SetPoints(vtk_points)
-        vtk_poly.SetLines(vtk_lines)
+        vtk_poly = points_to_vtkpoly(points, is_closed)
         return vtk_poly
