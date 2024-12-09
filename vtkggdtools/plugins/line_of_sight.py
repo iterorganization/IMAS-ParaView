@@ -56,12 +56,6 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
             self._load_los(output)
         return 1
 
-    def request_information(self):
-        """
-        Abstract method which is called during the RequestInformation pipeline step.
-        Intentionally left empty.
-        """
-
     def setup_ids(self):
         """
         Select which line_of_sights to show in the array domain selector. The

@@ -43,12 +43,6 @@ class IMASPyWallLimiterReader(GGDVTKPluginBase):
             self._load_limiters(output)
         return 1
 
-    def request_information(self):
-        """
-        Abstract method which is called during the RequestInformation pipeline step.
-        Intentionally left empty.
-        """
-
     def setup_ids(self):
         """
         Select which limiters to show in the array domain selector. The description_2d

@@ -48,12 +48,6 @@ class IMASPyPositionReader(GGDVTKPluginBase):
             self._load_position(output)
         return 1
 
-    def request_information(self):
-        """
-        Abstract method which is called during the RequestInformation pipeline step.
-        Intentionally left empty.
-        """
-
     def setup_ids(self):
         """
         Select which probes or gauges to show in the array domain selector. The names

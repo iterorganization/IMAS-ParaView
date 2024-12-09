@@ -117,12 +117,6 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
         vtk_array.SetName(name)
         return vtk_array
 
-    def request_information(self):
-        """
-        Select which profiles to show in the array domain selector, based
-        on whether the "Show All" checkbox is enabled.
-        """
-
     def update_available_profiles(self, time_idx):
         """
         Searches through the profiles_1d node at the current time step for

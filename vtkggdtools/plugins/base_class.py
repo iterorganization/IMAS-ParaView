@@ -474,10 +474,9 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     @abstractmethod
     def request_information(self):
         """
-        Called during the RequestInformation stage in ParaView.
-        Subclasses should implement this method to define actions or
-        operations that need to occur during the RequestInformation stage
-        of the pipeline.
+        Called during the RequestInformation stage in ParaView. Subclasses can implement
+        this method to define actions that need to occur during the RequestInformation
+        stage of the Paraview pipeline.
         """
         pass
 
