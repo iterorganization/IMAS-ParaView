@@ -1,8 +1,8 @@
 import imaspy
 import pytest
 
+from vtkggdtools.plugins.vtkggdreader import SUPPORTED_IDS_NAMES
 from vtkggdtools.tests.fill_ggd import fill_ids
-from vtkggdtools.util import SUPPORTED_IDS_NAMES
 
 
 @pytest.fixture(params=SUPPORTED_IDS_NAMES)

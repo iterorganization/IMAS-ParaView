@@ -9,9 +9,39 @@ from vtkggdtools.convert import Converter, InterpSettings
 from vtkggdtools.io import read_ps
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
 from vtkggdtools.progress import Progress
-from vtkggdtools.util import EXPERIMENTAL_IDS_NAMES, SUPPORTED_IDS_NAMES
 
 logger = logging.getLogger("vtkggdtools")
+
+
+SUPPORTED_IDS_NAMES = [
+    "edge_profiles",
+    "edge_sources",
+    "edge_transport",
+    "mhd",
+    "radiation",
+    "runaway_electrons",
+    "wall",
+]
+
+# FIXME: Some IDSs do not have the grid structure in a separate `grid_ggd` object, as
+# described by the GGD guidelines. They are for now denoted as experimental IDS, as they
+# are currently not covered by the unit tests. If the DD for these stays like this, they
+# will need to be handled separately. GGD grid locations for each IDS:
+# equilibrium (grids_ggd/grid)
+# distribution_sources (source/ggd/grid)
+# distributions (distribution/ggd/grid)
+# tf (field_map/grid)
+# transport_solver_numerics (boundary_conditions_ggd/grid)
+# waves (coherent_wave/full_wave/grid)
+
+EXPERIMENTAL_IDS_NAMES = [
+    "equilibrium",
+    "distribution_sources",
+    "distributions",
+    "tf",
+    "transport_solver_numerics",
+    "waves",
+]
 
 
 @smproxy.source(label="IMASPy GGDReader")
