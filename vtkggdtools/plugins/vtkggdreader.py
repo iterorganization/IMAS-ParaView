@@ -16,7 +16,7 @@ logger = logging.getLogger("vtkggdtools")
 
 @smproxy.source(label="GGD Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
-class IMASPyGGDReader(GGDVTKPluginBase):
+class IMASPyGGDReader(GGDVTKPluginBase, use_bezier=True):
     def __init__(self):
         supported_ids = EXPERIMENTAL_IDS_NAMES + SUPPORTED_IDS_NAMES
         super().__init__("vtkPartitionedDataSetCollection", supported_ids)

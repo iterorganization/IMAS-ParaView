@@ -39,7 +39,9 @@ DEFAULT_BACKEND = imaspy.ids_defs.MDSPLUS_BACKEND
 class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     """GGD Reader based on IMASPy"""
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, use_bezier=False, **kwargs):
+        # Only show bezier methods when the use_bezier flag is enabled.
+        bezier_methods = ["PG2_BezierGroup", "P20_SetNPlane", "P21_SetPhiRange"]
         super().__init_subclass__(**kwargs)
         # Copy all function definitions to the subclass
         # This allows paraview to see that they are properties that should be exposed
@@ -50,7 +52,11 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 and not getattr(value, "__isabstractmethod__", False)
                 and not name == "request_information"
             ):
-                setattr(cls, name, value)
+                if name in bezier_methods:
+                    if use_bezier:
+                        setattr(cls, name, value)
+                else:
+                    setattr(cls, name, value)
 
     def __init__(self, output_type, supported_ids):
         super().__init__(
@@ -140,6 +146,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 except Exception as exc:
                     self._uri_error = str(exc)
                     self._selectable = []
+                    self._selected = []
                     self._ids_list = []
             self._update_ids_list()
             self.Modified()
@@ -421,6 +428,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         if idsname not in self._ids_list:
             logger.warning("Could not find the selected IDS.")
             self._selectable = []
+            self._selected = []
             return 1
 
         self._load_ids_from_backend()
