@@ -23,7 +23,7 @@ class Limiter:
 
 
 @smproxy.source(label="Wall Limiter Reader")
-@smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
+@smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class IMASPyWallLimiterReader(GGDVTKPluginBase):
     """Imaspy-based reader that can load the limiter structures of 2D wall
     descriptions"""

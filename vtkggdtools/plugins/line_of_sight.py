@@ -36,8 +36,8 @@ class LineOfSight:
     line_of_sight: IDSStructure
 
 
-@smproxy.source(label="line_of_sight Reader")
-@smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
+@smproxy.source(label="LoS Reader")
+@smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class IMASPyLineOfSightReader(GGDVTKPluginBase):
     """Line of sight reader based on IMASPy"""
 

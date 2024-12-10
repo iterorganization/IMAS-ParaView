@@ -66,7 +66,7 @@ automatically done for you.
 
 ### View GGD (Grid and Plasma State) in ParaView
 
-In ParaView, go to Sources->VTKGGDTools and choose the input plug-in
+In ParaView, go to Sources->IMAS Tools and choose the input plug-in
 you want to use. Then fill the fields in the "Properties" panel with
 the correct details of the IDS and press "Apply" (if the panel is not
 visible, select it in the "View" menu). After a few seconds you should

@@ -29,7 +29,7 @@ class PositionStructure:
 
 
 @smproxy.source(label="Position Reader")
-@smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
+@smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class IMASPyPositionReader(GGDVTKPluginBase):
     """Positions reader based on IMASPy"""
 

@@ -28,8 +28,8 @@ class Profile_1d:
     profile: np.ndarray
 
 
-@smproxy.source(label="profiles_1d Reader")
-@smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
+@smproxy.source(label="1D Profiles Reader")
+@smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class IMASPyProfiles1DReader(GGDVTKPluginBase):
     """profiles_1d reader based on IMASPy"""
 

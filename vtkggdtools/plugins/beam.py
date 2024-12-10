@@ -25,7 +25,7 @@ class Beam:
 
 
 @smproxy.source(label="Beam Reader")
-@smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
+@smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class IMASPyBeamReader(GGDVTKPluginBase):
     """Beam reader based on IMASPy"""
 
