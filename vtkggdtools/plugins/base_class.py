@@ -158,6 +158,10 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 for occurrence in self._dbentry.list_all_occurrences(ids_name):
                     val = ids_name if occurrence == 0 else f"{ids_name}/{occurrence}"
                     self._ids_list.append(val)
+            # If dropdown will be used, add "<Select IDS>" dummy value as first entry
+            # in list, as this will be taken as default
+            if len(self._ids_list) > 1:
+                self._ids_list.insert(0, "<Select IDS>")
 
     # Note on property names:
     # - Properties are sorted in the GUI by name of the function in paraview < 5.13
