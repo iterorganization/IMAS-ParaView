@@ -139,6 +139,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 except Exception as exc:
                     self._uri_error = str(exc)
                     self._selectable = []
+                    self._selected = []
                     self._ids_list = []
             self._update_ids_list()
             self.Modified()
@@ -420,6 +421,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         if idsname not in self._ids_list:
             logger.warning("Could not find the selected IDS.")
             self._selectable = []
+            self._selected = []
             return 1
 
         self._load_ids_from_backend()
