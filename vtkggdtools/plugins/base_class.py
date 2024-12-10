@@ -40,7 +40,12 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     """GGD Reader based on IMASPy"""
 
     def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
+        # Only show bezier methods when the use_bezier flag is enabled.
+        bezier_methods = ["PG2_BezierGroup", "P20_SetNPlane", "P21_SetPhiRange"]
+        use_bezier = False
+        if "use_bezier" in kwargs and kwargs["use_bezier"]:
+            use_bezier = True
+        super().__init_subclass__()
         # Copy all function definitions to the subclass
         # This allows paraview to see that they are properties that should be exposed
         for name, value in vars(GGDVTKPluginBase).items():
@@ -49,7 +54,11 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 and not name.startswith("__")
                 and not getattr(value, "__isabstractmethod__", False)
             ):
-                setattr(cls, name, value)
+                if name in bezier_methods:
+                    if use_bezier:
+                        setattr(cls, name, value)
+                else:
+                    setattr(cls, name, value)
 
     def __init__(self, output_type, supported_ids):
         super().__init__(
