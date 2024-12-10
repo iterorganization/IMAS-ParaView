@@ -251,7 +251,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         self._ids = None
 
     @stringvector(name="IDSAndOccurrence", label="IDS/Occurrence")
-    @stringlistdomain("IDSList", name="ids_list", none_string="&lt;Select IDS&gt;")
+    @stringlistdomain("IDSList", name="ids_list")
     def P10_SetIDSAndOccurrence(self, value):
         """Select the IDS/occurrence to load.
 
@@ -419,6 +419,10 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     ####################################################################################
 
     def RequestInformation(self, request, inInfo, outInfo):
+        if len(self._ids_list) == 1:
+            value = self._ids_list[0]
+            self._update_property("_ids_and_occurrence", value, self._clear_ids)
+
         if self._dbentry is None or not self._ids_and_occurrence:
             return 1
 
