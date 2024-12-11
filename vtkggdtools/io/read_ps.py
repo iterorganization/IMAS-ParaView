@@ -1,15 +1,17 @@
 import logging
 
-import imaspy
 import numpy as np
 from imaspy.ids_data_type import IDSDataType
 from imaspy.ids_struct_array import IDSStructArray
-from imaspy.ids_toplevel import IDSToplevel
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid
 
-from vtkggdtools.ids_util import get_arrays_from_ids, recursive_ggd_path_search
+from vtkggdtools.ids_util import (
+    create_name_recursive,
+    get_arrays_from_ids,
+    recursive_ggd_path_search,
+)
 
 # We'll need these below when we create some units manually:
 from vtkggdtools.util import format_units
@@ -49,6 +51,7 @@ class PlasmaStateReader:
             scalar_array_paths: A list of paths of GGD scalar arrays in the IDS
             vector_array_paths: A list of paths of GGD vector arrays in the IDS
         """
+
         logger.debug("Retrieving GGD paths from IDS metadata")
         all_scalar_paths = []
         all_vector_paths = []
@@ -186,7 +189,7 @@ class PlasmaStateReader:
         """
 
         # Format the path in a neat format
-        name = self._create_name_recursive(array)
+        name = self._create_ggd_name(array)
 
         # Get units for this quantity
         units = format_units(array)
@@ -195,52 +198,22 @@ class PlasmaStateReader:
         name_with_units = f"{name} {units}"
         return name_with_units
 
-    def _create_name_recursive(self, node):
-        """Generates a name for the GGD array. The parent nodes of the array are
-        searched recursively until the IDS toplevel is reached. The name of the metadata
+    def _create_ggd_name(self, array):
+        """Generates a name for the GGD array. The name of the metadata
         of each parent node is stored as well as the identifier, name or labels of the
         node, which are added in brackets, if applicable.
+
         Args:
-            node: The IDS node
+            array: The GGD array
 
         Returns:
-            Name of the ggd scalar or vector
+            Name of the GGD scalar or vector
         """
-        node_id = id(node)
+        node_id = id(array)
         if node_id in self._cache:
             return self._cache[node_id]
-        name_current_node = node.metadata.name
-        name = ""
-        if "ggd" != name_current_node and "time_slice" not in name_current_node:
-            name_appendix = ""
+        name = create_name_recursive(array)
 
-            # Check if node has an identifier.name
-            if hasattr(node, "identifier") and hasattr(node.identifier, "name"):
-                name_appendix = str(node.identifier.name).strip()
-
-            # Check if node has a name
-            elif hasattr(node, "name"):
-                name_appendix = str(node.name).strip()
-
-            # Check if node has a label
-            elif hasattr(node, "label"):
-                name_appendix = str(node.label.value).strip()
-
-            # Add identifier/name/label in between brackets to the full name
-            if name_appendix != "":
-                name = (
-                    f"{name_current_node.capitalize()} ({name_appendix.capitalize()})"
-                )
-            else:
-                name = name_current_node.capitalize()
-
-        parent = imaspy.util.get_parent(node)
-        if parent.metadata is node.metadata:
-            parent = imaspy.util.get_parent(parent)
-        if not isinstance(parent, IDSToplevel):
-            name = f"{self._create_name_recursive(parent)} {name}"
-
-        name = name.strip()
         self._cache[node_id] = name
         return name
 
