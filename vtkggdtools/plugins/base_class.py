@@ -50,6 +50,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 callable(value)
                 and not name.startswith("__")
                 and not getattr(value, "__isabstractmethod__", False)
+                and not name == "request_information"
             ):
                 if name in bezier_methods:
                     if use_bezier:
@@ -479,13 +480,11 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             )
             self.setup_ids()
 
-    @abstractmethod
     def request_information(self):
         """
-        Called during the RequestInformation stage in ParaView.
-        Subclasses should implement this method to define actions or
-        operations that need to occur during the RequestInformation stage
-        of the pipeline.
+        Called during the RequestInformation stage in ParaView. Subclasses can implement
+        this method to define actions that need to occur during the RequestInformation
+        stage of the Paraview pipeline.
         """
         pass
 

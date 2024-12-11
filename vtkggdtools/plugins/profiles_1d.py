@@ -28,8 +28,8 @@ class Profile_1d:
     profile: np.ndarray
 
 
-@smproxy.source(label="profiles_1d Reader")
-@smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
+@smproxy.source(label="1D Profiles Reader")
+@smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class IMASPyProfiles1DReader(GGDVTKPluginBase):
     """profiles_1d reader based on IMASPy"""
 
@@ -116,12 +116,6 @@ class IMASPyProfiles1DReader(GGDVTKPluginBase):
         vtk_array = numpy_to_vtk(values, deep=1)
         vtk_array.SetName(name)
         return vtk_array
-
-    def request_information(self):
-        """
-        Select which profiles to show in the array domain selector, based
-        on whether the "Show All" checkbox is enabled.
-        """
 
     def update_available_profiles(self, time_idx):
         """

@@ -25,7 +25,7 @@ class Beam:
 
 
 @smproxy.source(label="Beam Reader")
-@smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
+@smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class IMASPyBeamReader(GGDVTKPluginBase):
     """Beam reader based on IMASPy"""
 
@@ -63,15 +63,9 @@ class IMASPyBeamReader(GGDVTKPluginBase):
             self._load_beam(output, time_idx)
         return 1
 
-    def request_information(self):
-        """
-        Abstract method which is called during the RequestInformation pipeline step.
-        Intentionally left empty.
-        """
-
     def setup_ids(self):
         """
-        Select which beams to show in the array domain selector. The IDS is is searched
+        Select which beams to show in the array domain selector. The IDS is searched
         for beam structures and their names are added to the array domain selector.
         """
         assert self._ids is not None, "IDS cannot be empty during setup."
