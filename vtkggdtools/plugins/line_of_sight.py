@@ -144,11 +144,12 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
         which both stored in a vtkPolyData object. The lines can be scaled by by a
         scaling factor.
 
-        The connecting lines are created based on the graph below. Here the points 0 ->
-        1 describe the main LoS (los.first_point -> los.second_point). The
-        reflection is described by 1 -> 2 (los.second_point -> los.third_point).
-        The extensions are described by the +'s, from 0 -> 3 for the main LoS, and from
-        1 -> 4, for the reflection.
+        The connecting lines are created based on the graph below. Here, the points
+        0 -> 1 describe the main LoS (los.first_point -> los.second_point). The
+        reflection is described by points 1 -> 2 (los.second_point -> los.third_point).
+        The extensions are visualized by the pluses in the graph, from 0 -> 3 for the
+        main LoS, and from 1 -> 4, for the reflection. Only the lines from 0 -> 3 and
+        1 -> 4 (if reflections exist) are transformed into vtkLines.
 
         0----1+++++3
               \
@@ -191,6 +192,20 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
         if has_reflection:
             points[4] = self._extend_line(points[1], points[2])
 
+        vtk_poly = self._create_vtk_poly(points, has_reflection)
+        return vtk_poly
+
+    def _create_vtk_poly(self, points, has_reflection):
+        """Create vtkPolyData from the provided points.
+
+        Args:
+            points: List of points.
+            has_reflection: booleans whether LoS contains a reflection
+
+        Return:
+            vtkPolyData containing vtkPoints and vtkLines corresponding to the scaled
+            LoS and reflection.
+        """
         vtk_points = vtkPoints()
         vtk_lines = vtkCellArray()
 
