@@ -141,13 +141,13 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
         """Create a vtkPolyData containing a line, based on the r, phi, and z
         coordinates in the line of sight structures. The r,phi,z-coordinates are
         converted to cartesian and stored as vtkPoints and connected using vtkLines,
-        which both stored in a vtkPolyData object. The lines can be scaled by by a 
+        which both stored in a vtkPolyData object. The lines can be scaled by by a
         scaling factor.
 
         The connecting lines are created based on the graph below. Here the points 0 ->
         1 describe the main LoS (los.first_point -> los.second_point). The
         reflection is described by 1 -> 2 (los.second_point -> los.third_point).
-        The extensions are described by the +'s, from 0 -> 3 for the main LoS, and from 
+        The extensions are described by the +'s, from 0 -> 3 for the main LoS, and from
         1 -> 4, for the reflection.
 
         0----1+++++3
@@ -194,20 +194,18 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
         vtk_points = vtkPoints()
         vtk_lines = vtkCellArray()
 
-        for point in points:
-            if point is None:
-                vtk_points.InsertNextPoint((0, 0, 0))
-            else:
-                vtk_points.InsertNextPoint(*point)
-
+        vtk_points.InsertNextPoint(*points[0])
+        vtk_points.InsertNextPoint(*points[3])
         line = vtkLine()
         line.GetPointIds().SetId(0, 0)
-        line.GetPointIds().SetId(1, 3)
+        line.GetPointIds().SetId(1, 1)
         vtk_lines.InsertNextCell(line)
         if has_reflection:
+            vtk_points.InsertNextPoint(*points[1])
+            vtk_points.InsertNextPoint(*points[4])
             line = vtkLine()
-            line.GetPointIds().SetId(0, 1)
-            line.GetPointIds().SetId(1, 4)
+            line.GetPointIds().SetId(0, 2)
+            line.GetPointIds().SetId(1, 3)
             vtk_lines.InsertNextCell(line)
 
         vtk_poly = vtkPolyData()
