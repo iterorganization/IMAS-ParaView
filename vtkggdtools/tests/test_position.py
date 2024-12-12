@@ -1,9 +1,36 @@
 import imaspy
 import numpy as np
+from imaspy import DBEntry
 from vtkmodules.vtkCommonDataModel import vtkPolyData
 
 from vtkggdtools.plugins.position import IMASPyPositionReader
 from vtkggdtools.util import pol_to_cart
+
+
+def test_load_position_magnetics():
+    reader = IMASPyPositionReader()
+    entry = DBEntry(
+        (
+            "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/"
+            "/3/150100/5/"
+        ),
+        "r",
+    )
+    ids = entry.get("magnetics", lazy=True, autoconvert=False)
+
+    reader._ids = ids
+    reader.setup_ids()
+
+    r1 = ids.b_field_pol_probe[0].r
+    phi1 = ids.b_field_pol_probe[0].phi
+    z1 = ids.b_field_pol_probe[0].z
+    name1 = f"{ids.b_field_pol_probe[0].name} / {ids.b_field_pol_probe[0].name}"
+    point1 = (*pol_to_cart(r1, phi1), z1)
+    output = vtkPolyData()
+    reader._selected = [name1]
+    reader._load_position(output)
+    assert output.GetNumberOfPoints() == 1
+    assert np.all(np.isclose(point1, output.GetPoint(0)))
 
 
 def test_load_position_barometry():
