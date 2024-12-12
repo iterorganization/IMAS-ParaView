@@ -30,7 +30,7 @@ class Profile_1d:
 
 @smproxy.source(label="1D Profiles Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
-class IMASPyProfiles1DReader(GGDVTKPluginBase):
+class IMASPyProfiles1DReader(GGDVTKPluginBase, is_time_dependent=True):
     """profiles_1d reader based on IMASPy"""
 
     def __init__(self):
