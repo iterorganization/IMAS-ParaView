@@ -36,8 +36,8 @@ class LineOfSight:
     line_of_sight: IDSStructure
 
 
-@smproxy.source(label="line_of_sight Reader")
-@smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
+@smproxy.source(label="LoS Reader")
+@smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class IMASPyLineOfSightReader(GGDVTKPluginBase):
     """Line of sight reader based on IMASPy"""
 
@@ -55,12 +55,6 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
             output = vtkMultiBlockDataSet.GetData(outInfo)
             self._load_los(output)
         return 1
-
-    def request_information(self):
-        """
-        Abstract method which is called during the RequestInformation pipeline step.
-        Intentionally left empty.
-        """
 
     def setup_ids(self):
         """

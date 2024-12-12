@@ -44,8 +44,8 @@ EXPERIMENTAL_IDS_NAMES = [
 ]
 
 
-@smproxy.source(label="IMASPy GGDReader")
-@smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
+@smproxy.source(label="GGD Reader")
+@smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class IMASPyGGDReader(GGDVTKPluginBase, use_bezier=True):
     def __init__(self):
         supported_ids = EXPERIMENTAL_IDS_NAMES + SUPPORTED_IDS_NAMES

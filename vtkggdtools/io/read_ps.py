@@ -28,8 +28,6 @@ class PlasmaStateReader:
 
         Args:
             ids: The IDS to load GGD arrays from
-            ggd_idx: The time step to load. Defaults to None, which corresponds with
-            loading all timesteps.
         """
 
         # _cache stores names for each node to avoid recomputing them. It checks if

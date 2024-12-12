@@ -23,16 +23,19 @@ def convert_grid_subset_to_unstructured_grid(
 ) -> vtkUnstructuredGrid:
     """
     Copy the elements found in given grid_ggd/grid_subset IDS node into a
-    vtkUnstructuredGrid instance.
-    This method uses the supplied point coordinates in the form of a vtkPoints instance.
-    :param grid_ggd: a grid_ggd ids node
-    :param subset_idx: an index into grid_ggd/grid_subset
-    :param n_plane: number of toroidal planes to be generated if 3D axysimetric
-    :param phi_start: start phi plane
-    :param phi_end: end plane at phi in degrees
-    :param vtk_grid_points: the point coordinates corresponding to 1d objects in
-        the subset elements.
-    :return:
+    vtkUnstructuredGrid instance. This method uses the supplied point coordinates in
+    the form of a vtkPoints instance.
+
+    Args:
+        ids_name: Name of the IDS.
+        ids: The IDS Name.
+        aos_index_values: Time index.
+        n_plane: Number of toroidal planes to be generated if 3D axysimetric.
+        phi_start: Start phi plane.
+        phi_end: End plane at phi in degrees.
+
+    Returns:
+        The created unstructured grid
     """
     output = vtkUnstructuredGrid()
 
@@ -340,15 +343,13 @@ def toroidal_basis(n_tor, n_period, phis, without_n0_mode):
     return HZ
 
 
-"""
-Interpolate scalars on 2D poloidal plane
-
-returns:
-    values: interpolated values, values[var, harmonic, element, is, it]
-"""
-
-
 def interp_scalars(values, vertex, size, n_sub):
+    """
+    Interpolate scalars on 2D poloidal plane
+
+    returns:
+        values: interpolated values, values[var, harmonic, element, is, it]
+    """
     # Multiply values[var,order,harm,vertex,element] with
     # size[order, vertex, element] and bf[order, vertex, s, t]
     return np.einsum(
@@ -356,26 +357,22 @@ def interp_scalars(values, vertex, size, n_sub):
     )
 
 
-"""
-Interpolate scalars on 2D planes * n_planes
-"""
-
-
 def interp_scalars_3D(values, vertex, size, n_sub, HZ):
+    """
+    Interpolate scalars on 2D planes * n_planes
+    """
     vals = interp_scalars(values, vertex, size, n_sub)
     return np.einsum("lhkmn,hp->lpkmn", vals, HZ)
 
 
-"""
-Calculate values of the basis functions at positions s and t
-Optionally put many values of s and t at once as numpy arrays.
-Dimension 0: order
-Dimension 1: vertex
-optional dimension 2, 3: position s, t
-"""
-
-
 def basis_functions(s, t):
+    """
+    Calculate values of the basis functions at positions s and t
+    Optionally put many values of s and t at once as numpy arrays.
+    Dimension 0: order
+    Dimension 1: vertex
+    optional dimension 2, 3: position s, t
+    """
     return np.asarray(
         [
             [
@@ -406,16 +403,14 @@ def basis_functions(s, t):
     )
 
 
-"""
-Calculate values of the basis functions derived to s at positions s and t
-Optionally put many values of s and t at once as numpy arrays.
-Dimension 0: order
-Dimension 1: vertex
-optional dimension 2, 3: position s, t
-"""
-
-
 def basis_functions_s(s, t):
+    """
+    Calculate values of the basis functions derived to s at positions s and t
+    Optionally put many values of s and t at once as numpy arrays.
+    Dimension 0: order
+    Dimension 1: vertex
+    optional dimension 2, 3: position s, t
+    """
     return np.asarray(
         [
             [
@@ -446,16 +441,14 @@ def basis_functions_s(s, t):
     )
 
 
-"""
-Calculate values of the basis functions derived to t at positions s and t
-Optionally put many values of s and t at once as numpy arrays.
-Dimension 0: order
-Dimension 1: vertex
-optional dimension 2, 3: position s, t
-"""
-
-
 def basis_functions_t(s, t):
+    """
+    Calculate values of the basis functions derived to t at positions s and t
+    Optionally put many values of s and t at once as numpy arrays.
+    Dimension 0: order
+    Dimension 1: vertex
+    optional dimension 2, 3: position s, t
+    """
     return np.asarray(
         [
             [
@@ -519,15 +512,21 @@ def value_in_IDS(
     ids_name, ggd_path, ids_data, field: str, name: str, valu: np.ndarray, names: list
 ):
     """
-    Check if IDS contains chosen value and add it to array of all values
-    param ids_name: ids name we are handling (for the units)
-    param ggd_path: path for the ggd inside the ids
-    param ids_data: data inside the ids to be processed
-    param field: path of the data inside the ggd (for the units); can use '.' or '/'
-    param name: descriptive name of the data, to be display in Paraview
-    param valu:
-    param names: list
+    Check if IDS contains chosen value and add it to an array of all values.
+
+    Args:
+        ids_name: IDS name being handled (for the units).
+        ggd_path: Path for the GGD inside the IDS.
+        ids_data: Data inside the IDS to be processed.
+        field: Path of the data inside the GGD (for the units); can use '.' or '/'.
+        name: Descriptive name of the data, to be displayed in ParaView.
+        valu: The value to be checked and added.
+        names: List to which the value will be added.
+
+    Returns:
+        tuple containing the value and names
     """
+
     try:
         new_val = operator.attrgetter(field.replace("/", "."))(ids_data)[0].coefficients
         name = f"{name} {format_units(new_val)}"

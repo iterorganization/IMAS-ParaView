@@ -1,5 +1,4 @@
-"""IMASPy version of the paraview plugin classes.
-"""
+"""IMASPy version of the paraview plugin classes."""
 
 import datetime
 import getpass
@@ -36,8 +35,8 @@ _ggd_space_types_xml = "".join(
 )
 
 
-@smproxy.filter(label="IMASPy GGDWriter")
-@smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
+@smproxy.filter(label="GGD Writer")
+@smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 @smproperty.input(name="Input", port_index=0)
 @smdomain.datatype(dataTypes=["vtkPointSet"], composite_data_supported=True)
 class IMASPyGGDWriter(VTKPythonAlgorithmBase):

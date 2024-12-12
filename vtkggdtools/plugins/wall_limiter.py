@@ -23,7 +23,7 @@ class Limiter:
 
 
 @smproxy.source(label="Wall Limiter Reader")
-@smhint.xml("""<ShowInMenu category="VTKGGDTools" />""")
+@smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class IMASPyWallLimiterReader(GGDVTKPluginBase):
     """Imaspy-based reader that can load the limiter structures of 2D wall
     descriptions"""
@@ -42,12 +42,6 @@ class IMASPyWallLimiterReader(GGDVTKPluginBase):
             output = vtkMultiBlockDataSet.GetData(outInfo)
             self._load_limiters(output)
         return 1
-
-    def request_information(self):
-        """
-        Abstract method which is called during the RequestInformation pipeline step.
-        Intentionally left empty.
-        """
 
     def setup_ids(self):
         """
