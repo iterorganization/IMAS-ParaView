@@ -4,7 +4,7 @@ probes."""
 import logging
 from dataclasses import dataclass
 
-from imaspy.ids_structure import IDSStructure
+from imaspy.ids_structure import IDSStructArray, IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import vtkPolyData
@@ -15,7 +15,7 @@ from vtkggdtools.util import pol_to_cart
 
 logger = logging.getLogger("vtkggdtools")
 
-SUPPORTED_IDS_NAMES = ["barometry", "langmuir_probes"]
+SUPPORTED_IDS_NAMES = ["barometry", "langmuir_probes", "magnetics"]
 
 
 @dataclass
@@ -58,24 +58,36 @@ class IMASPyPositionReader(GGDVTKPluginBase):
         self._selectable = []
 
         if self._ids.metadata.name == "barometry":
-            aos = self._ids.gauge
+            aos_list = [self._ids.gauge]
         elif self._ids.metadata.name == "langmuir_probes":
-            aos = self._ids.embedded
+            aos_list = [self._ids.embedded]
+        elif self._ids.metadata.name == "magnetics":
+            aos_list = [
+                self._ids.flux_loop,
+                self._ids.bpol_probe,
+                self._ids.b_field_pol_probe,
+                self._ids.b_field_tor_probe,
+                self._ids.rogowski_coil,
+            ]
+
         else:
             raise NotImplementedError(
                 f"Unable to find load position for {self._ids.metadata.name}."
             )
+        for aos in aos_list:
+            for i, structure in enumerate(aos):
+                name = structure.name
+                identifier = structure.identifier
+                if name == "":
+                    name = f"device {i}"
+                    logger.warning(
+                        f"Found a device without a name, it will be loaded as {name}."
+                    )
 
-        for i, structure in enumerate(aos):
-            name = structure.name
-            if name == "":
-                name = f"device {i}"
-                logger.warning(
-                    f"Found a device without a name, it will be loaded as {name}."
+                selectable = PositionStructure(
+                    f"{str(name)} / {str(identifier)}", structure
                 )
-
-            selectable = PositionStructure(str(name), structure)
-            self._selectable.append(selectable)
+                self._selectable.append(selectable)
 
     def _load_position(self, output):
         """Go through the list of selected position structures, and load each of them
@@ -93,7 +105,16 @@ class IMASPyPositionReader(GGDVTKPluginBase):
 
             pos = pos_struct.position_structure.position
             logger.info(f"Selected {pos_struct.name}")
-            pos_cart = (*pol_to_cart(pos.r, pos.phi), pos.z)
-            points.InsertNextPoint(*pos_cart)
+
+            if isinstance(pos, IDSStructArray):
+                for pos_struct in pos:
+                    pos_cart = (
+                        *pol_to_cart(pos_struct.r, pos_struct.phi),
+                        pos_struct.z,
+                    )
+                    points.InsertNextPoint(*pos_cart)
+            else:
+                pos_cart = (*pol_to_cart(pos.r, pos.phi), pos.z)
+                points.InsertNextPoint(*pos_cart)
 
         output.SetPoints(points)
