@@ -46,12 +46,11 @@ Build docs
 Deployment projects
 -------------------
 
-TODO
-.. There is currently one Bamboo deployment project for GGD-VTK:
-..
-.. `Deploy IDS-Validator-Doc <https://ci.iter.org/deploy/viewDeploymentProjectEnvironments.action?id=1908899843>`_
-..     Deploy the documentation created in the `Build docs` job to `Sharepoint
-..     <https://sharepoint.iter.org/departments/POP/CM/IMDesign/Code%20Documentation/IDS-Validator/index.html#>`_.
-..
-..     This deployment project runs for after each successful CI build of the IDS-validator main
-..     branch.
+There is currently one Bamboo deployment project for GGD-VTK:
+
+`Deploy GGD-VTK Docs <https://ci.iter.org/deploy/viewDeploymentProjectEnvironments.action?id=1942093825>`_
+    Deploy the documentation created in the `Build docs` job to `Sharepoint
+    <https://sharepoint.iter.org/departments/POP/CM/IMDesign/Code%20Documentation/GGD-VTK/index.html#>`_.
+
+    This deployment project runs for after each successful CI build of the GGD-VTK main
+    branch.
