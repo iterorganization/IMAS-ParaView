@@ -450,11 +450,9 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         if self.is_time_dependent:
             if (
                 self._ids.ids_properties.homogeneous_time
-                != imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
+                == imaspy.ids_defs.IDS_TIME_MODE_HETEROGENEOUS
             ):
-                logger.error(
-                    "Only IDSs with homogeneous time mode are currently supported."
-                )
+                logger.error("Heterogeneous IDSs are currently not supported.")
                 return 1
             self._time_steps = self._ids.time
 
