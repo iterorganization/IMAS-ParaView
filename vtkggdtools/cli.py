@@ -159,25 +159,25 @@ def convert_ggd_to_vtk(
     """
     uri, ids_name, occurrence = parse_uri(uri)
     click.echo(f"Loading {ids_name} from {uri} with occurrence {occurrence}...")
-    entry = imaspy.DBEntry(uri, "r")
-    click.echo("Loading IDS...")
-    ids = entry.get(
-        ids_name,
-        lazy=is_lazy(all_times, lazy, no_lazy),
-        occurrence=occurrence,
-        autoconvert=False,
-    )
-    index_list = parse_time_options(ids.time, index, time, all_times)
+    with imaspy.DBEntry(uri, "r") as entry:
+        click.echo("Loading IDS...")
+        ids = entry.get(
+            ids_name,
+            lazy=is_lazy(all_times, lazy, no_lazy),
+            occurrence=occurrence,
+            autoconvert=False,
+        )
+        index_list = parse_time_options(ids.time, index, time, all_times)
 
-    click.echo("Converting GGD to a VTK file...")
+        click.echo("Converting GGD to a VTK file...")
 
-    # TODO: Add time-dependent VTKHDF conversion
-    if format == "xml":
-        converter = Converter(ids)
-        converter.write_to_xml(output_dir, index_list)
+        # TODO: Add time-dependent VTKHDF conversion
+        if format == "xml":
+            converter = Converter(ids)
+            converter.write_to_xml(output_dir, index_list)
 
-    elif format == "vtkhdf":
-        raise NotImplementedError("vtkhdf format is not yet implemented.")
+        elif format == "vtkhdf":
+            raise NotImplementedError("vtkhdf format is not yet implemented.")
 
 
 def is_lazy(all_times, lazy_flag, no_lazy_flag):
