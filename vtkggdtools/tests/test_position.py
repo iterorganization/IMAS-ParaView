@@ -43,7 +43,6 @@ def test_load_position_barometry():
     phi1 = 2.2
     z1 = 3.3
     name1 = "gauge1"
-    imaspy.util.inspect(ids.gauge[0])
     ids.gauge[0].name = name1
     ids.gauge[0].position.r = r1
     ids.gauge[0].position.phi = phi1
