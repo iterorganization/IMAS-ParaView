@@ -8,6 +8,7 @@ from vtkggdtools.util import pol_to_cart
 
 
 def test_load_position_magnetics():
+    """Test if positions of magnetics barometry IDS are saved into vtkPolyData."""
     reader = IMASPyPositionReader()
     entry = DBEntry(
         (
@@ -21,10 +22,10 @@ def test_load_position_magnetics():
     reader._ids = ids
     reader.setup_ids()
 
-    r1 = ids.b_field_pol_probe[0].r
-    phi1 = ids.b_field_pol_probe[0].phi
-    z1 = ids.b_field_pol_probe[0].z
-    name1 = f"{ids.b_field_pol_probe[0].name} / {ids.b_field_pol_probe[0].name}"
+    r1 = ids.b_field_pol_probe[0].position.r
+    phi1 = ids.b_field_pol_probe[0].position.phi
+    z1 = ids.b_field_pol_probe[0].position.z
+    name1 = f"{ids.b_field_pol_probe[0].name} / {ids.b_field_pol_probe[0].identifier}"
     point1 = (*pol_to_cart(r1, phi1), z1)
     output = vtkPolyData()
     reader._selected = [name1]
@@ -42,6 +43,7 @@ def test_load_position_barometry():
     phi1 = 2.2
     z1 = 3.3
     name1 = "gauge1"
+    imaspy.util.inspect(ids.gauge[0])
     ids.gauge[0].name = name1
     ids.gauge[0].position.r = r1
     ids.gauge[0].position.phi = phi1

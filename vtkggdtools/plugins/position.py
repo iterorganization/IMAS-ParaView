@@ -77,16 +77,18 @@ class IMASPyPositionReader(GGDVTKPluginBase):
         for aos in aos_list:
             for i, structure in enumerate(aos):
                 name = structure.name
-                identifier = structure.identifier
                 if name == "":
                     name = f"device {i}"
                     logger.warning(
                         f"Found a device without a name, it will be loaded as {name}."
                     )
 
-                selectable = PositionStructure(
-                    f"{str(name)} / {str(identifier)}", structure
-                )
+                if hasattr(structure, "identifier"):
+                    identifier = structure.identifier
+                    if not identifier == "":
+                        name = f"{name} / {identifier}"
+
+                selectable = PositionStructure(name, structure)
                 self._selectable.append(selectable)
 
     def _load_position(self, output):
