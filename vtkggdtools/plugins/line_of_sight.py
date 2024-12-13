@@ -122,15 +122,17 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
             output.SetBlock(i, vtk_poly)
 
     def _extend_line(self, first_point, second_point):
-        """Extend a line from the first_point to the second_point by a scaling factor.
+        """Extends a line in the direction from the first_point to the second_point. The
+        distance from the first_point to the new point is determined by the original
+        distance between the first and second point, scaled by the scaling factor.
 
         Args:
             first_point: Tuple containing the (x,y,z) coordinates of the first point.
             second_point: Tuple containing the (x,y,z) coordinates of the second point.
 
-        Return:
+        Returns:
             Tuple containing a point (x,y,z) along the line from the first to the second
-            point, at a distance from the first point defined by the scaling factoir.
+            point, at a distance from the first point defined by the scaling factor.
         """
         line1_direction = tuple(x - y for x, y in zip(second_point, first_point))
         return tuple(
@@ -139,17 +141,17 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
 
     def _create_vtk_los(self, channel):
         """Create a vtkPolyData containing a line, based on the r, phi, and z
-        coordinates in the line of sight structures. The r,phi,z-coordinates are
+        coordinates in the line of sight structures. The r-, phi-, and z-coordinates are
         converted to cartesian and stored as vtkPoints and connected using vtkLines,
-        which both stored in a vtkPolyData object. The lines can be scaled by by a
+        which are both stored in a vtkPolyData object. The lines can be scaled by a
         scaling factor.
 
         The connecting lines are created based on the graph below. Here, the points
         0 -> 1 describe the main LoS (los.first_point -> los.second_point). The
         reflection is described by points 1 -> 2 (los.second_point -> los.third_point).
-        The extensions are visualized by the pluses in the graph, from 0 -> 3 for the
-        main LoS, and from 1 -> 4, for the reflection. Only the lines from 0 -> 3 and
-        1 -> 4 (if reflections exist) are transformed into vtkLines.
+        The extensions are visualized by the plusses in the graph, from 0 -> 3 for the
+        main LoS, and from 1 -> 4, for the reflection. Only the lines from 0 -> 3 (and
+        1 -> 4, if there is a reflection) are transformed into vtkLines.
 
         0----1+++++3
               \
@@ -159,10 +161,10 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
                   +
                    4
         Args:
-            channel: containing a line_of_sight structure
+            channel: containing a line_of_sight structure.
 
         Returns:
-            vtkPolyData containing line_of_sight data
+            vtkPolyData containing line_of_sight data.
         """
         los = channel.line_of_sight
         points = [None] * 5
@@ -196,15 +198,15 @@ class IMASPyLineOfSightReader(GGDVTKPluginBase):
         return vtk_poly
 
     def _create_vtk_poly(self, points, has_reflection):
-        """Create vtkPolyData from the provided points.
+        """Create vtkPolyData containing the vtkPoints and vtkLines in a vtkCellArray.
 
         Args:
-            points: List of points.
-            has_reflection: booleans whether LoS contains a reflection
+            points: List of points to store in the vtkPolyData.
+            has_reflection: boolean whether LoS contains a reflection point.
 
-        Return:
-            vtkPolyData containing vtkPoints and vtkLines corresponding to the scaled
-            LoS and reflection.
+        Returns:
+            vtkPolyData containing vtkPoints and vtkCellArray containing the vtkLines
+            corresponding to the scaled LoS and optionally its reflection.
         """
         vtk_points = vtkPoints()
         vtk_lines = vtkCellArray()
