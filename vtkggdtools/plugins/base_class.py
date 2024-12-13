@@ -39,7 +39,9 @@ DEFAULT_BACKEND = imaspy.ids_defs.MDSPLUS_BACKEND
 class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     """GGD Reader based on IMASPy"""
 
-    def __init_subclass__(cls, use_bezier=False, **kwargs):
+    def __init_subclass__(cls, use_bezier=False, is_time_dependent=False, **kwargs):
+        # Flag to classify time dependent plugins
+        cls.is_time_dependent = is_time_dependent
         # Only show bezier methods when the use_bezier flag is enabled.
         bezier_methods = ["PG2_BezierGroup", "P20_SetNPlane", "P21_SetPhiRange"]
         super().__init_subclass__(**kwargs)
@@ -445,26 +447,25 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         self.request_information()
 
         # TODO: Add support for IDSs with heterogeneous time mode
-        if (
-            self._ids.ids_properties.homogeneous_time
-            != imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
-        ):
-            logger.error(
-                "Only IDSs with homogeneous time mode are currently supported."
-            )
-            return 1
-        self._time_steps = self._ids.time
+        if self.is_time_dependent:
+            if (
+                self._ids.ids_properties.homogeneous_time
+                == imaspy.ids_defs.IDS_TIME_MODE_HETEROGENEOUS
+            ):
+                logger.error("Heterogeneous IDSs are currently not supported.")
+                return 1
+            self._time_steps = self._ids.time
 
-        # Pass time steps to Paraview
-        executive = self.GetExecutive()
-        outInfo = outInfo.GetInformationObject(0)
-        outInfo.Remove(executive.TIME_STEPS())
-        outInfo.Remove(executive.TIME_RANGE())
+            # Pass time steps to Paraview
+            executive = self.GetExecutive()
+            outInfo = outInfo.GetInformationObject(0)
+            outInfo.Remove(executive.TIME_STEPS())
+            outInfo.Remove(executive.TIME_RANGE())
 
-        for time_step in self._time_steps:
-            outInfo.Append(executive.TIME_STEPS(), time_step)
-        outInfo.Append(executive.TIME_RANGE(), self._time_steps[0])
-        outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
+            for time_step in self._time_steps:
+                outInfo.Append(executive.TIME_STEPS(), time_step)
+            outInfo.Append(executive.TIME_RANGE(), self._time_steps[0])
+            outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
         return 1
 
     def _load_ids_from_backend(self):
