@@ -538,5 +538,11 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         if time_step in self._time_steps:
             logger.debug(f"Selected time step in Paraview: {time_step}")
             return time_step
+        elif self._time_steps:
+            logger.info(
+                f"Selected time step {time_step} was not found in the IDS. "
+                f"The first time step ({self._time_steps[0]}) is loaded instead."
+            )
+            return self._time_steps[0]
         else:
             return None
