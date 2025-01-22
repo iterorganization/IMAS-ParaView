@@ -226,10 +226,14 @@ def convert_grid_subset_to_unstructured_grid(
                 6 + 2 * n_xy,
                 8 + 2 * n_xy,
                 11 + 2 * n_xy,
-                n_xy,
+                # According to VTK docs, the sequence should be ([0, 1, 3, 2] + n_xy).
+                # However that doesn't render correctly and we need to swap the 3 and
+                # the 2... See also
+                # https://www.kitware.com/main/wp-content/uploads/2020/03/Implementation-of-rational-Be%CC%81zier-cells-into-VTK-Report.pdf
+                0 + n_xy,
                 1 + n_xy,
-                3 + n_xy,
                 2 + n_xy,
+                3 + n_xy,
                 8 + n_xy,
                 11 + n_xy,
                 9 + n_xy,
