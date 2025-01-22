@@ -56,23 +56,24 @@ def convert_grid_subset_to_unstructured_grid(
 
     phi = [phi_start, phi_end]
     gr2d = ids.grid_ggd[0].space[0]
-    xyz0 = gr2d.objects_per_dimension[0].object
-    ien0 = gr2d.objects_per_dimension[2].object
+    N_vertex = len(gr2d.objects_per_dimension[0].object)
+    N_face = len(gr2d.objects_per_dimension[2].object)
 
     n_period = ids.grid_ggd[0].space[1].geometry_type.index
 
-    x = np.zeros((2, 4, len(xyz0)))
-    for j in range(np.shape(x)[2]):
-        x[:, :, j] = gr2d.objects_per_dimension[0].object[j].geometry_2d
+    x = np.zeros((2, 4, N_vertex))
+    for j, obj in enumerate(gr2d.objects_per_dimension[0].object):
+        x[:, :, j] = obj.geometry_2d.value
 
     # size 1, d_{uk}, d_{vk}, d{uv}d{vk} as in Daan Van Vugt thesis
-    size = np.empty((4, 4, len(ien0)))
-    for i in range(np.shape(size)[2]):
-        size[:, :, i] = gr2d.objects_per_dimension[2].object[i].geometry_2d
+    size = np.empty((4, 4, N_face))
+    for i, obj in enumerate(gr2d.objects_per_dimension[2].object):
+        size[:, :, i] = obj.geometry_2d.value
 
     val_tor1 = np.array([])
     nam = list()
 
+    # TODO: take data from array selection input
     if mhdval:
         data = ids.ggd[time_idx]
         ggd_path = "ggd"
@@ -131,18 +132,16 @@ def convert_grid_subset_to_unstructured_grid(
 
     n_val = len(nam)
     a = np.shape(val_tor1)
-    n_tor = int(a[1] / len(xyz0))
-    valu = np.reshape(val_tor1, (n_val, n_tor, len(xyz0), 4))
+    n_tor = a[1] // N_vertex
+    valu = np.reshape(val_tor1, (n_val, n_tor, N_vertex, 4))
     values = np.swapaxes(valu, 2, 3)
     values = np.swapaxes(values, 1, 2)
 
-    # vertex
-    ien0 = ids.grid_ggd[0].space[0].objects_per_dimension[2].object
-    ver = np.empty((len(ien0), len(ien0[0].nodes)))
-    for i in range(np.shape(ien0)[0]):
-        ver[i, :] = np.array(ien0[i].nodes)
-    ver = ver.astype(int)
-    vertex = np.swapaxes(ver, 1, 0)
+    # Get vertex numbers in the R,Z plane
+    object_aos = ids.grid_ggd[0].space[0].objects_per_dimension[2].object
+    vertex = np.zeros((len(object_aos[0].nodes), len(object_aos)), dtype=np.int32)
+    for i, obj in enumerate(object_aos):
+        vertex[:, i] = obj.nodes.value
 
     # Everything we need to visualise data is now excavated from IDS file
     n_plane = 1 + (n_plane - 1) * 2
@@ -181,9 +180,10 @@ def convert_grid_subset_to_unstructured_grid(
     n_xy = np.shape(RZ)[0]
     xyz = np.zeros((n_xy * n_plane, 3))
     for i in range(n_plane):
+        # x = R * cos(phi); y = R * sin(phi), z = Z
         xyz[i * n_xy : (i + 1) * n_xy, 0] = np.ravel(RZ[:, 0] * np.cos(phis[i]))
-        xyz[i * n_xy : (i + 1) * n_xy, 1] = np.ravel(RZ[:, 1])
-        xyz[i * n_xy : (i + 1) * n_xy, 2] = np.ravel(RZ[:, 0] * np.sin(phis[i]))
+        xyz[i * n_xy : (i + 1) * n_xy, 1] = np.ravel(RZ[:, 0] * np.sin(phis[i]))
+        xyz[i * n_xy : (i + 1) * n_xy, 2] = np.ravel(RZ[:, 1])
 
     if n_plane == 1:
         index = np.array([0, 1, 2, 3, 4, 5, 9, 10, 7, 6, 8, 11, 12, 13, 15, 14])
@@ -196,20 +196,20 @@ def convert_grid_subset_to_unstructured_grid(
 
     else:
         alpha = (phi[1] - phi[0]) / (n_plane - 1)
-        s = np.shape(xyz)[0] // n_plane
         w = np.cos(np.deg2rad(alpha))
         w1 = np.ones((np.shape(xyz)[0]))
         ien = None
+        # Connectivity list of one bezier cell:
         index = np.array(
             [
                 0,
                 1,
                 2,
                 3,
-                0 + 2 * s,
-                1 + 2 * s,
-                2 + 2 * s,
-                3 + 2 * s,
+                0 + 2 * n_xy,
+                1 + 2 * n_xy,
+                2 + 2 * n_xy,
+                3 + 2 * n_xy,
                 4,
                 5,
                 9,
@@ -218,80 +218,67 @@ def convert_grid_subset_to_unstructured_grid(
                 6,
                 8,
                 11,
-                4 + 2 * s,
-                5 + 2 * s,
-                9 + 2 * s,
-                10 + 2 * s,
-                7 + 2 * s,
-                6 + 2 * s,
-                8 + 2 * s,
-                11 + 2 * s,
-                s,
-                1 + s,
-                3 + s,
-                2 + s,
-                8 + s,
-                11 + s,
-                9 + s,
-                10 + s,
-                4 + s,
-                5 + s,
-                7 + s,
-                6 + s,
+                4 + 2 * n_xy,
+                5 + 2 * n_xy,
+                9 + 2 * n_xy,
+                10 + 2 * n_xy,
+                7 + 2 * n_xy,
+                6 + 2 * n_xy,
+                8 + 2 * n_xy,
+                11 + 2 * n_xy,
+                n_xy,
+                1 + n_xy,
+                3 + n_xy,
+                2 + n_xy,
+                8 + n_xy,
+                11 + n_xy,
+                9 + n_xy,
+                10 + n_xy,
+                4 + n_xy,
+                5 + n_xy,
+                7 + n_xy,
+                6 + n_xy,
                 12,
                 13,
                 15,
                 14,
-                12 + 2 * s,
-                13 + 2 * s,
-                15 + 2 * s,
-                14 + 2 * s,
-                12 + s,
-                13 + s,
-                15 + s,
-                14 + s,
+                12 + 2 * n_xy,
+                13 + 2 * n_xy,
+                15 + 2 * n_xy,
+                14 + 2 * n_xy,
+                12 + n_xy,
+                13 + n_xy,
+                15 + n_xy,
+                14 + n_xy,
             ]
         )
+        # Connectivity for all cells between two planes
+        repeat_in_plane = 16 * np.arange(n_xy // 16)
+        repeat_planes = np.arange((n_plane - 1) // 2) * 2 * n_xy
+        repeat_index = (repeat_in_plane + repeat_planes[:, np.newaxis]).ravel()
+        ien = index + repeat_index[:, np.newaxis]
+
+        # set rational weights of midplane points and adjust x/y values accordingly
         for i in range((n_plane - 1) // 2):
-            index2 = index + i * np.array([s * 2 for k in range(48)])
-            w1[s + i * 2 * s : 2 * s + i * 2 * s] = np.array([w for i in range(s)])
-            xyz[s + i * 2 * s : 2 * s + i * 2 * s, 0] = (
-                1 / w * xyz[s + i * 2 * s : 2 * s + i * 2 * s, 0]
-            )
-            xyz[s + i * 2 * s : 2 * s + i * 2 * s, 2] = (
-                1 / w * xyz[s + i * 2 * s : 2 * s + i * 2 * s, 2]
-            )
-            step = np.array([16 for i in range(48)])
-            ien2 = np.zeros((np.shape(xyz)[0] // n_plane // 16, 48))
-            for j in range(0, np.shape(xyz)[0] // n_plane // 16):
-                ien2[j, :] = np.array([index2 + j * step])
+            w1[n_xy * (1 + 2 * i) : n_xy * (2 + 2 * i)] = w
+            xyz[n_xy * (1 + 2 * i) : n_xy * (2 + 2 * i), 0:2] /= w
 
-            if np.any(ien):
-                ien = np.concatenate((ien, ien2), axis=0)
-            else:
-                ien = ien2
-
+        # VTK cell list requires number of points as first element:
         ien = np.insert(ien, 0, 48, axis=1)
         etype = vtk.VTK_BEZIER_HEXAHEDRON
 
         weights = npvtk.numpy_to_vtk(w1, deep=True, array_type=vtk_prec)
         weights.SetName("RationalWeights")
         output.GetPointData().SetRationalWeights(weights)
-        n_c = int(np.shape(xyz)[0] / n_plane / 16 * (n_plane - 1) / 2)
+
+        # Bezier degrees of the cells
         degrees = npvtk.numpy_to_vtk(
-            np.array([[3, 3, 2] for k in range(n_c)]),
+            np.repeat([[3, 3, 2]], len(ien), axis=0),
             deep=True,
             array_type=vtk.VTK_ID_TYPE,
         )
         degrees.SetName("HigherOrderDegrees")
-
         output.GetCellData().SetHigherOrderDegrees(degrees)
-
-    # Use for changing grid orientation in paraview
-    z = np.copy(xyz[:, 1])
-    y = np.copy(xyz[:, 2])
-    xyz[:, 1] = y
-    xyz[:, 2] = z
 
     pcoords = npvtk.numpy_to_vtk(xyz, deep=True, array_type=vtk_prec)
     points = vtk.vtkPoints()
