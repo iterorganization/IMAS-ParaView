@@ -25,6 +25,3 @@ class JorekGGDReader(
     def __init__(self):
         supported_ids = SUPPORTED_IDS_NAMES
         super().__init__(supported_ids)
-        self._n_plane = 1
-        self._phi_start = 0
-        self._phi_end = 0

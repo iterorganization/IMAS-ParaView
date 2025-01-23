@@ -56,6 +56,10 @@ class GGDBaseReader(GGDVTKPluginBase):
 
         # Convert GGD of IDS to VTK format
         converter = Converter(self._ids)
+
+        if type(self).__name__ == "JorekGGDReader" and self._n_plane < 1:
+            raise ValueError("The number of Bezier planes cannot be less than 1.")
+
         plane_config = InterpSettings(
             n_plane=self._n_plane, phi_start=self._phi_start, phi_end=self._phi_end
         )
