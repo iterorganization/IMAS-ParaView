@@ -10,7 +10,7 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPartitionedDataSetCollection,
 )
 
-from vtkggdtools.io import read_bezier, read_geom, read_ps
+from vtkggdtools.io import read_geom, read_jorek, read_ps
 from vtkggdtools.util import FauxIndexMap, find_closest_indices, get_grid_ggd
 
 logger = logging.getLogger("vtkggdtools")
@@ -199,7 +199,7 @@ class Converter:
         aos_index_values = FauxIndexMap()
         n_period = self.grid_ggd.space[1].geometry_type.index
         if n_period > 0:
-            ugrid = read_bezier.convert_grid_subset_to_unstructured_grid(
+            ugrid = read_jorek.convert_grid_subset_to_unstructured_grid(
                 self.ids.metadata.name,
                 self.ids,
                 aos_index_values,
