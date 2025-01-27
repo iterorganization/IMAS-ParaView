@@ -11,7 +11,7 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from vtkggdtools.io import read_geom, read_jorek, read_ps
-from vtkggdtools.util import FauxIndexMap, find_closest_indices, get_grid_ggd
+from vtkggdtools.util import find_closest_indices, get_grid_ggd
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -195,16 +195,10 @@ class Converter:
         Args:
             plane_config: Data class containing the interpolation settings.
         """
-        aos_index_values = FauxIndexMap()
         n_period = self.grid_ggd.space[1].geometry_type.index
         if n_period > 0:
             ugrid = read_jorek.convert_grid_subset_to_unstructured_grid(
-                self.ids.metadata.name,
-                self.ids,
-                aos_index_values,
-                plane_config.n_plane,
-                plane_config.phi_start,
-                plane_config.phi_end,
+                self.ids, self.time_idx, plane_config, self.ps_reader
             )
             self.output.SetPartition(0, 0, ugrid)
             child = self.assembly.AddNode(self.ids.metadata.name, 0)

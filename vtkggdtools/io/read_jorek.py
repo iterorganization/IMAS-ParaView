@@ -4,22 +4,18 @@ These methods copy contents from the grid_ggd/space and grid_ggd/grid_subset
 children into distinct vtkUnstructuredGrid objects for Bezier elements.
 """
 
-import operator
-
 import numpy as np
 import vtk
 from vtkmodules.util import numpy_support as npvtk
 from vtkmodules.util.vtkConstants import VTK_DOUBLE
 from vtkmodules.vtkCommonDataModel import vtkUnstructuredGrid
 
-from vtkggdtools.util import format_units
-
 prec = np.float64
 vtk_prec = VTK_DOUBLE
 
 
 def convert_grid_subset_to_unstructured_grid(
-    ids_name: str, ids, aos_index_values: dict, n_plane: int, phi_start, phi_end: float
+    ids, time_idx, plane_config, ps_reader
 ) -> vtkUnstructuredGrid:
     """
     Copy the elements found in given grid_ggd/grid_subset IDS node into a
@@ -27,34 +23,18 @@ def convert_grid_subset_to_unstructured_grid(
     the form of a vtkPoints instance.
 
     Args:
-        ids_name: Name of the IDS.
         ids: The IDS Name.
-        aos_index_values: Time index.
-        n_plane: Number of toroidal planes to be generated if 3D axysimetric.
-        phi_start: Start phi plane.
-        phi_end: End plane at phi in degrees.
+        time_idx: The selected time index.
+        plane_config: Configuration for the bezier planes
+        ps_reader: PlasmaStateReader which contains which array to load
 
     Returns:
         The created unstructured grid
     """
     output = vtkUnstructuredGrid()
+    n_plane = plane_config.n_plane
 
-    time_idx = aos_index_values.get("TimeIdx")
-    mhdval = False
-    radval = False
-    try:
-        if ids_name == "mhd":
-            # ggd = ids.ggd[time_idx]
-            mhdval = True
-        elif ids_name == "radiation":
-            # ggd = ids.grid_ggd[time_idx]
-            radval = True
-        else:
-            raise IndexError
-    except IndexError:
-        return output
-
-    phi = [phi_start, phi_end]
+    phi = [plane_config.phi_start, plane_config.phi_end]
     gr2d = ids.grid_ggd[0].space[0]
     N_vertex = len(gr2d.objects_per_dimension[0].object)
     N_face = len(gr2d.objects_per_dimension[2].object)
@@ -73,62 +53,21 @@ def convert_grid_subset_to_unstructured_grid(
     val_tor1 = np.array([])
     nam = list()
 
-    # TODO: take data from array selection input
-    if mhdval:
-        data = ids.ggd[time_idx]
-        ggd_path = "ggd"
+    array_list = ps_reader.scalar_array_list + ps_reader.vector_array_list
 
-        quantities = {
-            "electrons.temperature": "Electron Temperature",
-            "t_i_average": "Ion Temperature (average)",
-            "n_i_total": "Ion Density (total)",
-            "zeff": "Z effective",
-            "b_field_r": "Magnetic Field Br",
-            "b_field_z": "Magnetic Field Bz",
-            "b_field_tor": "Magnetic Field Btor",
-            "a_field_r": "Magnetic Potential Ar",
-            "a_field_z": "Magnetic Potential Az",
-            "a_field_tor": "Magnetic Potential Ator",
-            "psi": "Poloidal Flux",
-            "velocity_r": "Plasma Velocity Vr",
-            "velocity_z": "Plasma Velocity Vz",
-            "velocity_tor": "Plasma Velocity Vtor",
-            "velocity_parallel": "Plasma Velocity Vparallel",
-            "velocity_parallel_over_b_field": "Vparallel / |B|",
-            "phi_potential": "Electric Potential",
-            "vorticity": "Vorticity",
-            "vorticity_over_r": "Vorticity / Major Radius",
-            "j_r": "Current Density Jr",
-            "j_z": "Current Density Jz",
-            "j_tor": "Current Density Jtor",
-            "j_tor_r": "Jtor x Major Radius",
-            "mass_density": "Mass Density",
-        }
-        for q_field, q_name in quantities.items():
-            val_tor1, nam = value_in_IDS(
-                ids_name, ggd_path, data, q_field, q_name, val_tor1, nam
-            )
-
-    elif radval:
-        ggd_path = "process/ggd"
-        data = ids.process[0].ggd[time_idx]
-
-        try:
-            if np.size(val_tor1) == 0:
-                val_tor1 = np.array([data.ion[0].emissivity[0].coefficients])
-                nam.append("Radiation (W/m^3)")
-            else:
-                val_tor1 = np.concatenate(
-                    (val_tor1, np.array([data.ion[0].emissivity[0].coefficients])),
-                    axis=0,
-                )
-                nam.append("Radiation (W/m^3)")
-        except Exception:
-            print("No radiation values")
-
-    else:
-        print("No mhd or radiation values found")
+    # Skip processing if no arrays are selected
+    if array_list == []:
         return output
+
+    # Load selected arrays
+    for attribute_array in array_list:
+        name = ps_reader._create_name_with_units(attribute_array)
+        scalar_data = attribute_array[0].coefficients
+        nam.append(name)
+        if np.size(val_tor1) == 0:
+            val_tor1 = np.array([scalar_data])
+        else:
+            val_tor1 = np.concatenate((val_tor1, np.array([scalar_data])), axis=0)
 
     n_val = len(nam)
     a = np.shape(val_tor1)
@@ -497,43 +436,3 @@ def bf_t(n_sub):
     s = np.tensordot(lin, [1] * n_sub, axes=0)
     t = s.transpose()
     return basis_functions_t(s, t)
-
-
-def value_in_IDS(
-    ids_name, ggd_path, ids_data, field: str, name: str, valu: np.ndarray, names: list
-):
-    """
-    Check if IDS contains chosen value and add it to an array of all values.
-
-    Args:
-        ids_name: IDS name being handled (for the units).
-        ggd_path: Path for the GGD inside the IDS.
-        ids_data: Data inside the IDS to be processed.
-        field: Path of the data inside the GGD (for the units); can use '.' or '/'.
-        name: Descriptive name of the data, to be displayed in ParaView.
-        valu: The value to be checked and added.
-        names: List to which the value will be added.
-
-    Returns:
-        tuple containing the value and names
-    """
-
-    try:
-        new_val = operator.attrgetter(field.replace("/", "."))(ids_data)[0].coefficients
-        name = f"{name} {format_units(new_val)}"
-        if not (names):
-            names = list()
-            names.append(name)
-        else:
-            names.append(name)
-
-        if np.size(valu) == 0:
-            valu = np.array([new_val])
-            return valu, names
-
-        valu = np.concatenate((valu, np.array([new_val])), axis=0)
-        return valu, names
-
-    except Exception:
-        # pvlog.exception(e)
-        return valu, names
