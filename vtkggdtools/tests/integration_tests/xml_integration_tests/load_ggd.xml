@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <pqevents>
   <pqevent object="pqClientMainWindow/menubar" command="activate" arguments="menuSources" />
-  <pqevent object="pqClientMainWindow/menubar/menuSources" command="activate" arguments="VTKGGDTools" />
-  <pqevent object="pqClientMainWindow/menubar/menuSources/VTKGGDTools" command="activate" arguments="IMASPyGGDReader" />
+  <pqevent object="pqClientMainWindow/menubar/menuSources" command="activate" arguments="IMAS Tools" />
+  <pqevent object="pqClientMainWindow/menubar/menuSources/IMAS Tools" command="activate" arguments="GGD Reader" />
 </pqevents>
