@@ -4,8 +4,15 @@ from pathlib import Path
 import pytest
 
 # Load XML scripts for integration testing
-TEST_DIRECTORY = "./vtkggdtools/tests/integration_tests/xml_integration_tests"
-TEST_SCRIPTS = list(Path(TEST_DIRECTORY).glob("*.xml"))
+ROOT_DIRECTORY = Path(__file__).resolve().parents[3]
+TEST_DIRECTORY = (
+    ROOT_DIRECTORY
+    / "vtkggdtools"
+    / "tests"
+    / "integration_tests"
+    / "xml_integration_tests"
+)
+TEST_SCRIPTS = list(TEST_DIRECTORY.glob("*.xml"))
 
 
 def run_test(script, timeout=120):
@@ -52,7 +59,12 @@ def run_test(script, timeout=120):
 def test_xvfb_pass():
     """Test a passing integration test, by testing an empty XML."""
     test_passed = run_test(
-        "./vtkggdtools/tests/integration_tests/xml_xvfb_tests/passing_test.xml"
+        ROOT_DIRECTORY
+        / "vtkggdtools"
+        / "tests"
+        / "integration_tests"
+        / "xml_xvfb_tests"
+        / "passing_test.xml"
     )
     assert test_passed
 
@@ -61,7 +73,12 @@ def test_xvfb_pass():
 def test_xvfb_fail():
     """Test failing integration test."""
     test_passed = run_test(
-        "./vtkggdtools/tests/integration_tests/xml_xvfb_tests/failing_test.xml"
+        ROOT_DIRECTORY
+        / "vtkggdtools"
+        / "tests"
+        / "integration_tests"
+        / "xml_xvfb_tests"
+        / "failing_test.xml"
     )
     assert not test_passed
 
