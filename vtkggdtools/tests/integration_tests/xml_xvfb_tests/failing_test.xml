@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<pqevents>
+  <pqevent object="pqClientMainWindow/menubar" command="activate" arguments="menuSources" />
+  <pqevent object="pqClientMainWindow/menubar/menuSources" command="activate" arguments="VTKGGDTools" />
+  <pqevent object="pqClientMainWindow/menubar/menuSources/VTKGGDTools" command="activate" arguments="IMASPyGGDReader" />
+  <pqevent object="pqClientMainWindow/propertiesDock/propertiesPanel/scrollArea/qt_scrollarea_viewport/scrollAreaWidgetContents/PropertiesFrame/ProxyPanel/URIfromfile/FileChooser/FAKE_OBJECT" command="FAKE_FAILING_COMMAND" arguments="" />
+</pqevents>
