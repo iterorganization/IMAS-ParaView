@@ -66,6 +66,3 @@ cython_debug/
 /.idea
 /*.pvsm
 
-# Exclude XML files from integration tests
-!vtkggdtools/tests/integration_tests/xml_integration_tests/*.xml
-!vtkggdtools/tests/integration_tests/xml_xvfb_tests/*.xml
