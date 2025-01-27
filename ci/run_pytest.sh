@@ -16,7 +16,6 @@ module load $@
 echo "Done loading modules"
 set -x
 
-
 # Set up the testing venv
 rm -rf venv  # Environment should be clean, but remove directory to be sure
 python -m venv venv
@@ -34,4 +33,5 @@ pip freeze
 rm -f junit.xml
 rm -rf htmlcov
 export IMAS_VERSION="3.40.1" # set default version because IMASPy module on SDCC doesn't have latest one yet
-python -m pytest -n=auto --cov=vtkggdtools --cov-report=term-missing --cov-report=html --junit-xml=junit.xml
+
+python -m pytest -rA --cov=vtkggdtools --cov-report=term-missing --cov-report=html --junit-xml=junit.xml
