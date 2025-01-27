@@ -37,5 +37,5 @@ export IMAS_VERSION="3.40.1" # set default version because IMASPy module on SDCC
 # Currently the integration tests do not work on the CI, while they do succeed on SDCC.
 # We skip these tests on the CI for now, For more information, see:
 # https://jira.iter.org/servicedesk/customer/portal/1/ITSD-372198 
-python -m pytest -n=auto --cov=vtkggdtools --cov-report=term-missing --cov-report=html --junit-xml=junit.xml -m "not integration"
+python -m pytest --cov=vtkggdtools --cov-report=term-missing --cov-report=html --junit-xml=junit.xml -m "not integration"
 
