@@ -62,6 +62,7 @@ where = ["."]
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--strict-markers"
+markers = ["integration"]
 testpaths = "vtkggdtools/tests"
 
 [tool.versioneer]

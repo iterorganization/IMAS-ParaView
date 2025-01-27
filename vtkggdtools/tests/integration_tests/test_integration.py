@@ -48,6 +48,7 @@ def run_test(script, timeout=120):
         return False
 
 
+@pytest.mark.integration
 def test_xvfb_pass():
     """Test a passing integration test, by testing an empty XML."""
     test_passed = run_test(
@@ -56,6 +57,7 @@ def test_xvfb_pass():
     assert test_passed
 
 
+@pytest.mark.integration
 def test_xvfb_fail():
     """Test failing integration test."""
     test_passed = run_test(
@@ -64,6 +66,7 @@ def test_xvfb_fail():
     assert not test_passed
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize("test_script", TEST_SCRIPTS)
 def test_integration_scripts(test_script):
     """Parameterized test function for running integration tests."""
