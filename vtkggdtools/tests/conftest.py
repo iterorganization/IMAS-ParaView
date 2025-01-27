@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import imaspy
 import pytest
@@ -9,9 +10,7 @@ from vtkggdtools.tests.fill_ggd import fill_ids
 
 def set_environment():
     """Set environment variables for PV_PLUGIN_PATH and PYTHONPATH."""
-
-    # Here we assume that the pytest is ran from the root directory
-    current_path = os.getcwd()
+    current_path = Path(__file__).resolve().parent
 
     # Set the LD_PRELOAD environment variable to handle Paraview bug
     hdf5_dir = os.getenv("HDF5_DIR")
