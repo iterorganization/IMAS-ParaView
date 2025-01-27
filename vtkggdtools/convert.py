@@ -101,19 +101,18 @@ class Converter:
 
         self._setup_vtk_object(outInfo)
 
-        if plane_config.n_plane != 0:
-            self._interpolate_jorek(plane_config)
-            return self.output
-
         self.ps_reader = read_ps.PlasmaStateReader(self.ids)
         self.ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
-        self._fill_grid_and_plasma_state()
+        if plane_config.n_plane != 0:
+            self._interpolate_jorek(plane_config)
+        else:
+            self._fill_grid_and_plasma_state()
 
         return self.output
 
     def get_ugrids(self):
         """Retrieve the list of VTK unstructured grids."""
-        if self.output is not None and self.ugrids is not []:
+        if self.output is not None and self.ugrids != []:
             return self.ugrids
         else:
             return None
