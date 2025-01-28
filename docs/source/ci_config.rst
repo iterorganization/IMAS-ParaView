@@ -29,10 +29,16 @@ Testing
 
     It needs a virtual framebuffer implementation. This is currently
     not working reliably on the CI nodes, and so this job as been
-    disabled for now. It can be run manually.
+    disabled for now. To run the complete suite, including the virtual
+    framebuffer tests, make sure you have all the environment modules
+    loaded and run ``pytest`` in the root folder of the repository.
 
     **Example:**
-    ``$ ci/run_pytest.sh IMASPy IMAS-AL-Python ParaView Xvfb``
+    
+    ``$ ci/run_pytest.sh IMASPy IMAS-AL-Python ParaView Xvfb # identical run as in the CI``
+
+    ``$ module load IMASPy IMAS-AL-Python ParaView Xvfb``
+    ``$ pytest # enforcing the vfb tests``
 
 Benchmark
     This job runs the ASV benchmarks on the CI server. It
