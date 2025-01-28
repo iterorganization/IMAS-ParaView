@@ -45,7 +45,7 @@ def _iter_nodes_from_path(
     if len(path_parts) == 1:
         # The path_parts refer to nodes that have a defined length, such as struct
         # arrays
-        if len(child_node) > 1 or get_empty_arrays:
+        if len(child_node) >= 1 or get_empty_arrays:
             yield child_node
     elif isinstance(child_node, IDSStructArray):
         # Only load specific timeidx from ggd node

@@ -10,8 +10,8 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPartitionedDataSetCollection,
 )
 
-from vtkggdtools.io import read_bezier, read_geom, read_ps
-from vtkggdtools.util import FauxIndexMap, find_closest_indices, get_grid_ggd
+from vtkggdtools.io import read_geom, read_jorek, read_ps
+from vtkggdtools.util import find_closest_indices, get_grid_ggd
 
 logger = logging.getLogger("vtkggdtools")
 
@@ -101,19 +101,18 @@ class Converter:
 
         self._setup_vtk_object(outInfo)
 
-        if plane_config.n_plane != 0:
-            self._interpolate_jorek(plane_config)
-            return self.output
-
         self.ps_reader = read_ps.PlasmaStateReader(self.ids)
         self.ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
-        self._fill_grid_and_plasma_state()
+        if plane_config.n_plane != 0:
+            self._interpolate_jorek(plane_config)
+        else:
+            self._fill_grid_and_plasma_state()
 
         return self.output
 
     def get_ugrids(self):
         """Retrieve the list of VTK unstructured grids."""
-        if self.output is not None and self.ugrids is not []:
+        if self.output is not None and self.ugrids != []:
             return self.ugrids
         else:
             return None
@@ -196,16 +195,10 @@ class Converter:
         Args:
             plane_config: Data class containing the interpolation settings.
         """
-        aos_index_values = FauxIndexMap()
         n_period = self.grid_ggd.space[1].geometry_type.index
         if n_period > 0:
-            ugrid = read_bezier.convert_grid_subset_to_unstructured_grid(
-                self.ids.metadata.name,
-                self.ids,
-                aos_index_values,
-                plane_config.n_plane,
-                plane_config.phi_start,
-                plane_config.phi_end,
+            ugrid = read_jorek.convert_grid_subset_to_unstructured_grid(
+                self.ids, self.time_idx, plane_config, self.ps_reader
             )
             self.output.SetPartition(0, 0, ugrid)
             child = self.assembly.AddNode(self.ids.metadata.name, 0)

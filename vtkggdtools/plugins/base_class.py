@@ -81,8 +81,8 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         self._ids_and_occurrence = ""
         self._supported_ids = supported_ids
 
-        # Bezier interpolation properties
-        self._n_plane = 0
+        # Bezier interpolation properties, the derived classes are responsible for
+        # setting self._n_plane to the correct default value
         self._phi_start = 0
         self._phi_end = 0
 
@@ -376,7 +376,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     # Properties for Bezier interpolation
     ####################################################################################
 
-    @intvector(name="N plane", default_values=0)
+    @intvector(name="N plane", default_values=1)
     def P20_SetNPlane(self, val):
         self._update_property("_n_plane", val)
 
@@ -479,8 +479,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
 
             if self._dbentry is None:
                 raise RuntimeError(
-                    "Could not fetch IDS from the database entry, "
-                    "as the entry is empty"
+                    "Could not fetch IDS from the database entry, as the entry is empty"
                 )
             self._ids = self._dbentry.get(
                 idsname,
