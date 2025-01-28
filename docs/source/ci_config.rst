@@ -4,12 +4,13 @@ CI configuration
 ================
 
 GGD-VTK uses `ITER Bamboo <https://ci.iter.org/>`_ for CI. This page provides an overview
-of the CI Plan and deployment projects.
+of the CI Plan and deployment projects. Some of the jobs in the CI Plan can also be run manually,
+examples provided below.
 
 CI Plan
 -------
 
-The `GGD-VTK CI plan <https://ci.iter.org/browse/VIS-GGDVTK28>`_ consists of 3 types of jobs:
+The `GGD-VTK CI plan <https://ci.iter.org/browse/VIS-GGDVTK>`_ consists of 3 types of jobs:
 
 Linting 
     Run ``black``, ``flake8``, and ``isort`` on the vtkggdtools code base.
@@ -17,11 +18,21 @@ Linting
 
     The CI script executed in this job is ``ci/linting.sh``.
 
+    **Example:**
+    ``$ ci/linting.sh Python/3.11.5-GCCcore-13.2.0``
+
 Testing
     This runs all unit tests with pytest.
 
     The CI script executed in this job is ``ci/run_pytest.sh``, which expects the
-    modules it needs to load as arguments. 
+    modules it needs to load as arguments.
+
+    It needs a virtual framebuffer implementation. This is currently
+    not working reliably on the CI nodes, and so this job as been
+    disabled for now. It can be run manually.
+
+    **Example:**
+    ``$ ci/run_pytest.sh IMASPy IMAS-AL-Python ParaView Xvfb``
 
 Benchmark
     This job runs the ASV benchmarks on the CI server. It
@@ -36,11 +47,17 @@ Benchmark
 
     The CI script executed in this job is: ``ci/run_benchmark.sh``.
 
+    **Example:**
+    ``$ ci/run_benchmark.sh IMASPy``
+
 Build docs
     This job builds the Sphinx documentation.
 
     The CI script executed in this job is: ``ci/build_docs.sh``, which expects the
     modules it needs to load as arguments.
+
+    **Example:**
+    ``$ ci/build_docs.sh IMASPy``
 
 
 Deployment projects
