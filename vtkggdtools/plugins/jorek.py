@@ -25,3 +25,4 @@ class JorekGGDReader(
     def __init__(self):
         supported_ids = SUPPORTED_IDS_NAMES
         super().__init__(supported_ids)
+        self._MIN_N_PLANE = self._n_plane = 1

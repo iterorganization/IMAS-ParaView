@@ -46,3 +46,4 @@ class IMASPyGGDReader(GGDBaseReader, is_time_dependent=True):
     def __init__(self):
         supported_ids = EXPERIMENTAL_IDS_NAMES + SUPPORTED_IDS_NAMES
         super().__init__(supported_ids)
+        self._MIN_N_PLANE = self._n_plane = 0

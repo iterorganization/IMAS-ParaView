@@ -81,11 +81,8 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         self._ids_and_occurrence = ""
         self._supported_ids = supported_ids
 
-        # Bezier interpolation properties
-        if type(self).__name__ == "JorekGGDReader":
-            self._n_plane = 1
-        else:
-            self._n_plane = 0
+        # Bezier interpolation properties, the derived classes are responsible for
+        # setting self._n_plane to the correct default value
         self._phi_start = 0
         self._phi_end = 0
 
