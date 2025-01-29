@@ -34,11 +34,15 @@ Testing
     loaded and run ``pytest`` in the root folder of the repository.
 
     **Example:**
-    
-    ``$ ci/run_pytest.sh IMASPy IMAS-AL-Python ParaView Xvfb # identical run as in the CI``
 
-    ``$ module load IMASPy IMAS-AL-Python ParaView Xvfb``
-    ``$ pytest # enforcing the vfb tests``
+    .. code-block:: console
+
+        $ # identical run as in the CI:
+        $ ci/run_pytest.sh IMASPy IMAS-AL-Python ParaView Xvfb
+
+        $ # enforcing the vfb tests
+        $ module load IMASPy IMAS-AL-Python ParaView Xvfb
+        $ pytest
 
 Benchmark
     This job runs the ASV benchmarks on the CI server. It
