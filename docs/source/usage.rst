@@ -7,8 +7,8 @@ This page will go over how to use the Paraview plugins, as well as the CLI inter
 .. tip:: More information about the usage of specific plugin UI elements can be obtained by hovering
    the mouse over the element.
 
-Visualize GGD in Paraview
--------------------------
+Loading an URI
+--------------
 If Paraview is correctly installed according to the :ref:`installation docs <installing>`, you should
 see the GGD reader plugin under `Sources > IMAS Tools > GGD Reader`. Selecting this source
 will create a GGD Reader source in the Paraview pipeline.
@@ -36,6 +36,8 @@ The different input options are shown in the figure below:
 
          3\. Manual input.
 
+Loading an IDS
+--------------
 When the URI input is selected, and filled accordingly, you can press `Apply` to load the URI.
 If the URI loads successfully, an IDS can be selected from the drop-down list. The reader automatically
 detects which IDSs are available for the given URI, and only shows applicable IDSs for this plugin.
@@ -59,6 +61,8 @@ You should now be able to see the mesh of the GGD.
 
 .. |ico2| image:: images/filter_icon.png
 
+Selecting GGD arrays
+--------------------
 Attributes which are defined on the GGD grid can be loaded using the Attribute Selection window. 
 The selection window can be found on the left under `Select attribute Arrays`.
 Any number of attributes can be selected, and the list
@@ -76,36 +80,3 @@ The selected quantities can now be visualized using Paraview's selection drop-do
    may be benificial to disable lazy loading. This can be done by enabling the `Preload Data`
    checkbox in the plugin settings.
 
-
-
-Convert GGD to VTK using the CLI
---------------------------------
-GGD-VTK supports converting the GGD of an IDS to VTK format from a command-line interface (CLI).
-This can be by using the `ggd2vtk` tool. Detailed usage, as well as examples can be found by running
-
-  .. code-block:: bash
-
-    vtkggdtools ggd2vtk --help
-
-Example usage:
-
-  .. code-block:: bash
-
-    vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles output_dir
-
-This will create the following tree file structure:
-
-  .. code-block:: bash 
-
-    output_dir/
-    ├── edge_profiles_0/
-    │   ├── edge_profiles_0_0_0.vtu
-    │   ├── edge_profiles_0_1_0.vtu
-    │   ├── edge_profiles_0_2_0.vtu
-    │   …
-    └── edge_profiles_0.vtpc
-
-Here, the 0 in ``edge_profiles_0`` denotes that is has converted the first time step. 
-The vtpc file contains a vtkPartitionedCollection, which can directly be loaded into Paraview
-for visualization. The vtu files contain a vtkUnstructuredGrid, and can also be loaded into
-Paraview directly.

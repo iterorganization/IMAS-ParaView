@@ -27,6 +27,7 @@ Manual
    self
    installing
    usage
+   cli
 
 .. toctree::
    :caption: API docs
