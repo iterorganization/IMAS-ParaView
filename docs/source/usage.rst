@@ -10,17 +10,17 @@ This page will go over how to use the Paraview plugins, as well as the CLI inter
 Visualize GGD in Paraview
 -------------------------
 If Paraview is correctly installed according to the :ref:`installation docs <installing>`, you should
-see the GGD reader plugin under `Sources > VTKGGD Tools > IMASPyGGDReader`. Selecting this source
-will create an IMASPyGGDReader source in the Paraview pipeline.
+see the GGD reader plugin under `Sources > IMAS Tools > GGD Reader`. Selecting this source
+will create a GGD Reader source in the Paraview pipeline.
 
-The first step is to select which URI you want to load. The IMASPyGGDReader provides three different
+The first step is to select which URI you want to load. The GGD Reader provides three different
 methods of supplying an URI.
 
 1. A string containing the URI.
-2. A file browser with which you can select the file to load
-3. Manual selection of the backend, database, pulse, run, user, and version
+2. A file browser with which you can select the file to load.
+3. Manual selection of the backend, database, pulse, run, user, and version.
 
-These are shown in the figure below:
+The different input options are shown in the figure below:
 
 .. list-table::
    :widths: 33 33 33
@@ -36,24 +36,39 @@ These are shown in the figure below:
 
          3\. Manual input.
 
-When the URI is loaded, an IDS can be selected from the drop-down list. The reader automatically
-detects which IDS is available for the given URI, and only shows applicable IDSs for this plugin.
+When the URI input is selected, and filled accordingly, you can press `Apply` to load the URI.
+If the URI loads successfully, an IDS can be selected from the drop-down list. The reader automatically
+detects which IDSs are available for the given URI, and only shows applicable IDSs for this plugin.
 
 .. figure:: images/ids_dropdown.png
 
    The drop-down list to select an IDS.
 
 .. |ico1| image:: images/rotate_axis.png
-.. |ico2| image:: images/filter_icon.png
 
-After the IDS is loaded, the grid should appear in the viewport. If the grid does not show up, it is
+When the desired IDS is selected, click on `Apply` to load it. After the IDS is loaded, 
+the grid should appear in the viewport. If the grid does not show up, it is
 possible that the axes are not aligned properly. You can use the buttons above to align your viewpoint
 with the data. For example, to align the viewpoint in the positive Y direction, press: |ico1|.
 
-The selection window shows a list of physical quantities which are defined on the grid which is
-currently displayed. Any of these (or all) can be selected in the selection box, additionally these
-entries can be filtered using the |ico2|-icon in the top right of the selection box. The selected
-quantities can now be selected using Paraview's selection drop-down menu.
+You should now be able to see the mesh of the GGD.
+
+.. figure:: images/mesh.png
+
+   The mesh of the GGD.
+
+.. |ico2| image:: images/filter_icon.png
+
+Attributes which are defined on the GGD grid can be loaded using the Attribute Selection window. 
+The selection window can be found on the left under `Select attribute Arrays`.
+Any number of attributes can be selected, and the list
+can be filtered using the |ico2|-icon in the top right of the selection window. 
+When the attributes are selected, click on `Apply` to load the selected attributes from the backend.
+The selected quantities can now be visualized using Paraview's selection drop-down menu.
+
+.. figure:: images/electron_pressure.png
+
+   Visualize the `Electron Pressure` of the GGD.
 
 .. note:: By default, the data is lazy loaded. This means that the data will only be fetched from
    the backend as soon it is required by the plugin. This helps loading times, as we don't need to

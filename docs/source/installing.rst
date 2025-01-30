@@ -90,3 +90,7 @@ SDCC installation
 
     make -C docs html
     # You can now open ./docs/_build/html/index.html
+
+..
+  TODO: add local installing documentation, maybe wait until ggd-vtk goes open source?
+  As it needs to be installed with IMASPy.
