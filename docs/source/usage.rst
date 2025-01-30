@@ -93,3 +93,19 @@ Example usage:
 
     vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles output_dir
 
+This will create the following tree file structure:
+
+  .. code-block:: bash 
+
+    output_dir/
+    ├── edge_profiles_0/
+    │   ├── edge_profiles_0_0_0.vtu
+    │   ├── edge_profiles_0_1_0.vtu
+    │   ├── edge_profiles_0_2_0.vtu
+    │   …
+    └── edge_profiles_0.vtpc
+
+Here, the 0 in ``edge_profiles_0`` denotes that is has converted the first time step. 
+The vtpc file contains a vtkPartitionedCollection, which can directly be loaded into Paraview
+for visualization. The vtu files contain a vtkUnstructuredGrid, and can also be loaded into
+Paraview directly.
