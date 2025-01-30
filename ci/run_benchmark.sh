@@ -28,10 +28,12 @@ source venv/bin/activate
 pip install --upgrade pip setuptools wheel
 pip install virtualenv .[benchmark]
 
-# Copy previous results (if any)
-mkdir -p /mnt/bamboo_deploy/vtkggdtools/benchmarks/results
 mkdir -p .asv
-cp -rf /mnt/bamboo_deploy/vtkggdtools/benchmarks/results .asv/
+# If on the CI, copy previous results (if any):
+if [ "$bamboo_build_working_directory" ]; then
+    mkdir -p /mnt/bamboo_deploy/vtkggdtools/benchmarks/results
+    cp -rf /mnt/bamboo_deploy/vtkggdtools/benchmarks/results .asv/
+fi    
 
 # Ensure there is a machine configuration
 asv machine --yes
@@ -58,6 +60,8 @@ fi
 # Publish results
 asv publish
 
-# And persistently store them
-cp -rf .asv/{results,html} /mnt/bamboo_deploy/vtkggdtools/benchmarks/
+# And persistently store them if on the CI:
+if [ "$bamboo_build_working_directory" ]; then
+    cp -rf .asv/{results,html} /mnt/bamboo_deploy/vtkggdtools/benchmarks/
+fi
 
