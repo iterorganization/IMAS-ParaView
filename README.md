@@ -18,15 +18,19 @@ vtkggdtools --version
 
 ### Running on SDCC
 
-Use the following instructions from the root of the project directory to run paraview 
-with the updated plugin:
+Use the following instructions from the root of the project directory to run paraview:
 
 ```bash
 # Load compatible IMASPy, IMAS and ParaView modules, like:
-module load IMASPy/1.1.0-foss-2023b IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
-# export environment variables, assumes the current working directory is the root of the repository
-export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH PYTHONPATH=$PWD:$PYTHONPATH
-# Use LD_PRELOAD to work around a VTK bug: https://gitlab.kitware.com/vtk/vtk/-/issues/19373
+# AL5 and ParaView 5.12 (recommended on RHEL9):
+module load IMASPy/1.1.1-foss-2023b \
+IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
+# export environment variables, this assumes the current
+# working directory is the root of the repository
+export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH
+export PYTHONPATH=$PWD:$PYTHONPATH
+# Use LD_PRELOAD to work around a VTK bug:
+# https://gitlab.kitware.com/vtk/vtk/-/issues/19373
 export LD_PRELOAD=$HDF5_DIR/lib/libhdf5.so.310
 # Run paraview
 paraview
@@ -38,7 +42,8 @@ Use the following instructions from the root of the project directory to run the
 command line interface:
 ```bash
 # Load compatible IMASPy, IMAS and ParaView modules, like:
-module load IMASPy/1.1.0-foss-2023b IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
+module load IMASPy/1.1.1-foss-2023b \
+IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
 # create virtual environment and install dependencies
 python3 -m venv ./venv
 . venv/bin/activate
