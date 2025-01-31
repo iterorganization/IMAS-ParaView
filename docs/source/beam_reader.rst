@@ -9,7 +9,7 @@ This page explains how to use the Beam Reader to visualize Beam IDS data structu
 Supported IDSs
 --------------
 
-Currently, the following IDS is supported in the 1D Profiles Reader.
+Currently, the following IDS is supported in the Beam Reader.
 
 - ``ec_launchers``
 

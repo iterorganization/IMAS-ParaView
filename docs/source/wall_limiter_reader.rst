@@ -10,7 +10,7 @@ description 2D structures in a Wall IDS.
 Supported IDSs
 --------------
 
-Currently, the following IDS is supported in the 1D Profiles Reader.
+Currently, the following IDS is supported in the Wall Limiter Reader.
 
 - ``wall``
 
