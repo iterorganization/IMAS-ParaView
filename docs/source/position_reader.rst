@@ -1,7 +1,7 @@
 .. _`using the Position Reader`:
 
 Position Reader
-===========
+===============
 
 This page explains how to use the Position Reader to visualize position IDS data structures.
 
@@ -9,7 +9,7 @@ This page explains how to use the Position Reader to visualize position IDS data
 Supported IDSs
 --------------
 
-Currently, the following IDS is supported in the 1D Profiles Reader.
+Currently, the following IDSs are supported in the 1D Profiles Reader.
 
 - ``barometry``
 - ``langmuir_probes``
