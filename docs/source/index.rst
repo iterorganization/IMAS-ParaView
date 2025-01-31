@@ -26,6 +26,11 @@ Manual
 
    self
    installing
+   
+.. toctree::
+   :caption: Using GGD-VTK Tools
+   :maxdepth: 2
+
    usage
    cli
 

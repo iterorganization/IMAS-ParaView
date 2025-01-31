@@ -7,11 +7,9 @@ This page go over how to use the CLI interface to convert a GGD to VTK.
 Convert GGD to VTK using the CLI
 --------------------------------
 GGD-VTK supports converting the GGD of an IDS to VTK format from a command-line interface (CLI).
-This can be by using the `ggd2vtk` tool. Detailed usage, as well as examples can be found by running
+This can be done by using the `ggd2vtk` tool. 
 
-  .. code-block:: bash
-
-    vtkggdtools ggd2vtk --help
+.. tip:: Detailed usage of the CLI tool can be found by running ``vtkggdtools ggd2vtk --help``
 
 Example usage:
 
@@ -56,7 +54,7 @@ convert all time steps instead, use the ``-a`` or ``--all-times`` flag.
 .. note:: If you intend to convert a large chunk of the entire GGD dataset, it may be 
    beneficial to disable lazy loading. For this, the ``--no-lazy`` flag can be set. 
    By default, lazy loading is enabled, except when all time steps are converted, in 
-   which case it is disabled. To enforce the use of lazy loading, use the ``lazy`` flag.
+   which case it is disabled. To enforce the use of lazy loading, use the ``--lazy`` flag.
 
 Index-based slicing
 ^^^^^^^^^^^^^^^^^^^

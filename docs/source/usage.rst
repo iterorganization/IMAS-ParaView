@@ -1,7 +1,7 @@
-.. _`usage`:
+.. _`using the GGD Reader`:
 
-Using GGD-VTK
-=============
+Using the GGD Reader
+====================
 This page will go over how to use the Paraview plugins, as well as the CLI interface.
 
 .. tip:: More information about the usage of specific plugin UI elements can be obtained by hovering
