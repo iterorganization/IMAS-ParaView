@@ -33,8 +33,8 @@ SDCC installation
     export LD_PRELOAD=$HDF5_DIR/lib/libhdf5.so.310
     # Run paraview
     paraview
-    # Open the "Sources" tab in the top left, if you see "IMAS Tools" in the drop down, 
-    # It is installed correctly.
+    # Open the "Sources" tab in the top left, if you see "IMAS Tools" 
+    # in the drop down, it is installed correctly.
 
 * To use the command-line interface, setup a python virtual environment and install python dependencies
 
