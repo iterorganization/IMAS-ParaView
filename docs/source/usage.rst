@@ -15,3 +15,4 @@ well as loading non-GGD data.
    1d_profiles_reader
    beam_reader
    los_reader
+   position_reader

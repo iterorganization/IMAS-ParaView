@@ -17,7 +17,7 @@ Using the Beam Reader
 ---------------------
 
 The Beam Reader functions similarly to the GGD Reader, with the same interface and data loading workflow. 
-This means that the steps for loading a dataset, selecting attributes, and interacting with the grid are identical. 
+This means that the steps for loading an URI, an IDS, and selecting attributes are identical. 
 Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 
 - :ref:`Loading an URI <loading-an-uri>`: How to provide the file path or select a dataset.
