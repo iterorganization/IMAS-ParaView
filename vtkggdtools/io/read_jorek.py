@@ -55,10 +55,6 @@ def convert_grid_subset_to_unstructured_grid(
 
     array_list = ps_reader.scalar_array_list + ps_reader.vector_array_list
 
-    # Skip processing if no arrays are selected
-    if array_list == []:
-        return output
-
     # Load selected arrays
     for attribute_array in array_list:
         name = ps_reader._create_name_with_units(attribute_array)
@@ -71,7 +67,8 @@ def convert_grid_subset_to_unstructured_grid(
 
     n_val = len(nam)
     a = np.shape(val_tor1)
-    n_tor = a[1] // N_vertex
+    n_tor = a[1] // N_vertex if len(a) > 1 else 0
+
     valu = np.reshape(val_tor1, (n_val, n_tor, N_vertex, 4))
     values = np.swapaxes(valu, 2, 3)
     values = np.swapaxes(values, 1, 2)
@@ -237,8 +234,9 @@ def convert_grid_subset_to_unstructured_grid(
 
     HZ = toroidal_basis(n_tor, n_period, phis, without_n0_mode)
 
-    val = interp_scalars_3D(values, vertex, size, n_sub, HZ).reshape((n_val, -1))
-
+    val = interp_scalars_3D(values, vertex, size, n_sub, HZ)
+    if n_val > 0:
+        val = val.reshape((n_val, -1))
     a = np.shape(val)
     val = val.reshape((a[0], a[1] // 16, 16))
     val[:, :, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]] = val[
