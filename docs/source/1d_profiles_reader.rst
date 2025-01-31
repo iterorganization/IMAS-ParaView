@@ -17,7 +17,7 @@ Currently, the following IDSs are supported in the 1D Profiles Reader.
 Using the 1D Profiles Reader
 ----------------------------
 
-The 1D Profiles functions similarly to the GGD Reader, with the same interface and data loading workflow. 
+The 1D Profiles Reader functions similarly to the GGD Reader, with the same interface and data loading workflow. 
 This means that the steps for loading a dataset, selecting attributes, and interacting with the grid are identical. 
 Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 

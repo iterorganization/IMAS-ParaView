@@ -13,3 +13,5 @@ well as loading non-GGD data.
    ggd_reader
    jorek_reader
    1d_profiles_reader
+   beam_reader
+   los_reader
