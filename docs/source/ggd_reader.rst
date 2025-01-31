@@ -7,6 +7,25 @@ This page will go over how to use the GGD Paraview plugin.
 .. tip:: More information about the usage of specific plugin UI elements can be obtained by hovering
    the mouse over the element.
 
+Supported IDSs
+--------------
+
+Currently, the following IDSs are supported in the GGD Reader.
+
+- ``edge_profiles``
+- ``edge_sources``
+- ``edge_transport``
+- ``mhd``
+- ``radiation``
+- ``runaway_electrons``
+- ``wall``
+- ``equilibrium``
+- ``distribution_sources``
+- ``distributions``
+- ``tf``
+- ``transport_solver_numerics``
+- ``waves``
+
 .. _loading-an-uri:
 
 Loading an URI

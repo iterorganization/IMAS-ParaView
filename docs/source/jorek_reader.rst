@@ -5,6 +5,14 @@ JOREK Reader
 
 This page explains how to use the JOREK GGD reader to visualize JOREK simulation data in Paraview.
 
+Supported IDSs
+--------------
+
+Currently, the following IDSs are supported in the JOREK Reader.
+
+- ``mhd``
+- ``radiation``
+
 Using the JOREK Reader
 ----------------------
 
