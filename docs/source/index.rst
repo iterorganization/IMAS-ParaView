@@ -28,7 +28,7 @@ Manual
    installing
    
 .. toctree::
-   :caption: Using GGD-VTK Tools
+   :caption: How To Use
    :maxdepth: 2
 
    usage
