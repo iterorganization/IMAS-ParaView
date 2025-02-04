@@ -68,6 +68,7 @@ class IMASPyPositionReader(GGDVTKPluginBase):
                 self._ids.b_field_pol_probe,
                 self._ids.b_field_tor_probe,
                 self._ids.rogowski_coil,
+                self._ids.b_field_phi_probe,
             ]
 
         else:
