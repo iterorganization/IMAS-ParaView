@@ -62,14 +62,19 @@ class IMASPyPositionReader(GGDVTKPluginBase):
         elif self._ids.metadata.name == "langmuir_probes":
             aos_list = [self._ids.embedded]
         elif self._ids.metadata.name == "magnetics":
-            aos_list = [
-                self._ids.flux_loop,
-                self._ids.bpol_probe,
-                self._ids.b_field_pol_probe,
-                self._ids.b_field_tor_probe,
-                self._ids.rogowski_coil,
-                self._ids.b_field_phi_probe,
+            aos_list = []
+            # Depending on the DD version, some attributes might not exist
+            attributes = [
+                "flux_loop",
+                "bpol_probe",
+                "b_field_pol_probe",
+                "b_field_tor_probe",
+                "rogowski_coil",
+                "b_field_phi_probe",
             ]
+            for attr in attributes:
+                if hasattr(self._ids, attr):
+                    aos_list.append(getattr(self._ids, attr))
 
         else:
             raise NotImplementedError(
