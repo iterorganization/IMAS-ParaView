@@ -9,11 +9,23 @@ This page explains how to use the Position Reader to visualize position IDS data
 Supported IDSs
 --------------
 
-Currently, the following IDSs are supported in the 1D Profiles Reader.
+Currently, the following IDS and structures are supported in the 1D Profiles Reader:
 
-- ``barometry``
-- ``langmuir_probes``
-- ``magnetics``
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * - IDS
+     - Structure
+   * - ``barometry``
+     - `Gauges <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/barometry.html#barometry-gauge-position>`__
+   * - ``langmuir_probes``
+     - `Embedded probes <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/langmuir_probes.html#langmuir_probes-embedded-position>`__
+   * - ``magnetics``
+     - `Flux loops <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/magnetics.html#magnetics-flux_loop-position>`__,
+       `Rogowski coils <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/magnetics.html#magnetics-rogowski_coil-position>`__,
+       `Poloidal field probes <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/magnetics.html#magnetics-b_field_pol_probe-position>`__,
+       `Toroidal field probes <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/magnetics.html#magnetics-b_field_phi_probe-position>`__
 
 Using the Position Reader
 -------------------------

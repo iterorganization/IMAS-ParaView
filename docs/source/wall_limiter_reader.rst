@@ -3,16 +3,27 @@
 Wall Limiter Reader
 ===================
 
-This page explains how to use the Wall Limiter Reader to visualize limiter structures of 
-description 2D structures in a Wall IDS.
+This page explains how to use the Wall Limiter Reader to visualize 
+`limiter structures of description 2D structures <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/wall.html#wall-description_2d-limiter>`_ in a Wall IDS.
+The `outline <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/wall.html#wall-description_2d-limiter-unit-outline>`_ 
+of the limiter units is loaded into Paraview. 
+
+.. note:: The ``phi_extensions`` property of the limiters is ignored, therefore this plugin is only applicable for axisymmetric limiter units.
 
 
 Supported IDSs
 --------------
 
-Currently, the following IDS is supported in the Wall Limiter Reader.
+Currently, the following IDS and structures are supported in the Wall Limiter Reader:
 
-- ``wall``
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * - IDS
+     - Structure
+   * - ``wall``
+     - `Limiter units <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/wall.html#wall-description_2d-limiter-unit>`__
 
 Using the Wall Limiter Reader
 -----------------------------

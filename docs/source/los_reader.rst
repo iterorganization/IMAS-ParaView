@@ -9,19 +9,37 @@ This page explains how to use the LoS (Line-of-Sight) Reader to visualize Line o
 Supported IDSs
 --------------
 
-Currently, the following IDSs are supported in the LoS Reader.
+Currently, the following IDS and structures are supported in the Line of Sight Reader:
 
-- ``bolometer``
-- ``bremsstrahlung_visible``
-- ``ece``
-- ``hard_x_rays``
-- ``interferometer``
-- ``mse``
-- ``polarimeter``
-- ``refractometer``
-- ``soft_x_rays``
-- ``spectrometer_uv``
-- ``spectrometer_visible``
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * - IDS
+     - Structure
+   * - ``bolometer``
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/bolometer.html#bolometer-channel-line_of_sight>`__
+   * - ``bremsstrahlung_visible``
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/bremsstrahlung_visible.html#bremsstrahlung_visible-channel-line_of_sight>`__
+   * - ``ece``
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/ece.html#ece-line_of_sight>`__,
+       `All Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/ece.html#ece-line_of_sight>`__
+   * - ``hard_x_rays``
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/hard_x_rays.html#hard_x_rays-channel-line_of_sight>`__
+   * - ``interferometer``
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/interferometer.html#interferometer-channel-line_of_sight>`__
+   * - ``mse``
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/mse.html#mse-channel-line_of_sight>`__
+   * - ``polarimeter``
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/polarimeter.html#polarimeter-channel-line_of_sight>`__
+   * - ``refractometer``
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/refractometer.html#refractometer-channel-line_of_sight>`__
+   * - ``soft_x_rays``
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/soft_x_rays.html#soft_x_rays-channel-line_of_sight>`__
+   * - ``spectrometer_uv``
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/spectrometer_uv.html#spectrometer_uv-channel-line_of_sight>`__
+   * - ``spectrometer_visible``
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/spectrometer_visible.html#spectrometer_visible-channel-line_of_sight>`__
 
 Using the LoS Reader
 --------------------

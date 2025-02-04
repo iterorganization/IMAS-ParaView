@@ -9,10 +9,18 @@ This page explains how to use the 1D Profiles Reader to visualize 1D profile dat
 Supported IDSs
 --------------
 
-Currently, the following IDSs are supported in the 1D Profiles Reader.
+Currently, the following IDS and structures are supported in the 1D Profiles Reader:
 
-- ``core_profiles``
-- ``core_sources``
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * - IDS
+     - Structure
+   * - ``core_profiles``
+     - `Core plasma radial profiles <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/core_profiles.html#core_profiles-profiles_1d>`__
+   * - ``core_sources``
+     - `Source profiles <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/core_sources.html#core_sources-source-profiles_1d>`__
 
 Using the 1D Profiles Reader
 ----------------------------

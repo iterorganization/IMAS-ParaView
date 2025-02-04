@@ -3,7 +3,7 @@
 Beam Reader
 ===========
 
-This page explains how to use the Beam Reader to visualize Beam IDS data structures.
+This page explains how to use the Beam Reader to visualize Beam IDS data structures. 
 
 .. note:: The EC beam directions are visualized as straight lines from their initial 
    launching position and angle. This is not the actual path of the EC waves through the plasma.
@@ -11,9 +11,17 @@ This page explains how to use the Beam Reader to visualize Beam IDS data structu
 Supported IDSs
 --------------
 
-Currently, the following IDS is supported in the Beam Reader.
+Currently, the following IDS and structures are supported in the Beam Reader:
 
-- ``ec_launchers``
+     
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * - IDS
+     - Structure
+   * - ``ec_launchers``
+     - `Beam <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/ec_launchers.html#ec_launchers-beam>`__
 
 Using the Beam Reader
 ---------------------
