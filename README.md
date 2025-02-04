@@ -17,7 +17,14 @@ vtkggdtools --version
 ```
 
 ### Running on SDCC
+```bash
+module load GGD-VTK
+paraview
+# Open the "Sources" tab in the top left, and ensure you see "IMAS Tools" in 
+# the drop down menu.
+```
 
+### Running development version on SDCC
 Use the following instructions from the root of the project directory to run paraview:
 
 ```bash

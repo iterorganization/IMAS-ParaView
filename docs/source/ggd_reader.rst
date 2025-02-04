@@ -102,6 +102,6 @@ The selected quantities can now be visualized using Paraview's selection drop-do
 .. note:: By default, the data is lazy loaded. This means that the data will only be fetched from
    the backend as soon it is required by the plugin. This helps loading times, as we don't need to
    fetch the entire dataset before handling any data. If you plan on loading the entire dataset, it
-   may be benificial to disable lazy loading. This can be done by enabling the `Preload Data`
+   may be beneficial to load all data up front. This can be done by enabling the `Preload Data`
    checkbox in the plugin settings.
 

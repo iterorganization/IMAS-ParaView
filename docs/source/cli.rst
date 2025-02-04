@@ -13,13 +13,13 @@ This can be done by using the `ggd2vtk` tool.
 
 Example usage:
 
-  .. code-block:: bash
+.. code-block:: bash
 
     vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles output_dir
 
 This will create the following tree file structure:
 
-  .. code-block:: bash 
+.. code-block:: bash 
 
     output_dir/
     ├── edge_profiles_0/

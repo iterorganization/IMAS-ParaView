@@ -5,6 +5,8 @@ Beam Reader
 
 This page explains how to use the Beam Reader to visualize Beam IDS data structures.
 
+.. note:: The EC beam directions are visualized as straight lines from their initial 
+   launching position and angle. This is not the actual path of the EC waves through the plasma.
 
 Supported IDSs
 --------------
@@ -23,6 +25,7 @@ Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 - :ref:`Loading an URI <loading-an-uri>`: How to provide the file path or select a dataset.
 - :ref:`Loading an IDS <loading-an-ids>`: How to load a dataset and display the grid.
 - :ref:`Selecting attribute arrays <selecting-ggd-arrays>`: How to choose and visualize attributes.
+
 
 
 Setting the Beam Distance

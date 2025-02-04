@@ -34,7 +34,8 @@ Plotting 1D profiles
 --------------------
 
 The 1D Profiles Reader outputs vtkTable data, this can be plotted in a 1D plot.
-After loading the attribute arrays using the steps above, apply the ``Plot Data`` Paraview filter.
+After loading the attribute arrays using the steps above, apply the ``Plot Data`` Paraview filter 
+(For more information on applying filters in Paraview, have a look at the `Paraview documentation <https://docs.paraview.org/en/latest/UsersGuide/filteringData.html>`_).
 Within the ``Plot Data`` filter options, disable the ``Use Index For X Axis`` option, 
 and in the drop-down menu, select the array to use as X-axis (e.g. ``rho_tor_norm``).
 The profiles that should be plotted can now be selected.
