@@ -26,7 +26,13 @@ Manual
 
    self
    installing
+   
+.. toctree::
+   :caption: How To Use
+   :maxdepth: 2
+
    usage
+   cli
 
 .. toctree::
    :caption: API docs
