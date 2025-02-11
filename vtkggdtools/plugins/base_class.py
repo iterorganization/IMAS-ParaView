@@ -145,6 +145,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 # Try to open the DBEntry
                 try:
                     self._dbentry = imaspy.DBEntry(self._uri, "r")
+                    logger.info(f'Successfully opened URI "{self._uri}".')
                 except Exception as exc:
                     self._uri_error = str(exc)
                     self._selectable = []
