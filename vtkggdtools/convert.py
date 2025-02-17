@@ -230,7 +230,7 @@ class Converter:
         )
         ugrids = {}
         for subset_idx in range(-1, num_subsets):
-            if subset_idx == 0:
+            if subset_idx == 0 and self.progress:
                 self.progress.set(0)
             progress = self.progress if subset_idx == -1 else None
 
