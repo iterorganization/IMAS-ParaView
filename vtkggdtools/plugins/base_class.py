@@ -10,6 +10,7 @@ from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonCore import vtkStringArray
 
+from vtkggdtools.convert import Converter
 from vtkggdtools.imas_uri import uri_from_path, uri_from_pulse_run
 from vtkggdtools.paraview_support.servermanager_tools import (
     arrayselectiondomain,
@@ -101,6 +102,8 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         # Values to fill the array selector with
         self._selectable = []
         self._selected = []
+
+        self.converter = None
 
     def _update_property(self, name, value, callback=None):
         """Convenience method to update a property when value changed."""
@@ -490,6 +493,8 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 ignore_unknown_dd_version=True,
             )
             self.setup_ids()
+            # Convert GGD of IDS to VTK format
+            self.converter = Converter(self._ids)
 
     def request_information(self):
         """

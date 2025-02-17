@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
+from cachetools import LRUCache
 from vtk import vtkXMLPartitionedDataSetCollectionWriter
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
@@ -32,6 +33,7 @@ class Converter:
         self.grid_ggd = None
         self.output = None
         self.ps_reader = None
+        self.grid_cache = LRUCache(maxsize=32)
 
     def write_to_xml(self, output_path: Path, index_list=[0]):
         """Convert an IDS to VTK format and write it to disk using the XML output
@@ -65,7 +67,6 @@ class Converter:
         plane_config: InterpSettings = InterpSettings(),
         outInfo=None,
         progress=None,
-        ugrids=None,
     ):
         """Converts the GGD of an IDS to VTK format.
 
@@ -79,7 +80,6 @@ class Converter:
             plane_config: Data class containing the interpolation settings.
             outInfo: Paraview's Source outInfo information object.
             progress: Progress indicator for Paraview.
-            ugrids: List of ugrids to use instead of reading grids from IDS.
 
         Returns:
             vtkPartitionedDataSetCollection containing the converted GGD data.
@@ -87,8 +87,7 @@ class Converter:
         self.points = vtkPoints()
         self.assembly = vtkDataAssembly()
         self.time_idx = self._resolve_time_idx(time_idx, time)
-        self.input_ugrids = ugrids
-        self.ugrids = []
+
         self.progress = progress
 
         if self.time_idx is None:
@@ -109,13 +108,6 @@ class Converter:
             self._fill_grid_and_plasma_state()
 
         return self.output
-
-    def get_ugrids(self):
-        """Retrieve the list of VTK unstructured grids."""
-        if self.output is not None and self.ugrids != []:
-            return self.ugrids
-        else:
-            return None
 
     def _resolve_time_idx(self, time_idx, time):
         """Resolves the appropriate time index based on the given time index or time
@@ -170,7 +162,8 @@ class Converter:
         else:
             self.output = vtkPartitionedDataSetCollection.GetData(outInfo)
 
-        if self.input_ugrids is None:
+        if self.time_idx not in self.grid_cache:
+            self.grid_cache[self.time_idx] = {}
             read_geom.fill_vtk_points(
                 self.grid_ggd, 0, self.points, self.ids.metadata.name, self.progress
             )
@@ -248,13 +241,15 @@ class Converter:
         Returns:
             The unstructured grid for the given subset and partition.
         """
-        if self.input_ugrids is None:
+        if subset_idx not in self.grid_cache[self.time_idx]:
             ugrid = self._fill_grid(subset_idx, partition, progress=progress)
+            self.grid_cache[self.time_idx][subset_idx] = ugrid
         else:
             ugrid = self._fill_grid(
-                subset_idx, partition, ugrid=self.input_ugrids[subset_idx]
+                subset_idx,
+                partition,
+                ugrid=self.grid_cache[self.time_idx][subset_idx],
             )
-        self.ugrids.append(ugrid)
         return ugrid
 
     def _fill_grid(self, subset_idx, partition, ugrid=None, progress=None):
