@@ -98,7 +98,11 @@ class Converter:
         if not self._is_grid_valid():
             return None
 
-        self._setup_vtk_object(outInfo)
+        if outInfo is None:
+            self.output = vtkPartitionedDataSetCollection()
+        else:
+            self.output = vtkPartitionedDataSetCollection.GetData(outInfo)
+        self.output.SetDataAssembly(self.assembly)
 
         self.ps_reader = read_ps.PlasmaStateReader(self.ids)
         self.ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
@@ -151,27 +155,6 @@ class Converter:
             )
             return time_idx
 
-    def _setup_vtk_object(self, outInfo):
-        """Setup the partitioned dataset collection VTK object and its data assembly.
-
-        Args:
-            outInfo: Paraview's Source outInfo information object.
-        """
-        if outInfo is None:
-            self.output = vtkPartitionedDataSetCollection()
-        else:
-            self.output = vtkPartitionedDataSetCollection.GetData(outInfo)
-
-        if self.time_idx not in self.grid_cache:
-            self.grid_cache[self.time_idx] = {}
-            read_geom.fill_vtk_points(
-                self.grid_ggd, 0, self.points, self.ids.metadata.name, self.progress
-            )
-        else:
-            if self.progress:
-                self.progress.set(0.5)
-        self.output.SetDataAssembly(self.assembly)
-
     def _is_grid_valid(self):
         """Validates if the grid is properly loaded."""
         if self.grid_ggd is None:
@@ -209,28 +192,32 @@ class Converter:
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             self.output.SetNumberOfPartitionedDataSets(1)
-            ugrid = self._get_ugrid(-1, 0, progress=self.progress)
+            self.partition = 0
+            ugrid = self._get_ugrid(-1)
             self.ps_reader.read_plasma_state(-1, ugrid)
         elif self.ids.metadata.name == "wall":
             # FIXME: what if num_subsets is 2 or 3?
             self.output.SetNumberOfPartitionedDataSets(num_subsets - 3)
-            ugrid = self._get_ugrid(-1, 0)
+            self.partition = 0
+            ugrid = self._get_ugrid(-1)
             self.ps_reader.read_plasma_state(-1, ugrid)
 
             for subset_idx in range(4, num_subsets):
-                ugrid = self._get_ugrid(subset_idx, subset_idx - 3)
+                self.partition = subset_idx - 3
+                ugrid = self._get_ugrid(subset_idx)
                 self.ps_reader.read_plasma_state(subset_idx, ugrid)
                 if self.progress:
                     self.progress.increment(0.5 / num_subsets)
         else:
             self.output.SetNumberOfPartitionedDataSets(num_subsets)
             for subset_idx in range(num_subsets):
-                ugrid = self._get_ugrid(subset_idx, subset_idx)
+                self.partition = subset_idx
+                ugrid = self._get_ugrid(subset_idx)
                 self.ps_reader.read_plasma_state(subset_idx, ugrid)
                 if self.progress:
                     self.progress.increment(0.5 / num_subsets)
 
-    def _get_ugrid(self, subset_idx, partition, progress=None):
+    def _get_ugrid(self, subset_idx):
         """Retrieves or generates an unstructured grid for the specified subset and
         partition.
 
@@ -241,13 +228,22 @@ class Converter:
         Returns:
             The unstructured grid for the given subset and partition.
         """
+        if self.time_idx not in self.grid_cache:
+            self.grid_cache[self.time_idx] = {}
+            read_geom.fill_vtk_points(
+                self.grid_ggd, 0, self.points, self.ids.metadata.name, self.progress
+            )
+        else:
+            if self.progress:
+                self.progress.set(0.5)
+
         if subset_idx not in self.grid_cache[self.time_idx]:
-            ugrid = self._fill_grid(subset_idx, partition, progress=progress)
+            ugrid = self._fill_grid(subset_idx, self.partition, progress=self.progress)
             self.grid_cache[self.time_idx][subset_idx] = ugrid
         else:
             ugrid = self._fill_grid(
                 subset_idx,
-                partition,
+                self.partition,
                 ugrid=self.grid_cache[self.time_idx][subset_idx],
             )
         return ugrid
