@@ -230,11 +230,17 @@ class Converter:
         )
         ugrids = {}
         for subset_idx in range(-1, num_subsets):
+            if subset_idx == 0:
+                self.progress.set(0)
+            progress = self.progress if subset_idx == -1 else None
+
             ugrids[subset_idx] = (
                 read_geom.convert_grid_subset_geometry_to_unstructured_grid(
-                    self.grid_ggd, subset_idx, self.points, self.progress
+                    self.grid_ggd, subset_idx, self.points, progress
                 )
             )
+            if self.progress and num_subsets != 0:
+                self.progress.increment(0.5 / num_subsets)
         return ugrids
 
     def _set_partition(self, partition, ugrid, subset_idx):
