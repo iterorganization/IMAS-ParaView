@@ -91,16 +91,31 @@ def test_ggd_to_vtk_subset_time_index(dummy_ids_five_steps):
 
 
 def test_ggd_to_vtk_grid_caching(dummy_ids):
+    """Test if ggd_to_vtk caches grids if the same time step is provided."""
     converter = Converter(dummy_ids)
-    vtk_object = converter.ggd_to_vtk()
-    cached_grid = converter.get_ugrids()
-    vtk_object2 = converter.ggd_to_vtk(ugrids=cached_grid)
+    vtk_object1 = converter.ggd_to_vtk()
+    cache = converter.get_grids_at_time.cache_info()
+    assert cache.hits == 0
+    assert cache.misses == 1
+    vtk_object2 = converter.ggd_to_vtk()
+    cache = converter.get_grids_at_time.cache_info()
+    assert cache.hits == 1
+    assert cache.misses == 1
+    vtk_object3 = converter.ggd_to_vtk()
+    cache = converter.get_grids_at_time.cache_info()
+    assert cache.hits == 2
+    assert cache.misses == 1
 
-    if dummy_ids.metadata.name == "wall":
-        assert len(cached_grid) == 1
-    else:
-        assert len(cached_grid) == 3
-    assert names_from_vtk(vtk_object) == names_from_vtk(vtk_object2)
+    assert (
+        names_from_vtk(vtk_object1)
+        == names_from_vtk(vtk_object2)
+        == names_from_vtk(vtk_object3)
+    )
+
+
+def test_ggd_to_vtk_grid_caching_time_dependent(dummy_ids_five_steps):
+    """Test if ggd_to_vtk caches grids if the same time step is provided."""
+    # TODO
 
 
 def test_convert_to_xml(dummy_ids_five_steps, tmp_path):
