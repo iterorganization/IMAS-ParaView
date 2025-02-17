@@ -21,7 +21,6 @@ requires-python = ">=3.8"
 dependencies = [
     "numpy >= 1.19.4",
     "vtk >= 9.1.0",
-    "cachetools >= 5.5.1",
     # TODO: "imaspy >= 1.1.0",
 ]
 

@@ -1,8 +1,8 @@
 import logging
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
-from cachetools import LRUCache
 from vtk import vtkXMLPartitionedDataSetCollectionWriter
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
@@ -33,7 +33,7 @@ class Converter:
         self.grid_ggd = None
         self.output = None
         self.ps_reader = None
-        self.grid_cache = LRUCache(maxsize=32)
+        self.get_grids_at_time = lru_cache(maxsize=32)(self.get_grids_at_time)
 
     def write_to_xml(self, output_path: Path, index_list=[0]):
         """Convert an IDS to VTK format and write it to disk using the XML output
@@ -189,88 +189,71 @@ class Converter:
         """Fills the VTK output object with the GGD grid and GGD array values."""
         num_subsets = len(self.grid_ggd.grid_subset)
 
+        ugrids = self.get_grids_at_time(self.time_idx)
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             self.output.SetNumberOfPartitionedDataSets(1)
-            self.partition = 0
-            ugrid = self._get_ugrid(-1)
-            self.ps_reader.read_plasma_state(-1, ugrid)
+            self._set_partition(0, ugrids[-1], -1)
+            self.ps_reader.read_plasma_state(-1, ugrids[-1])
         elif self.ids.metadata.name == "wall":
             # FIXME: what if num_subsets is 2 or 3?
             self.output.SetNumberOfPartitionedDataSets(num_subsets - 3)
             self.partition = 0
-            ugrid = self._get_ugrid(-1)
-            self.ps_reader.read_plasma_state(-1, ugrid)
+            self._set_partition(0, ugrids[-1], -1)
+            self.ps_reader.read_plasma_state(-1, ugrids[-1])
 
             for subset_idx in range(4, num_subsets):
-                self.partition = subset_idx - 3
-                ugrid = self._get_ugrid(subset_idx)
-                self.ps_reader.read_plasma_state(subset_idx, ugrid)
+                self._set_partition(subset_idx - 3, ugrids[subset_idx], subset_idx)
+                self.ps_reader.read_plasma_state(subset_idx, ugrids[subset_idx])
                 if self.progress:
                     self.progress.increment(0.5 / num_subsets)
         else:
             self.output.SetNumberOfPartitionedDataSets(num_subsets)
             for subset_idx in range(num_subsets):
-                self.partition = subset_idx
-                ugrid = self._get_ugrid(subset_idx)
-                self.ps_reader.read_plasma_state(subset_idx, ugrid)
+                self._set_partition(subset_idx, ugrids[subset_idx], subset_idx)
+                self.ps_reader.read_plasma_state(subset_idx, ugrids[subset_idx])
                 if self.progress:
                     self.progress.increment(0.5 / num_subsets)
 
-    def _get_ugrid(self, subset_idx):
-        """Retrieves or generates an unstructured grid for the specified subset and
-        partition.
+    def get_grids_at_time(self, time_idx):
+        """Fetches the unstructured grids at a certain time index. Note that this
+        function is cached using lru_cache based on `time_idx`.
 
         Args:
-            subset_idx: Index of the subset to retrieve or fill.
-            partition: Partition index for the partitioned dataset.
-
-        Returns:
-            The unstructured grid for the given subset and partition.
+            time_idx: Time index of the grid to get, is used for creation the hash of
+                the cache entry.
         """
-        if self.time_idx not in self.grid_cache:
-            self.grid_cache[self.time_idx] = {}
-            read_geom.fill_vtk_points(
-                self.grid_ggd, 0, self.points, self.ids.metadata.name, self.progress
+        logger.info("No cache found, loading the grid from the IDS.")
+        num_subsets = len(self.grid_ggd.grid_subset)
+        read_geom.fill_vtk_points(
+            self.grid_ggd, 0, self.points, self.ids.metadata.name, self.progress
+        )
+        ugrids = {}
+        for subset_idx in range(-1, num_subsets):
+            ugrids[subset_idx] = (
+                read_geom.convert_grid_subset_geometry_to_unstructured_grid(
+                    self.grid_ggd, subset_idx, self.points, self.progress
+                )
             )
-        else:
-            if self.progress:
-                self.progress.set(0.5)
+        return ugrids
 
-        if subset_idx not in self.grid_cache[self.time_idx]:
-            ugrid = self._fill_grid(subset_idx, self.partition, progress=self.progress)
-            self.grid_cache[self.time_idx][subset_idx] = ugrid
-        else:
-            ugrid = self._fill_grid(
-                subset_idx,
-                self.partition,
-                ugrid=self.grid_cache[self.time_idx][subset_idx],
-            )
-        return ugrid
-
-    def _fill_grid(self, subset_idx, partition, ugrid=None, progress=None):
-        """Converts grid data into a VTK unstructured grid and associates it with the
-        partition.
+    def _set_partition(self, partition, ugrid, subset_idx):
+        """Sets a partition in the output dataset and updates the assembly structure.
 
         Args:
-            subset_idx: Index of the subset to convert.
-            partition: Partition index for the partitioned dataset.
-            ugrid: Pre-existing ugrid to use.
-
-        Returns:
-            The unstructured grid for the given subset and partition.
+            partition: Partition index in the output dataset.
+            ugrid: Unstructured grid data.
+            subset_idx: Index of the subset in `self.grid_ggd.grid_subset`, if negative
+                the metadata name is used.
         """
         subset = None if subset_idx < 0 else self.grid_ggd.grid_subset[subset_idx]
-        if ugrid is None:
-            ugrid = read_geom.convert_grid_subset_geometry_to_unstructured_grid(
-                self.grid_ggd, subset_idx, self.points, progress
-            )
-        self.output.SetPartition(partition, 0, ugrid)
         label = str(subset.identifier.name) if subset else self.ids.metadata.name
+
+        self.output.SetPartition(partition, 0, ugrid)
         child = self.assembly.AddNode(label.replace(" ", "_"), 0)
         self.assembly.AddDataSetIndex(child, partition)
+
         self.output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
-        return ugrid
 
     def _write_vtk_to_xml(self, vtk_object, output_path):
         """Writes a VTK object to XML file, and a directory containing files for each
