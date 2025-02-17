@@ -87,6 +87,7 @@ class Converter:
         self.points = vtkPoints()
         self.assembly = vtkDataAssembly()
         self.time_idx = self._resolve_time_idx(time_idx, time)
+        self.plane_config = plane_config
 
         self.progress = progress
 
@@ -106,10 +107,9 @@ class Converter:
 
         self.ps_reader = read_ps.PlasmaStateReader(self.ids)
         self.ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
-        if plane_config.n_plane != 0:
-            self._interpolate_jorek(plane_config)
-        else:
-            self._fill_grid_and_plasma_state()
+
+        self.is_jorek = True if plane_config.n_plane != 0 else False
+        self._fill_grid_and_plasma_state()
 
         return self.output
 
@@ -176,12 +176,7 @@ class Converter:
             ugrid = read_jorek.convert_grid_subset_to_unstructured_grid(
                 self.ids, self.time_idx, plane_config, self.ps_reader
             )
-            self.output.SetPartition(0, 0, ugrid)
-            child = self.assembly.AddNode(self.ids.metadata.name, 0)
-            self.assembly.AddDataSetIndex(child, 0)
-            self.output.GetMetaData(0).Set(
-                vtkCompositeDataSet.NAME(), self.ids.metadata.name
-            )
+            self._set_partition(0, ugrid, -1)
         else:
             logger.error("Invalid plane configuration for the given IDS type.")
 
@@ -190,6 +185,14 @@ class Converter:
         num_subsets = len(self.grid_ggd.grid_subset)
 
         ugrids = self.get_grids_at_time(id(self.grid_ggd))
+        if self.is_jorek:
+            n_period = self.grid_ggd.space[1].geometry_type.index
+            if n_period > 0:
+                self._set_partition(0, ugrids[-1], -1)
+            else:
+                logger.error("Invalid plane configuration for the given IDS type.")
+            return
+
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             self.output.SetNumberOfPartitionedDataSets(1)
@@ -233,11 +236,18 @@ class Converter:
                 self.progress.set(0)
             progress = self.progress if subset_idx == -1 else None
 
-            ugrids[subset_idx] = (
-                read_geom.convert_grid_subset_geometry_to_unstructured_grid(
-                    self.grid_ggd, subset_idx, self.points, progress
+            if self.is_jorek:
+                ugrids[subset_idx] = (
+                    read_jorek.convert_grid_subset_to_unstructured_grid(
+                        self.ids, self.time_idx, self.plane_config, self.ps_reader
+                    )
                 )
-            )
+            else:
+                ugrids[subset_idx] = (
+                    read_geom.convert_grid_subset_geometry_to_unstructured_grid(
+                        self.grid_ggd, subset_idx, self.points, progress
+                    )
+                )
             if self.progress and num_subsets != 0:
                 self.progress.increment(0.5 / num_subsets)
         return ugrids
