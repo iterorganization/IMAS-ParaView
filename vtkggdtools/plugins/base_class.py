@@ -493,7 +493,6 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 ignore_unknown_dd_version=True,
             )
             self.setup_ids()
-            # Convert GGD of IDS to VTK format
             self.converter = Converter(self._ids)
 
     def request_information(self):
