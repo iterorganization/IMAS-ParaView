@@ -230,7 +230,7 @@ class Converter:
                 used for creation of the hash of the cache entry.
             plane_config: plane_config used to generate the grid. These should be all
                 zero for a regular GGD. However, for a JOREK GGD, these can be changed,
-                triggers the grid from being reloaded.
+                and changing them should trigger the grid to be reloaded.
 
         Returns:
             Dictionary containing the ugrid of each subset, with the subset index as
