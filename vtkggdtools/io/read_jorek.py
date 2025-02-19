@@ -14,7 +14,7 @@ prec = np.float64
 vtk_prec = VTK_DOUBLE
 
 
-def read_plasma_state(ids, ps_reader, plane_config, ugrid):
+def read_plasma_state(grid_ggd, ps_reader, plane_config, ugrid):
     """Reads plasma state data arrays from the ggd node in the IDS. These arrays are
         added as point data to the unstructured grid.
 
@@ -30,7 +30,7 @@ def read_plasma_state(ids, ps_reader, plane_config, ugrid):
     val_tor1 = np.array([])
     nam = list()
 
-    N_vertex = len(ids.grid_ggd[0].space[0].objects_per_dimension[0].object)
+    N_vertex = len(grid_ggd.space[0].objects_per_dimension[0].object)
     array_list = ps_reader.scalar_array_list + ps_reader.vector_array_list
 
     # Load selected arrays
@@ -51,7 +51,7 @@ def read_plasma_state(ids, ps_reader, plane_config, ugrid):
     values = np.swapaxes(valu, 2, 3)
     values = np.swapaxes(values, 1, 2)
 
-    n_period = ids.grid_ggd[0].space[1].geometry_type.index
+    n_period = grid_ggd.space[1].geometry_type.index
     n_sub = 4
     without_n0_mode = False
 
@@ -60,8 +60,8 @@ def read_plasma_state(ids, ps_reader, plane_config, ugrid):
 
     HZ = toroidal_basis(n_tor, n_period, phis, without_n0_mode)
 
-    vertex = get_vertex(ids)
-    size = calc_size(ids)
+    vertex = get_vertex(grid_ggd)
+    size = calc_size(grid_ggd)
     val = interp_scalars_3D(values, vertex, size, n_sub, HZ)
     if n_val > 0:
         val = val.reshape((n_val, -1))
@@ -78,7 +78,9 @@ def read_plasma_state(ids, ps_reader, plane_config, ugrid):
         ugrid.GetPointData().AddArray(tmp)
 
 
-def convert_grid_subset_to_unstructured_grid(ids, plane_config) -> vtkUnstructuredGrid:
+def convert_grid_subset_to_unstructured_grid(
+    grid_ggd, plane_config
+) -> vtkUnstructuredGrid:
     """
     Copy the elements found in given grid_ggd/grid_subset IDS node into a
     vtkUnstructuredGrid instance. This method uses the supplied point coordinates in
@@ -95,15 +97,15 @@ def convert_grid_subset_to_unstructured_grid(ids, plane_config) -> vtkUnstructur
 
     n_plane = plane_config.n_plane
     phi = [plane_config.phi_start, plane_config.phi_end]
-    gr2d = ids.grid_ggd[0].space[0]
+    gr2d = grid_ggd.space[0]
     N_vertex = len(gr2d.objects_per_dimension[0].object)
 
     x = np.zeros((2, 4, N_vertex))
     for j, obj in enumerate(gr2d.objects_per_dimension[0].object):
         x[:, :, j] = obj.geometry_2d.value
 
-    size = calc_size(ids)
-    vertex = get_vertex(ids)
+    size = calc_size(grid_ggd)
+    vertex = get_vertex(grid_ggd)
 
     # Everything we need to visualise data is now excavated from IDS file
     n_plane = 1 + (n_plane - 1) * 2
@@ -252,19 +254,18 @@ def convert_grid_subset_to_unstructured_grid(ids, plane_config) -> vtkUnstructur
     return output
 
 
-def calc_size(ids):
+def calc_size(grid_ggd):
     """Calculate the size matrix for each face in the grid.
     Uses the geometry values from the 2D grid representation.
 
     Args:
-        ids: The ids to obtain the ggd grid from.
+        grid_ggd: The GGD grid
 
     Returns:
         The calculated size matrix.
     """
     # size 1, d_{uk}, d_{vk}, d{uv}d{vk} as in Daan Van Vugt thesis
-    # TODO: support other timesteps
-    gr2d = ids.grid_ggd[0].space[0]
+    gr2d = grid_ggd.space[0]
     n_face = len(gr2d.objects_per_dimension[2].object)
     size = np.empty((4, 4, n_face))
 
@@ -273,18 +274,18 @@ def calc_size(ids):
     return size
 
 
-def get_vertex(ids):
+def get_vertex(grid_ggd):
     """Retrieve vertex numbers in the R-Z plane.
     Extracts node indices for each face in the grid.
 
     Args:
-        ids: The ids to obtain the ggd grid from.
+        grid_ggd: The GGD grid
 
     Returns:
         The vertex numbers
     """
     # Get vertex numbers in the R,Z plane
-    object_aos = ids.grid_ggd[0].space[0].objects_per_dimension[2].object
+    object_aos = grid_ggd.space[0].objects_per_dimension[2].object
     vertex = np.zeros((len(object_aos[0].nodes), len(object_aos)), dtype=np.int32)
     for i, obj in enumerate(object_aos):
         vertex[:, i] = obj.nodes.value

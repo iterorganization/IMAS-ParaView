@@ -184,7 +184,7 @@ class Converter:
         n_period = self.grid_ggd.space[1].geometry_type.index
         if n_period > 0:
             read_jorek.read_plasma_state(
-                self.ids, self.ps_reader, self.plane_config, ugrids[-1]
+                self.grid_ggd, self.ps_reader, self.plane_config, ugrids[-1]
             )
             self._set_partition(0, ugrids[-1], -1)
         else:
@@ -250,7 +250,7 @@ class Converter:
             if self.is_jorek:
                 ugrids[subset_idx] = (
                     read_jorek.convert_grid_subset_to_unstructured_grid(
-                        self.ids, self.plane_config
+                        self.grid_ggd, self.plane_config
                     )
                 )
             else:
