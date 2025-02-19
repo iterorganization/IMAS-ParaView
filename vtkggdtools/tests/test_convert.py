@@ -92,7 +92,7 @@ def test_ggd_to_vtk_subset_time_index(dummy_ids_five_steps):
 
 def assert_cache(converter, hits, misses):
     """Assert that the cache of a converter has a certain number of hits and misses."""
-    cache = converter.get_grids_at_time.cache_info()
+    cache = converter.get_grids.cache_info()
     assert cache.hits == hits
     assert cache.misses == misses
 
