@@ -17,7 +17,8 @@ from vtkggdtools.util import find_closest_indices, get_grid_ggd
 logger = logging.getLogger("vtkggdtools")
 
 
-@dataclass
+# Make dataclass frozen so that it is hashable, which is required for grid caching
+@dataclass(frozen=True)
 class InterpSettings:
     """Data class containing Fourier interpolation settings."""
 
@@ -33,7 +34,7 @@ class Converter:
         self.grid_ggd = None
         self.output = None
         self.ps_reader = None
-        self.get_grids_at_time = lru_cache(maxsize=32)(self.get_grids_at_time)
+        self.get_grids = lru_cache(maxsize=32)(self.get_grids)
 
     def write_to_xml(self, output_path: Path, index_list=[0]):
         """Convert an IDS to VTK format and write it to disk using the XML output
@@ -182,17 +183,32 @@ class Converter:
 
     def _fill_grid_and_plasma_state(self):
         """Fills the VTK output object with the GGD grid and GGD array values."""
-        num_subsets = len(self.grid_ggd.grid_subset)
 
-        ugrids = self.get_grids_at_time(id(self.grid_ggd))
+        ugrids = self.get_grids(id(self.grid_ggd), self.plane_config)
         if self.is_jorek:
-            n_period = self.grid_ggd.space[1].geometry_type.index
-            if n_period > 0:
-                self._set_partition(0, ugrids[-1], -1)
-            else:
-                logger.error("Invalid plane configuration for the given IDS type.")
-            return
+            self._fill_jorek(ugrids)
+        else:
+            self._fill_ggd(ugrids)
 
+    def _fill_jorek(self, ugrids):
+        """Fill the GGD arrays for JOREK grid.
+
+        Args:
+            ugrids: Dictionary containing the ugrid of each subset.
+        """
+        n_period = self.grid_ggd.space[1].geometry_type.index
+        if n_period > 0:
+            self._set_partition(0, ugrids[-1], -1)
+        else:
+            logger.error("Invalid plane configuration for the given IDS type.")
+
+    def _fill_ggd(self, ugrids):
+        """Fill the GGD arrays for each grid subset.
+
+        Args:
+            ugrids: Dictionary containing the ugrid of each subset.
+        """
+        num_subsets = len(self.grid_ggd.grid_subset)
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             self.output.SetNumberOfPartitionedDataSets(1)
@@ -217,13 +233,20 @@ class Converter:
                 if self.progress:
                     self.progress.increment(0.5 / num_subsets)
 
-    def get_grids_at_time(self, grid_id):
+    def get_grids(self, grid_id, plane_config):
         """Fetches the unstructured grids at a certain time index. Note that this
         function is cached using lru_cache based on `time_idx`.
 
         Args:
             grid_id: ID of the GGD grid corresponding to a certain time index. This is
                 used for creation of the hash of the cache entry.
+            plane_config: plane_config used to generate the grid. These should be all
+                zero for a regular GGD. However, for a JOREK GGD, these can be changed,
+                triggers the grid from being reloaded.
+
+        Returns:
+            Dictionary containing the ugrid of each subset, with the subset index as
+            keys.
         """
         logger.info("No cache found, loading the grid from the IDS.")
         num_subsets = len(self.grid_ggd.grid_subset)
