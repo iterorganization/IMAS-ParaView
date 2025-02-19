@@ -198,7 +198,6 @@ class Converter:
         elif self.ids.metadata.name == "wall":
             # FIXME: what if num_subsets is 2 or 3?
             self.output.SetNumberOfPartitionedDataSets(num_subsets - 3)
-            self.partition = 0
             self._set_partition(0, ugrids[-1], -1)
             self.ps_reader.read_plasma_state(-1, ugrids[-1])
 
