@@ -166,21 +166,6 @@ class Converter:
             return False
         return True
 
-    def _interpolate_jorek(self, plane_config: InterpSettings):
-        """Interpolate JOREK Fourier space.
-
-        Args:
-            plane_config: Data class containing the interpolation settings.
-        """
-        n_period = self.grid_ggd.space[1].geometry_type.index
-        if n_period > 0:
-            ugrid = read_jorek.convert_grid_subset_to_unstructured_grid(
-                self.ids, self.time_idx, plane_config, self.ps_reader
-            )
-            self._set_partition(0, ugrid, -1)
-        else:
-            logger.error("Invalid plane configuration for the given IDS type.")
-
     def _fill_grid_and_plasma_state(self):
         """Fills the VTK output object with the GGD grid and GGD array values."""
 
@@ -198,6 +183,9 @@ class Converter:
         """
         n_period = self.grid_ggd.space[1].geometry_type.index
         if n_period > 0:
+            read_jorek.read_plasma_state(
+                self.ids, self.ps_reader, self.plane_config, ugrids[-1]
+            )
             self._set_partition(0, ugrids[-1], -1)
         else:
             logger.error("Invalid plane configuration for the given IDS type.")
@@ -262,7 +250,7 @@ class Converter:
             if self.is_jorek:
                 ugrids[subset_idx] = (
                     read_jorek.convert_grid_subset_to_unstructured_grid(
-                        self.ids, self.time_idx, self.plane_config, self.ps_reader
+                        self.ids, self.plane_config
                     )
                 )
             else:
