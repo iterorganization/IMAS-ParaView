@@ -189,7 +189,7 @@ class Converter:
         """Fills the VTK output object with the GGD grid and GGD array values."""
         num_subsets = len(self.grid_ggd.grid_subset)
 
-        ugrids = self.get_grids_at_time(self.time_idx)
+        ugrids = self.get_grids_at_time(id(self.grid_ggd))
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             self.output.SetNumberOfPartitionedDataSets(1)
@@ -214,13 +214,13 @@ class Converter:
                 if self.progress:
                     self.progress.increment(0.5 / num_subsets)
 
-    def get_grids_at_time(self, time_idx):
+    def get_grids_at_time(self, grid_id):
         """Fetches the unstructured grids at a certain time index. Note that this
         function is cached using lru_cache based on `time_idx`.
 
         Args:
-            time_idx: Time index of the grid to get, is used for creation the hash of
-                the cache entry.
+            grid_id: ID of the GGD grid corresponding to a certain time index. This is
+                used for creation of the hash of the cache entry.
         """
         logger.info("No cache found, loading the grid from the IDS.")
         num_subsets = len(self.grid_ggd.grid_subset)
