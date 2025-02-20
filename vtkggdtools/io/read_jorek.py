@@ -4,11 +4,15 @@ These methods copy contents from the grid_ggd/space and grid_ggd/grid_subset
 children into distinct vtkUnstructuredGrid objects for Bezier elements.
 """
 
+import logging
+
 import numpy as np
 import vtk
 from vtkmodules.util import numpy_support as npvtk
 from vtkmodules.util.vtkConstants import VTK_DOUBLE
 from vtkmodules.vtkCommonDataModel import vtkUnstructuredGrid
+
+logger = logging.getLogger("vtkggdtools")
 
 prec = np.float64
 vtk_prec = VTK_DOUBLE
@@ -41,6 +45,7 @@ def read_plasma_state(grid_ggd, ps_reader, plane_config, ugrid):
         elif hasattr(attribute_array[0], "phi_coefficients"):
             scalar_data = attribute_array[0].phi_coefficients
         else:
+            logger.warning(f"Could not load the coefficients for {name}, it is ignored")
             continue
         nam.append(name)
         if np.size(val_tor1) == 0:
