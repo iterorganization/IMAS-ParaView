@@ -19,7 +19,7 @@ def read_plasma_state(grid_ggd, ps_reader, plane_config, ugrid):
         added as point data to the unstructured grid.
 
     Args:
-        ids: The IDS Name.
+        grid_ggd: The GGD grid.
         ps_reader: PlasmaStateReader which contains which array to load
         plane_config: Configuration for the bezier planes
         ugrid: The ugrid to load the GGD arrays for
@@ -87,11 +87,11 @@ def convert_grid_subset_to_unstructured_grid(
     the form of a vtkPoints instance.
 
     Args:
-        ids: The IDS Name.
-        plane_config: Configuration for the bezier planes
+        grid_ggd: The GGD grid.
+        plane_config: Configuration for the bezier planes.
 
     Returns:
-        The created unstructured grid
+        The created unstructured grid.
     """
     output = vtkUnstructuredGrid()
 
@@ -259,7 +259,7 @@ def calc_size(grid_ggd):
     Uses the geometry values from the 2D grid representation.
 
     Args:
-        grid_ggd: The GGD grid
+        grid_ggd: The GGD grid.
 
     Returns:
         The calculated size matrix.
@@ -279,10 +279,10 @@ def get_vertex(grid_ggd):
     Extracts node indices for each face in the grid.
 
     Args:
-        grid_ggd: The GGD grid
+        grid_ggd: The GGD grid.
 
     Returns:
-        The vertex numbers
+        The vertex numbers.j
     """
     # Get vertex numbers in the R,Z plane
     object_aos = grid_ggd.space[0].objects_per_dimension[2].object
