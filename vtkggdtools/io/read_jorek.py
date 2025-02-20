@@ -36,7 +36,12 @@ def read_plasma_state(grid_ggd, ps_reader, plane_config, ugrid):
     # Load selected arrays
     for attribute_array in array_list:
         name = ps_reader._create_name_with_units(attribute_array)
-        scalar_data = attribute_array[0].coefficients
+        if hasattr(attribute_array[0], "coefficients"):
+            scalar_data = attribute_array[0].coefficients
+        elif hasattr(attribute_array[0], "phi_coefficients"):
+            scalar_data = attribute_array[0].phi_coefficients
+        else:
+            return
         nam.append(name)
         if np.size(val_tor1) == 0:
             val_tor1 = np.array([scalar_data])
