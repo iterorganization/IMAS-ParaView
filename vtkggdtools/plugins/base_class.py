@@ -246,9 +246,15 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             return "No URI selected, press Apply to set URI."
         if self._uri_error:
             return f'Could not open URI "{self._uri}":\n{self._uri_error}'
+        num_ids = len(self._ids_list)
+
+        # Ensure <Select IDS> is not counted towards number of IDSs
+        if num_ids > 1:
+            num_ids -= 1
+
         return (
             f'Successfully opened URI "{self._uri}".\n'
-            f"This Data Entry contains {len(self._ids_list)} supported IDSs."
+            f"This Data Entry contains {num_ids} supported IDSs."
         )
 
     # Properties for setting the IDS name, occurrence and which GGD arrays to load
