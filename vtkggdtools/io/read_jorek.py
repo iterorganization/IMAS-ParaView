@@ -282,7 +282,7 @@ def get_vertex(grid_ggd):
         grid_ggd: The GGD grid.
 
     Returns:
-        The vertex numbers.j
+        The vertex numbers.
     """
     # Get vertex numbers in the R,Z plane
     object_aos = grid_ggd.space[0].objects_per_dimension[2].object
