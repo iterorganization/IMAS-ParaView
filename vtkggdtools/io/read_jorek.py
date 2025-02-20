@@ -41,7 +41,7 @@ def read_plasma_state(grid_ggd, ps_reader, plane_config, ugrid):
         elif hasattr(attribute_array[0], "phi_coefficients"):
             scalar_data = attribute_array[0].phi_coefficients
         else:
-            return
+            continue
         nam.append(name)
         if np.size(val_tor1) == 0:
             val_tor1 = np.array([scalar_data])
