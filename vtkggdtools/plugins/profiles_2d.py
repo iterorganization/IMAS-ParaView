@@ -3,7 +3,6 @@
 import logging
 from dataclasses import dataclass
 
-import imaspy
 import numpy as np
 import vtk
 from imaspy.ids_structure import IDSStructure
@@ -26,7 +25,7 @@ PROFILES_2D_IDS_NAMES = [
 
 @dataclass
 class Profile_2d:
-    """Data class that stores 2d profiles, along with its name and coordinate array."""
+    """Data class that stores 2d profiles, along with its name."""
 
     name: str
     profile: np.ndarray
@@ -38,7 +37,6 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
     """profiles_2d reader based on IMASPy"""
 
     def __init__(self):
-        # TODO: Check if output correct
         super().__init__("vtkMultiBlockDataSet", PROFILES_2D_IDS_NAMES)
 
     def GetAttributeArrayName(self, idx) -> str:
@@ -136,9 +134,10 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
                 profiles_2d = self._ids.profiles_2d[time_idx]
 
             for profile in profiles_2d:
-                if profile.grid_type.index != 1:
+                grid_type = profile.grid_type.index
+                if grid_type != 1:
                     # TODO: handle grid types properly
-                    logger.warning(f"Grid type {profile.grid_type} is not supported.")
+                    logger.warning(f"Grid type {grid_type} is not supported.")
                     continue
                 self._find_profiles(profile)
 
