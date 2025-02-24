@@ -68,13 +68,13 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         Args:
             output: The vtkMultiBlockDataSet containing the limiter contours.
         """
-        for i, limiter_name in enumerate(self._selected):
-            limiter = get_object_by_name(self._selectable, limiter_name)
-            if limiter is None:
-                raise ValueError(f"Could not find {limiter_name}")
+        for i, profile_name in enumerate(self._selected):
+            profile = get_object_by_name(self._selectable, profile_name)
+            if profile is None:
+                raise ValueError(f"Could not find {profile_name}")
 
-            logger.info(f"Selected {limiter.name}")
-            vtk_poly = self._create_ugrid(limiter)
+            logger.info(f"Selected {profile.name}")
+            vtk_poly = self._create_ugrid(profile)
             output.SetBlock(i, vtk_poly)
 
     def _create_ugrid(self, profile):
@@ -127,22 +127,30 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         self.z = None
         self._filled_profiles = []
         self._all_profiles = []
-        if self._ids is not None:
-            if self._ids.metadata.name == "equilibrium":
-                profiles_2d = self._ids.time_slice[time_idx].profiles_2d
-            else:
-                profiles_2d = self._ids.profiles_2d[time_idx]
+        if self._ids is None:
+            logger.error("Could not find the IDS.")
+            return
 
-            for profile in profiles_2d:
-                grid_type = profile.grid_type.index
-                if grid_type != 1:
-                    # TODO: handle grid types properly
-                    logger.warning(f"Grid type {grid_type} is not supported.")
-                    continue
-                self._find_profiles(profile)
+        if self._ids.metadata.name == "equilibrium":
+            profiles_2d = self._ids.time_slice[time_idx].profiles_2d
+        else:
+            profiles_2d = self._ids.profiles_2d[time_idx]
 
-                if self._filled_profiles:
-                    break
+        for profile in profiles_2d:
+            grid_type = profile.grid_type.index
+            if grid_type != 1:
+                logger.warning(
+                    f"Found a grid type with identifier index of {grid_type}. "
+                    "Only rectangular profiles (index = 1) are supported."
+                )
+                continue
+
+            self._get_filled_quantities(profile)
+
+            # Only load the first encountered valid profile
+            if self._filled_profiles:
+                break
+
         if not self._filled_profiles:
             logger.error("Could not find a valid profiles_2d node.")
             return
@@ -185,28 +193,58 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         profile_list = []
         for profile in profiles:
             name = create_name_recursive(profile)
-
-            if profile.metadata.name == "r":
-                self.r = profile
-                continue
-            elif profile.metadata.name == "z":
-                self.z = profile
-                continue
-
             profile = Profile_2d(name, profile)
             profile_list.append(profile)
         return profile_list
 
-    def _find_profiles(self, node):
-        # TODO: docstring
-        """Recursively traverses through the IDS node searching for filled 1d profiles.
-        If a filled profile is found, it is appended to self._filled_profiles.
+    def _get_filled_quantities(self, profile):
+        for plasma_quantity in profile:
+            if isinstance(plasma_quantity, IDSStructure):
+                continue
 
-        Args:
-            node: the node to search through.
-        """
-        for subnode in node:
-            if not isinstance(subnode, IDSStructure):
-                if subnode.has_value:
-                    self._filled_profiles.append(subnode)
-                self._all_profiles.append(subnode)
+            if plasma_quantity.metadata.name == "r":
+                self.r = plasma_quantity
+                continue
+            elif plasma_quantity.metadata.name == "z":
+                self.z = plasma_quantity
+                continue
+            if plasma_quantity.has_value:
+                self._filled_profiles.append(plasma_quantity)
+            self._all_profiles.append(plasma_quantity)
+
+            # Check if r- and z- coordinates are filled, otherwise take dim1 and dim2
+            # as r and z, respectively.
+            if self._filled_profiles:
+                if self.r is None:
+                    if profile.grid.dim1:
+                        logger.info(
+                            "Could not find 'r' node in the profiles_2d. "
+                            "Setting dim1 as the radial coordinate."
+                        )
+                        self.r = np.tile(
+                            profile.grid.dim1[:, np.newaxis],
+                            (1, len(profile.grid.dim2)),
+                        )
+                    else:
+                        logger.error(
+                            "Could not find 'r' or 'grid.dim1' node in the profiles_2d. "
+                        )
+                        self._filled_profiles = self._all_profiles = []
+                if self.z is None:
+                    if profile.grid.dim2:
+                        logger.info(
+                            "Could not find 'z' node in the profiles_2d. "
+                            "Setting dim2 as the radial coordinate."
+                        )
+                        self.z = np.tile(
+                            profile.grid.dim2[np.newaxis, :],
+                            (len(profile.grid.dim1), 1),
+                        )
+
+                    else:
+                        logger.error(
+                            "Could not find 'z' or 'grid.dim2' node in the profiles_2d. "
+                        )
+                        self._filled_profiles = self._all_profiles = []
+
+                return
