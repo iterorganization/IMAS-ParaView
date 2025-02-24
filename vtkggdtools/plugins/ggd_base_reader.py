@@ -4,7 +4,7 @@ import logging
 
 from vtkmodules.vtkCommonDataModel import vtkDataObject, vtkPartitionedDataSetCollection
 
-from vtkggdtools.convert import Converter, InterpSettings
+from vtkggdtools.convert import InterpSettings
 from vtkggdtools.io import read_ps
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
 from vtkggdtools.progress import Progress
@@ -18,9 +18,6 @@ class GGDBaseReader(GGDVTKPluginBase):
         # GGD arrays to load
         self._all_vector_paths = []
         self._all_scalar_paths = []
-
-        # Cache grids if they have been loaded before
-        self.grid_cache = {}
 
     def GetAttributeArrayName(self, idx) -> str:
         return self._name_from_idspath(self._selectable[idx])
@@ -47,16 +44,6 @@ class GGDBaseReader(GGDVTKPluginBase):
         # Create progress object to advance Paraview progress bar
         progress = Progress(self.UpdateProgress)
 
-        # Load grids from cache
-        if time in self.grid_cache:
-            logger.info("Using a previously loaded, cached GGD grid.")
-            cached_ugrids = self.grid_cache[time]
-        else:
-            cached_ugrids = None
-
-        # Convert GGD of IDS to VTK format
-        converter = Converter(self._ids)
-
         if self._n_plane < self._MIN_N_PLANE:
             raise ValueError(
                 f"The number of Bezier planes cannot be less than {self._MIN_N_PLANE}."
@@ -65,21 +52,15 @@ class GGDBaseReader(GGDVTKPluginBase):
         plane_config = InterpSettings(
             n_plane=self._n_plane, phi_start=self._phi_start, phi_end=self._phi_end
         )
-        output = converter.ggd_to_vtk(
+        output = self.converter.ggd_to_vtk(
             time=time,
             scalar_paths=selected_scalar_paths,
             vector_paths=selected_vector_paths,
             plane_config=plane_config,
             outInfo=outInfo,
             progress=progress,
-            ugrids=cached_ugrids,
         )
 
-        ugrids = converter.get_ugrids()
-
-        # Add grids to cache
-        if time not in self.grid_cache:
-            self.grid_cache[time] = ugrids
         if output is None:
             logger.warning("Could not convert GGD to VTK.")
         return 1
@@ -110,9 +91,6 @@ class GGDBaseReader(GGDVTKPluginBase):
                 self._filled_scalar_paths,
                 self._filled_vector_paths,
             ) = ps_reader.load_paths_from_ids()
-
-            # Clear grid cache when loading new IDS
-            self.grid_cache = {}
 
     def _name_from_idspath(self, path):
         """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part

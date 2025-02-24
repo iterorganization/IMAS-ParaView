@@ -90,17 +90,40 @@ def test_ggd_to_vtk_subset_time_index(dummy_ids_five_steps):
     assert vtk_object is None
 
 
-def test_ggd_to_vtk_grid_caching(dummy_ids):
-    converter = Converter(dummy_ids)
-    vtk_object = converter.ggd_to_vtk()
-    cached_grid = converter.get_ugrids()
-    vtk_object2 = converter.ggd_to_vtk(ugrids=cached_grid)
+def assert_cache(converter, hits, misses):
+    """Assert that the cache of a converter has a certain number of hits and misses."""
+    cache = converter.get_grids.cache_info()
+    assert cache.hits == hits
+    assert cache.misses == misses
 
-    if dummy_ids.metadata.name == "wall":
-        assert len(cached_grid) == 1
-    else:
-        assert len(cached_grid) == 3
-    assert names_from_vtk(vtk_object) == names_from_vtk(vtk_object2)
+
+def test_ggd_to_vtk_grid_caching(dummy_ids):
+    """Test if ggd_to_vtk caches grids if the same time step is provided."""
+    converter = Converter(dummy_ids)
+    vtk_object1 = converter.ggd_to_vtk()
+    assert_cache(converter, 0, 1)
+    vtk_object2 = converter.ggd_to_vtk()
+    assert_cache(converter, 1, 1)
+    vtk_object3 = converter.ggd_to_vtk()
+    assert_cache(converter, 2, 1)
+
+    assert (
+        names_from_vtk(vtk_object1)
+        == names_from_vtk(vtk_object2)
+        == names_from_vtk(vtk_object3)
+    )
+
+
+def test_ggd_to_vtk_grid_caching_time_dependent(dummy_ids_five_steps):
+    """Test if ggd_to_vtk caches grids if the same time step is provided."""
+    converter = Converter(dummy_ids_five_steps)
+    for time_idx in range(5):
+        _ = converter.ggd_to_vtk(time_idx=time_idx)
+        assert_cache(converter, 0, time_idx + 1)
+
+    for time_idx in range(5):
+        _ = converter.ggd_to_vtk(time_idx=time_idx)
+        assert_cache(converter, time_idx + 1, 5)
 
 
 def test_convert_to_xml(dummy_ids_five_steps, tmp_path):

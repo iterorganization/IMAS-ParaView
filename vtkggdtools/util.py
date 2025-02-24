@@ -64,14 +64,16 @@ def get_ggd_path(ids_metadata) -> Optional[str]:
 
 
 def get_grid_ggd(ids, ggd_idx=0):
-    """Finds and returns the first grid_ggd within IDS.
+    """Finds and returns the grid_ggd within IDS at the time index ggd_idx. If the
+    grid_ggd at ggd_idx time index does not exist, it tries to return the first
+    grid_ggd. If this does not exist, it returns None.
 
     Args:
-        ids: The IDS for which to return the first grid_gdd.
+        ids: The IDS for which to return the grid_gdd.
         ggd_idx: Time index for which to load the grid.
 
     Returns:
-        The first grid_ggd node found, or None if not found.
+        The grid_ggd node found, or None if not found.
     """
     grid_path = get_ggd_grid_path(ids.metadata)
     if grid_path is None:

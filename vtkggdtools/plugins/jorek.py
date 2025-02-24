@@ -12,6 +12,7 @@ logger = logging.getLogger("vtkggdtools")
 SUPPORTED_IDS_NAMES = [
     "mhd",
     "radiation",
+    "plasma_profiles",
 ]
 
 
