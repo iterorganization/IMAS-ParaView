@@ -3,7 +3,6 @@
 import logging
 from dataclasses import dataclass
 
-import imaspy
 import numpy as np
 import vtk
 from imaspy.ids_struct_array import IDSStructArray
@@ -66,19 +65,16 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         return 1
 
     def update_available_profiles(self, time_idx):
-        """
-        Searches through the profiles_1d node at the current time step for
+        """Searches through the profiles_2d node at the current time step for
         available profiles to select. Which profiles show in the array domain selector
         is based on whether the "Show All" checkbox is enabled.
+
+        Args:
+            time_idx: The time index of the 2D profile
         """
         if self._ids is None:
             logger.error("Could not find the IDS.")
             return
-
-        self.r = np.array([])
-        self.z = np.array([])
-        self._filled_profiles = []
-        self._all_profiles = []
 
         if self._ids.metadata.name == "equilibrium":
             if not time_idx < len(self._ids.time_slice):
@@ -91,7 +87,30 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
                 return
             profiles_2d = self._ids.profiles_2d[time_idx]
 
+        self._search_valid_profile(profiles_2d)
+
+        if not self._filled_profiles:
+            logger.error("Could not find a valid profiles_2d node.")
+            return
+
+        if self.show_all:
+            self._selectable = self._get_selectable_profiles(self._all_profiles)
+        else:
+            self._selectable = self._get_selectable_profiles(self._filled_profiles)
+
+    def _search_valid_profile(self, profiles_2d):
+        """Looks for valid profiles within a profiles_2d node and stores them into a
+        list.
+
+        Args:
+            profiles_2d: The profiles_2d node at a specific time step.
+        """
         for profile in profiles_2d:
+            self.r = np.array([])
+            self.z = np.array([])
+            self._filled_profiles = []
+            self._all_profiles = []
+
             grid_type = profile.grid_type.index
             if grid_type != 1:
                 logger.debug(
@@ -102,29 +121,57 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
 
             self._recursively_find_profiles(profile)
 
-            # Use dim1 or dim2 if r or z are not filled, respectively
+            # Use dim1 or dim2 instead if r or z are not filled, respectively
             if self._filled_profiles:
                 if len(self.r) == 0:
-                    self._set_coordinate(
-                        "r", profile.grid.dim1, 0, "radial", len(profile.grid.dim2)
-                    )
+                    self._set_coordinate("r", profile.grid)
                 if len(self.z) == 0:
-                    self._set_coordinate(
-                        "z", profile.grid.dim2, 1, "height", len(profile.grid.dim1)
-                    )
+                    self._set_coordinate("z", profile.grid)
 
             # Only load the first encountered valid profile
-            if self._filled_profiles:
+            if self._filled_profiles and len(self.r) > 0 and len(self.z) > 0:
                 break
 
-        if not self._filled_profiles:
-            logger.error("Could not find a valid profiles_2d node.")
+    def _set_coordinate(self, coord_name, grid):
+        """Sets the coordinate ('r' or 'z') by creating a 2D grid from grid.dim1 or
+        grid.dim2.
+
+        Args:
+            coord_name: Name of the coordinate ("r" or "z").
+            grid: The grid of the profile.
+        """
+        if coord_name == "r":
+            dim = grid.dim1
+            tile_size = len(grid.dim2)
+            shape = (len(dim), 1)
+            tile_repeat = (1, tile_size)
+            dim_num = 1
+        elif coord_name == "z":
+            dim = grid.dim2
+            tile_size = len(grid.dim1)
+            shape = (1, len(dim))
+            tile_repeat = (tile_size, 1)
+            dim_num = 2
+        else:
+            raise ValueError(
+                "Cannot generate grid from dimension for coordinate other than "
+                "'r' or 'z'"
+            )
+
+        if not dim:
+            logger.error(
+                f"Could not find a filled '{coord_name}' or 'grid.dim{dim_num}' node"
+                "in the profiles_2d."
+            )
+            self._filled_profiles = self._all_profiles = []
             return
 
-        if self.show_all:
-            self._selectable = self._get_selectable_profiles(self._all_profiles)
-        else:
-            self._selectable = self._get_selectable_profiles(self._filled_profiles)
+        # Create a 2D grid from the 1D dim array
+        setattr(self, coord_name, np.tile(dim.reshape(shape), tile_repeat))
+        logger.info(
+            f"Could not find '{coord_name}' node in profiles_2d. "
+            f"Using grid.dim{dim_num} as the '{coord_name}' coordinate."
+        )
 
     def setup_ids(self):
         """
@@ -146,15 +193,13 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         self.update_available_profiles(time_idx)
 
     def _get_selectable_profiles(self, profiles):
-        """Filters and processes a list of profiles to extract those containing
-        coordinates and creates a list of Profile_1d objects with generated names.
+        """Creates a list of Profile_2d objects with generated names.
 
         Args:
             profiles: A list of profile objects to be processed.
 
         Returns:
-            A list of `Profile_1d` objects created from the provided profiles that
-                  contain valid coordinates.
+            A list of `Profile_2d` objects created from the provided profiles
         """
         profile_list = []
         for profile in profiles:
@@ -164,8 +209,9 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         return profile_list
 
     def _recursively_find_profiles(self, node):
-        """Recursively traverses through the IDS node searching for filled 1d profiles.
-        If a filled profile is found, it is appended to self._filled_profiles.
+        """Recursively traverses through the IDS node searching for filled 2d profiles.
+        If a filled profile is found, it is appended to self._filled_profiles, all
+        profiles are appended to self._all_profiles, filled or not.
 
         Args:
             node: the node to search through.
@@ -186,27 +232,10 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
                     self._filled_profiles.append(node)
                 self._all_profiles.append(node)
 
-    def _set_coordinate(self, coord_name, dim, axis, coord_label, tile_size):
-        """Helper method to set r or z coordinates from profile grid dimensions."""
-        if dim:
-            logger.info(
-                f"Could not find '{coord_name}' node in profiles_2d. "
-                f"Using grid.dim{axis + 1} as the {coord_label} coordinate."
-            )
-            # Create a 2D grid from the 1D dim array
-            shape = (len(dim), 1) if axis == 0 else (1, len(dim))
-            tile_repeat = (1, tile_size) if axis == 0 else (tile_size, 1)
-            setattr(self, coord_name, np.tile(dim.reshape(shape), tile_repeat))
-        else:
-            logger.error(
-                f"Could not find a filled '{coord_name}' or 'grid.dim{axis + 1}' node"
-                "in the profiles_2d."
-            )
-            self._filled_profiles = self._all_profiles = []
-
     def _load_profiles(self, output):
-        """Go through the list of selected limiters, and load each of them in a
-        separate vtkPolyData object, which are all combined into a vtkMultiBlockDataSet.
+        """Go through the list of selected profiles, and load each of them in a
+        separate vtkUnstructuredGrid object, which are all combined into a
+        vtkMultiBlockDataSet.
 
         Args:
             output: The vtkMultiBlockDataSet containing the limiter contours.
@@ -221,16 +250,13 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
             output.SetBlock(i, vtk_poly)
 
     def _create_ugrid(self, profile):
-        """Create a contour based on the r,z coordinates in the limiter.
-        The r,z-coordinates are stored as vtkPoints, and connected using vtkLines, which
-        are both stored in a vtkPolyData object. If the contour is closed, the start
-        and end points are connected.
+        """Create a vtkUnstructuredGrid of the given profile.
 
         Args:
-            limiter: limiter object containing contour
+            profile: The profile to create a ugrid for.
 
         Returns:
-            vtkPolyData containing contour data
+            The created unstructured grid.
         """
 
         r_flat = self.r.flatten()
