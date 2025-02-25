@@ -117,6 +117,7 @@ def create_name_recursive(node):
     if (
         "ggd" != name_current_node
         and "profiles_1d" != name_current_node
+        and "profiles_2d" != name_current_node
         and "time_slice" not in name_current_node
     ):
         name_appendix = ""
