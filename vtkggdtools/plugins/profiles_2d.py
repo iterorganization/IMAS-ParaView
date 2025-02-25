@@ -41,6 +41,10 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
 
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", PROFILES_2D_IDS_NAMES)
+        self.r = np.array([])
+        self.z = np.array([])
+        self._filled_profiles = []
+        self._all_profiles = []
 
     def GetAttributeArrayName(self, idx) -> str:
         return self._selectable[idx].name
