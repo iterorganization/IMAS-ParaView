@@ -3,8 +3,10 @@
 import logging
 from dataclasses import dataclass
 
+import imaspy
 import numpy as np
 import vtk
+from imaspy.ids_struct_array import IDSStructArray
 from imaspy.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
@@ -69,13 +71,14 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         available profiles to select. Which profiles show in the array domain selector
         is based on whether the "Show All" checkbox is enabled.
         """
+        if self._ids is None:
+            logger.error("Could not find the IDS.")
+            return
+
         self.r = None
         self.z = None
         self._filled_profiles = []
         self._all_profiles = []
-        if self._ids is None:
-            logger.error("Could not find the IDS.")
-            return
 
         if self._ids.metadata.name == "equilibrium":
             profiles_2d = self._ids.time_slice[time_idx].profiles_2d
@@ -91,7 +94,18 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
                 )
                 continue
 
-            self._fill_profiles(profile)
+            self._recursively_find_profiles(profile)
+
+            # Use dim1 or dim2 if r or z are not filled, respectively
+            if self._filled_profiles:
+                if not self.r:
+                    self._set_coordinate(
+                        "r", profile.grid.dim1, 0, "radial", len(profile.grid.dim2)
+                    )
+                if not self.z:
+                    self._set_coordinate(
+                        "z", profile.grid.dim2, 1, "height", len(profile.grid.dim1)
+                    )
 
             # Only load the first encountered valid profile
             if self._filled_profiles:
@@ -143,56 +157,46 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
             profile_list.append(profile)
         return profile_list
 
-    def _fill_profiles(self, profile):
-        for plasma_quantity in profile:
-            if isinstance(plasma_quantity, IDSStructure):
-                continue
-            if plasma_quantity.metadata.name == "r":
-                self.r = plasma_quantity
-                continue
-            elif plasma_quantity.metadata.name == "z":
-                self.z = plasma_quantity
-                continue
-            if plasma_quantity.has_value:
-                self._filled_profiles.append(plasma_quantity)
-            self._all_profiles.append(plasma_quantity)
+    def _recursively_find_profiles(self, node):
+        """Recursively traverses through the IDS node searching for filled 1d profiles.
+        If a filled profile is found, it is appended to self._filled_profiles.
 
-            # Check if r- and z- coordinates are filled, otherwise take dim1 and dim2
-            # as r and z, respectively.
-            if self._filled_profiles:
-                if self.r is None:
-                    if profile.grid.dim1:
-                        logger.info(
-                            "Could not find 'r' node in the profiles_2d. "
-                            "Setting dim1 as the radial coordinate."
-                        )
-                        self.r = np.tile(
-                            profile.grid.dim1[:, np.newaxis],
-                            (1, len(profile.grid.dim2)),
-                        )
-                    else:
-                        logger.error(
-                            "Could not find 'r' or 'grid.dim1' node in the profiles_2d. "
-                        )
-                        self._filled_profiles = self._all_profiles = []
-                if self.z is None:
-                    if profile.grid.dim2:
-                        logger.info(
-                            "Could not find 'z' node in the profiles_2d. "
-                            "Setting dim2 as the radial coordinate."
-                        )
-                        self.z = np.tile(
-                            profile.grid.dim2[np.newaxis, :],
-                            (len(profile.grid.dim1), 1),
-                        )
+        Args:
+            node: the node to search through.
+        """
 
-                    else:
-                        logger.error(
-                            "Could not find 'z' or 'grid.dim2' node in the profiles_2d. "
-                        )
-                        self._filled_profiles = self._all_profiles = []
+        if node.metadata.name == "grid":
+            return
+        elif node.metadata.name == "r":
+            self.r = node
+        elif node.metadata.name == "z":
+            self.z = node
+        elif isinstance(node, IDSStructure) or isinstance(node, IDSStructArray):
+            for subnode in node:
+                self._recursively_find_profiles(subnode)
+        else:
+            if node.metadata.ndim == 2:
+                if node.has_value:
+                    self._filled_profiles.append(node)
+                self._all_profiles.append(node)
 
-                return
+    def _set_coordinate(self, coord_name, dim, axis, coord_label, tile_size):
+        """Helper method to set r or z coordinates from profile grid dimensions."""
+        if dim:
+            logger.info(
+                f"Could not find '{coord_name}' node in profiles_2d. "
+                f"Using grid.dim{axis + 1} as the {coord_label} coordinate."
+            )
+            # Create a 2D grid from the 1D dim array
+            shape = (len(dim), 1) if axis == 0 else (1, len(dim))
+            tile_repeat = (1, tile_size) if axis == 0 else (tile_size, 1)
+            setattr(self, coord_name, np.tile(dim.reshape(shape), tile_repeat))
+        else:
+            logger.error(
+                f"Could not find a filled '{coord_name}' or 'grid.dim{axis + 1}' node"
+                "in the profiles_2d."
+            )
+            self._filled_profiles = self._all_profiles = []
 
     def _load_profiles(self, output):
         """Go through the list of selected limiters, and load each of them in a
