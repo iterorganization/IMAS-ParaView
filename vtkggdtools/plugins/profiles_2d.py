@@ -75,14 +75,20 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
             logger.error("Could not find the IDS.")
             return
 
-        self.r = None
-        self.z = None
+        self.r = np.array([])
+        self.z = np.array([])
         self._filled_profiles = []
         self._all_profiles = []
 
         if self._ids.metadata.name == "equilibrium":
+            if not time_idx < len(self._ids.time_slice):
+                logger.error(f"There is no profiles_2d at time step {time_idx}")
+                return
             profiles_2d = self._ids.time_slice[time_idx].profiles_2d
         else:
+            if not time_idx < len(self._ids.profiles_2d):
+                logger.error(f"There is no profiles_2d at time step {time_idx}")
+                return
             profiles_2d = self._ids.profiles_2d[time_idx]
 
         for profile in profiles_2d:
@@ -98,11 +104,11 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
 
             # Use dim1 or dim2 if r or z are not filled, respectively
             if self._filled_profiles:
-                if not self.r:
+                if len(self.r) == 0:
                     self._set_coordinate(
                         "r", profile.grid.dim1, 0, "radial", len(profile.grid.dim2)
                     )
-                if not self.z:
+                if len(self.z) == 0:
                     self._set_coordinate(
                         "z", profile.grid.dim2, 1, "height", len(profile.grid.dim1)
                     )
