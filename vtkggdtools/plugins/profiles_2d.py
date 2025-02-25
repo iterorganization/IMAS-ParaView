@@ -8,6 +8,7 @@ import vtk
 from imaspy.ids_struct_array import IDSStructArray
 from imaspy.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
+from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
 from vtkggdtools.ids_util import create_name_recursive, get_object_by_name
@@ -70,8 +71,8 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
 
     def update_available_profiles(self, time_idx):
         """Searches through the profiles_2d node at the current time step for
-        available profiles to select. Which profiles show in the array domain selector
-        is based on whether the "Show All" checkbox is enabled.
+        available profiles to select. Which profiles are shown in the array domain
+        selector is based on whether the "Show All" checkbox is enabled.
 
         Args:
             time_idx: The time index of the 2D profile
@@ -162,7 +163,7 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
                 "'r' or 'z'"
             )
 
-        if not dim:
+        if len(dim) == 0:
             logger.error(
                 f"Could not find a filled '{coord_name}' or 'grid.dim{dim_num}' node"
                 "in the profiles_2d."
@@ -250,8 +251,8 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
                 raise ValueError(f"Could not find {profile_name}")
 
             logger.info(f"Selected {profile.name}")
-            vtk_poly = self._create_ugrid(profile)
-            output.SetBlock(i, vtk_poly)
+            vtk_ugrid = self._create_ugrid(profile)
+            output.SetBlock(i, vtk_ugrid)
 
     def _create_ugrid(self, profile):
         """Create a vtkUnstructuredGrid of the given profile.
@@ -263,29 +264,30 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
             The created unstructured grid.
         """
 
-        r_flat = self.r.flatten()
-        z_flat = self.z.flatten()
-        values_flat = profile.profile.flatten()
+        r_flat = self.r.ravel()
+        z_flat = self.z.ravel()
+        values_flat = profile.profile.ravel()
 
-        points = vtk.vtkPoints()
+        points = np.column_stack((r_flat, np.zeros_like(r_flat), z_flat))
+        vtk_points = vtk.vtkPoints()
+        vtk_points.SetData(numpy_to_vtk(points.astype(np.float64), deep=True))
+        vtk_scalars = numpy_to_vtk(values_flat.astype(np.float64), deep=True)
+        vtk_scalars.SetName(profile.name)
+
         ugrid = vtk.vtkUnstructuredGrid()
-        scalars = vtk.vtkDoubleArray()
-        scalars.SetName(profile.name)
+        ugrid.SetPoints(vtk_points)
+        ugrid.GetPointData().SetScalars(vtk_scalars)
 
-        point_ids = []
-        for i in range(len(r_flat)):
-            pid = points.InsertNextPoint(r_flat[i], 0, z_flat[i])
-            scalars.InsertNextValue(values_flat[i])
-            point_ids.append(pid)
-
-        ugrid.SetPoints(points)
-        ugrid.GetPointData().SetScalars(scalars)
+        num_points = points.shape[0]
         cells = vtk.vtkCellArray()
-        for pid in point_ids:
+
+        for i in range(num_points):
             vertex = vtk.vtkVertex()
-            vertex.GetPointIds().SetId(0, pid)
+            vertex.GetPointIds().SetId(0, i)
             cells.InsertNextCell(vertex)
 
+        ugrid = vtk.vtkUnstructuredGrid()
+        ugrid.SetPoints(vtk_points)
+        ugrid.GetPointData().SetScalars(vtk_scalars)
         ugrid.SetCells(vtk.VTK_VERTEX, cells)
-
         return ugrid
