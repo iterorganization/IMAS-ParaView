@@ -102,6 +102,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         # Values to fill the array selector with
         self._selectable = []
         self._selected = []
+        self.show_all = False
 
         self.converter = None
 
