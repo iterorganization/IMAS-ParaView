@@ -116,67 +116,27 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
             self._filled_profiles = []
             self._all_profiles = []
 
-            grid_type = profile.grid_type.index
-            if grid_type != 1:
-                logger.debug(
-                    f"Found a grid type with identifier index of {grid_type}. "
-                    "Only rectangular profiles (index = 1) are supported."
-                )
-                continue
+            if profile.r.has_value and profile.r.shape == profile.z.shape:
+                # Use the 2D R and Z arrays to construct the grid
+                self.r = profile.r
+                self.z = profile.z
+            else:
+                # Check if this is a rectangular grid, and use dim1/dim2
+                grid_type = profile.grid_type.index
+                if grid_type != 1:
+                    logger.debug(
+                        f"Found a grid type with identifier index of {grid_type}. "
+                        "Only rectangular profiles (index = 1) are supported."
+                    )
+                    continue
+                self.r = np.tile(profile.grid.dim1, (len(profile.grid.dim2), 1))
+                self.z = np.tile(profile.grid.dim2, (len(profile.grid.dim1), 1)).T
 
             self._recursively_find_profiles(profile)
-
-            # Use dim1 or dim2 instead if r or z are not filled, respectively
-            if self._filled_profiles:
-                if len(self.r) == 0:
-                    self._set_coordinate("r", profile.grid)
-                if len(self.z) == 0:
-                    self._set_coordinate("z", profile.grid)
 
             # Only load the first encountered valid profile
             if self._filled_profiles and len(self.r) > 0 and len(self.z) > 0:
                 break
-
-    def _set_coordinate(self, coord_name, grid):
-        """Sets the coordinate ('r' or 'z') by creating a 2D grid from grid.dim1 or
-        grid.dim2.
-
-        Args:
-            coord_name: Name of the coordinate ("r" or "z").
-            grid: The grid of the profile.
-        """
-        if coord_name == "r":
-            dim = grid.dim1
-            tile_size = len(grid.dim2)
-            shape = (len(dim), 1)
-            tile_repeat = (1, tile_size)
-            dim_num = 1
-        elif coord_name == "z":
-            dim = grid.dim2
-            tile_size = len(grid.dim1)
-            shape = (1, len(dim))
-            tile_repeat = (tile_size, 1)
-            dim_num = 2
-        else:
-            raise ValueError(
-                "Cannot generate grid from dimension for coordinate other than "
-                "'r' or 'z'"
-            )
-
-        if len(dim) == 0:
-            logger.error(
-                f"Could not find a filled '{coord_name}' or 'grid.dim{dim_num}' node"
-                "in the profiles_2d."
-            )
-            self._filled_profiles = self._all_profiles = []
-            return
-
-        # Create a 2D grid from the 1D dim array
-        setattr(self, coord_name, np.tile(dim.reshape(shape), tile_repeat))
-        logger.info(
-            f"Could not find '{coord_name}' node in profiles_2d. "
-            f"Using grid.dim{dim_num} as the '{coord_name}' coordinate."
-        )
 
     def setup_ids(self):
         """
@@ -222,12 +182,8 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
             node: the node to search through.
         """
 
-        if node.metadata.name == "grid":
+        if node.metadata.name in ("grid", "r", "z"):
             return
-        elif node.metadata.name == "r":
-            self.r = node
-        elif node.metadata.name == "z":
-            self.z = node
         elif isinstance(node, IDSStructure) or isinstance(node, IDSStructArray):
             for subnode in node:
                 self._recursively_find_profiles(subnode)
