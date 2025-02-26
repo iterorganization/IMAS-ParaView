@@ -201,16 +201,50 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         Args:
             output: The vtkMultiBlockDataSet containing the limiter contours.
         """
+
+        # Since profiles share the same grid, it can be converted once
+        vtk_points = self._create_vtkpoints()
+
         for i, profile_name in enumerate(self._selected):
             profile = get_object_by_name(self._selectable, profile_name)
             if profile is None:
                 raise ValueError(f"Could not find {profile_name}")
 
             logger.info(f"Selected {profile.name}")
-            vtk_ugrid = self._create_ugrid(profile)
+
+            vtk_scalars = self._create_vtkscalars(profile)
+            vtk_ugrid = self._create_ugrid(vtk_points, vtk_scalars)
             output.SetBlock(i, vtk_ugrid)
 
-    def _create_ugrid(self, profile):
+    def _create_vtkpoints(self):
+        """Create vtkPoints containing the radial and height coordinates of the profile.
+
+        Returns:
+            The VTK points.
+        """
+        r_flat = self.r.ravel()
+        z_flat = self.z.ravel()
+        points = np.column_stack((r_flat, np.zeros_like(r_flat), z_flat))
+
+        vtk_points = vtk.vtkPoints()
+        vtk_points.SetData(numpy_to_vtk(points.astype(np.float64), deep=True))
+        return vtk_points
+
+    def _create_vtkscalars(self, profile):
+        """Create VTK array containing the values of the profile at the grid.
+
+        Args:
+            profile: The profile to load the values from
+
+        Returns:
+            The converted VTK array.
+        """
+        values_flat = profile.profile.ravel()
+        vtk_scalars = numpy_to_vtk(values_flat.astype(np.float64), deep=True)
+        vtk_scalars.SetName(profile.name)
+        return vtk_scalars
+
+    def _create_ugrid(self, vtk_points, vtk_scalars):
         """Create a vtkUnstructuredGrid of the given profile.
 
         Args:
@@ -220,21 +254,10 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
             The created unstructured grid.
         """
 
-        r_flat = self.r.ravel()
-        z_flat = self.z.ravel()
-        values_flat = profile.profile.ravel()
-
-        points = np.column_stack((r_flat, np.zeros_like(r_flat), z_flat))
-        vtk_points = vtk.vtkPoints()
-        vtk_points.SetData(numpy_to_vtk(points.astype(np.float64), deep=True))
-        vtk_scalars = numpy_to_vtk(values_flat.astype(np.float64), deep=True)
-        vtk_scalars.SetName(profile.name)
-
         ugrid = vtk.vtkUnstructuredGrid()
-        ugrid.SetPoints(vtk_points)
         ugrid.GetPointData().SetScalars(vtk_scalars)
 
-        num_points = points.shape[0]
+        num_points = vtk_points.GetNumberOfPoints()
         cells = vtk.vtkCellArray()
 
         for i in range(num_points):
