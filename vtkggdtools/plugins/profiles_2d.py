@@ -132,10 +132,14 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
                 self.r = np.tile(profile.grid.dim1, (len(profile.grid.dim2), 1))
                 self.z = np.tile(profile.grid.dim2, (len(profile.grid.dim1), 1)).T
 
+            # If the grid is not filled, continue to the next profiles_2d
+            if len(self.r) == 0 or len(self.z) == 0:
+                continue
+
             self._recursively_find_profiles(profile)
 
-            # Only load the first encountered valid profile
-            if self._filled_profiles and len(self.r) > 0 and len(self.z) > 0:
+            # Exit once a valid profiles_2d node has been found
+            if self._filled_profiles:
                 break
 
     def setup_ids(self):
