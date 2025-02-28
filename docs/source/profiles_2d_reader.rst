@@ -40,8 +40,12 @@ Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 Plotting 2D profiles
 --------------------
 
-Currently only `rectangular <https://imas-data-dictionary.readthedocs.io/en/latest/generated/identifier/poloidal_plane_coordinates_identifier.html#identifier-utilities-poloidal_plane_coordinates_identifier.xml>`_  2D profiles are supported.
-The VTK plugin will output a vtkMultiBlockDataSet where each block contains a single profile stored as a vtkUnstructuredGrid. The following image shows a 2D profile from an equilibrium IDS.
+The 2D profile reader will try to load the first valid ``profiles_2d`` node that is encountered. 
+A ``profiles_2d`` node is valid if both the grid coordinates (``r``- and ``z``-coordinates), and at least one profile is found. 
+If the `radial <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/equilibrium.html#equilibrium-time_slice-profiles_2d-r>`_ and `height <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/equilibrium.html#equilibrium-time_slice-profiles_2d-z>`_ coordinates are filled, these will be loaded.
+Alternatively, if these coordinates are empty, it will try to load the radial and height coordinates from the `dim1 <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/equilibrium.html#equilibrium-time_slice-profiles_2d-grid-dim1>`_ and `dim2 <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/equilibrium.html#equilibrium-time_slice-profiles_2d-grid-dim2>`_ coordinates, respectively. Note, this is only supported for rectangular grids.
+
+The VTK plugin will output a ``vtkMultiBlockDataSet`` where each block contains a single profile stored as a ``vtkUnstructuredGrid``. The following image shows a 2D profile from an equilibrium IDS.
 
 .. figure:: images/profiles_2d.png
 
