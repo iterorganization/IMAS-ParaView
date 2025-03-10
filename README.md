@@ -1,6 +1,8 @@
 # VTKGGDTools
 IMAS GGD-VTK is a tool to convert GGD ([Generalized Grid Description](https://sharepoint.iter.org/departments/POP/CM/IMDesign/Data%20Model/sphinx/dev/ggd_guide/doc.html)) 
-structures to VTK formats, and back. This is complemented by a number of Paraview plugins that can visualise both GGD and non-GGD IDS data in Paraview.
+structures to VTK formats, and back. This is complemented by a number of Paraview plugins that can visualise both GGD and non-GGD IDS data in Paraview. 
+
+For an overview of the different types of IDS data that can be loaded, see the [documentation](https://sharepoint.iter.org/departments/POP/CM/IMDesign/Code%20Documentation/GGD-VTK/usage.html).
 
 ## Running on SDCC
 Use the following instructions to launch Paraview:
