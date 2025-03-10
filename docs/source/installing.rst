@@ -9,7 +9,12 @@ steps below and simply load the module as follows:
 .. code-block:: bash
 
   module load GGD-VTK
+  # Launch Paraview
   paraview
+  # Open the "Sources" tab in the top left, and ensure you see "IMAS Tools" in 
+  # the drop down menu.
+  # The command-line interface can be started using:
+  vtkggdtools --help
 
 
 SDCC installation
@@ -37,9 +42,6 @@ SDCC installation
   # working directory is the root of the repository
   export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH
   export PYTHONPATH=$PWD:$PYTHONPATH
-  # Use LD_PRELOAD to work around a VTK bug:
-  # https://gitlab.kitware.com/vtk/vtk/-/issues/19373
-  export LD_PRELOAD=$HDF5_DIR/lib/libhdf5.so.310
   # Run paraview
   paraview
   # Open the "Sources" tab in the top left, if you see "IMAS Tools" 
@@ -74,7 +76,6 @@ SDCC installation
   # Export the environment variables
   export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH
   export PYTHONPATH=$PWD:$PYTHONPATH
-  export LD_PRELOAD=$HDF5_DIR/lib/libhdf5.so.310
   # And activate the Python virtual environment
   . venv/bin/activate
   # Validate if it is working as intended
