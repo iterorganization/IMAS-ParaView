@@ -12,6 +12,7 @@ Currently, the following IDSs are supported in the JOREK Reader.
 
 - ``mhd``
 - ``radiation``
+- ``plasma_profiles``
 
 Using the JOREK Reader
 ----------------------
