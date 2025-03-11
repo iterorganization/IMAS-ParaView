@@ -1,13 +1,25 @@
 # VTKGGDTools
-IMAS GGD-VTK is a tool to convert GGD ([Generalized Grid Description](https://sharepoint.iter.org/departments/POP/CM/IMDesign/Data%20Model/sphinx/dev/ggd_guide/doc.html)) 
-structures to VTK formats, and back. This is complemented by a number of Paraview plugins that can visualise both GGD and non-GGD IDS data in Paraview.
+IMAS GGD-VTK is a tool to convert GGD ([Generalized Grid Description](https://imas-data-dictionary.readthedocs.io/en/latest/ggd_guide/doc.html)) 
+structures to VTK formats, and back. This is complemented by a number of Paraview plugins that can visualise both GGD and non-GGD IDS data in Paraview. 
+
+For an overview of the different types of IDS data that can be loaded, see the [documentation](https://sharepoint.iter.org/departments/POP/CM/IMDesign/Code%20Documentation/GGD-VTK/usage.html).
 
 ## Running on SDCC
+Use the following instructions to launch Paraview:
 ```bash
 module load GGD-VTK
+# Launch Paraview
 paraview
 # Open the "Sources" tab in the top left, and ensure you see "IMAS Tools" in 
 # the drop down menu.
+```
+
+Use the following instructions to start the command-line interface:
+```bash
+module load GGD-VTK
+# Run the command-line interface
+vtkggdtools --help
+# You will now see the CLI help message which explains the available commands
 ```
 
 ## Running development version on SDCC
@@ -21,9 +33,6 @@ IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
 # working directory is the root of the repository
 export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH
 export PYTHONPATH=$PWD:$PYTHONPATH
-# Use LD_PRELOAD to work around a VTK bug:
-# https://gitlab.kitware.com/vtk/vtk/-/issues/19373
-export LD_PRELOAD=$HDF5_DIR/lib/libhdf5.so.310
 # Run paraview
 paraview
 # Open the "Sources" tab in the top left.
