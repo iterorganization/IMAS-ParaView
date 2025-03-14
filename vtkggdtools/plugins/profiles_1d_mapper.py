@@ -1,8 +1,8 @@
 import logging
 
 import numpy as np
-import vtk
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
+from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonDataModel import vtkPartitionedDataSetCollection, vtkTable
@@ -54,8 +54,8 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
             vtkPartitionedDataSetCollection.GetData(inInfoVec[0], 0)
         )
         input1 = dsa.WrapDataObject(vtkTable.GetData(inInfoVec[1], 0))
-        self._selectable = input1.RowData.keys()
 
+        self._selectable = input1.RowData.keys()
         psi = input0.PointData["Psi [Wb]"]
 
         if isinstance(psi, dsa.VTKNoneArray):
@@ -81,21 +81,10 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
                     "1DProfilesReader."
                 )
                 return 1
-
-            # Interpolate to zero outside the core profiles range
-            piecewise_function = vtk.vtkPiecewiseFunction()
-            piecewise_function.ClampingOff()
-
-            for i in range(psi_profiles.GetNumberOfTuples()):
-                piecewise_function.AddPoint(
-                    psi_profiles.GetTuple1(i), profile.GetTuple1(i)
-                )
-
-            # Perform resampling based on the psi values
-            resample = np.zeros(psi_grid.GetSize())
-            for i in range(psi_grid.GetSize()):
-                psi_value = psi_grid.GetValue(i)
-                resample[i] = piecewise_function.GetValue(psi_value)
+            xp = vtk_to_numpy(psi_profiles)[::-1]
+            fp = vtk_to_numpy(profile)[::-1]
+            psi_grid_values = vtk_to_numpy(psi_grid)
+            resample = np.interp(psi_grid_values, xp, fp, left=0, right=0)
 
             progress.increment(1 / len(self._selectable))
             output.PointData.append(resample, f"{profile_name} (resampled)")
