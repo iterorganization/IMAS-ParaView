@@ -3,12 +3,13 @@ import vtk
 from paraview.util.vtkAlgorithm import smdomain, smproperty, smproxy
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
-from vtkmodules.vtkCommonDataModel import vtkTable
+from vtkmodules.vtkCommonDataModel import vtkPartitionedDataSetCollection, vtkTable
 
 from vtkggdtools.paraview_support.servermanager_tools import (
     arrayselectiondomain,
     arrayselectionstringvector,
 )
+from vtkggdtools.progress import Progress
 
 
 @smproxy.filter(label="test_filter")
@@ -27,7 +28,7 @@ class ExampleTwoInputFilter(VTKPythonAlgorithmBase):
             outputType="vtkPartitionedDataSetCollection",
         )
         self._selected = []
-        self._selectable = ["Ion (D) Density", "J_total"]
+        self._selectable = []
 
     def FillInputPortInformation(self, port, info):
         if port == 1:
@@ -44,10 +45,13 @@ class ExampleTwoInputFilter(VTKPythonAlgorithmBase):
 
         psi_grid = input0.PointData["Psi [Wb]"].GetArrays()[0]
         psi_profiles = input1.RowData["Grid Psi"]
+        self._selectable = input1.RowData.keys()
 
         output = dsa.WrapDataObject(vtkPartitionedDataSetCollection.GetData(outInfo))
         output.ShallowCopy(input0.VTKObject)
 
+        # Create progress object to advance Paraview progress bar
+        progress = Progress(self.UpdateProgress)
         for profile_name in self._selected:
             profile = input1.RowData[profile_name]
 
@@ -65,6 +69,7 @@ class ExampleTwoInputFilter(VTKPythonAlgorithmBase):
                 psi_value = psi_grid.GetValue(i)
                 resample[i] = piecewise_function.GetValue(psi_value)
 
+            progress.increment(1 / len(self._selectable))
             output.PointData.append(resample, f"{profile_name} (resampled)")
         return 1
 
