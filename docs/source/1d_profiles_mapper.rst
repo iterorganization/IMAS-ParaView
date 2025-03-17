@@ -14,7 +14,7 @@ The filter takes two inputs:
 The 1DProfilesReader must provide at least the Psi grid coordinate but may include any number of additional 1D profiles. The filter resamples the 1D profiles onto the 2D Psi grid of the GGD data. 
 
 
-.. note:: If the 1D profile contains values outstide of the range of the values of the GGD Psi grid, these points will be mapped to 0.
+.. note:: If the 1D profile contains values outside of the range of the values of the Psi grid, these points will be mapped to 0.
 
 
 Example Usage
