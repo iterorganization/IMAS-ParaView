@@ -11,7 +11,7 @@ The filter takes two inputs:
 1. A **Poloidal Flux (Psi)** from a GGD source (e.g. from the GGD Reader or JOREK Reader) as input 0.
 2. A **1D profile** from the 1DProfilesReader as input 1.
 
-The 1DProfilesReader must provide at least the Psi grid coordinate but may include any number of additional 1D profiles. The filter resample the 1D profiles onto the 2D Psi grid of the GGD data. 
+The 1DProfilesReader must provide at least the Psi grid coordinate but may include any number of additional 1D profiles. The filter resamples the 1D profiles onto the 2D Psi grid of the GGD data. 
 
 
 .. note:: If the 1D profile contains values outstide of the range of the values of the GGD Psi grid, these points will be mapped to 0.
