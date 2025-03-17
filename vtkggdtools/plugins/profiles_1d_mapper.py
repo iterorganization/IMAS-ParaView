@@ -25,7 +25,7 @@ logger = logging.getLogger("vtkggdtools")
     dataTypes=["vtkPartitionedDataSetCollection"], composite_data_supported=True
 )
 class Profiles1DMapper(VTKPythonAlgorithmBase):
-    """Filter that maps 1d profiles onto R,Z Rectangular coordinates. This filter takes
+    """Filter that maps 1d profiles onto a 2D poloidal flux grid. This filter takes
     2 inputs:
     - A poloidal flux (Psi) from a GGD. i.e. from GGD Reader/JOREK Reader (input 0)
     - A 1D profile from the 1DProfilesReader. (input 1)
@@ -84,7 +84,7 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
             xp = vtk_to_numpy(psi_profiles)[::-1]
             fp = vtk_to_numpy(profile)[::-1]
             psi_grid_values = vtk_to_numpy(psi_grid)
-            resample = np.interp(psi_grid_values, xp, fp, left=0, right=0)
+            resample = np.interp(psi_grid_values, xp, fp, left=np.nan, right=np.nan)
 
             progress.increment(1 / len(self._selectable))
             output.PointData.append(resample, f"{profile_name} (resampled)")
