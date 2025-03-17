@@ -9,7 +9,10 @@ from imaspy.ids_struct_array import IDSStructArray
 from imaspy.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.util.numpy_support import numpy_to_vtk
-from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
+from vtkmodules.vtkCommonDataModel import (
+    vtkPartitionedDataSet,
+    vtkPartitionedDataSetCollection,
+)
 
 from vtkggdtools.ids_util import create_name_recursive, get_object_by_name
 from vtkggdtools.plugins.base_class import GGDVTKPluginBase
@@ -41,7 +44,7 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
     """profiles_2d reader based on IMASPy"""
 
     def __init__(self):
-        super().__init__("vtkMultiBlockDataSet", PROFILES_2D_IDS_NAMES)
+        super().__init__("vtkPartitionedDataSetCollection", PROFILES_2D_IDS_NAMES)
         self.r = np.array([])
         self.z = np.array([])
         self._filled_profiles = []
@@ -65,7 +68,7 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         self.update_available_profiles(time_idx)
 
         if len(self._selected) > 0:
-            output = vtkMultiBlockDataSet.GetData(outInfo)
+            output = vtkPartitionedDataSetCollection.GetData(outInfo)
             self._load_profiles(output)
         return 1
 
@@ -208,7 +211,7 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
 
         # Since profiles share the same grid, it can be converted once
         vtk_points = self._create_vtkpoints()
-
+        partitioned_dataset = vtkPartitionedDataSet()
         for i, profile_name in enumerate(self._selected):
             profile = get_object_by_name(self._selectable, profile_name)
             if profile is None:
@@ -218,7 +221,9 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
 
             vtk_scalars = self._create_vtkscalars(profile)
             vtk_ugrid = self._create_ugrid(vtk_points, vtk_scalars)
-            output.SetBlock(i, vtk_ugrid)
+            partitioned_dataset.SetPartition(i, vtk_ugrid)
+
+        output.SetPartitionedDataSet(0, partitioned_dataset)
 
     def _create_vtkpoints(self):
         """Create vtkPoints containing the radial and height coordinates of the profile.
@@ -245,7 +250,8 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         """
         values_flat = profile.profile.ravel()
         vtk_scalars = numpy_to_vtk(values_flat.astype(np.float64), deep=True)
-        vtk_scalars.SetName(profile.name)
+        units = profile.profile.metadata.units
+        vtk_scalars.SetName(f"{profile.name} [{units}]")
         return vtk_scalars
 
     def _create_ugrid(self, vtk_points, vtk_scalars):
