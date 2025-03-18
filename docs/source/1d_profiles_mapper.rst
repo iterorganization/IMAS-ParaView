@@ -4,9 +4,7 @@
 ==================
 
 The **1D Profiles Mapper** is a ParaView filter designed to map 1D profiles onto a 2D flux grid. 
-It is designed to work in conjunction with the :ref:`using the 1d Profiles Reader` as well as one of either the :ref:`using the GGD Reader` or the :ref:`using the JOREK Reader`. 
-
-The filter takes two inputs:
+It is designed to work in conjunction with 1D profiles exported by the :ref:`using the 1d Profiles Reader`. These profiles can be interpolated on a 2D Psi grid which can be provided either in the form of a GGD, by using one of either the :ref:`using the GGD Reader` or the :ref:`using the JOREK Reader`, or by means of a 2D profile from the :ref:`using the 2d Profiles Reader`.
 
 1. A **Poloidal Flux (Psi)** from a GGD source (e.g. from the GGD Reader or JOREK Reader) as input 0.
 2. A **1D profile** from the 1DProfilesReader as input 1.
@@ -46,4 +44,8 @@ Example Usage
 .. warning::  
    The filter does not take into account which parts of the 2D flux map are inside or outside the LCFS.
    1D profiles are typically only valid within the core plasma, so care should be taken when interpreting
-   data outside of the LCFS.
+   data outside of the LCFS. This effect is clearly demonstrated in the figure below.
+
+.. figure:: images/2d_profile_mapped.png
+
+   The total parallel current density 1D profile mapped onto the 2D Psi profile of an equilibrium IDS.
