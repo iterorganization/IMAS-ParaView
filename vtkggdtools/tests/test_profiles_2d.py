@@ -29,17 +29,17 @@ def test_load_2d_profiles():
         reader._selected = [name1]
         reader._load_profiles(output)
 
-        assert output.GetNumberOfPartitionedDatasets() == 1
-        check_ugrid(output.GetPartitionedDataset(0).GetPartition(0), profile1, reader)
+        assert output.GetNumberOfPartitionedDataSets() == 1
+        check_ugrid(output.GetPartitionedDataSet(0).GetPartition(0), profile1, reader)
 
         # 2 selections
         output = vtkPartitionedDataSetCollection()
         reader._selected = [name1, name2]
         reader._load_profiles(output)
 
-        assert output.GetNumberOfPartitionedDatasets() == 2
-        check_ugrid(output.GetPartitionedDataset(0).GetPartition(0), profile1, reader)
-        check_ugrid(output.GetPartitionedDataset(1).GetPartition(0), profile2, reader)
+        assert output.GetNumberOfPartitionedDataSets() == 2
+        check_ugrid(output.GetPartitionedDataSet(0).GetPartition(0), profile1, reader)
+        check_ugrid(output.GetPartitionedDataSet(1).GetPartition(0), profile2, reader)
 
 
 def check_ugrid(ugrid, expected_profile, reader):
