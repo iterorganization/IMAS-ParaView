@@ -203,15 +203,15 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
     def _load_profiles(self, output):
         """Go through the list of selected profiles, and load each of them in a
         separate vtkUnstructuredGrid object, which are all combined into a
-        vtkMultiBlockDataSet.
+        vtkPartitionedDataSetCollection.
 
         Args:
-            output: The vtkMultiBlockDataSet containing the limiter contours.
+            output: The vtkPartitionedDataSetCollection containing the profiles.
         """
 
         # Since profiles share the same grid, it can be converted once
         vtk_points = self._create_vtkpoints()
-        partitioned_dataset = vtkPartitionedDataSet()
+
         for i, profile_name in enumerate(self._selected):
             profile = get_object_by_name(self._selectable, profile_name)
             if profile is None:
@@ -221,9 +221,11 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
 
             vtk_scalars = self._create_vtkscalars(profile)
             vtk_ugrid = self._create_ugrid(vtk_points, vtk_scalars)
-            partitioned_dataset.SetPartition(i, vtk_ugrid)
 
-        output.SetPartitionedDataSet(0, partitioned_dataset)
+            partitioned_dataset = vtkPartitionedDataSet()
+            partitioned_dataset.SetPartition(0, vtk_ugrid)
+
+            output.SetPartitionedDataSet(i, partitioned_dataset)
 
     def _create_vtkpoints(self):
         """Create vtkPoints containing the radial and height coordinates of the profile.
