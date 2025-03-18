@@ -67,22 +67,31 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
         psi_grid = psi.GetArrays()[0]
         psi_profiles = input1.RowData["Grid Psi"]
 
+        if isinstance(psi_profiles, dsa.VTKNoneArray) and self._selected:
+            logger.warning(
+                "The 1DProfilesReader should output a poloidal flux grid. Please"
+                " select 'Grid Psi' in the attribute selector window of the "
+                "1DProfilesReader."
+            )
+            return 1
+
         output = dsa.WrapDataObject(vtkPartitionedDataSetCollection.GetData(outInfo))
         output.ShallowCopy(input0.VTKObject)
 
         progress = Progress(self.UpdateProgress)
+
         for profile_name in self._selected:
             profile = input1.RowData[profile_name]
 
-            if isinstance(psi_profiles, dsa.VTKNoneArray):
-                logger.warning(
-                    "The 1DProfilesReader should output a poloidal flux grid. Please"
-                    " select 'Grid Psi' in the attribute selector window of the "
-                    "1DProfilesReader."
-                )
-                return 1
-            xp = vtk_to_numpy(psi_profiles)[::-1]
-            fp = vtk_to_numpy(profile)[::-1]
+            xp = vtk_to_numpy(psi_profiles)
+            fp = vtk_to_numpy(profile)
+
+            # numpy's interp requires xp to be strictly increasing, and the DD does not
+            # enforce a specific ordering. So we invert the array if it is decreasing
+            if xp[0] > xp[-1]:
+                xp = xp[::-1]
+                fp = fp[::-1]
+
             psi_grid_values = vtk_to_numpy(psi_grid)
             resample = np.interp(psi_grid_values, xp, fp, left=np.nan, right=np.nan)
 
