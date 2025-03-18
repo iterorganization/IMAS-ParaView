@@ -14,7 +14,7 @@ The filter takes two inputs:
 The 1DProfilesReader must provide at least the Psi grid coordinate but may include any number of additional 1D profiles. The filter resamples the 1D profiles onto the 2D Psi grid of the GGD data. 
 
 
-.. note:: If the 1D profile contains values outside of the range of the values of the Psi grid, these points will be mapped to 0.
+.. note:: If the 1D profile contains values outside of the range of the values of the Psi grid, these points will be mapped to NaN values.
 
 
 Example Usage
@@ -41,7 +41,7 @@ Example Usage
 
 .. figure:: images/profiles1d_map.png
 
-   The Deuterium density 1D profile mapped onto the 2D poloidal flux grid from an MHD IDS.
+   The Deuterium density 1D profile mapped onto the 2D poloidal flux grid from an MHD IDS. Here, the NaN values are colored in translucent black.
 
 .. warning::  
    The filter does not take into account which parts of the 2D flux map are inside or outside the LCFS.
