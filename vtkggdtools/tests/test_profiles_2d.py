@@ -1,13 +1,14 @@
 import numpy as np
 from imaspy import DBEntry
 from vtk.util.numpy_support import vtk_to_numpy
-from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
+from vtkmodules.vtkCommonDataModel import vtkPartitionedDataSetCollection
 
 from vtkggdtools.plugins.profiles_2d import IMASPyProfiles2DReader
 
 
-def test_load_load_profiles():
-    """Test if 2d profiles structures are loaded in the VTK Multiblock Dataset."""
+def test_load_2d_profiles():
+    """Test if 2D profiles structures are loaded in the VTK
+    PartitionedDatasetCollection."""
     reader = IMASPyProfiles2DReader()
 
     with DBEntry(
@@ -24,21 +25,21 @@ def test_load_load_profiles():
         name2 = "J_tor"
 
         # 1 selection
-        output = vtkMultiBlockDataSet()
+        output = vtkPartitionedDataSetCollection()
         reader._selected = [name1]
         reader._load_profiles(output)
 
-        assert output.GetNumberOfBlocks() == 1
-        check_ugrid(output.GetBlock(0), profile1, reader)
+        assert output.GetNumberOfPartitionedDatasets() == 1
+        check_ugrid(output.GetPartitionedDataset(0).GetPartition(0), profile1, reader)
 
         # 2 selections
-        output = vtkMultiBlockDataSet()
+        output = vtkPartitionedDataSetCollection()
         reader._selected = [name1, name2]
         reader._load_profiles(output)
 
-        assert output.GetNumberOfBlocks() == 2
-        check_ugrid(output.GetBlock(0), profile1, reader)
-        check_ugrid(output.GetBlock(1), profile2, reader)
+        assert output.GetNumberOfPartitionedDatasets() == 2
+        check_ugrid(output.GetPartitionedDataset(0).GetPartition(0), profile1, reader)
+        check_ugrid(output.GetPartitionedDataset(1).GetPartition(0), profile2, reader)
 
 
 def check_ugrid(ugrid, expected_profile, reader):
@@ -51,4 +52,5 @@ def check_ugrid(ugrid, expected_profile, reader):
 
     assert np.array_equal(expected_profile.ravel(), scalars_array)
     assert np.array_equal(reader.r.ravel(), r_vtk)
+    assert np.array_equal(reader.z.ravel(), z_vtk)
     assert np.array_equal(reader.z.ravel(), z_vtk)
