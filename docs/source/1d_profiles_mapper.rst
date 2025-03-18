@@ -18,7 +18,7 @@ The 1DProfilesReader must provide at least the Psi grid coordinate but may inclu
 Example Usage
 -------------
 
-1. Load a GGD that contains a poloidal flux (Psi) grid. Ensure that the Psi is selected in the attribute window. In the example figure below, an MHD IDS is used.
+1. Load a GGD or 2D Profile that contains a poloidal flux (Psi) grid. Ensure that the Psi is selected in the attribute window. In the example figure below, an MHD IDS is used.
 
 .. figure:: images/jorek_psi.png
 
