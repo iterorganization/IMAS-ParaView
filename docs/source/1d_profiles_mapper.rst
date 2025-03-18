@@ -42,3 +42,8 @@ Example Usage
 .. figure:: images/profiles1d_map.png
 
    The Deuterium density 1D profile mapped onto the 2D poloidal flux grid from an MHD IDS.
+
+.. warning::  
+   The filter does not take into account which parts of the 2D flux map are inside or outside the LCFS.
+   1D profiles are typically only valid within the core plasma, so care should be taken when interpreting
+   data outside of the LCFS.
