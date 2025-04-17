@@ -35,6 +35,7 @@ class Converter:
         self.grid_ggd = None
         self.output = None
         self.ps_reader = None
+        self.reference_grid_path = None
         self.get_grids = lru_cache(maxsize=32)(self.get_grids)
 
     def write_to_xml(self, output_path: Path, index_list=[0]):
@@ -99,7 +100,10 @@ class Converter:
         self.grid_ggd = get_grid_ggd(self.ids, self.time_idx)
 
         if self.grid_ggd.path:
+            self.reference_grid_path = self.grid_ggd.path
             self._replace_grid_with_reference()
+        else:
+            self.reference_grid_path = None
 
         if not self._is_grid_valid():
             return None
@@ -195,7 +199,14 @@ class Converter:
     def _fill_grid_and_plasma_state(self):
         """Fills the VTK output object with the GGD grid and GGD array values."""
 
-        ugrids = self.get_grids(id(self.grid_ggd), self.plane_config)
+        # If the grid is a reference to another grid, we store it by its path string
+        # Otherwise by ID of the object
+        if self.reference_grid_path:
+            grid_key = str(self.reference_grid_path)
+        else:
+            grid_key = id(self.grid_ggd)
+
+        ugrids = self.get_grids(grid_key, self.plane_config)
         if self.is_jorek:
             self._fill_jorek(ugrids)
         else:
