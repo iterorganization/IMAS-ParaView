@@ -173,7 +173,7 @@ def convert_ggd_to_vtk(
 
         # TODO: Add time-dependent VTKHDF conversion
         if format == "xml":
-            converter = Converter(ids)
+            converter = Converter(ids, dbentry=entry)
             converter.write_to_xml(output_dir, index_list)
 
         elif format == "vtkhdf":
@@ -341,7 +341,7 @@ def parse_index(index):
         start_str, end_str = index.split(":")
         if not start_str.strip().isdigit() or not end_str.strip().isdigit():
             raise click.UsageError(
-                "The lower and upper bound of indices must be " "integers."
+                "The lower and upper bound of indices must be integers."
             )
         start = int(start_str)
         end = int(end_str)

@@ -28,8 +28,9 @@ class InterpSettings:
 
 
 class Converter:
-    def __init__(self, ids):
+    def __init__(self, ids, dbentry=None):
         self.ids = ids
+        self.dbentry = dbentry
         self.time_idx = None
         self.grid_ggd = None
         self.output = None
@@ -97,6 +98,9 @@ class Converter:
 
         self.grid_ggd = get_grid_ggd(self.ids, self.time_idx)
 
+        if self.grid_ggd.path:
+            self._replace_grid_with_reference()
+
         if not self._is_grid_valid():
             return None
 
@@ -113,6 +117,28 @@ class Converter:
         self._fill_grid_and_plasma_state()
 
         return self.output
+
+    def _replace_grid_with_reference(self):
+        """
+        Retrieve the GGD grid from a reference IDS path and replace the current grid.
+        """
+        path = self.grid_ggd.path
+        logger.info(f"Fetching the GGD grid from the reference: '{path}'")
+        path = path.strip("#")
+        ids_name, path = path.split("/", 1)
+
+        if not self.dbentry:
+            raise ValueError(
+                "An opened dbentry must be provided if a GGD grid reference is given."
+            )
+
+        ids = self.dbentry.get(
+            ids_name,
+            autoconvert=False,
+            lazy=True,
+            ignore_unknown_dd_version=True,
+        )
+        self.grid_ggd = ids[path]
 
     def _resolve_time_idx(self, time_idx, time):
         """Resolves the appropriate time index based on the given time index or time
