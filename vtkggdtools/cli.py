@@ -161,9 +161,10 @@ def convert_ggd_to_vtk(
     click.echo(f"Loading {ids_name} from {uri} with occurrence {occurrence}...")
     with imaspy.DBEntry(uri, "r") as entry:
         click.echo("Loading IDS...")
+        use_lazy = is_lazy(all_times, lazy, no_lazy)
         ids = entry.get(
             ids_name,
-            lazy=is_lazy(all_times, lazy, no_lazy),
+            lazy=use_lazy,
             occurrence=occurrence,
             autoconvert=False,
         )
@@ -173,7 +174,7 @@ def convert_ggd_to_vtk(
 
         # TODO: Add time-dependent VTKHDF conversion
         if format == "xml":
-            converter = Converter(ids, dbentry=entry)
+            converter = Converter(ids, dbentry=entry, ref_lazy=use_lazy)
             converter.write_to_xml(output_dir, index_list)
 
         elif format == "vtkhdf":

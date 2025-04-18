@@ -499,7 +499,9 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 ignore_unknown_dd_version=True,
             )
             self.setup_ids()
-            self.converter = Converter(self._ids, dbentry=self._dbentry)
+            self.converter = Converter(
+                self._ids, dbentry=self._dbentry, ref_lazy=self.lazy
+            )
 
     def request_information(self):
         """
