@@ -130,6 +130,8 @@ class Converter:
         logger.info(f"Fetching the GGD grid from the reference: '{path}'")
         path = path.strip("#")
         ids_name, path = path.split("/", 1)
+        if ids_name not in self.dbentry.factory.ids_names():
+            raise ValueError(f"{ids_name} is not a valid IDS name")
 
         if not self.dbentry:
             raise ValueError(
@@ -139,10 +141,13 @@ class Converter:
         ids = self.dbentry.get(
             ids_name,
             autoconvert=False,
-            lazy=True,
+            lazy=False,
             ignore_unknown_dd_version=True,
         )
-        self.grid_ggd = ids[path]
+        try:
+            self.grid_ggd = ids[path]
+        except KeyError:
+            raise ValueError(f"{path} does not exist in {ids}.")
 
     def _resolve_time_idx(self, time_idx, time):
         """Resolves the appropriate time index based on the given time index or time
