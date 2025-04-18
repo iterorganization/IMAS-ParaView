@@ -28,9 +28,10 @@ class InterpSettings:
 
 
 class Converter:
-    def __init__(self, ids, dbentry=None):
+    def __init__(self, ids, dbentry=None, ref_lazy=True):
         self.ids = ids
         self.dbentry = dbentry
+        self.ref_lazy = ref_lazy
         self.time_idx = None
         self.grid_ggd = None
         self.output = None
@@ -141,7 +142,7 @@ class Converter:
         ids = self.dbentry.get(
             ids_name,
             autoconvert=False,
-            lazy=False,
+            lazy=self.ref_lazy,
             ignore_unknown_dd_version=True,
         )
         try:

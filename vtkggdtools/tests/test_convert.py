@@ -33,11 +33,11 @@ def test_ggd_to_vtk_reference(tmp_path):
         ids2.grid_ggd.resize(1)
         ids2.time = [0]
 
-        converter = Converter(ids2, dbentry=dbentry)
+        converter = Converter(ids2, dbentry=dbentry, ref_lazy=False)
         assert converter.ggd_to_vtk() is None
 
         ids2.grid_ggd[0].path = "#edge_profiles/grid_ggd(1)"
-        converter = Converter(ids2, dbentry=dbentry)
+        converter = Converter(ids2, dbentry=dbentry, ref_lazy=False)
         assert converter.ggd_to_vtk() is not None
 
 
