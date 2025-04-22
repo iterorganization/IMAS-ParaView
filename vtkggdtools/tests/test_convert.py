@@ -1,5 +1,6 @@
 import imaspy
 import pytest
+from imaspy.ids_defs import IDS_TIME_MODE_HOMOGENEOUS
 from imaspy.ids_path import IDSPath
 
 from vtkggdtools.convert import Converter
@@ -30,6 +31,7 @@ def test_ggd_to_vtk_reference(tmp_path):
         fill_ids(ids)
         dbentry.put(ids)
         ids2 = dbentry.factory.new("edge_sources")
+        ids2.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
         ids2.grid_ggd.resize(1)
         ids2.time = [0]
 
