@@ -119,7 +119,8 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         self._all_profiles = []
 
         if (
-            hasattr(profile, "r") and hasattr(profile, "z")
+            hasattr(profile, "r")
+            and hasattr(profile, "z")
             and profile.r.has_value
             and profile.r.shape == profile.z.shape
         ):
