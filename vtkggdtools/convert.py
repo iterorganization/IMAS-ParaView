@@ -142,7 +142,7 @@ class Converter:
         ids = self.dbentry.get(
             ids_name,
             autoconvert=False,
-            lazy=self.ref_lazy,
+            lazy=True,
             ignore_unknown_dd_version=True,
         )
         try:
