@@ -116,7 +116,11 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
             self._filled_profiles = []
             self._all_profiles = []
 
-            if profile.r.has_value and profile.r.shape == profile.z.shape:
+            if (
+                all(hasattr(profile, attr) for attr in ("r", "z"))
+                and profile.r.has_value
+                and profile.r.shape == profile.z.shape
+            ):
                 # Use the 2D R and Z arrays to construct the grid
                 self.r = profile.r
                 self.z = profile.z
