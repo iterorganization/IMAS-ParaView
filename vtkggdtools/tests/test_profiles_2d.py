@@ -6,7 +6,7 @@ from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 from vtkggdtools.plugins.profiles_2d import IMASPyProfiles2DReader
 
 
-def test_load_load_profiles():
+def test_load_profiles():
     """Test if 2d profiles structures are loaded in the VTK Multiblock Dataset."""
     reader = IMASPyProfiles2DReader()
 
