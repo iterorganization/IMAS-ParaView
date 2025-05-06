@@ -75,4 +75,3 @@ source venv/bin/activate
 pip install --upgrade .[docs]
 make -C docs clean html
 ```
-
