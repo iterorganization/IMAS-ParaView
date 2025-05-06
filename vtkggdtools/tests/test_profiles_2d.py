@@ -71,12 +71,12 @@ def test_load_profiles_dummy_equilibrium():
     reader = IMASPyProfiles2DReader()
     reader._ids = ids
     reader.setup_ids()
-    output = vtkMultiBlockDataSet()
+    output = vtkPartitionedDataSetCollection()
     reader._selected = ["Psi"]
     reader._load_profiles(output)
-    assert output.GetNumberOfBlocks() == 1
+    assert output.GetNumberOfPartitionedDataSets() == 1
     profile = ids.time_slice[0].profiles_2d[0].psi
-    check_ugrid(output.GetBlock(0), profile, reader)
+    check_ugrid(output.GetPartitionedDataSet(0).GetPartition(0), profile, reader)
 
 
 def test_load_profiles_dummy_core_profiles():
@@ -94,9 +94,9 @@ def test_load_profiles_dummy_core_profiles():
     reader = IMASPyProfiles2DReader()
     reader._ids = ids
     reader.setup_ids()
-    output = vtkMultiBlockDataSet()
+    output = vtkPartitionedDataSetCollection()
     reader._selected = ["Ion Pressure"]
     reader._load_profiles(output)
-    assert output.GetNumberOfBlocks() == 1
+    assert output.GetNumberOfPartitionedDataSets() == 1
     profile = profiles_2d.ion[0].pressure
-    check_ugrid(output.GetBlock(0), profile, reader)
+    check_ugrid(output.GetPartitionedDataSet(0).GetPartition(0), profile, reader)
