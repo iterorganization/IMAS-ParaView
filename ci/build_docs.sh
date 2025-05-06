@@ -1,5 +1,5 @@
 #!/bin/bash
-# Bamboo CI script to build the ggd-vtk docs
+# Bamboo CI script to build the IMAS-Paraview docs
 # Note: this script should be run from the root of the git repository
 
 # Debuggging:
