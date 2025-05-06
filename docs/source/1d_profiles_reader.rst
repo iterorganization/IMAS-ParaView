@@ -36,7 +36,7 @@ Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 Mapping 1D profiles to 2D
 -------------------------
 
-TODO
+For information on how to map 1D profiles to a 2D grid, refer to the section :ref:`using the 1d Profiles Mapper`.
 
 Plotting 1D profiles
 --------------------
