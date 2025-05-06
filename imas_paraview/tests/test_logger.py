@@ -8,7 +8,7 @@ from imas_paraview import VTKHandler
 
 @pytest.fixture
 def mock_output_window():
-    with patch("vtkggdtools.vtkhandler.win") as mock_vtk_win:
+    with patch("imas_paraview.vtkhandler.win") as mock_vtk_win:
         mock_output_window = Mock()
         mock_vtk_win.GetInstance.return_value = mock_output_window
         yield mock_output_window
