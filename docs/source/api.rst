@@ -13,5 +13,5 @@ GGD-VTK
    :recursive:
    :template: custom-module-template.rst
 
-   vtkggdtools
+   imas_paraview
    
