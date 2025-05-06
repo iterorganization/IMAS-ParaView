@@ -1,5 +1,6 @@
 import imaspy
 import pytest
+from imaspy.ids_defs import IDS_TIME_MODE_HOMOGENEOUS
 from imaspy.ids_path import IDSPath
 
 from vtkggdtools.convert import Converter
@@ -20,6 +21,26 @@ def test_ggd_to_vtk(dummy_ids):
 
     vtk_array_names = names_from_vtk(vtk_object)
     assert vtk_array_names == ggd_names
+
+
+def test_ggd_to_vtk_reference(tmp_path):
+    """Test if ggd_to_vtk works with a reference grid."""
+
+    with imaspy.DBEntry(f"{tmp_path}/test.nc", "w") as dbentry:
+        ids = dbentry.factory.new("edge_profiles")
+        fill_ids(ids)
+        dbentry.put(ids)
+        ids2 = dbentry.factory.new("edge_sources")
+        ids2.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
+        ids2.grid_ggd.resize(1)
+        ids2.time = [0]
+
+        converter = Converter(ids2, dbentry=dbentry, ref_lazy=False)
+        assert converter.ggd_to_vtk() is None
+
+        ids2.grid_ggd[0].path = "#edge_profiles/grid_ggd(1)"
+        converter = Converter(ids2, dbentry=dbentry, ref_lazy=False)
+        assert converter.ggd_to_vtk() is not None
 
 
 def test_ggd_to_vtk_index(dummy_ids_five_steps):

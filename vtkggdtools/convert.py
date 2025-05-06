@@ -28,12 +28,15 @@ class InterpSettings:
 
 
 class Converter:
-    def __init__(self, ids):
+    def __init__(self, ids, dbentry=None, ref_lazy=True):
         self.ids = ids
+        self.dbentry = dbentry
+        self.ref_lazy = ref_lazy
         self.time_idx = None
         self.grid_ggd = None
         self.output = None
         self.ps_reader = None
+        self.reference_grid_path = None
         self.get_grids = lru_cache(maxsize=32)(self.get_grids)
 
     def write_to_xml(self, output_path: Path, index_list=[0]):
@@ -97,6 +100,12 @@ class Converter:
 
         self.grid_ggd = get_grid_ggd(self.ids, self.time_idx)
 
+        if self.grid_ggd.path:
+            self.reference_grid_path = self.grid_ggd.path
+            self._replace_grid_with_reference()
+        else:
+            self.reference_grid_path = None
+
         if not self._is_grid_valid():
             return None
 
@@ -113,6 +122,33 @@ class Converter:
         self._fill_grid_and_plasma_state()
 
         return self.output
+
+    def _replace_grid_with_reference(self):
+        """
+        Retrieve the GGD grid from a reference IDS path and replace the current grid.
+        """
+        path = self.grid_ggd.path
+        logger.info(f"Fetching the GGD grid from the reference: '{path}'")
+        path = path.strip("#")
+        ids_name, path = path.split("/", 1)
+        if ids_name not in self.dbentry.factory.ids_names():
+            raise ValueError(f"{ids_name} is not a valid IDS name")
+
+        if not self.dbentry:
+            raise ValueError(
+                "An opened dbentry must be provided if a GGD grid reference is given."
+            )
+
+        ids = self.dbentry.get(
+            ids_name,
+            autoconvert=False,
+            lazy=True,
+            ignore_unknown_dd_version=True,
+        )
+        try:
+            self.grid_ggd = ids[path]
+        except KeyError:
+            raise ValueError(f"{path} does not exist in {ids}.")
 
     def _resolve_time_idx(self, time_idx, time):
         """Resolves the appropriate time index based on the given time index or time
@@ -169,7 +205,14 @@ class Converter:
     def _fill_grid_and_plasma_state(self):
         """Fills the VTK output object with the GGD grid and GGD array values."""
 
-        ugrids = self.get_grids(id(self.grid_ggd), self.plane_config)
+        # If the grid is a reference to another grid, we store it by its path string
+        # Otherwise by ID of the object
+        if self.reference_grid_path:
+            grid_key = str(self.reference_grid_path)
+        else:
+            grid_key = id(self.grid_ggd)
+
+        ugrids = self.get_grids(grid_key, self.plane_config)
         if self.is_jorek:
             self._fill_jorek(ugrids)
         else:
