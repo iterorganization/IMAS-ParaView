@@ -15,7 +15,7 @@ import sphinx_autosummary_accessors
 from jinja2.defaults import DEFAULT_FILTERS
 from packaging.version import Version
 
-import vtkggdtools
+import imas_paraview
 
 print("python exec:", sys.executable)
 print("sys.path:", sys.path)
@@ -53,7 +53,7 @@ extlinks = {
     "src": (blob_url + "%s", f"{src_group}/{src_project}/%s"),
 }
 
-full_version = Version(vtkggdtools.__version__)
+full_version = Version(imas_paraview.__version__)
 
 # version: The major project version, used as the replacement for |version|.
 #   For example, for the Python documentation, this may be something like 2.6.
@@ -254,8 +254,8 @@ htmlhelp_basename = "ggd_vtk_doc"
 # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 autodoc_typehints = "signature"
 
-# The documentation for these external import give errors, so we mock them 
-autodoc_mock_imports = ["vtkmodules", "paraview","vtk"]
+# The documentation for these external import give errors, so we mock them
+autodoc_mock_imports = ["vtkmodules", "paraview", "vtk"]
 
 # Configuration of sphinx.ext.autosummary
 # https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html

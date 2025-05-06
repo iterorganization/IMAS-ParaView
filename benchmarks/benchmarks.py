@@ -2,8 +2,8 @@ from pathlib import Path
 
 import imaspy
 
-from vtkggdtools.convert import Converter
-from vtkggdtools.tests.fill_ggd import fill_ids
+from imas_paraview.convert import Converter
+from imas_paraview.tests.fill_ggd import fill_ids
 
 SIZE_GRID = 10
 
