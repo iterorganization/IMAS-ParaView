@@ -1,5 +1,5 @@
 #!/bin/bash
-# Bamboo CI script to install vtkggdtools and run all benchmarks
+# Bamboo CI script to install imas_paraview and run all benchmarks
 # Note: this script should be run from the root of the git repository
 
 # Debuggging:

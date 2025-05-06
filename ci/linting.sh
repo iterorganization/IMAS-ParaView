@@ -25,6 +25,6 @@ python -m venv venv
 # Install and run linters
 pip install --upgrade .[linting]
 
-black --check vtkggdtools
-isort --check-only vtkggdtools
-flake8 vtkggdtools
+black --check imas_paraview
+isort --check-only imas_paraview
+flake8 imas_paraview
