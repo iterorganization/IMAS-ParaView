@@ -88,14 +88,17 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
             if not time_idx < len(self._ids.time_slice):
                 logger.error(f"There is no profiles_2d at time step {time_idx}")
                 return
-            profiles_2d = self._ids.time_slice[time_idx].profiles_2d
+            for profile in self._ids.time_slice[time_idx].profiles_2d:
+                self._search_valid_profile(profile)
+                # Exit once a valid profiles_2d node has been found
+                if self._filled_profiles:
+                    break
         else:
             if not time_idx < len(self._ids.profiles_2d):
                 logger.error(f"There is no profiles_2d at time step {time_idx}")
                 return
-            profiles_2d = self._ids.profiles_2d[time_idx]
-
-        self._search_valid_profile(profiles_2d)
+            profile = self._ids.profiles_2d[time_idx]
+            self._search_valid_profile(profile)
 
         if not self._filled_profiles:
             logger.error("Could not find a valid profiles_2d node.")
@@ -106,44 +109,44 @@ class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         else:
             self._selectable = self._get_selectable_profiles(self._filled_profiles)
 
-    def _search_valid_profile(self, profiles_2d):
+    def _search_valid_profile(self, profile):
         """Looks for valid profiles within a profiles_2d node and stores them into a
         list.
 
         Args:
-            profiles_2d: The profiles_2d node at a specific time step.
+            profile: The profile node at a specific time step.
         """
-        for profile in profiles_2d:
-            self.r = np.array([])
-            self.z = np.array([])
-            self._filled_profiles = []
-            self._all_profiles = []
+        self.r = np.array([])
+        self.z = np.array([])
+        self._filled_profiles = []
+        self._all_profiles = []
 
-            if profile.r.has_value and profile.r.shape == profile.z.shape:
-                # Use the 2D R and Z arrays to construct the grid
-                self.r = profile.r
-                self.z = profile.z
-            else:
-                # Check if this is a rectangular grid, and use dim1/dim2
-                grid_type = profile.grid_type.index
-                if grid_type != 1:
-                    logger.debug(
-                        f"Found a grid type with identifier index of {grid_type}. "
-                        "Only rectangular profiles (index = 1) are supported."
-                    )
-                    continue
-                self.r = np.tile(profile.grid.dim1, (len(profile.grid.dim2), 1))
-                self.z = np.tile(profile.grid.dim2, (len(profile.grid.dim1), 1)).T
+        if (
+            hasattr(profile, "r")
+            and hasattr(profile, "z")
+            and profile.r.has_value
+            and profile.r.shape == profile.z.shape
+        ):
+            # Use the 2D R and Z arrays to construct the grid
+            self.r = profile.r
+            self.z = profile.z
+        else:
+            # Check if this is a rectangular grid, and use dim1/dim2
+            grid_type = profile.grid_type.index
+            if grid_type != 1:
+                logger.debug(
+                    f"Found a grid type with identifier index of {grid_type}. "
+                    "Only rectangular profiles (index = 1) are supported."
+                )
+                return
+            self.r = np.tile(profile.grid.dim1, (len(profile.grid.dim2), 1))
+            self.z = np.tile(profile.grid.dim2, (len(profile.grid.dim1), 1)).T
 
-            # If the grid is not filled, continue to the next profiles_2d
-            if len(self.r) == 0 or len(self.z) == 0:
-                continue
+        # If the grid is not filled, continue to the next profiles_2d
+        if len(self.r) == 0 or len(self.z) == 0:
+            return
 
-            self._recursively_find_profiles(profile)
-
-            # Exit once a valid profiles_2d node has been found
-            if self._filled_profiles:
-                break
+        self._recursively_find_profiles(profile)
 
     def setup_ids(self):
         """

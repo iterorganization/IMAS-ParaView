@@ -1,12 +1,14 @@
+import imaspy
 import numpy as np
 from imaspy import DBEntry
+from imaspy.backends.imas_core.db_entry_helpers import IDS_TIME_MODE_HOMOGENEOUS
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkPartitionedDataSetCollection
 
 from vtkggdtools.plugins.profiles_2d import IMASPyProfiles2DReader
 
 
-def test_load_2d_profiles():
+def test_load_profiles():
     """Test if 2D profiles structures are loaded in the VTK
     PartitionedDatasetCollection."""
     reader = IMASPyProfiles2DReader()
@@ -53,3 +55,48 @@ def check_ugrid(ugrid, expected_profile, reader):
     assert np.array_equal(expected_profile.ravel(), scalars_array)
     assert np.array_equal(reader.r.ravel(), r_vtk)
     assert np.array_equal(reader.z.ravel(), z_vtk)
+
+
+def test_load_profiles_dummy_equilibrium():
+    ids = imaspy.IDSFactory(version="4.0.0").new("equilibrium")
+    ids.time = [0]
+    ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
+    ids.time_slice.resize(1)
+    ids.time_slice[0].profiles_2d.resize(1)
+    profiles_2d = ids.time_slice[0].profiles_2d[0]
+    profiles_2d.r = np.array([[1.1, 2.2], [3.3, 4.4]])
+    profiles_2d.z = np.array([[5.5, 6.6], [7.7, 8.8]])
+    profiles_2d.psi = np.array([[10.1, 10.2], [10.3, 10.4]])
+
+    reader = IMASPyProfiles2DReader()
+    reader._ids = ids
+    reader.setup_ids()
+    output = vtkMultiBlockDataSet()
+    reader._selected = ["Psi"]
+    reader._load_profiles(output)
+    assert output.GetNumberOfBlocks() == 1
+    profile = ids.time_slice[0].profiles_2d[0].psi
+    check_ugrid(output.GetBlock(0), profile, reader)
+
+
+def test_load_profiles_dummy_core_profiles():
+    ids = imaspy.IDSFactory(version="4.0.0").new("core_profiles")
+    ids.time = [0]
+    ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
+    ids.profiles_2d.resize(1)
+    ids.profiles_2d[0].ion.resize(1)
+    profiles_2d = ids.profiles_2d[0]
+    profiles_2d.grid.dim1 = [1, 2]
+    profiles_2d.grid.dim2 = [3, 4]
+    profiles_2d.grid_type = 1
+    profiles_2d.ion[0].pressure = np.array([[10.1, 10.2], [10.3, 10.4]])
+
+    reader = IMASPyProfiles2DReader()
+    reader._ids = ids
+    reader.setup_ids()
+    output = vtkMultiBlockDataSet()
+    reader._selected = ["Ion Pressure"]
+    reader._load_profiles(output)
+    assert output.GetNumberOfBlocks() == 1
+    profile = profiles_2d.ion[0].pressure
+    check_ugrid(output.GetBlock(0), profile, reader)
