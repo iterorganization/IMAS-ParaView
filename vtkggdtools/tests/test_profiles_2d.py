@@ -53,4 +53,3 @@ def check_ugrid(ugrid, expected_profile, reader):
     assert np.array_equal(expected_profile.ravel(), scalars_array)
     assert np.array_equal(reader.r.ravel(), r_vtk)
     assert np.array_equal(reader.z.ravel(), z_vtk)
-    assert np.array_equal(reader.z.ravel(), z_vtk)
