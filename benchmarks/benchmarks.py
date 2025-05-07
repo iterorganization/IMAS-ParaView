@@ -45,7 +45,7 @@ class ConvertHDF5:
 
 
 class ConvertMDSPlus:
-    timeout = 120
+    timeout = 200
 
     def setup(self):
         es = imas.IDSFactory().edge_profiles()
