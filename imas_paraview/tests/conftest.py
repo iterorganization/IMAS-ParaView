@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-import imaspy
+import imas
 import pytest
 
 from imas_paraview.plugins.vtkggdreader import SUPPORTED_IDS_NAMES
@@ -47,15 +47,15 @@ def pytest_sessionstart(session):
     set_environment()
 
     # Generate test data
-    ids = imaspy.IDSFactory(version="3.42.0").new("edge_profiles")
+    ids = imas.IDSFactory(version="3.42.0").new("edge_profiles")
     fill_ids(ids, time_steps=10, grid_size=5)
 
     # Write test file as MDSPlus
-    with imaspy.DBEntry("imas:mdsplus?path=mdsplus_testdb", "w") as dbentry:
+    with imas.DBEntry("imas:mdsplus?path=mdsplus_testdb", "w") as dbentry:
         dbentry.put(ids)
 
     # Write test file as HDF5
-    with imaspy.DBEntry("imas:hdf5?path=hdf5_testdb", "w") as dbentry:
+    with imas.DBEntry("imas:hdf5?path=hdf5_testdb", "w") as dbentry:
         dbentry.put(ids)
 
     print("Test environment setup complete.")
@@ -73,7 +73,7 @@ def dummy_ids(ids_name):
     """Creates a dummy IDS object with a dummy grid and random GGD values for
     testing purposes."""
 
-    ids = imaspy.IDSFactory().new(ids_name)
+    ids = imas.IDSFactory().new(ids_name)
     fill_ids(ids)
     ids.validate()
     return ids
@@ -84,7 +84,7 @@ def dummy_ids_five_steps(ids_name):
     """Creates a dummy IDS object containing five time steps with a dummy grid and
     random GGD values for testing purposes."""
 
-    ids = imaspy.IDSFactory().new(ids_name)
+    ids = imas.IDSFactory().new(ids_name)
     fill_ids(ids, time_steps=5)
     ids.validate()
     return ids

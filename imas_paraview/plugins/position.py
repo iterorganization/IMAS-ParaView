@@ -1,10 +1,10 @@
-"""IMASPy plugin to view positional data of barometry gauges and embedded langmuir
+"""imas plugin to view positional data of barometry gauges and embedded langmuir
 probes."""
 
 import logging
 from dataclasses import dataclass
 
-from imaspy.ids_structure import IDSStructArray, IDSStructure
+from imas.ids_structure import IDSStructArray, IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import vtkPolyData

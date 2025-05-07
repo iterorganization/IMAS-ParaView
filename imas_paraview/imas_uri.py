@@ -1,15 +1,14 @@
-"""Helper functions for generating IMAS URIs.
-"""
+"""Helper functions for generating IMAS URIs."""
 
 from pathlib import Path
 from typing import Optional
 
-import imaspy
+import imas
 
 BACKENDS = {
-    imaspy.ids_defs.MDSPLUS_BACKEND: "mdsplus",
-    imaspy.ids_defs.HDF5_BACKEND: "hdf5",
-    imaspy.ids_defs.ASCII_BACKEND: "ascii",
+    imas.ids_defs.MDSPLUS_BACKEND: "mdsplus",
+    imas.ids_defs.HDF5_BACKEND: "hdf5",
+    imas.ids_defs.ASCII_BACKEND: "ascii",
 }
 """Mapping of backend ID to the backend string used in the URI."""
 

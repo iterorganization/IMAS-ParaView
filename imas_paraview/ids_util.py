@@ -1,6 +1,6 @@
-import imaspy
-from imaspy.ids_data_type import IDSDataType
-from imaspy.ids_toplevel import IDSToplevel
+import imas
+from imas.ids_data_type import IDSDataType
+from imas.ids_toplevel import IDSToplevel
 
 from imas_paraview._ids_util import _get_nodes_from_path
 
@@ -140,9 +140,9 @@ def create_name_recursive(node):
         else:
             name = name_current_node.capitalize()
 
-    parent = imaspy.util.get_parent(node)
+    parent = imas.util.get_parent(node)
     if parent.metadata is node.metadata:
-        parent = imaspy.util.get_parent(parent)
+        parent = imas.util.get_parent(parent)
     if not isinstance(parent, IDSToplevel):
         name = f"{create_name_recursive(parent)} {name}"
 

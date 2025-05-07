@@ -1,4 +1,4 @@
-from imaspy import DBEntry
+from imas import DBEntry
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
 from imas_paraview.plugins.beam import IMASPyBeamReader

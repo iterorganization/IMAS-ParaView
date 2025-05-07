@@ -1,6 +1,6 @@
-import imaspy
+import imas
 import pytest
-from imaspy.ids_path import IDSPath
+from imas.ids_path import IDSPath
 from vtkmodules.vtkCommonCore import vtkPoints
 
 from imas_paraview.io.read_geom import (
@@ -32,7 +32,7 @@ def test_read_plasma_state(ids_name, dummy_ids):
 
 
 def test_create_name_with_units():
-    ids = imaspy.IDSFactory(version="3.40.0").new("edge_sources")
+    ids = imas.IDSFactory(version="3.40.0").new("edge_sources")
     ps_reader = PlasmaStateReader(ids)
 
     # Resize relevant structures
@@ -53,7 +53,7 @@ def test_create_name_with_units():
 
 def test_load_paths_from_ids_empty():
     """Test if load_paths_from_ids returns empty lists if no GGDs are filled"""
-    ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
+    ids = imas.IDSFactory(version="3.41.0").new("edge_sources")
     ps_reader = PlasmaStateReader(ids)
 
     _, _, scalar_array_paths, vector_array_paths = ps_reader.load_paths_from_ids()
@@ -65,7 +65,7 @@ def test_load_paths_from_ids_empty():
 
 def test_load_paths_from_ids_filled():
     """Test if load_paths_from_ids returns filled GGD paths"""
-    ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
+    ids = imas.IDSFactory(version="3.41.0").new("edge_sources")
     ps_reader = PlasmaStateReader(ids)
 
     ids.source.resize(1)
@@ -86,7 +86,7 @@ def test_load_paths_from_ids_filled():
 
 def test_load_paths_from_ids_empty_first():
     """Test if load_paths_from_ids handles first entry in IDSStructure being empty"""
-    ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
+    ids = imas.IDSFactory(version="3.41.0").new("edge_sources")
     ps_reader = PlasmaStateReader(ids)
 
     ids.source.resize(1)
@@ -108,7 +108,7 @@ def test_load_paths_from_ids_empty_first():
 
 def test_load_paths_from_ids_all():
     """Test if load_paths_from_ids returns all GGD paths with return_empty flag"""
-    ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
+    ids = imas.IDSFactory(version="3.41.0").new("edge_sources")
     ps_reader = PlasmaStateReader(ids)
 
     # Only load filled GGD array paths
@@ -144,7 +144,7 @@ def test_load_paths_from_ids_all():
 
 def test_load_paths_from_ids_multiple_timesteps():
     """Test load_paths_from_ids when GGD contains multiple time steps"""
-    ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
+    ids = imas.IDSFactory(version="3.41.0").new("edge_sources")
     ps_reader = PlasmaStateReader(ids)
 
     ids.source.resize(1)

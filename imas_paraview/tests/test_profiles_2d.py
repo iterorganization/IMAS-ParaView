@@ -1,7 +1,7 @@
-import imaspy
+import imas
 import numpy as np
-from imaspy import DBEntry
-from imaspy.backends.imas_core.db_entry_helpers import IDS_TIME_MODE_HOMOGENEOUS
+from imas import DBEntry
+from imas.backends.imas_core.db_entry_helpers import IDS_TIME_MODE_HOMOGENEOUS
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkPartitionedDataSetCollection
 
@@ -58,7 +58,7 @@ def check_ugrid(ugrid, expected_profile, reader):
 
 
 def test_load_profiles_dummy_equilibrium():
-    ids = imaspy.IDSFactory(version="4.0.0").new("equilibrium")
+    ids = imas.IDSFactory(version="4.0.0").new("equilibrium")
     ids.time = [0]
     ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
     ids.time_slice.resize(1)
@@ -80,7 +80,7 @@ def test_load_profiles_dummy_equilibrium():
 
 
 def test_load_profiles_dummy_core_profiles():
-    ids = imaspy.IDSFactory(version="4.0.0").new("core_profiles")
+    ids = imas.IDSFactory(version="4.0.0").new("core_profiles")
     ids.time = [0]
     ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
     ids.profiles_2d.resize(1)

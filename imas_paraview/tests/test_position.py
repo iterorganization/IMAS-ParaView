@@ -1,6 +1,6 @@
-import imaspy
+import imas
 import numpy as np
-from imaspy import DBEntry
+from imas import DBEntry
 from vtkmodules.vtkCommonDataModel import vtkPolyData
 
 from imas_paraview.plugins.position import IMASPyPositionReader
@@ -36,7 +36,7 @@ def test_load_position_magnetics():
 
 def test_load_position_barometry():
     """Test if positions of gauges of barometry IDS are saved into vtkPolyData."""
-    ids = imaspy.IDSFactory().barometry()
+    ids = imas.IDSFactory().barometry()
     ids.gauge.resize(2)
 
     r1 = 1.1
@@ -79,7 +79,7 @@ def test_load_position_barometry():
 
 def test_load_position_langmuir_probes():
     """Test if positions of embedded langmuir probes are saved into vtkPolyData."""
-    ids = imaspy.IDSFactory().langmuir_probes()
+    ids = imas.IDSFactory().langmuir_probes()
     ids.embedded.resize(2)
 
     r1 = 1.1

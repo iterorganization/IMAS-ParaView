@@ -1,8 +1,8 @@
 import logging
 
 import numpy as np
-from imaspy.ids_data_type import IDSDataType
-from imaspy.ids_struct_array import IDSStructArray
+from imas.ids_data_type import IDSDataType
+from imas.ids_struct_array import IDSStructArray
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDoubleArray
 from vtkmodules.vtkCommonDataModel import vtkCellData, vtkPointData, vtkUnstructuredGrid

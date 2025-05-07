@@ -1,7 +1,7 @@
-import imaspy
+import imas
 import pytest
-from imaspy.ids_defs import IDS_TIME_MODE_HOMOGENEOUS
-from imaspy.ids_path import IDSPath
+from imas.ids_defs import IDS_TIME_MODE_HOMOGENEOUS
+from imas.ids_path import IDSPath
 
 from imas_paraview.convert import Converter
 from imas_paraview.io.read_ps import PlasmaStateReader
@@ -23,15 +23,10 @@ def test_ggd_to_vtk(dummy_ids):
     assert vtk_array_names == ggd_names
 
 
-# TODO: remove expected fail mark when we switch from IMASPy to IMAS-Python
-@pytest.mark.xfail(
-    reason="The latest version of IMASPy does not allow lazy loading for netcdf files.",
-    strict=True,
-)
 def test_ggd_to_vtk_reference(tmp_path):
     """Test if ggd_to_vtk works with a reference grid."""
 
-    with imaspy.DBEntry(f"{tmp_path}/test.nc", "w") as dbentry:
+    with imas.DBEntry(f"{tmp_path}/test.nc", "w") as dbentry:
         ids = dbentry.factory.new("edge_profiles")
         fill_ids(ids)
         dbentry.put(ids)
@@ -86,7 +81,7 @@ def test_ggd_to_vtk_out_of_bounds(dummy_ids_five_steps):
 
 def test_ggd_to_vtk_subset():
     """Test for conversion of a subset of GGD arrays."""
-    ids = imaspy.IDSFactory(version="3.41.0").new("edge_profiles")
+    ids = imas.IDSFactory(version="3.41.0").new("edge_profiles")
     fill_ids(ids)
 
     # Convert subset of filled paths

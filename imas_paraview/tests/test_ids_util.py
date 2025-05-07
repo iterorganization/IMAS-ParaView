@@ -1,6 +1,6 @@
-import imaspy
+import imas
 import pytest
-from imaspy.ids_path import IDSPath
+from imas.ids_path import IDSPath
 
 from imas_paraview.ids_util import (
     create_name_recursive,
@@ -13,7 +13,7 @@ from imas_paraview.tests.fill_ggd import fill_scalar_quantity, fill_vector_quant
 @pytest.fixture
 def ids_fixture():
     """Creates a dummy IDS with 4 time steps"""
-    ids = imaspy.IDSFactory().new("edge_sources")
+    ids = imas.IDSFactory().new("edge_sources")
     ids.time = [1.1, 2.2, 3.3, 4.4]
     num_timesteps = len(ids.time)
     ids.source.resize(1)
@@ -92,7 +92,7 @@ def test_get_arrays_from_ids_not_defined_timesteps(ids_fixture):
 
 def test_recursive_ggd_path_search():
     """Test if recursive_ggd_path_search returns all GGD array paths"""
-    ids = imaspy.IDSFactory(version="3.41.0").new("edge_sources")
+    ids = imas.IDSFactory(version="3.41.0").new("edge_sources")
 
     es_scalar_v3_41 = [
         IDSPath("source/ggd/electrons/particles"),
@@ -124,7 +124,7 @@ def test_recursive_ggd_path_search():
 
 
 def test_create_name_recursive_ggd():
-    ids = imaspy.IDSFactory(version="3.40.0").new("edge_sources")
+    ids = imas.IDSFactory(version="3.40.0").new("edge_sources")
 
     # Resize relevant structures
     ids.source.resize(1)
@@ -143,7 +143,7 @@ def test_create_name_recursive_ggd():
 
 
 def test_create_name_recursive_profiles():
-    ids = imaspy.IDSFactory(version="3.40.0").new("core_profiles")
+    ids = imas.IDSFactory(version="3.40.0").new("core_profiles")
 
     ids.profiles_1d.resize(1)
     phi_potential = ids.profiles_1d[0].phi_potential

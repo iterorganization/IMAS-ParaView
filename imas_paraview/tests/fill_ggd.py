@@ -1,6 +1,6 @@
 import logging
 
-import imaspy
+import imas
 import numpy as np
 
 from imas_paraview.ids_util import get_arrays_from_ids
@@ -384,14 +384,14 @@ def fill_ids(ids, time_steps=1, grid_size=2):
     else:
         # Create time steps
         ids.time = [float(t) for t in range(time_steps)]
-        ids.ids_properties.homogeneous_time = imaspy.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
+        ids.ids_properties.homogeneous_time = imas.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
 
         # Create grid and GGD AoS
-        grid_ggd_aos = imaspy.util.get_parent(grid_ggd)
+        grid_ggd_aos = imas.util.get_parent(grid_ggd)
 
         grid_ggd_aos.resize(time_steps)
         ggd = create_first_ggd(ids)
-        ggd_aos = imaspy.util.get_parent(ggd)
+        ggd_aos = imas.util.get_parent(ggd)
         ggd_aos.resize(time_steps)
 
         # Create uniform grids and fill them with random GGD data
