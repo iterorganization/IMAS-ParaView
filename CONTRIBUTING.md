@@ -9,7 +9,7 @@ Please first make sure you read and follow the
 ## You think you found a bug in the code, or have a question in its use
 1. use the [issue search](https://github.com/iterorganization/IMAS-Paraview/issues)
 to check if someone already created a similar issue;
-2. if not, make a **new issue** to describe your problem or question. 
+2. if not, make a [new issue](https://github.com/iterorganization/IMAS-Paraview/issues/new/choose) to describe your problem or question. 
 In the case of a bug suspiscion, please try to give all the relevant 
 information to allow reproducing the error or identifying 
 its root cause (version of the IMAS-Paraview, OS and relevant 
