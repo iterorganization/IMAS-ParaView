@@ -1,5 +1,5 @@
-# VTKGGDTools
-IMAS GGD-VTK is a tool to convert GGD ([Generalized Grid Description](https://imas-data-dictionary.readthedocs.io/en/latest/ggd_guide/doc.html)) 
+# IMAS-Paraview
+IMAS-Paraview is a tool to convert GGD ([Generalized Grid Description](https://imas-data-dictionary.readthedocs.io/en/latest/ggd_guide/doc.html)) 
 structures to VTK formats, and back. This is complemented by a number of Paraview plugins that can visualise both GGD and non-GGD IDS data in Paraview. 
 
 For an overview of the different types of IDS data that can be loaded, see the [documentation](https://sharepoint.iter.org/departments/POP/CM/IMDesign/Code%20Documentation/GGD-VTK/usage.html).

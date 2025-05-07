@@ -1,11 +1,12 @@
 .. _`installing`:
 
-Installing GGD-VTK
-==================
+Installing IMAS-Paraview
+========================
 
-If the GGD-VTK module is available on your HPC environment, you can ignore the further 
+If the IMAS-Paraview module is available on your HPC environment, you can ignore the further 
 steps below and simply load the module as follows:
 
+# TODO: Change module name when new IMAS-Paraview easybuild module is available
 .. code-block:: bash
 
   module load GGD-VTK
@@ -14,7 +15,7 @@ steps below and simply load the module as follows:
   # Open the "Sources" tab in the top left, and ensure you see "IMAS Tools" in 
   # the drop down menu.
   # The command-line interface can be started using:
-  vtkggdtools --help
+  imas-paraview --help
 
 
 SDCC installation
@@ -40,7 +41,7 @@ SDCC installation
   IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
   # export environment variables, this assumes the current
   # working directory is the root of the repository
-  export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH
+  export PV_PLUGIN_PATH=$PWD/imas_paraview/plugins:$PV_PLUGIN_PATH
   export PYTHONPATH=$PWD:$PYTHONPATH
   # Run paraview
   paraview
@@ -62,8 +63,8 @@ SDCC installation
   # For development install in editable mode
   pip install -e .[all]
   # Run CLI with help information
-  vtkggdtools --help
-  # If you see the help page of the vtkggdtools, it is installed correctly.
+  imas-paraview --help
+  # If you see the help page of IMAS-Paraview, it is installed correctly.
 
 * Every time that a new session is started, ensure the correct modules are loaded, 
   the python virtual environment is activated, and the environment variables are set.
@@ -74,12 +75,12 @@ SDCC installation
   module load IMASPy/1.1.1-foss-2023b \
   IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
   # Export the environment variables
-  export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH
+  export PV_PLUGIN_PATH=$PWD/imas_paraview/plugins:$PV_PLUGIN_PATH
   export PYTHONPATH=$PWD:$PYTHONPATH
   # And activate the Python virtual environment
   . venv/bin/activate
   # Validate if it is working as intended
-  vtkggdtools --version
+  imas-paraview --version
 
 * To run the unit and integration tests, make sure the install is working using the 
   code block above. Also ensure the optional test dependencies are pip installed (or 
@@ -93,7 +94,7 @@ SDCC installation
   # Alternatively, if you want to skip running the integration tests
   python -m pytest -m "not integration"
 
-* To build the GGD-VTK documentation, ensure the optional docs dependencies are pip 
+* To build the IMAS-Paraview documentation, ensure the optional docs dependencies are pip 
   installed (or simply use all, to install all optional dependencies).
 
 .. code-block:: bash

@@ -22,8 +22,8 @@ print("sys.path:", sys.path)
 
 # -- Project information -----------------------------------------------------
 # The documented project’s name
-project = src_project = PROJECT = "ggd-vtk"
-PACKAGE = "ggd_vtk"
+project = src_project = PROJECT = "imas-paraview"
+PACKAGE = "imas_paraview"
 src_group = GROUP = "IMEX"
 
 # A copyright statement in the style '2008, Author Name'.
@@ -40,7 +40,7 @@ imas_repos = urljoin(iter_projects, "IMAS/")
 imex_repos = urljoin(iter_projects, "IMEX/")
 issue_url = jira_url = "https://jira.iter.org/browse/"
 
-# GGD-VTK
+# IMAS-Paraview
 repository_url = f"{iter_projects}/{src_group}/repos/{src_project}/"
 blob_url = urljoin(repository_url, "browse/")
 mr_url = urljoin(repository_url, "/pull-requests")
