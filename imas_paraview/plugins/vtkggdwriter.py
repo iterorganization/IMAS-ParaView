@@ -22,7 +22,7 @@ from imas_paraview.io import write_geom, write_ps
 from imas_paraview.io.representables import GridSubsetRepresentable
 from imas_paraview.util import FauxIndexMap, create_first_grid
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 
 
 _ggd_types_xml = "".join(
@@ -151,7 +151,7 @@ class GGDWriter(VTKPythonAlgorithmBase):
         ids_obj.ids_properties.provider = getpass.getuser()
         ids_obj.ids_properties.creation_date = str(datetime.datetime.today())
 
-        ids_obj.code.name = "VTKGGDTools"
+        ids_obj.code.name = "IMAS-Paraview"
         ids_obj.code.version = get_versions()["version"]
         ids_obj.code.commit = get_versions()["full-revisionid"]
         ids_obj.code.repository = "https://git.iter.org/scm/imex/ggd-vtk.git"

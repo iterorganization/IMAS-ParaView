@@ -16,7 +16,7 @@ from imas_paraview.ids_util import (
 # We'll need these below when we create some units manually:
 from imas_paraview.util import format_units
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 u_pre = "["
 u_post = "]"
 

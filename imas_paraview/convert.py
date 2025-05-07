@@ -14,7 +14,7 @@ from vtkmodules.vtkCommonDataModel import (
 from imas_paraview.io import read_geom, read_jorek, read_ps
 from imas_paraview.util import find_closest_indices, get_grid_ggd
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 
 
 # Make dataclass frozen so that it is hashable, which is required for grid caching

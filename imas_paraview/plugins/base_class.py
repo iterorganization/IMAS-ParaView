@@ -25,7 +25,7 @@ from imas_paraview.paraview_support.servermanager_tools import (
     stringvector,
 )
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 
 BACKENDS = {
     "MDSplus": imas.ids_defs.MDSPLUS_BACKEND,

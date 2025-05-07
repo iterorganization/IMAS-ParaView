@@ -7,7 +7,7 @@ import pytest
 ROOT_DIRECTORY = Path(__file__).resolve().parents[3]
 TEST_DIRECTORY = (
     ROOT_DIRECTORY
-    / "vtkggdtools"
+    / "imas_paraview"
     / "tests"
     / "integration_tests"
     / "xml_integration_tests"
@@ -60,7 +60,7 @@ def test_xvfb_pass():
     """Test a passing integration test, by testing an empty XML."""
     test_passed = run_test(
         ROOT_DIRECTORY
-        / "vtkggdtools"
+        / "imas_paraview"
         / "tests"
         / "integration_tests"
         / "xml_xvfb_tests"
@@ -74,7 +74,7 @@ def test_xvfb_fail():
     """Test failing integration test."""
     test_passed = run_test(
         ROOT_DIRECTORY
-        / "vtkggdtools"
+        / "imas_paraview"
         / "tests"
         / "integration_tests"
         / "xml_xvfb_tests"

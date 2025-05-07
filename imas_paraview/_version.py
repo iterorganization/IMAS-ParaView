@@ -52,7 +52,7 @@ def get_config() -> VersioneerConfig:
     cfg.style = "pep440"
     cfg.tag_prefix = ""
     cfg.parentdir_prefix = ""
-    cfg.versionfile_source = "vtkggdtools/_version.py"
+    cfg.versionfile_source = "imas_paraview/_version.py"
     cfg.verbose = False
     return cfg
 

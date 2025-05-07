@@ -13,7 +13,7 @@ from imas_paraview.paraview_support.servermanager_tools import (
 )
 from imas_paraview.progress import Progress
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 
 
 @smproxy.filter(label="1D Profiles Mapper")

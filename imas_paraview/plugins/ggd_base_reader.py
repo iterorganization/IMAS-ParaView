@@ -7,7 +7,7 @@ from imas_paraview.io import read_ps
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.progress import Progress
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 
 
 class GGDBaseReader(GGDVTKPluginBase):

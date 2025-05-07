@@ -16,7 +16,7 @@ from imas_paraview.paraview_support.servermanager_tools import (
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import find_closest_indices, points_to_vtkpoly, pol_to_cart
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 
 
 @dataclass

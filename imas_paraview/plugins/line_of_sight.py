@@ -21,7 +21,7 @@ from imas_paraview.paraview_support.servermanager_tools import (
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import pol_to_cart
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 
 SUPPORTED_LINE_OF_SIGHT_IDS = [
     "bolometer",

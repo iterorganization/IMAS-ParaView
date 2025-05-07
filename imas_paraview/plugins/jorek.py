@@ -6,7 +6,7 @@ from paraview.util.vtkAlgorithm import smhint, smproxy
 
 from imas_paraview.plugins.ggd_base_reader import GGDBaseReader
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 
 
 SUPPORTED_IDS_NAMES = [

@@ -14,7 +14,7 @@ from imas_paraview.ids_util import create_name_recursive, get_object_by_name
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import find_closest_indices
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 
 PROFILES_1D_IDS_NAMES = ["core_profiles", "core_sources"]
 

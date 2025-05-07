@@ -12,7 +12,7 @@ from vtkmodules.util import numpy_support as npvtk
 from vtkmodules.util.vtkConstants import VTK_DOUBLE
 from vtkmodules.vtkCommonDataModel import vtkUnstructuredGrid
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 
 prec = np.float64
 vtk_prec = VTK_DOUBLE

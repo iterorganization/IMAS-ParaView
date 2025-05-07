@@ -6,7 +6,7 @@ import numpy as np
 from imas_paraview.ids_util import get_arrays_from_ids
 from imas_paraview.util import create_first_ggd, create_first_grid, int32array
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 
 
 def fill_NxN_grid(grid_ggd, N):

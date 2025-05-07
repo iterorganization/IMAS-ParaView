@@ -20,10 +20,10 @@ def set_environment():
     # Update PV_PLUGIN_PATH
     pv_plugin_path = os.environ.get("PV_PLUGIN_PATH")
     if pv_plugin_path is None:
-        os.environ["PV_PLUGIN_PATH"] = f"{current_path}/vtkggdtools/plugins"
+        os.environ["PV_PLUGIN_PATH"] = f"{current_path}/imas_paraview/plugins"
     else:
         os.environ["PV_PLUGIN_PATH"] = (
-            f"{current_path}/vtkggdtools/plugins:{pv_plugin_path}"
+            f"{current_path}/imas_paraview/plugins:{pv_plugin_path}"
         )
 
     # Update PYTHONPATH

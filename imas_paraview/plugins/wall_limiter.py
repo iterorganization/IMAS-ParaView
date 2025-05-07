@@ -11,7 +11,7 @@ from imas_paraview.ids_util import get_object_by_name
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import points_to_vtkpoly
 
-logger = logging.getLogger("vtkggdtools")
+logger = logging.getLogger("imas_paraview")
 
 
 @dataclass
