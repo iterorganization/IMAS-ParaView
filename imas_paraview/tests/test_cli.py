@@ -18,7 +18,7 @@ def test_version():
 
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
-    assert "vtkggdtools version:" in result.output
+    assert "IMAS-Paraview version:" in result.output
     assert "IMASPy version:" in result.output
     assert "Default data dictionary version:" in result.output
     assert "Available data dictionary versions:" in result.output

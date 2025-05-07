@@ -27,15 +27,15 @@ def _excepthook(type_, value, tb):
     console.Console(stderr=True).print(rich_tb)
 
 
-@click.group("vtkggdtools", invoke_without_command=True, no_args_is_help=True)
+@click.group("imas-paraview", invoke_without_command=True, no_args_is_help=True)
 @click.option("-v", "--version", is_flag=True, help="Show version information")
 def cli(version):
-    """vtkggdtools command line interface.
+    """IMAS-Paraview command line interface.
 
     Please use one of the available commands listed below. You can get help for each
     command by executing:
 
-        vtkggdtools <command> --help
+        imas-paraview <command> --help
     """
     # Limit the traceback to 1 item: avoid scaring CLI users with long traceback prints
     # and let them focus on the actual error message
@@ -46,15 +46,15 @@ def cli(version):
 
 
 def print_version():
-    """Print version information of vtkggdtools."""
+    """Print version information of IMAS-Paraview."""
     cons = console.Console()
     grid = Table(
-        title="vtkggdtools version info", show_header=False, title_style="bold"
+        title="IMAS-Paraview version info", show_header=False, title_style="bold"
     )
     grid.box = box.HORIZONTALS
     if cons.size.width > 120:
         grid.width = 120
-    grid.add_row("vtkggdtools version:", imas_paraview.__version__)
+    grid.add_row("IMAS-Paraview version:", imas_paraview.__version__)
     grid.add_section()
     grid.add_row("IMASPy version:", imaspy.__version__)
     grid.add_section()
@@ -121,37 +121,37 @@ def convert_ggd_to_vtk(
 
      \b
      To convert the middle time step (default), no time options need to be given:
-         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir
+         $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir
      \b
      To convert all time slices in the IDS:
-         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -a
+         $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -a
      \b
      To convert occurrence number 1 (default=0):
-         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles:1 test_dir
+         $ ggd2vtk imas:hdf5?path=testdb#edge_profiles:1 test_dir
 
     Index-based slicing:
 
      \b
      To convert index 5:
-         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 5
+         $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 5
      \b
      To convert indices 5, 8, and 9:
-         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 5,8,9
+         $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 5,8,9
      \b
      To convert a range of indices, such as 2,3,4,5,6:
-         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 2:6
+         $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 2:6
 
     Time-based slicing:
 
      \b
      To convert time step at 5.5s:
-         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 5.5
+         $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 5.5
      \b
      To convert time steps 5.5s, 8s, and 9.1s:
-         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 5.5,8,9.1
+         $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 5.5,8,9.1
      \b
      To convert all time steps that fall between 2.2s and 6.6s:
-         $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 2.2:6.6
+         $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 2.2:6.6
 
         \b
         Note: If the specified time step is not found in the IDS, the closest earlier

@@ -3,9 +3,9 @@ requires = ["setuptools>=61", "wheel", "tomli;python_version<'3.11'", "versionee
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "vtkggdtools"
+name = "IMAS-Paraview"
 authors = [
-    {name = "vtkggdtools developers"},
+    {name = "IMAS-Paraview developers"},
     {name = "Panchumarti Jaswant EXT", email = "jaswant.panchumarti@iter.org"},
     {name = "Olivier Hoenen", email = "olivier.hoenen@iter.org"},
 ]
@@ -26,7 +26,7 @@ dependencies = [
 
 [project.optional-dependencies]
 all = [
-    "vtkggdtools[docs,test,linting,benchmark]"
+    "imas_paraview[docs,test,linting,benchmark]"
 ]
 docs = [
     "sphinx>=6.0.0,<7.0.0",
@@ -51,7 +51,8 @@ benchmark=[
 ]
 
 [project.scripts]
-vtkggdtools = "vtkggdtools.cli:cli"
+imas-paraview = "imas_paraview.cli:cli"
+ggd2vtk = "imas_paraview.cli:convert_ggd_to_vtk"
 
 [project.urls]
 homepage = "https://git.iter.org/projects/IMEX/repos/ggd-vtk"
@@ -63,19 +64,19 @@ where = ["."]
 minversion = "6.0"
 addopts = "--strict-markers"
 markers = ["integration"]
-testpaths = "vtkggdtools/tests"
+testpaths = "imas_paraview/tests"
 
 [tool.versioneer]
 VCS = "git"
 style = "pep440"
-versionfile_source = "vtkggdtools/_version.py"
-versionfile_build = "vtkggdtools/_version.py"
+versionfile_source = "imas_paraview/_version.py"
+versionfile_build = "imas_paraview/_version.py"
 tag_prefix = ""
 parentdir_prefix = ""
 
 [tool.black]
 # Exclude versioneer-generated file
-force-exclude = "vtkggdtools/_version.py"
+force-exclude = "imas_paraview/_version.py"
 
 [tool.isort]
 profile = "black"
