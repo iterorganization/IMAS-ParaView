@@ -7,7 +7,7 @@
     python -m imas_paraview
 
     # Run as "program" (see project.scripts in pyproject.toml)
-    imas_paraview
+    imas-paraview
 """
 
 from imas_paraview.cli import cli
