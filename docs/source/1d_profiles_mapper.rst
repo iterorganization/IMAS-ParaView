@@ -24,7 +24,7 @@ Example Usage
 
    A 2D profile from an equilibrium IDS with the Psi grid selected. 
 
-2. Load a profile using the `1DProfilesReader`, and ensure you select the ``Grid Psi`` attribute. You may also select any of the 1d profiles that you would like to map. These profiles will taken as input for the the 1D Profiles Mapper filter.
+2. Load a profile using the `1DProfilesReader`, and ensure you select the ``Grid Psi`` attribute. You may also select any of the 1d profiles that you would like to map. These profiles will be taken as input for the the 1D Profiles Mapper filter.
 
 .. figure:: images/profiles_psi.png
 
