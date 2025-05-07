@@ -157,6 +157,8 @@ def convert_ggd_to_vtk(
         Note: If the specified time step is not found in the IDS, the closest earlier
         time step will be used by default.
     """
+
+    sys.excepthook = _excepthook
     uri, ids_name, occurrence = parse_uri(uri)
     click.echo(f"Loading {ids_name} from {uri} with occurrence {occurrence}...")
     with imaspy.DBEntry(uri, "r") as entry:
