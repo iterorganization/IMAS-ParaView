@@ -1,5 +1,3 @@
-"""Plugin to view profiles_2d nodes"""
-
 import logging
 from dataclasses import dataclass
 
@@ -40,8 +38,8 @@ class Profile_2d:
 
 @smproxy.source(label="2D Profiles Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
-class IMASPyProfiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
-    """profiles_2d reader based on IMASPy"""
+class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
+    """profiles_2d reader based on IMAS-Python"""
 
     def __init__(self):
         super().__init__("vtkPartitionedDataSetCollection", PROFILES_2D_IDS_NAMES)

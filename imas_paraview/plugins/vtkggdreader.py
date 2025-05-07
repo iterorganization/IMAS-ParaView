@@ -1,5 +1,3 @@
-"""IMASPy version of the paraview plugin classes."""
-
 import logging
 
 from paraview.util.vtkAlgorithm import smhint, smproxy
@@ -42,7 +40,7 @@ EXPERIMENTAL_IDS_NAMES = [
 
 @smproxy.source(label="GGD Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
-class IMASPyGGDReader(GGDBaseReader, is_time_dependent=True):
+class GGDReader(GGDBaseReader, is_time_dependent=True):
     def __init__(self):
         supported_ids = EXPERIMENTAL_IDS_NAMES + SUPPORTED_IDS_NAMES
         super().__init__(supported_ids)

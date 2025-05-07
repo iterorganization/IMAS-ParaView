@@ -3,13 +3,13 @@ import numpy as np
 from imas import DBEntry
 from vtkmodules.vtkCommonDataModel import vtkPolyData
 
-from imas_paraview.plugins.position import IMASPyPositionReader
+from imas_paraview.plugins.position import PositionReader
 from imas_paraview.util import pol_to_cart
 
 
 def test_load_position_magnetics():
     """Test if positions of magnetics barometry IDS are saved into vtkPolyData."""
-    reader = IMASPyPositionReader()
+    reader = PositionReader()
     entry = DBEntry(
         (
             "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/"
@@ -59,7 +59,7 @@ def test_load_position_barometry():
     ids.gauge[1].position.z = z2
     point2 = (*pol_to_cart(r2, phi2), z2)
 
-    reader = IMASPyPositionReader()
+    reader = PositionReader()
     reader._ids = ids
     reader.setup_ids()
 
@@ -102,7 +102,7 @@ def test_load_position_langmuir_probes():
     ids.embedded[1].position.z = z2
     point2 = (*pol_to_cart(r2, phi2), z2)
 
-    reader = IMASPyPositionReader()
+    reader = PositionReader()
     reader._ids = ids
     reader.setup_ids()
 

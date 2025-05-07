@@ -3,12 +3,12 @@ from imas import DBEntry
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
-from imas_paraview.plugins.wall_limiter import IMASPyWallLimiterReader
+from imas_paraview.plugins.wall_limiter import WallLimiterReader
 
 
 def test_load_limiters():
     """Test if limiters are loaded in the VTK Multiblock Dataset."""
-    reader = IMASPyWallLimiterReader()
+    reader = WallLimiterReader()
 
     with DBEntry(
         "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/3/116000/5/",

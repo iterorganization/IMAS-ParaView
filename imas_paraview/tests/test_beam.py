@@ -1,12 +1,12 @@
 from imas import DBEntry
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
-from imas_paraview.plugins.beam import IMASPyBeamReader
+from imas_paraview.plugins.beam import BeamReader
 
 
 def test_load_beam():
     """Test if limiters are loaded in the VTK Multiblock Dataset."""
-    reader = IMASPyBeamReader()
+    reader = BeamReader()
     with DBEntry(
         (
             "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/"

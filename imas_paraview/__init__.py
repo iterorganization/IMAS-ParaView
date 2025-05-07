@@ -24,7 +24,7 @@ imas_logger.addHandler(handler)
 imas_logger.setLevel(handler.get_level())
 
 # Check imas version
-imas_version = imas.version
+imas_version = imas.__version__
 required_imas_python_version = "2.0.0"
 if version.parse(imas_version) < version.parse(required_imas_python_version):
     logger.warning(

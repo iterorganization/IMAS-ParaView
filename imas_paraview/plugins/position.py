@@ -30,8 +30,8 @@ class PositionStructure:
 
 @smproxy.source(label="Position Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
-class IMASPyPositionReader(GGDVTKPluginBase):
-    """Positions reader based on IMASPy"""
+class PositionReader(GGDVTKPluginBase):
+    """Positions reader based on IMAS-Python"""
 
     def __init__(self):
         super().__init__("vtkPolyData", SUPPORTED_IDS_NAMES)

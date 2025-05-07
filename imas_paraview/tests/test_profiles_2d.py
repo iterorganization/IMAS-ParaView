@@ -5,13 +5,13 @@ from imas.backends.imas_core.db_entry_helpers import IDS_TIME_MODE_HOMOGENEOUS
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkPartitionedDataSetCollection
 
-from imas_paraview.plugins.profiles_2d import IMASPyProfiles2DReader
+from imas_paraview.plugins.profiles_2d import Profiles2DReader
 
 
 def test_load_profiles():
     """Test if 2D profiles structures are loaded in the VTK
     PartitionedDatasetCollection."""
-    reader = IMASPyProfiles2DReader()
+    reader = Profiles2DReader()
 
     with DBEntry(
         "imas:hdf5?path=/work/imas/shared/imasdb/ITER_SCENARIOS/3/110004/1",
@@ -68,7 +68,7 @@ def test_load_profiles_dummy_equilibrium():
     profiles_2d.z = np.array([[5.5, 6.6], [7.7, 8.8]])
     profiles_2d.psi = np.array([[10.1, 10.2], [10.3, 10.4]])
 
-    reader = IMASPyProfiles2DReader()
+    reader = Profiles2DReader()
     reader._ids = ids
     reader.setup_ids()
     output = vtkPartitionedDataSetCollection()
@@ -91,7 +91,7 @@ def test_load_profiles_dummy_core_profiles():
     profiles_2d.grid_type = 1
     profiles_2d.ion[0].pressure = np.array([[10.1, 10.2], [10.3, 10.4]])
 
-    reader = IMASPyProfiles2DReader()
+    reader = Profiles2DReader()
     reader._ids = ids
     reader.setup_ids()
     output = vtkPartitionedDataSetCollection()

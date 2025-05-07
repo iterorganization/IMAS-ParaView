@@ -48,8 +48,8 @@ class LineOfSight:
 
 @smproxy.source(label="LoS Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
-class IMASPyLineOfSightReader(GGDVTKPluginBase):
-    """Line of sight reader based on IMASPy"""
+class LineOfSightReader(GGDVTKPluginBase):
+    """Line of sight reader based on IMAS-Python"""
 
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", SUPPORTED_LINE_OF_SIGHT_IDS)

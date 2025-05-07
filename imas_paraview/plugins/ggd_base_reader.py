@@ -1,5 +1,3 @@
-"""Base class for IMASPyGGDReader and the JorekGGDReader."""
-
 import logging
 
 from vtkmodules.vtkCommonDataModel import vtkDataObject, vtkPartitionedDataSetCollection
@@ -13,6 +11,8 @@ logger = logging.getLogger("vtkggdtools")
 
 
 class GGDBaseReader(GGDVTKPluginBase):
+    """Base class for GGDReader and the JorekGGDReader."""
+
     def __init__(self, supported_ids):
         super().__init__("vtkPartitionedDataSetCollection", supported_ids)
         # GGD arrays to load

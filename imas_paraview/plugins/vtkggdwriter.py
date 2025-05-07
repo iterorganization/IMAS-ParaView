@@ -39,8 +39,8 @@ _ggd_space_types_xml = "".join(
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 @smproperty.input(name="Input", port_index=0)
 @smdomain.datatype(dataTypes=["vtkPointSet"], composite_data_supported=True)
-class IMASPyGGDWriter(VTKPythonAlgorithmBase):
-    """GGD Writer based on IMASPy"""
+class GGDWriter(VTKPythonAlgorithmBase):
+    """GGD Writer based on IMAS-Python"""
 
     def __init__(self):
         super().__init__(

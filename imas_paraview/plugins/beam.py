@@ -29,9 +29,7 @@ class Beam:
 
 @smproxy.source(label="Beam Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
-class IMASPyBeamReader(GGDVTKPluginBase, is_time_dependent=True):
-    """Beam reader based on IMASPy"""
-
+class BeamReader(GGDVTKPluginBase, is_time_dependent=True):
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", ["ec_launchers"])
         self.distance = 10

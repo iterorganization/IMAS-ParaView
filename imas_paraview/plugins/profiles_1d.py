@@ -30,8 +30,8 @@ class Profile_1d:
 
 @smproxy.source(label="1D Profiles Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
-class IMASPyProfiles1DReader(GGDVTKPluginBase, is_time_dependent=True):
-    """profiles_1d reader based on IMASPy"""
+class Profiles1DReader(GGDVTKPluginBase, is_time_dependent=True):
+    """profiles_1d reader based on IMAS-Python"""
 
     def __init__(self):
         super().__init__("vtkTable", PROFILES_1D_IDS_NAMES)

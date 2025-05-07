@@ -3,13 +3,13 @@ from imas import DBEntry
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
-from imas_paraview.plugins.line_of_sight import IMASPyLineOfSightReader
+from imas_paraview.plugins.line_of_sight import LineOfSightReader
 from imas_paraview.util import pol_to_cart
 
 
 def test_load_los():
     """Test if line_of_sight structures are loaded in the VTK Multiblock Dataset."""
-    reader = IMASPyLineOfSightReader()
+    reader = LineOfSightReader()
 
     with DBEntry(
         "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/3/150401/3/",
@@ -54,7 +54,7 @@ def test_load_los():
 def test_load_los_ece():
     """Test if line_of_sight structures in ece are loaded in the VTK
     Multiblock Dataset."""
-    reader = IMASPyLineOfSightReader()
+    reader = LineOfSightReader()
     with DBEntry(
         "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/3/150601/22",
         "r",
