@@ -28,10 +28,9 @@ class InterpSettings:
 
 
 class Converter:
-    def __init__(self, ids, dbentry=None, ref_lazy=True):
+    def __init__(self, ids, dbentry=None):
         self.ids = ids
         self.dbentry = dbentry
-        self.ref_lazy = ref_lazy
         self.time_idx = None
         self.grid_ggd = None
         self.output = None
