@@ -25,7 +25,8 @@ def test_ggd_to_vtk(dummy_ids):
 
 # TODO: remove expected fail mark when we switch from IMASPy to IMAS-Python
 @pytest.mark.xfail(
-    reason="The latest version of IMASPy does not allow lazy loading for netcdf files."
+    reason="The latest version of IMASPy does not allow lazy loading for netcdf files.",
+    strict=True,
 )
 def test_ggd_to_vtk_reference(tmp_path):
     """Test if ggd_to_vtk works with a reference grid."""
