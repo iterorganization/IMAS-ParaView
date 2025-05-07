@@ -1,9 +1,9 @@
-"""IMASPy plugin to view limiter structures of 2d wall descriptions nodes"""
+"""Plugin to view limiter structures of 2d wall descriptions nodes"""
 
 import logging
 from dataclasses import dataclass
 
-from imaspy.ids_structure import IDSStructure
+from imas.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 

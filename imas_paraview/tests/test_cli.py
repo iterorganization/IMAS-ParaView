@@ -1,4 +1,4 @@
-import imaspy
+import imas
 import numpy as np
 import pytest
 from click import UsageError
@@ -19,7 +19,7 @@ def test_version():
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
     assert "IMAS-Paraview version:" in result.output
-    assert "IMASPy version:" in result.output
+    assert "IMAS-Python version:" in result.output
     assert "Default data dictionary version:" in result.output
     assert "Available data dictionary versions:" in result.output
     assert "Access Layer core version:" in result.output
@@ -27,7 +27,7 @@ def test_version():
 
 def test_ggd2vtk(tmp_path, dummy_ids):
     uri = f"imas:hdf5?path={tmp_path}/testdb"
-    with imaspy.DBEntry(uri, "w") as dbentry:
+    with imas.DBEntry(uri, "w") as dbentry:
         dbentry.put(dummy_ids)
 
     runner = CliRunner()

@@ -1,11 +1,11 @@
-"""IMASPy version of the paraview plugin classes."""
+"""IMAS-Python version of the paraview plugin classes."""
 
 import getpass
 import logging
 from abc import ABC, abstractmethod
 
-import imaspy
-import imaspy.ids_defs
+import imas
+import imas.ids_defs
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonCore import vtkStringArray
@@ -28,17 +28,17 @@ from imas_paraview.paraview_support.servermanager_tools import (
 logger = logging.getLogger("vtkggdtools")
 
 BACKENDS = {
-    "MDSplus": imaspy.ids_defs.MDSPLUS_BACKEND,
-    "HDF5": imaspy.ids_defs.HDF5_BACKEND,
-    "ASCII": imaspy.ids_defs.ASCII_BACKEND,
+    "MDSplus": imas.ids_defs.MDSPLUS_BACKEND,
+    "HDF5": imas.ids_defs.HDF5_BACKEND,
+    "ASCII": imas.ids_defs.ASCII_BACKEND,
 }
 """Mapping of UI labels for each backend and their ID, used for the Backend dropdown."""
-DEFAULT_BACKEND = imaspy.ids_defs.MDSPLUS_BACKEND
+DEFAULT_BACKEND = imas.ids_defs.MDSPLUS_BACKEND
 """Default backend selected in the UI."""
 
 
 class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
-    """GGD Reader based on IMASPy"""
+    """GGD Reader based on IMAS-Python"""
 
     def __init_subclass__(cls, use_bezier=False, is_time_dependent=False, **kwargs):
         # Flag to classify time dependent plugins
@@ -148,7 +148,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             if self._uri:
                 # Try to open the DBEntry
                 try:
-                    self._dbentry = imaspy.DBEntry(self._uri, "r")
+                    self._dbentry = imas.DBEntry(self._uri, "r")
                     logger.info(f'Successfully opened URI "{self._uri}".')
                 except Exception as exc:
                     self._uri_error = str(exc)
@@ -461,7 +461,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         if self.is_time_dependent:
             if (
                 self._ids.ids_properties.homogeneous_time
-                == imaspy.ids_defs.IDS_TIME_MODE_HETEROGENEOUS
+                == imas.ids_defs.IDS_TIME_MODE_HETEROGENEOUS
             ):
                 logger.error("Heterogeneous IDSs are currently not supported.")
                 return 1

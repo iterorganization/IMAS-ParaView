@@ -1,12 +1,12 @@
-"""IMASPy plugin to view profiles_2d nodes"""
+"""Plugin to view profiles_2d nodes"""
 
 import logging
 from dataclasses import dataclass
 
 import numpy as np
 import vtk
-from imaspy.ids_struct_array import IDSStructArray
-from imaspy.ids_structure import IDSStructure
+from imas.ids_struct_array import IDSStructArray
+from imas.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules.vtkCommonDataModel import (

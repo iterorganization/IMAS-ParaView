@@ -1,11 +1,11 @@
-"""IMASPy version of the paraview plugin classes."""
+"""IMAS-Python version of the paraview plugin classes."""
 
 import datetime
 import getpass
 import logging
 
-import imaspy
-import imaspy.ids_defs
+import imas
+import imas.ids_defs
 import numpy as np
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty, smproxy
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
@@ -27,11 +27,11 @@ logger = logging.getLogger("vtkggdtools")
 
 _ggd_types_xml = "".join(
     f'<Entry text="{member.name}" value="{member.index}" />'
-    for member in imaspy.identifiers.ggd_identifier
+    for member in imas.identifiers.ggd_identifier
 )
 _ggd_space_types_xml = "".join(
     f'<Entry text="{member.name}" value="{member.index}" />'
-    for member in imaspy.identifiers.ggd_space_identifier
+    for member in imas.identifiers.ggd_space_identifier
 )
 
 
@@ -138,11 +138,12 @@ class IMASPyGGDWriter(VTKPythonAlgorithmBase):
         output = vtkUnstructuredGrid.GetData(outInfo)
         # FIXME: the following line results in an AttributeError: 'NoneType' object has
         # no attribute 'GetCellData'. This was already the case before migrating to
-        # IMASPy. To be investigated when working on the VTK -> GGD conversion logic.
+        # IMAS-Python.
+        # To be investigated when working on the VTK -> GGD conversion logic.
         cell_data: vtkCellData = input0.GetCellData()
 
         if self._dbentry is None:
-            self._dbentry = imaspy.DBEntry(self._uri, "a")
+            self._dbentry = imas.DBEntry(self._uri, "a")
 
         # Fill IDS metadata
         ids_obj = self._dbentry.factory.new(self._idsname)
@@ -180,10 +181,10 @@ class IMASPyGGDWriter(VTKPythonAlgorithmBase):
         space_idx = 0
         logger.info(f"Populating grid_ggd/space[{space_idx}]")
 
-        space_name = imaspy.identifiers.ggd_space_identifier(
+        space_name = imas.identifiers.ggd_space_identifier(
             self._grid_ggd_space_type
         ).name
-        description = imaspy.identifiers.ggd_space_identifier[space_name].description
+        description = imas.identifiers.ggd_space_identifier[space_name].description
 
         grid_ggd.space[space_idx].identifier.name = space_name
         grid_ggd.space[space_idx].identifier.index = self._grid_ggd_space_type

@@ -4,9 +4,9 @@ from collections import OrderedDict
 from pathlib import Path
 
 import click
-import imaspy
-import imaspy.backends.imas_core.imas_interface
-from imaspy.backends.imas_core.imas_interface import ll_interface
+import imas
+import imas.backends.imas_core.imas_interface
+from imas.backends.imas_core.imas_interface import ll_interface
 from rich import box, console, traceback
 from rich.table import Table
 
@@ -56,10 +56,10 @@ def print_version():
         grid.width = 120
     grid.add_row("IMAS-Paraview version:", imas_paraview.__version__)
     grid.add_section()
-    grid.add_row("IMASPy version:", imaspy.__version__)
+    grid.add_row("IMAS-Python version:", imas.__version__)
     grid.add_section()
-    grid.add_row("Default data dictionary version:", imaspy.IDSFactory().dd_version)
-    dd_versions = ", ".join(imaspy.dd_zip.dd_xml_versions())
+    grid.add_row("Default data dictionary version:", imas.IDSFactory().dd_version)
+    dd_versions = ", ".join(imas.dd_zip.dd_xml_versions())
     grid.add_row("Available data dictionary versions:", dd_versions)
     grid.add_section()
     grid.add_row("Access Layer core version:", ll_interface.get_al_version() or "N/A")
@@ -159,7 +159,7 @@ def convert_ggd_to_vtk(
     """
     uri, ids_name, occurrence = parse_uri(uri)
     click.echo(f"Loading {ids_name} from {uri} with occurrence {occurrence}...")
-    with imaspy.DBEntry(uri, "r") as entry:
+    with imas.DBEntry(uri, "r") as entry:
         click.echo("Loading IDS...")
         use_lazy = is_lazy(all_times, lazy, no_lazy)
         ids = entry.get(

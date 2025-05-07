@@ -1,4 +1,4 @@
-from imaspy.ids_struct_array import IDSStructArray
+from imas.ids_struct_array import IDSStructArray
 
 
 def _get_nodes_from_path(

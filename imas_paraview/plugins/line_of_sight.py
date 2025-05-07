@@ -1,9 +1,9 @@
-"""IMASPy plugin to view line of sight IDS structures in Paraview."""
+"""Plugin to view line of sight IDS structures in Paraview."""
 
 import logging
 from dataclasses import dataclass
 
-from imaspy.ids_structure import IDSStructure
+from imas.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (

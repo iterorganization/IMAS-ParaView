@@ -1,4 +1,4 @@
-from imaspy.ids_defs import ASCII_BACKEND, HDF5_BACKEND, MDSPLUS_BACKEND
+from imas.ids_defs import ASCII_BACKEND, HDF5_BACKEND, MDSPLUS_BACKEND
 
 from imas_paraview.imas_uri import uri_from_path, uri_from_pulse_run
 

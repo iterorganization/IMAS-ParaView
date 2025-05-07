@@ -1,4 +1,4 @@
-"""IMASPy plugin to view Jorek GGD data."""
+"""Plugin to view Jorek GGD data."""
 
 import logging
 

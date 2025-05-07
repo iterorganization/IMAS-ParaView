@@ -1,10 +1,10 @@
-"""IMASPy plugin to view beam structures of ec_launchers IDS in Paraview."""
+"""Plugin to view beam structures of ec_launchers IDS in Paraview."""
 
 import logging
 from dataclasses import dataclass
 
 import numpy as np
-from imaspy.ids_structure import IDSStructure
+from imas.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
@@ -82,8 +82,7 @@ class IMASPyBeamReader(GGDVTKPluginBase, is_time_dependent=True):
             if beam_name == "":
                 beam_name = f"beam {i}"
                 logger.warning(
-                    "Found a channel without a name, "
-                    f"it will be loaded as {beam_name}."
+                    f"Found a channel without a name, it will be loaded as {beam_name}."
                 )
 
             selectable = Beam(str(beam_name), beam)

@@ -1,5 +1,5 @@
 import numpy as np
-from imaspy import DBEntry
+from imas import DBEntry
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 

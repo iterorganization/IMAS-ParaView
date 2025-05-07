@@ -6,7 +6,7 @@ These methods populate the grid_ggd/space and grid_ggd/grid_subset children.
 from collections import OrderedDict, defaultdict
 from typing import Dict, List, Tuple
 
-import imaspy
+import imas
 from vtkmodules.numpy_interface import algorithms as algs
 from vtkmodules.numpy_interface import dataset_adapter as dsa
 from vtkmodules.vtkCommonCore import vtkDataArray, vtkIdList, vtkMath
@@ -94,16 +94,16 @@ def convert_vtk_dataset_to_grid_subset_geometry(
         None
     """
 
-    is_custom_subset = name not in imaspy.identifiers.ggd_subset_identifier.__members__
+    is_custom_subset = name not in imas.identifiers.ggd_subset_identifier.__members__
     subset_enum = (
-        imaspy.identifiers.ggd_subset_identifier[name] if not is_custom_subset else None
+        imas.identifiers.ggd_subset_identifier[name] if not is_custom_subset else None
     )
     if not is_custom_subset:
         grid_ggd.grid_subset[subset_idx].identifier.name = name
         grid_ggd.grid_subset[subset_idx].identifier.index = subset_enum.index
-        grid_ggd.grid_subset[subset_idx].identifier.description = (
-            subset_enum.description
-        )
+        grid_ggd.grid_subset[
+            subset_idx
+        ].identifier.description = subset_enum.description
     else:
         grid_ggd.grid_subset[subset_idx].identifier.name = name
         grid_ggd.grid_subset[subset_idx].identifier.index = -subset_idx
@@ -285,20 +285,20 @@ def _fill_0d_objects(dataset: vtkUnstructuredGrid, space_idx: int, grid_ggd) -> 
     space = grid_ggd.space[space_idx]
     space.coordinates_type.resize(geom_size)
     if geom_size == 2:
-        space.coordinates_type[0] = imaspy.identifiers.coordinate_identifier["r"].index
-        space.coordinates_type[1] = imaspy.identifiers.coordinate_identifier["z"].index
+        space.coordinates_type[0] = imas.identifiers.coordinate_identifier["r"].index
+        space.coordinates_type[1] = imas.identifiers.coordinate_identifier["z"].index
     else:
-        space.coordinates_type[0] = imaspy.identifiers.coordinate_identifier["x"].index
-        space.coordinates_type[1] = imaspy.identifiers.coordinate_identifier["y"].index
-        space.coordinates_type[2] = imaspy.identifiers.coordinate_identifier["z"].index
+        space.coordinates_type[0] = imas.identifiers.coordinate_identifier["x"].index
+        space.coordinates_type[1] = imas.identifiers.coordinate_identifier["y"].index
+        space.coordinates_type[2] = imas.identifiers.coordinate_identifier["z"].index
 
     objects_per_dim = space.objects_per_dimension
     geometry_content = objects_per_dim[0].geometry_content
     geometry_content.name = "node_coordinates"
-    geometry_content.index = imaspy.identifiers.ggd_geometry_content_identifier[
+    geometry_content.index = imas.identifiers.ggd_geometry_content_identifier[
         "node_coordinates"
     ].index
-    geometry_content.description = imaspy.identifiers.ggd_geometry_content_identifier[
+    geometry_content.description = imas.identifiers.ggd_geometry_content_identifier[
         "node_coordinates"
     ].description
 
@@ -332,10 +332,10 @@ def _fill_1d_objects(dataset: vtkUnstructuredGrid, space_idx: int, grid_ggd):
     geometry_content = objects_per_dim[1].geometry_content
     geometry_content.name = "edge_areas"
 
-    geometry_content.index = imaspy.identifiers.ggd_geometry_content_identifier[
+    geometry_content.index = imas.identifiers.ggd_geometry_content_identifier[
         "edge_areas"
     ].index
-    geometry_content.description = imaspy.identifiers.ggd_geometry_content_identifier[
+    geometry_content.description = imas.identifiers.ggd_geometry_content_identifier[
         "edge_areas"
     ].description
 
@@ -426,10 +426,10 @@ def _fill_2d_objects(
     geometry_content = objects_per_dim[2].geometry_content
     geometry_content.name = "face_indices_volume"
 
-    geometry_content.index = imaspy.identifiers.ggd_geometry_content_identifier[
+    geometry_content.index = imas.identifiers.ggd_geometry_content_identifier[
         "face_indices_volume"
     ].index
-    geometry_content.description = imaspy.identifiers.ggd_geometry_content_identifier[
+    geometry_content.description = imas.identifiers.ggd_geometry_content_identifier[
         "face_indices_volume"
     ].description
 
@@ -528,10 +528,10 @@ def _fill_3d_objects(
     geometry_content = objects_per_dim[3].geometry_content
     geometry_content.name = "unspecified"
 
-    geometry_content.index = imaspy.identifiers.ggd_geometry_content_identifier[
+    geometry_content.index = imas.identifiers.ggd_geometry_content_identifier[
         "unspecified"
     ].index
-    geometry_content.description = imaspy.identifiers.ggd_geometry_content_identifier[
+    geometry_content.description = imas.identifiers.ggd_geometry_content_identifier[
         "unspecified"
     ].description
 
@@ -621,12 +621,14 @@ def _fill_implicit_grid_subsets(space_idx: int, grid_ggd):
         dim = i
         name = grid_subset_id_name[dim]
         grid_ggd.grid_subset[subset_idx].identifier.name = name
-        grid_ggd.grid_subset[subset_idx].identifier.index = (
-            imaspy.identifiers.ggd_subset_identifier[name].index
-        )
-        grid_ggd.grid_subset[subset_idx].identifier.description = (
-            imaspy.identifiers.ggd_subset_identifier[name].description
-        )
+        grid_ggd.grid_subset[
+            subset_idx
+        ].identifier.index = imas.identifiers.ggd_subset_identifier[name].index
+        grid_ggd.grid_subset[
+            subset_idx
+        ].identifier.description = imas.identifiers.ggd_subset_identifier[
+            name
+        ].description
         grid_ggd.grid_subset[subset_idx].dimension = dim + 1
         num_elements = len(grid_ggd.space[space_idx].objects_per_dimension[dim].object)
         grid_ggd.grid_subset[subset_idx].element.resize(num_elements)
