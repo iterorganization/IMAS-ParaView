@@ -174,7 +174,7 @@ def convert_ggd_to_vtk(
 
         # TODO: Add time-dependent VTKHDF conversion
         if format == "xml":
-            converter = Converter(ids, dbentry=entry, ref_lazy=use_lazy)
+            converter = Converter(ids, dbentry=entry)
             converter.write_to_xml(output_dir, index_list)
 
         elif format == "vtkhdf":
