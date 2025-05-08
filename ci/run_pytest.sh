@@ -32,7 +32,6 @@ pip freeze
 # Clean artifacts created by pytest
 rm -f junit.xml
 rm -rf htmlcov
-export IMAS_VERSION="3.40.1" # set default version because IMASPy module on SDCC doesn't have latest one yet
 
 # Currently the integration tests do not work on the CI, while they do succeed on SDCC.
 # We skip these tests on the CI for now, For more information, see:

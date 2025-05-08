@@ -41,12 +41,7 @@ asv machine --yes
 # Run ASV for the current commit, develop and main
 asv run -v --show-stderr --skip-existing-successful HEAD^!
 asv run -v --show-stderr --skip-existing-successful develop^!
-
-# TODO: Turn on benchmarking for master branch as well. Currently there is an 
-# issue with the master branch, where it is unable to find the 
-# 'vtkggdtools.generator' module. As this is not used anymore since the IMASPy 
-# migration. We can turn on benchmarking after a new master version.
-# asv run --skip-existing-successful master^!
+asv run -v --show-stderr --skip-existing-successful master^!
 
 # Compare results
 if [ `git rev-parse --abbrev-ref HEAD` == develop ]
