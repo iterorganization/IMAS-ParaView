@@ -35,15 +35,10 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-
-    - name: Install pip
-      run: |
-        apt-get update && apt-get install -y python3-pip
 
     - name: Install dependencies
       run: |
+        apt-get update && apt-get install -y python3-pip
         python3 -m pip install --upgrade pip
         pip3 install .[test]
 
