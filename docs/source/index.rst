@@ -5,10 +5,10 @@
    define TOC here, but it'll be put in the sidebar by the theme
 
 ====================
-IMAS-Paraview Manual
+IMAS-ParaView Manual
 ====================
 
-IMAS-Paraview is a tool to convert GGD (Generalized Grid Description) structures to VTK formats, and back.
+IMAS-ParaView is a tool to convert GGD (Generalized Grid Description) structures to VTK formats, and back.
 This is complemented by a number of Paraview plugins that can visualise both GGD and non-GGD IDS data in Paraview.
 
 

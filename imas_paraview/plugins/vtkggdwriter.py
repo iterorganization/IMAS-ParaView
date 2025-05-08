@@ -151,7 +151,7 @@ class GGDWriter(VTKPythonAlgorithmBase):
         ids_obj.ids_properties.provider = getpass.getuser()
         ids_obj.ids_properties.creation_date = str(datetime.datetime.today())
 
-        ids_obj.code.name = "IMAS-Paraview"
+        ids_obj.code.name = "IMAS-ParaView"
         ids_obj.code.version = get_versions()["version"]
         ids_obj.code.commit = get_versions()["full-revisionid"]
         ids_obj.code.repository = "https://git.iter.org/scm/imex/ggd-vtk.git"
