@@ -38,10 +38,10 @@ Testing
     .. code-block:: console
 
         $ # identical run as in the CI:
-        $ ci/run_pytest.sh IMASPy IMAS-AL-Python ParaView Xvfb
+        $ ci/run_pytest.sh IMAS-Python IMAS-AL-Core ParaView Xvfb
 
         $ # enforcing the vfb tests
-        $ module load IMASPy IMAS-AL-Python ParaView Xvfb
+        $ module load IMAS-Python IMAS-AL-Core ParaView Xvfb
         $ pytest
 
 Benchmark
@@ -58,7 +58,7 @@ Benchmark
     The CI script executed in this job is: ``ci/run_benchmark.sh``.
 
     **Example:**
-    ``$ ci/run_benchmark.sh IMASPy``
+    ``$ ci/run_benchmark.sh IMAS-AL-Core``
 
 Build docs
     This job builds the Sphinx documentation.
@@ -67,7 +67,7 @@ Build docs
     modules it needs to load as arguments.
 
     **Example:**
-    ``$ ci/build_docs.sh IMASPy``
+    ``$ ci/build_docs.sh IMAS-AL-Core``
 
 
 Deployment projects

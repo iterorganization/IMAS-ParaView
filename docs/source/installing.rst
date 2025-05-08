@@ -35,16 +35,15 @@ SDCC installation
 
 .. code-block:: bash
 
-  # Load compatible IMASPy, IMAS and ParaView modules, like:
-  # AL5 and ParaView 5.12 (recommended on RHEL9):
-  module load IMASPy/1.1.1-foss-2023b \
-  IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
+  # Load compatible IMAS-Python, IMAS-Core and ParaView modules, like:
+  module load IMAS-AL-Core/5.4.3-foss-2023b IMAS-Python/2.0.0-foss-2023b \
+  ParaView/5.12.0-foss-2023b
   # export environment variables, this assumes the current
   # working directory is the root of the repository
   export PV_PLUGIN_PATH=$PWD/imas_paraview/plugins:$PV_PLUGIN_PATH
   export PYTHONPATH=$PWD:$PYTHONPATH
-  # Run paraview
-  paraview
+  # Run paraview (add vglrun to enable hardware acceleration)
+  vglrun paraview
   # Open the "Sources" tab in the top left, if you see "IMAS Tools" 
   # in the drop down, it is installed correctly.
 
@@ -52,9 +51,9 @@ SDCC installation
 
 .. code-block:: bash
 
-  # Load compatible IMASPy, IMAS and ParaView modules, like:
-  module load IMASPy/1.1.1-foss-2023b \
-  IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
+  # Load compatible IMAS-Python, IMAS-Core and ParaView modules, like:
+  module load IMAS-AL-Core/5.4.3-foss-2023b IMAS-Python/2.0.0-foss-2023b \
+  ParaView/5.12.0-foss-2023b
   # create virtual environment and install dependencies
   python3 -m venv ./venv
   . venv/bin/activate
@@ -72,8 +71,8 @@ SDCC installation
 .. code-block:: bash
 
   # Load the required modules
-  module load IMASPy/1.1.1-foss-2023b \
-  IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
+  module load IMAS-AL-Core/5.4.3-foss-2023b IMAS-Python/2.0.0-foss-2023b \
+  ParaView/5.12.0-foss-2023b
   # Export the environment variables
   export PV_PLUGIN_PATH=$PWD/imas_paraview/plugins:$PV_PLUGIN_PATH
   export PYTHONPATH=$PWD:$PYTHONPATH
@@ -104,4 +103,4 @@ SDCC installation
 
 ..
   TODO: add local installing documentation, maybe wait until ggd-vtk goes open source?
-  As it needs to be installed with IMASPy.
+  As it needs to be installed with IMAS-Python.

@@ -18,23 +18,22 @@ Use the following instructions to start the command-line interface:
 ```bash
 module load GGD-VTK
 # Run the command-line interface
-vtkggdtools --help
+imas-paraview --help
 # You will now see the CLI help message which explains the available commands
 ```
 
 ## Running development version on SDCC
 Use the following instructions from the root of the project directory to run paraview:
 ```bash
-# Load compatible IMASPy, IMAS and ParaView modules, like:
-# AL5 and ParaView 5.12 (recommended on RHEL9):
-module load IMASPy/1.1.1-foss-2023b \
-IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
+# Load compatible IMAS-Python, IMAS-Core and ParaView modules, like:
+module load IMAS-AL-Core/5.4.3-foss-2023b IMAS-Python/2.0.0-foss-2023b \
+ParaView/5.12.0-foss-2023b
 # export environment variables, this assumes the current
 # working directory is the root of the repository
-export PV_PLUGIN_PATH=$PWD/vtkggdtools/plugins:$PV_PLUGIN_PATH
+export PV_PLUGIN_PATH=$PWD/imas_paraview/plugins:$PV_PLUGIN_PATH
 export PYTHONPATH=$PWD:$PYTHONPATH
-# Run paraview
-paraview
+# Run paraview (add vglrun to enable hardware acceleration)
+vglrun paraview
 # Open the "Sources" tab in the top left.
 # If you see "IMAS Tools" in the drop down, it is installed correctly.
 ```
@@ -42,9 +41,9 @@ paraview
 Use the following instructions from the root of the project directory to run the 
 command line interface:
 ```bash
-# Load compatible IMASPy, IMAS and ParaView modules, like:
-module load IMASPy/1.1.1-foss-2023b \
-IMAS-AL-Python/5.3.0-foss-2023b-DD-3.42.0 ParaView/5.12.0-foss-2023b
+# Load compatible IMAS-Python, IMAS-Core and ParaView modules, like:
+module load IMAS-AL-Core/5.4.3-foss-2023b IMAS-Python/2.0.0-foss-2023b \
+ParaView/5.12.0-foss-2023b
 # create virtual environment and install dependencies
 python3 -m venv ./venv
 . venv/bin/activate
@@ -53,7 +52,7 @@ pip install --upgrade wheel setuptools
 # For development install in editable mode
 pip install -e .[all]
 # Run CLI with help information
-vtkggdtools --help
+imas-paraview --help
 # If you see the help page of the vtkggdtools, it is installed correctly.
 ```
 
