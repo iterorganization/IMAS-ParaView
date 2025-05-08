@@ -23,6 +23,7 @@ def test_ggd_to_vtk(dummy_ids):
     assert vtk_array_names == ggd_names
 
 
+@pytest.mark.skip(reason="issue with netcdf")
 def test_ggd_to_vtk_reference(tmp_path):
     """Test if ggd_to_vtk works with a reference grid."""
 

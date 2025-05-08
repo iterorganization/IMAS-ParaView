@@ -26,6 +26,7 @@ def test_version():
     assert "Access Layer core version:" in result.output
 
 
+@pytest.mark.skip(reason="issue with netcdf")
 def test_ggd2vtk(tmp_path, dummy_ids):
     uri = f"{tmp_path}/testdb.nc"
     with imas.DBEntry(uri, "w") as dbentry:
