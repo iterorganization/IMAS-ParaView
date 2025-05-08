@@ -9,7 +9,7 @@
   <pqevent object="pqClientMainWindow/propertiesDock/propertiesPanel/Accept" command="activate" arguments="" />
   <pqevent object="pqClientMainWindow/menubar" command="activate" arguments="menuSources" />
   <pqevent object="pqClientMainWindow/menubar/menuSources" command="activate" arguments="IMAS Tools" />
-  <pqevent object="pqClientMainWindow/menubar/menuSources/IMAS Tools" command="activate" arguments="IMASPyProfiles1DReader" />
+  <pqevent object="pqClientMainWindow/menubar/menuSources/IMAS Tools" command="activate" arguments="Profiles1DReader" />
   <pqevent object="pqClientMainWindow/propertiesDock/propertiesPanel/scrollArea/qt_scrollarea_viewport/scrollAreaWidgetContents/PropertiesFrame/ProxyPanel/EnterURI/Enter URI" command="set_string" arguments="imas:hdf5?path=/work/imas/shared/imasdb/ITER_SCENARIOS/3/134102/41" />
   <pqevent object="pqClientMainWindow/propertiesDock/propertiesPanel/Accept" command="activate" arguments="" />
   <pqevent object="pqClientMainWindow/centralwidget/MultiViewWidget/CoreWidget/qt_tabwidget_stackedwidget/MultiViewWidget1/Container/Frame.2/Close" command="activate" arguments="" />
