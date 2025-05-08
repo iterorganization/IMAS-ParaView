@@ -25,6 +25,9 @@ Currently, the following IDSs are supported in the GGD Reader.
 - ``tf``
 - ``transport_solver_numerics``
 - ``waves``
+- ``plasma_profiles``,
+- ``plasma_sources``,
+- ``plasma_transport``,
 
 .. _loading-an-uri:
 

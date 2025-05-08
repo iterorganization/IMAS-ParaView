@@ -18,8 +18,6 @@ SUPPORTED_IDS_NAMES = [
     "plasma_profiles",
     "plasma_sources",
     "plasma_transport",
-    "em_coupling",
-    "ferritic",
 ]
 
 # FIXME: Some IDSs do not have the grid structure in a separate `grid_ggd` object, as

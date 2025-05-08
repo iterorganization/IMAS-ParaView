@@ -98,6 +98,9 @@ class Converter:
             return None
 
         self.grid_ggd = get_grid_ggd(self.ids, self.time_idx)
+        if self.grid_ggd is None:
+            logger.info("Could not find a valid GGD grid.")
+            return None
 
         if self.grid_ggd.path:
             self.reference_grid_path = self.grid_ggd.path
