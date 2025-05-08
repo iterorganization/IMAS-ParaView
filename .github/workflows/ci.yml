@@ -47,7 +47,7 @@ jobs:
 
     - name: Run tests
       run: |
-        /opt/paraview/install/bin/pvpython -m pytest -n=auto --cov=imas_paraview --cov-report=term-missing --cov-report=html --junit-xml=junit-3.11.xml
+        /opt/paraview/install/bin/pvpython -m pytest  --cov=imas_paraview --cov-report=term-missing --cov-report=html --junit-xml=junit-3.11.xml
 
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
