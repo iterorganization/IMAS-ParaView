@@ -53,7 +53,7 @@ pip install --upgrade wheel setuptools
 pip install -e .[all]
 # Run CLI with help information
 imas-paraview --help
-# If you see the help page of the vtkggdtools, it is installed correctly.
+# If you see the help page of IMAS-Paraview, it is installed correctly.
 ```
 
 ## Documentation
