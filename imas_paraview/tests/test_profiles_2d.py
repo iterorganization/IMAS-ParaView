@@ -1,5 +1,6 @@
 import imas
 import numpy as np
+import pytest
 from imas import DBEntry
 from imas.backends.imas_core.db_entry_helpers import IDS_TIME_MODE_HOMOGENEOUS
 from vtk.util.numpy_support import vtk_to_numpy
@@ -8,6 +9,7 @@ from vtkmodules.vtkCommonDataModel import vtkPartitionedDataSetCollection
 from imas_paraview.plugins.profiles_2d import Profiles2DReader
 
 
+@pytest.mark.skip(reason="no IMAS-Core available")
 def test_load_profiles():
     """Test if 2D profiles structures are loaded in the VTK
     PartitionedDatasetCollection."""

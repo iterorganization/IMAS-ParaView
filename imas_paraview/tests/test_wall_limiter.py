@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from imas import DBEntry
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
@@ -6,6 +7,7 @@ from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 from imas_paraview.plugins.wall_limiter import WallLimiterReader
 
 
+@pytest.mark.skip(reason="no IMAS-Core available")
 def test_load_limiters():
     """Test if limiters are loaded in the VTK Multiblock Dataset."""
     reader = WallLimiterReader()

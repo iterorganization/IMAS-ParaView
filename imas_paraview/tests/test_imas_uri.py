@@ -1,3 +1,4 @@
+import pytest
 from imas.ids_defs import ASCII_BACKEND, HDF5_BACKEND, MDSPLUS_BACKEND
 
 from imas_paraview.imas_uri import uri_from_path, uri_from_pulse_run
@@ -18,6 +19,7 @@ def test_uri_from_path():
     assert uri_from_path("test/ids_001.tree") == "imas:mdsplus?path=test"
 
 
+@pytest.mark.skip(reason="no IMAS-Core available")
 def test_uri_from_pulse_run():
     # Missing values result in a None uri
     assert uri_from_pulse_run(-1, "a", 1, 2, "b", "c") is None

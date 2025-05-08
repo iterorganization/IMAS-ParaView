@@ -1,5 +1,6 @@
 import imas
 import numpy as np
+import pytest
 from imas import DBEntry
 from vtkmodules.vtkCommonDataModel import vtkPolyData
 
@@ -7,6 +8,7 @@ from imas_paraview.plugins.position import PositionReader
 from imas_paraview.util import pol_to_cart
 
 
+@pytest.mark.skip(reason="no IMAS-Core available")
 def test_load_position_magnetics():
     """Test if positions of magnetics barometry IDS are saved into vtkPolyData."""
     reader = PositionReader()
@@ -34,6 +36,7 @@ def test_load_position_magnetics():
     assert np.all(np.isclose(point1, output.GetPoint(0)))
 
 
+@pytest.mark.skip(reason="no IMAS-Core available")
 def test_load_position_barometry():
     """Test if positions of gauges of barometry IDS are saved into vtkPolyData."""
     ids = imas.IDSFactory().barometry()
