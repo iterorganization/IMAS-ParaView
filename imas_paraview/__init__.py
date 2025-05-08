@@ -24,6 +24,8 @@ imas_logger.addHandler(handler)
 imas_logger.setLevel(handler.get_level())
 
 # Check IMAS-Python version
+if not hasattr(imas, "__version__"):
+    raise RuntimeError("IMAS-AL-Python is not supported. Use IMAS-Python instead.")
 imas_version = imas.__version__
 required_imas_python_version = "2.0.0"
 if version.parse(imas_version) < version.parse(required_imas_python_version):
