@@ -25,7 +25,24 @@ imas_logger.setLevel(handler.get_level())
 
 # Check IMAS-Python version
 if not hasattr(imas, "__version__"):
-    raise RuntimeError("IMAS-AL-Python is not supported. Use IMAS-Python instead.")
+    raise RuntimeError(
+        """
+[ERROR] Detected an outdated version of the 'imas' module.
+
+The installed 'imas' package appears to be an incompatible legacy
+version of the high-level Python interface of the IMAS Access Layer.
+
+To resolve this, remove / unload this version and re-install using:
+
+    pip install imas-python
+
+or load the appropriate environment module on your system, e.g.
+
+    module load IMAS-Python
+
+More info: https://pypi.org/project/imas-python/
+"""
+    )
 imas_version = imas.__version__
 required_imas_python_version = "2.0.0"
 if version.parse(imas_version) < version.parse(required_imas_python_version):
