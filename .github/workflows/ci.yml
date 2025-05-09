@@ -40,7 +40,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        apt-get update && apt-get install -y python3-pip
+        git config --global --add safe.directory /__w/IMAS-ParaView/IMAS-ParaView # ensure versioneer works
+        apt-get update && apt-get install -y python3-pip git
         python3 -m pip install --upgrade pip
         pip3 install .[test]
 
