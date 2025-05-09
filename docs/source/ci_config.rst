@@ -3,17 +3,17 @@
 CI configuration
 ================
 
-IMAS-Paraview uses `ITER Bamboo <https://ci.iter.org/>`_ for CI. This page provides an overview
+IMAS-ParaView uses `ITER Bamboo <https://ci.iter.org/>`_ for CI. This page provides an overview
 of the CI Plan and deployment projects. Some of the jobs in the CI Plan can also be run manually,
 examples provided below.
 
 CI Plan
 -------
 
-The `IMAS-Paraview CI plan <https://ci.iter.org/browse/VIS-GGDVTK>`_ consists of 3 types of jobs:
+The `IMAS-ParaView CI plan <https://ci.iter.org/browse/VIS-GGDVTK>`_ consists of 3 types of jobs:
 
 Linting 
-    Run ``black``, ``flake8``, and ``isort`` on the IMAS-Paraview code base.
+    Run ``black``, ``flake8``, and ``isort`` on the IMAS-ParaView code base.
     See :ref:`code style and linting`.
 
     The CI script executed in this job is ``ci/linting.sh``.
@@ -73,11 +73,11 @@ Build docs
 Deployment projects
 -------------------
 
-There is currently one Bamboo deployment project for IMAS-Paraview:
+There is currently one Bamboo deployment project for IMAS-ParaView:
 
-`Deploy IMAS-Paraview Docs <https://ci.iter.org/deploy/viewDeploymentProjectEnvironments.action?id=1942093825>`_
+`Deploy IMAS-ParaView Docs <https://ci.iter.org/deploy/viewDeploymentProjectEnvironments.action?id=1942093825>`_
     Deploy the documentation created in the `Build docs` job to `Sharepoint
     <https://sharepoint.iter.org/departments/POP/CM/IMDesign/Code%20Documentation/GGD-VTK/index.html#>`_.
 
-    This deployment project runs for after each successful CI build of the IMAS-Paraview main
+    This deployment project runs for after each successful CI build of the IMAS-ParaView main
     branch.

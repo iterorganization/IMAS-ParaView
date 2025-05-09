@@ -1,5 +1,5 @@
 #!/bin/bash
-# Bamboo CI script to install IMAS-Paraview and run all benchmarks
+# Bamboo CI script to install IMAS-ParaView and run all benchmarks
 # Note: this script should be run from the root of the git repository
 
 # Debuggging:

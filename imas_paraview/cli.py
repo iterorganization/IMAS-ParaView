@@ -30,7 +30,7 @@ def _excepthook(type_, value, tb):
 @click.group("imas-paraview", invoke_without_command=True, no_args_is_help=True)
 @click.option("-v", "--version", is_flag=True, help="Show version information")
 def cli(version):
-    """IMAS-Paraview command line interface.
+    """IMAS-ParaView command line interface.
 
     Please use one of the available commands listed below. You can get help for each
     command by executing:
@@ -46,15 +46,15 @@ def cli(version):
 
 
 def print_version():
-    """Print version information of IMAS-Paraview."""
+    """Print version information of IMAS-ParaView."""
     cons = console.Console()
     grid = Table(
-        title="IMAS-Paraview version info", show_header=False, title_style="bold"
+        title="IMAS-ParaView version info", show_header=False, title_style="bold"
     )
     grid.box = box.HORIZONTALS
     if cons.size.width > 120:
         grid.width = 120
-    grid.add_row("IMAS-Paraview version:", imas_paraview.__version__)
+    grid.add_row("IMAS-ParaView version:", imas_paraview.__version__)
     grid.add_section()
     grid.add_row("IMAS-Python version:", imas.__version__)
     grid.add_section()

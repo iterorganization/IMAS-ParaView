@@ -7,7 +7,7 @@ Code style and linting
 Code style
 ----------
 
-IMAS-Paraview follows `The Black Code Style
+IMAS-ParaView follows `The Black Code Style
 <https://black.readthedocs.io/en/stable/the_black_code_style/index.html>`_. All Python
 files should be formatted with the ``black`` command line tool (this is checked in
 :ref:`CI <ci configuration>`).
@@ -48,8 +48,8 @@ with pre-commit hooks):
 Linting
 -------
 
-IMAS-Paraview uses `flake8 <https://flake8.pycqa.org/en/latest/>`_ for linting (static code
-analysis). Flake8 should not report any violations when running it on the ``IMAS-Paraview``
+IMAS-ParaView uses `flake8 <https://flake8.pycqa.org/en/latest/>`_ for linting (static code
+analysis). Flake8 should not report any violations when running it on the ``IMAS-ParaView``
 code base. Again, this is checked in CI.
 
 In some exceptions we can ignore a violation. For example, if a violation cannot be
@@ -79,7 +79,7 @@ your code introduces any violations:
 
 Import sorting
 --------------
-IMAS-Paraview uses `isort <https://pycqa.github.io/isort/>`_ for automatic import sorting separated by type.
+IMAS-ParaView uses `isort <https://pycqa.github.io/isort/>`_ for automatic import sorting separated by type.
 
 Using isort
 '''''''''''

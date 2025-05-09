@@ -6,7 +6,7 @@ This page go over how to use the CLI interface to convert a GGD to VTK.
 
 Convert GGD to VTK using the CLI
 --------------------------------
-IMAS-Paraview supports converting the GGD of an IDS to VTK format from a command-line interface (CLI).
+IMAS-ParaView supports converting the GGD of an IDS to VTK format from a command-line interface (CLI).
 This can be done by using the `ggd2vtk` tool. 
 
 .. tip:: Detailed usage of the CLI tool can be found by running ``ggd2vtk --help``

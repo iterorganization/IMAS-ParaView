@@ -1,11 +1,11 @@
 API reference
 =============
 
-This page provides an auto-generated summary of IMAS-Paraview's API. For more details
+This page provides an auto-generated summary of IMAS-ParaView's API. For more details
 and examples, refer to the relevant chapters in the main part of the
 documentation.
 
-IMAS-Paraview
+IMAS-ParaView
 -------------
 
 .. autosummary::
