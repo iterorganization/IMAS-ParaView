@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -6,6 +7,8 @@ import pytest
 
 from imas_paraview.plugins.vtkggdreader import SUPPORTED_IDS_NAMES
 from imas_paraview.tests.fill_ggd import fill_ids
+
+logger = logging.getLogger("imas_paraview")
 
 
 def set_environment():
@@ -39,27 +42,29 @@ def set_environment():
     print(f"LD_PRELOAD={os.environ['LD_PRELOAD']}")
 
 
-#
-# def pytest_sessionstart(session):
-#     """Set up the environment variables and generate test data to
-#     perform the integration tests on."""
-#
-#     print("Setting up test environment...")
-#     set_environment()
-#
-#     # Generate test data
-#     ids = imas.IDSFactory(version="3.42.0").new("edge_profiles")
-#     fill_ids(ids, time_steps=10, grid_size=5)
-#
-#     # Write test file as MDSPlus
-#     with imas.DBEntry("imas:mdsplus?path=mdsplus_testdb", "w") as dbentry:
-#         dbentry.put(ids)
-#
-#     # Write test file as HDF5
-#     with imas.DBEntry("imas:hdf5?path=hdf5_testdb", "w") as dbentry:
-#         dbentry.put(ids)
-#
-#     print("Test environment setup complete.")
+def pytest_sessionstart(session):
+    """Set up the environment variables and generate test data to
+    perform the integration tests on."""
+
+    if not imas.backends.imas_core.imas_interface.has_imas:
+        logger.warning("IMAS-Core is not available, integration tests are skipped.")
+        return
+    print("Setting up test environment...")
+    set_environment()
+
+    # Generate test data
+    ids = imas.IDSFactory(version="3.42.0").new("edge_profiles")
+    fill_ids(ids, time_steps=10, grid_size=5)
+
+    # Write test file as MDSPlus
+    with imas.DBEntry("imas:mdsplus?path=mdsplus_testdb", "w") as dbentry:
+        dbentry.put(ids)
+
+    # Write test file as HDF5
+    with imas.DBEntry("imas:hdf5?path=hdf5_testdb", "w") as dbentry:
+        dbentry.put(ids)
+
+    print("Test environment setup complete.")
 
 
 @pytest.fixture(params=SUPPORTED_IDS_NAMES)
