@@ -40,7 +40,7 @@ imas_repos = urljoin(iter_projects, "IMAS/")
 imex_repos = urljoin(iter_projects, "IMEX/")
 issue_url = jira_url = "https://jira.iter.org/browse/"
 
-# IMAS-Paraview
+# IMAS-ParaView
 repository_url = f"{iter_projects}/{src_group}/repos/{src_project}/"
 blob_url = urljoin(repository_url, "browse/")
 mr_url = urljoin(repository_url, "/pull-requests")

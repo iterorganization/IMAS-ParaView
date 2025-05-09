@@ -3,9 +3,9 @@ requires = ["setuptools>=61", "wheel", "tomli;python_version<'3.11'", "versionee
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "IMAS-Paraview"
+name = "IMAS-ParaView"
 authors = [
-    {name = "IMAS-Paraview developers"},
+    {name = "IMAS-ParaView developers"},
     {name = "Panchumarti Jaswant EXT", email = "jaswant.panchumarti@iter.org"},
     {name = "Olivier Hoenen", email = "olivier.hoenen@iter.org"},
 ]
