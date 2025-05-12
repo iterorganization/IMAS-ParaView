@@ -30,24 +30,41 @@ jobs:
   pytest:
     runs-on: ubuntu-latest
     needs: linting
-    container:
-      image: kitware/paraview-for-ci
+    env:
+      paraview-download-file: ParaView-5.13.3-MPI-Linux-Python3.10-x86_64.tar.gz
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        # Note: Python version **must** match the one in the paraview binaries
+        python-version: '3.10'
+
+    - name: Cache paraview
+      id: cache-npm
+      uses: actions/cache@v4
+      with:
+        path: paraview/
+        key: ${{ env.paraview-download-file }}
+
+    - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
+      name: Download paraview binaries
+      run: |
+        wget "https://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v5.13&type=binary&os=Linux&downloadFile=${{ env.paraview-download-file }}" -O paraview.tar.gz
+        tar -xzf paraview.tar.gz
+        mv ParaView* paraview
+
     - name: Install dependencies
       run: |
-        git config --global --add safe.directory /__w/IMAS-ParaView/IMAS-ParaView # ensure versioneer works
-        apt-get update && apt-get install -y python3-pip git
-        python3 -m pip install --upgrade pip
-        pip3 install .[test]
+        pip install .[test]
 
     - name: Run tests
       run: |
-        /opt/paraview/install/bin/pvpython -m pytest  --cov=imas_paraview --cov-report=term-missing --cov-report=html --junit-xml=junit-3.11.xml
+        ./paraview/bin/pvpython -m pytest --cov=imas_paraview --cov-report=term-missing --cov-report=html
 
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
