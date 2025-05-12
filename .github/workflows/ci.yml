@@ -45,13 +45,13 @@ jobs:
         python-version: '3.10'
 
     - name: Cache paraview
-      id: cache-npm
+      id: cache-paraview
       uses: actions/cache@v4
       with:
         path: paraview/
         key: ${{ env.paraview-download-file }}
 
-    - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
+    - if: ${{ steps.cache-paraview.outputs.cache-hit != 'true' }}
       name: Download paraview binaries
       run: |
         wget "https://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v5.13&type=binary&os=Linux&downloadFile=${{ env.paraview-download-file }}" -O paraview.tar.gz
