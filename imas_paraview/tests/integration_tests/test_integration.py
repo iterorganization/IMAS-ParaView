@@ -56,7 +56,6 @@ def run_test(script, timeout=120):
 
 
 @pytest.mark.integration
-@pytest.mark.skip(reason="no IMAS-Core available")
 def test_xvfb_pass():
     """Test a passing integration test, by testing an empty XML."""
     test_passed = run_test(
@@ -71,7 +70,6 @@ def test_xvfb_pass():
 
 
 @pytest.mark.integration
-@pytest.mark.skip(reason="no IMAS-Core available")
 def test_xvfb_fail():
     """Test failing integration test."""
     test_passed = run_test(
