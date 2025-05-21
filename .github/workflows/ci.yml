@@ -46,7 +46,7 @@ jobs:
 
     - name: Cache paraview
       id: cache-paraview
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: paraview/
         key: ${{ env.paraview-download-file }}
@@ -57,6 +57,14 @@ jobs:
         wget "https://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v5.13&type=binary&os=Linux&downloadFile=${{ env.paraview-download-file }}" -O paraview.tar.gz
         tar -xzf paraview.tar.gz
         mv ParaView* paraview
+    
+    - name: Always save cache (even if pytest would fail)
+      id: cache-paraview-save
+      if: always() && steps.cache-paraview.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ steps.cache-paraview.outputs.cache-primary-key }}
+        path: paraview/
 
     - name: Install dependencies
       run: |
