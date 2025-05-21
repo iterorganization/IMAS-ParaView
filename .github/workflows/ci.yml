@@ -68,6 +68,10 @@ jobs:
 
     - name: Install dependencies
       run: |
+        # Install dependencies required for running paraview gui in xfvb-run:
+        sudo apt install -y libqt5gui5-gles
+
+        # Install python dependencies
         python -m venv venv
         . venv/bin/activate
         pip install .[test]
