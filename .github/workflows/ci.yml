@@ -39,10 +39,11 @@ jobs:
         fetch-depth: 0
 
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         # Note: Python version **must** match the one in the paraview binaries
         python-version: '3.10'
+        cache: 'pip'  # caching pip dependencies
 
     - name: Cache paraview
       id: cache-paraview
