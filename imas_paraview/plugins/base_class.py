@@ -37,7 +37,7 @@ if imas.backends.imas_core.imas_interface.has_imas:
     DEFAULT_BACKEND = imas.ids_defs.MDSPLUS_BACKEND
     """Default backend selected in the UI."""
 else:
-    BACKENDS = {"<IMAS-Core is not available>": -1}
+    BACKENDS = {"[IMAS-Core is not available]": -1}
     DEFAULT_BACKEND = -1
 
 
