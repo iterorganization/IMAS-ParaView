@@ -84,9 +84,16 @@ def test_xvfb_fail():
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("test_script", TEST_SCRIPTS)
-@pytest.mark.skip(reason="no IMAS-Core available")
+@pytest.mark.parametrize(
+    "test_script", [pytest.param(script, id=script.name) for script in TEST_SCRIPTS]
+)
 def test_integration_scripts(test_script):
     """Parameterized test function for running integration tests."""
+    if "hdf5" in str(test_script) and not Path("hdf5_testdb").exists():
+        pytest.skip("HDF5 testdb does not exist")
+    if "mdsplus" in str(test_script) and not Path("mdsplus_testdb").exists():
+        pytest.skip("MDSplus testdb does not exist")
+    if "profiles_1d_mapper" in str(test_script):
+        pytest.skip("Requires ITER data, not available on GH Actions")
     test_passed = run_test(test_script)
     assert test_passed

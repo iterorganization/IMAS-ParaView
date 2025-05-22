@@ -8,6 +8,7 @@ import pytest
 from imas_paraview.plugins.vtkggdreader import SUPPORTED_IDS_NAMES
 from imas_paraview.tests.fill_ggd import fill_ids
 
+
 logger = logging.getLogger("imas_paraview")
 
 
@@ -17,8 +18,9 @@ def set_environment():
 
     # Set the LD_PRELOAD environment variable to handle Paraview bug
     hdf5_dir = os.getenv("HDF5_DIR")
-    ld_preload_value = f"{hdf5_dir}/lib/libhdf5.so.310"
-    os.environ["LD_PRELOAD"] = ld_preload_value
+    if hdf5_dir:
+        ld_preload_value = f"{hdf5_dir}/lib/libhdf5.so.310"
+        os.environ["LD_PRELOAD"] = ld_preload_value
 
     # Update PV_PLUGIN_PATH
     pv_plugin_path = os.environ.get("PV_PLUGIN_PATH")
@@ -39,29 +41,42 @@ def set_environment():
     print("Setting the following environment variables:")
     print(f"PV_PLUGIN_PATH={os.environ['PV_PLUGIN_PATH']}")
     print(f"PYTHONPATH={os.environ['PYTHONPATH']}")
-    print(f"LD_PRELOAD={os.environ['LD_PRELOAD']}")
+    if "LD_PRELOAD" in os.environ:
+        print(f"LD_PRELOAD={os.environ['LD_PRELOAD']}")
 
 
 def pytest_sessionstart(session):
     """Set up the environment variables and generate test data to
     perform the integration tests on."""
 
-    if not imas.backends.imas_core.imas_interface.has_imas:
-        logger.warning("IMAS-Core is not available, integration tests are skipped.")
-        return
     print("Setting up test environment...")
     set_environment()
 
     # Generate test data
-    ids = imas.IDSFactory(version="3.42.0").new("edge_profiles")
+    DD_VERSION = "3.42.0"
+    ids = imas.IDSFactory(version=DD_VERSION).new("edge_profiles")
     fill_ids(ids, time_steps=10, grid_size=5)
 
+    # Write test file as netCDF
+    with imas.DBEntry("netcdf_testdb.nc", "w", dd_version=DD_VERSION) as dbentry:
+        dbentry.put(ids)
+
+    if not imas.backends.imas_core.imas_interface.has_imas:
+        logger.warning(
+            "IMAS-Core is not available, some integration tests are skipped."
+        )
+        return
+
     # Write test file as MDSPlus
-    with imas.DBEntry("imas:mdsplus?path=mdsplus_testdb", "w") as dbentry:
+    with imas.DBEntry(
+        "imas:mdsplus?path=mdsplus_testdb", "w", dd_version=DD_VERSION
+    ) as dbentry:
         dbentry.put(ids)
 
     # Write test file as HDF5
-    with imas.DBEntry("imas:hdf5?path=hdf5_testdb", "w") as dbentry:
+    with imas.DBEntry(
+        "imas:hdf5?path=hdf5_testdb", "w", dd_version=DD_VERSION
+    ) as dbentry:
         dbentry.put(ids)
 
     print("Test environment setup complete.")
