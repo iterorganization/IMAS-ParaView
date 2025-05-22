@@ -19,9 +19,7 @@ def set_environment():
 
     # Update PV_PLUGIN_PATH
     pv_plugin_path = os.environ.get("PV_PLUGIN_PATH", "")
-    os.environ["PV_PLUGIN_PATH"] = (
-        f"{current_path}/imas_paraview/plugins:{pv_plugin_path}"
-    )
+    os.environ["PV_PLUGIN_PATH"] = f"{current_path.parent}/plugins:{pv_plugin_path}"
 
     # Update PYTHONPATH
     os.environ["PYTHONPATH"] = ":".join(sys.path)
