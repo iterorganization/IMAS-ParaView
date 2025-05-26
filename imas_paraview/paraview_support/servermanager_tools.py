@@ -1,5 +1,4 @@
-"""Helper functions for generating paraview ServerManager XMLs for the plugins.
-"""
+"""Helper functions for generating paraview ServerManager XMLs for the plugins."""
 
 import functools
 from typing import List

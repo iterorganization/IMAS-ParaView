@@ -77,9 +77,9 @@ def fill_vtk_points(
     # When length of coordinate type is greater than 2, the third coordinate is in
     # geometry[2], else it is 0.
     if len(coordinate_type) > 2:
-        third_dim: Callable[[Any], int] = lambda e: getattr(e, "geometry")[2]
+        third_dim: Callable[[Any], int] = lambda e: getattr(e, "geometry")[2]  # noqa
     else:
-        third_dim: Callable[[Any], int] = lambda e: 0
+        third_dim: Callable[[Any], int] = lambda e: 0  # noqa
 
     objects = grid_ggd.space[space_idx].objects_per_dimension[0].object
     for obj in objects:

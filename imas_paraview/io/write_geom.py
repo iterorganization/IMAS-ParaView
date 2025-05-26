@@ -101,9 +101,9 @@ def convert_vtk_dataset_to_grid_subset_geometry(
     if not is_custom_subset:
         grid_ggd.grid_subset[subset_idx].identifier.name = name
         grid_ggd.grid_subset[subset_idx].identifier.index = subset_enum.index
-        grid_ggd.grid_subset[subset_idx].identifier.description = (
-            subset_enum.description
-        )
+        grid_ggd.grid_subset[
+            subset_idx
+        ].identifier.description = subset_enum.description
     else:
         grid_ggd.grid_subset[subset_idx].identifier.name = name
         grid_ggd.grid_subset[subset_idx].identifier.index = -subset_idx
@@ -621,12 +621,14 @@ def _fill_implicit_grid_subsets(space_idx: int, grid_ggd):
         dim = i
         name = grid_subset_id_name[dim]
         grid_ggd.grid_subset[subset_idx].identifier.name = name
-        grid_ggd.grid_subset[subset_idx].identifier.index = (
-            imas.identifiers.ggd_subset_identifier[name].index
-        )
-        grid_ggd.grid_subset[subset_idx].identifier.description = (
-            imas.identifiers.ggd_subset_identifier[name].description
-        )
+        grid_ggd.grid_subset[
+            subset_idx
+        ].identifier.index = imas.identifiers.ggd_subset_identifier[name].index
+        grid_ggd.grid_subset[
+            subset_idx
+        ].identifier.description = imas.identifiers.ggd_subset_identifier[
+            name
+        ].description
         grid_ggd.grid_subset[subset_idx].dimension = dim + 1
         num_elements = len(grid_ggd.space[space_idx].objects_per_dimension[dim].object)
         grid_ggd.grid_subset[subset_idx].element.resize(num_elements)
