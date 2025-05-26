@@ -22,35 +22,40 @@ print("sys.path:", sys.path)
 
 # -- Project information -----------------------------------------------------
 # The documented project’s name
-project = src_project = PROJECT = "imas-paraview"
+project = src_project = PROJECT = "IMAS-ParaView"
 PACKAGE = "imas_paraview"
-src_group = GROUP = "IMEX"
 
 # A copyright statement in the style '2008, Author Name'.
 copyright = f"2020-{datetime.datetime.now().year}, ITER Organization"
 # The author name(s) of the document
 author = "ITER Organization"
-src_host = "git.iter.org"
+src_host = "https://github.com/iterorganization/"
 
 # Parse urls here for convenience, to be re-used
 
 # ITER docs
-iter_projects = "https://git.iter.org/projects/"
-imas_repos = urljoin(iter_projects, "IMAS/")
-imex_repos = urljoin(iter_projects, "IMEX/")
-issue_url = jira_url = "https://jira.iter.org/browse/"
+iter_projects = "https://github.com/iterorganization/"
+dd_url = urljoin(iter_projects, "IMAS-Data-Dictionary/")
+al_url = urljoin(iter_projects, "IMAS-Python/")
+issue_url = jira_url = "https://github.com/iterorganization/IMAS-ParaView/issues"
 
 # IMAS-ParaView
-repository_url = f"{iter_projects}/{src_group}/repos/{src_project}/"
-blob_url = urljoin(repository_url, "browse/")
-mr_url = urljoin(repository_url, "/pull-requests")
+repository_url = f"{iter_projects}/{src_project}/"
+blob_url = repository_ur
+mr_url = urljoin(repository_url, "/pulls")
 
 
 # Configuration of sphinx.ext.extlinks
 # See https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
 # unique name: (base URL, label prefix)
 extlinks = {
-    "src": (blob_url + "%s", f"{src_group}/{src_project}/%s"),
+    "src": (blob_url + "%s", "%s"),
+    "issue": (issue_url + "%s", "%s"),
+    "merge": (mr_url + "%s", "!%s"),
+    "dd": (dd_url + "%s", "%s"),
+    "al": (al_url + "%s", "%s"),
+    "pypa": ("https://packaging.python.org/%s", None),
+
 }
 
 full_version = Version(imas_paraview.__version__)
@@ -122,10 +127,10 @@ html_theme = "sphinx_immaterial"
 # and
 # https://sphinx-immaterial.readthedocs.io/en/latest/customization.html#confval-html_theme_options
 html_theme_options = {
-    "repo_url": "https://git.iter.org/projects/IMEX/repos/ggd-vtk/",
-    "repo_name": "GGD-VTK",
+    "repo_url": "https://github.com/iterorganization/IMAS-Paraview",
+    "repo_name": "IMAS-ParaView",
     "icon": {
-        "repo": "fontawesome/brands/bitbucket",
+        "repo": "fontawesome/brands/github",
     },
     "features": [
         # "navigation.expand",
@@ -293,4 +298,4 @@ def escape_underscores(string):
 
 def setup(app):
     DEFAULT_FILTERS["escape_underscores"] = escape_underscores
-    app.add_css_file("ggd_vtk.css")
+    app.add_css_file("imas_paraview.css")
