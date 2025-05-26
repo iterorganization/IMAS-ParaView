@@ -104,8 +104,8 @@ jobs:
       run: |
         git fetch origin develop:refs/remotes/origin/develop
         git fetch origin master:refs/remotes/origin/master
-        git branch develop origin/develop
-        git branch master origin/master
+        git show-ref --verify --quiet refs/heads/develop || git branch develop origin/develop
+        git show-ref --verify --quiet refs/heads/master || git branch master origin/master
 
     - name: Set up Python
       uses: actions/setup-python@v3
