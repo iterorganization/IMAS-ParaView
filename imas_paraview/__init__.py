@@ -5,9 +5,10 @@ from packaging import version
 
 from imas_paraview.vtkhandler import VTKHandler
 
-from . import _version
-
-__version__ = _version.get_versions()["version"]
+try:
+    from ._version import version as __version__
+except ImportError:
+    __version__ = "unknown"
 
 # Setup logger for GGDVTK module
 logger = logging.getLogger("imas_paraview")
