@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61", "wheel", "tomli;python_version<'3.11'", "versioneer[toml]"]
+requires = ["setuptools>=61", "wheel", "tomli;python_version<'3.11'", "setuptools_scm>8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -64,18 +64,9 @@ addopts = "--strict-markers"
 markers = ["integration"]
 testpaths = "imas_paraview/tests"
 
-[tool.versioneer]
-VCS = "git"
-style = "pep440"
-versionfile_source = "imas_paraview/_version.py"
-versionfile_build = "imas_paraview/_version.py"
-tag_prefix = ""
-parentdir_prefix = ""
+[tool.setuptools_scm]
+write_to = "imas_paraview/_version.py"
+local_scheme = "no-local-version"
 
-[tool.black]
-# Exclude versioneer-generated file
-force-exclude = "imas_paraview/_version.py"
-
-[tool.isort]
-profile = "black"
-
+[tool.ruff]
+exclude = ["imas_paraview/_version.py"]
