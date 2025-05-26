@@ -15,7 +15,7 @@ This is complemented by a number of Paraview plugins that can visualise both GGD
 README
 ------
 
-The README is best read on the `git page <https://git.iter.org/projects/IMEX/repos/ggd-vtk/browse>`_.
+The README is best read on the `git page <https://github.com/IMAS-ParaView/>`_.
 
 Manual
 ------

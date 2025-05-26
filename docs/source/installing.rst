@@ -27,8 +27,8 @@ SDCC installation
 
   mkdir projects
   cd projects
-  git clone ssh://git@git.iter.org/imex/ggd-vtk.git
-  cd ggd-vtk
+  git clone git@github.com:iterorganization/IMAS-ParaView.git
+  cd IMAS-ParaView
 
 
 * To run a plugin in Paraview, run the following at the root of the project directory.
