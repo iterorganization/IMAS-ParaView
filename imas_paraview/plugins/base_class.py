@@ -27,14 +27,18 @@ from imas_paraview.paraview_support.servermanager_tools import (
 
 logger = logging.getLogger("imas_paraview")
 
-BACKENDS = {
-    "MDSplus": imas.ids_defs.MDSPLUS_BACKEND,
-    "HDF5": imas.ids_defs.HDF5_BACKEND,
-    "ASCII": imas.ids_defs.ASCII_BACKEND,
-}
-"""Mapping of UI labels for each backend and their ID, used for the Backend dropdown."""
-DEFAULT_BACKEND = imas.ids_defs.MDSPLUS_BACKEND
-"""Default backend selected in the UI."""
+if imas.backends.imas_core.imas_interface.has_imas:
+    BACKENDS = {
+        "MDSplus": imas.ids_defs.MDSPLUS_BACKEND,
+        "HDF5": imas.ids_defs.HDF5_BACKEND,
+        "ASCII": imas.ids_defs.ASCII_BACKEND,
+    }
+    """Mapping of UI labels for each backend and ID, used for the Backend dropdown."""
+    DEFAULT_BACKEND = imas.ids_defs.MDSPLUS_BACKEND
+    """Default backend selected in the UI."""
+else:
+    BACKENDS = {"[IMAS-Core is not available]": -1}
+    DEFAULT_BACKEND = -1
 
 
 class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):

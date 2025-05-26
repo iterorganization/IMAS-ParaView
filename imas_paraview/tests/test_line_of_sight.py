@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from imas import DBEntry
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
@@ -7,6 +8,7 @@ from imas_paraview.plugins.line_of_sight import LineOfSightReader
 from imas_paraview.util import pol_to_cart
 
 
+@pytest.mark.skip(reason="no IMAS-Core available")
 def test_load_los():
     """Test if line_of_sight structures are loaded in the VTK Multiblock Dataset."""
     reader = LineOfSightReader()
@@ -51,6 +53,7 @@ def test_load_los():
             assert_values_match(los, output.GetBlock(i))
 
 
+@pytest.mark.skip(reason="no IMAS-Core available")
 def test_load_los_ece():
     """Test if line_of_sight structures in ece are loaded in the VTK
     Multiblock Dataset."""

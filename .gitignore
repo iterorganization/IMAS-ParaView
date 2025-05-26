@@ -62,10 +62,14 @@ cython_debug/
 
 # Archives
 *.tar.gz
-/vtkggdtools/plugins/VTKGGDTools.py
 /.idea
 /*.pvsm
 
 # Exclude XML files from integration tests
-!vtkggdtools/tests/integration_tests/xml_integration_tests/*.xml
-!vtkggdtools/tests/integration_tests/xml_xvfb_tests/*.xml
+!imas-paraview/tests/integration_tests/xml_integration_tests/*.xml
+!imas-paraview/tests/integration_tests/xml_xvfb_tests/*.xml
+
+# Test databases
+netcdf_testdb.nc
+hdf5_testdb/*
+mdsplus_testdb/*

@@ -13,6 +13,7 @@ from imas_paraview.cli import (
 )
 
 
+@pytest.mark.skip(reason="no IMAS-Core available")
 def test_version():
     runner = CliRunner()
 
@@ -26,7 +27,7 @@ def test_version():
 
 
 def test_ggd2vtk(tmp_path, dummy_ids):
-    uri = f"imas:hdf5?path={tmp_path}/testdb"
+    uri = f"{tmp_path}/testdb.nc"
     with imas.DBEntry(uri, "w") as dbentry:
         dbentry.put(dummy_ids)
 

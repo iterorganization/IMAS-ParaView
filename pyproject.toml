@@ -35,9 +35,7 @@ docs = [
     "recommonmark>=0.6",
 ]
 linting = [
-    "black>=24,<25",
-    "flake8",
-    "isort",
+    "ruff",
 ]
 test = [
     "pytest>=6",
