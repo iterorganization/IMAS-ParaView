@@ -39,14 +39,15 @@ jobs:
         fetch-depth: 0
 
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         # Note: Python version **must** match the one in the paraview binaries
         python-version: '3.10'
+        cache: 'pip'  # caching pip dependencies
 
     - name: Cache paraview
       id: cache-paraview
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: paraview/
         key: ${{ env.paraview-download-file }}
@@ -57,9 +58,21 @@ jobs:
         wget "https://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v5.13&type=binary&os=Linux&downloadFile=${{ env.paraview-download-file }}" -O paraview.tar.gz
         tar -xzf paraview.tar.gz
         mv ParaView* paraview
+    
+    - name: Always save cache (even if pytest would fail)
+      id: cache-paraview-save
+      if: always() && steps.cache-paraview.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ steps.cache-paraview.outputs.cache-primary-key }}
+        path: paraview/
 
     - name: Install dependencies
       run: |
+        # Install dependencies required for running paraview gui in xfvb-run:
+        sudo apt install -y libqt5gui5-gles
+
+        # Install python dependencies
         python -m venv venv
         . venv/bin/activate
         pip install .[test]
@@ -68,7 +81,8 @@ jobs:
 
     - name: Run tests
       run: |
-        ./paraview/bin/pvpython --venv venv -m pytest --cov=imas_paraview --cov-report=term-missing --cov-report=html
+        export PATH="$PWD/paraview/bin:$PATH"
+        pvpython --venv venv -m pytest --cov=imas_paraview --cov-report=term-missing --cov-report=html
 
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
