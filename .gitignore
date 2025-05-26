@@ -26,6 +26,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+imas_paraview/_version.py
 
 # Installer logs
 pip-log.txt
