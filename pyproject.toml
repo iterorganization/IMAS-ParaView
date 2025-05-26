@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "IMAS-ParaView"
 authors = [
-    {name = "IMAS-ParaView developers"},
     {name = "Panchumarti Jaswant EXT", email = "jaswant.panchumarti@iter.org"},
-    {name = "Olivier Hoenen", email = "olivier.hoenen@iter.org"},
+    {name = "ITER Organization"},
+    {email = "imas-support@iter.org"},
 ]
 description = "Tools to expose GGD readers/writers as ParaView plugins."
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -55,7 +55,7 @@ imas-paraview = "imas_paraview.cli:cli"
 ggd2vtk = "imas_paraview.cli:convert_ggd_to_vtk"
 
 [project.urls]
-homepage = "https://git.iter.org/projects/IMEX/repos/ggd-vtk"
+homepage = "https://github.com/iterorganization/IMAS-ParaView"
 
 [tool.setuptools.packages.find]
 where = ["."]
