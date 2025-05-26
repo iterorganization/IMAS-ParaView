@@ -26,7 +26,7 @@ project = src_project = PROJECT = "IMAS-ParaView"
 PACKAGE = "imas_paraview"
 
 # A copyright statement in the style '2008, Author Name'.
-copyright = f"2020-{datetime.datetime.now().year}, ITER Organization"
+copyright = f"2022-{datetime.datetime.now().year}, ITER Organization"
 # The author name(s) of the document
 author = "ITER Organization"
 src_host = "https://github.com/iterorganization/"
@@ -41,7 +41,7 @@ issue_url = jira_url = "https://github.com/iterorganization/IMAS-ParaView/issues
 
 # IMAS-ParaView
 repository_url = f"{iter_projects}/{src_project}/"
-blob_url = repository_ur
+blob_url = repository_url
 mr_url = urljoin(repository_url, "/pulls")
 
 
