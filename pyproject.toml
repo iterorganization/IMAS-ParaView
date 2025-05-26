@@ -67,3 +67,6 @@ testpaths = "imas_paraview/tests"
 [tool.setuptools_scm]
 write_to = "imas_paraview/_version.py"
 local_scheme = "no-local-version"
+
+[tool.ruff]
+exclude = ["imas_paraview/_version.py"]
