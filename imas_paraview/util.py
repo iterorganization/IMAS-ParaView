@@ -8,14 +8,6 @@ from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkLine, vtkPolyData
 logger = logging.getLogger("imas_paraview")
 
 
-class FauxIndexMap:
-    def __getitem__(self, item):
-        return 0
-
-    def get(self, name, default=None):
-        return 0
-
-
 def format_units(node) -> str:
     """Return the unit of the node surrounded by square brackets."""
     return f"[{node.metadata.units}]"
