@@ -34,7 +34,7 @@ Installation on Ubuntu 24.04
 
     .. code-block:: bash
     
-      tar -xzf ParaView-5.13.3-MPI-Linux-Python3.10-x86_64.tar.gz
+      tar -xzvf ParaView-5.13.3-MPI-Linux-Python3.10-x86_64.tar.gz
 
 3.  Install ``uv``:
 
@@ -59,6 +59,8 @@ Installation on Ubuntu 24.04
       uv venv --python 3.10
       # TODO: update when package is available on PyPI
       uv pip install --python 3.10 git+https://github.com/iterorganization/IMAS-ParaView.git
+      # Uninstall VTK, this would conflict with ParaView's built-in VTK module
+      uv pip uninstall --python 3.10 vtk
       # Optional: install imas-core package from the ITER git:
       git clone ssh://git@git.iter.org/imas/al-core.git -b main
       uv pip install --python 3.10 ./al-core
@@ -69,6 +71,9 @@ Installation on Ubuntu 24.04
 
       export PYTHONPATH="$PWD/.venv/lib/python3.10/site-packages/"
       export PV_PLUGIN_PATH="$PWD/.venv/lib/python3.10/site-packages/imas_paraview/plugins"
+      # This LD_PRELOAD is required when loading data with the imas_core HDF5 backend.
+      # Note that it may break any built-in ParaView HDF5 support...
+      export LD_PRELOAD="/lib/x86_64-linux-gnu/libhdf5_serial.so.103"
       ./ParaView-5.13.3-MPI-Linux-Python3.10-x86_64/bin/paraview
 
 
