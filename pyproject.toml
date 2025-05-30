@@ -4,11 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "imas-paraview"
-authors = [
-    {name = "Panchumarti Jaswant EXT", email = "jaswant.panchumarti@iter.org"},
-    {name = "ITER Organization"},
-    {email = "imas-support@iter.org"},
-]
+authors = [{name = "ITER Organization", email = "imas-support@iter.org"}]
 description = "Tool to convert IMAS Generalized Grid Description (GGD) structures to VTK, together with a few plugins to visualize GGD and non-GGD IMAS data in ParaView."
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE.txt"}
