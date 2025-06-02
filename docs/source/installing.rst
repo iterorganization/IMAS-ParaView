@@ -6,11 +6,9 @@ Installing IMAS-ParaView
 If the IMAS-ParaView module is available on your HPC environment, you can ignore the further 
 steps below and simply load the module as follows:
 
-# TODO: Change module name when new IMAS-ParaView easybuild module is available
-
 .. code-block:: bash
 
-  module load GGD-VTK
+  module load IMAS-ParaView
   # Launch Paraview
   paraview
   # Open the "Sources" tab in the top left, and ensure you see "IMAS Tools" in 
@@ -57,8 +55,7 @@ Installation on Ubuntu 24.04
     .. code-block:: bash
 
       uv venv --python 3.10
-      # TODO: update when package is available on PyPI
-      uv pip install --python 3.10 git+https://github.com/iterorganization/IMAS-ParaView.git
+      uv pip install --python 3.10 imas-paraview
       # Uninstall VTK, this would conflict with ParaView's built-in VTK module
       uv pip uninstall --python 3.10 vtk
       # Optional: install imas-core package from the ITER git:
@@ -102,7 +99,7 @@ Installation on Ubuntu 22.04
 
       python -m venv venv
       . venv/bin/activate
-      pip install git+https://github.com/iterorganization/IMAS-ParaView.git
+      pip install imas-paraview
       # Uninstall VTK, this would conflict with ParaView's built-in VTK module
       pip uninstall vtk
       # Optional: install imas-core package from the ITER git:
@@ -142,7 +139,7 @@ IMAS-Paraview plugins on the ITER SDCC cluster.
 
   # Load compatible IMAS-Python, IMAS-Core and ParaView modules, like:
   module load IMAS-AL-Core/5.4.3-foss-2023b IMAS-Python/2.0.0-foss-2023b \
-  ParaView/5.12.0-foss-2023b
+    ParaView/5.12.0-foss-2023b
   # export environment variables, this assumes the current
   # working directory is the root of the repository
   export PV_PLUGIN_PATH=$PWD/imas_paraview/plugins:$PV_PLUGIN_PATH
@@ -158,7 +155,7 @@ IMAS-Paraview plugins on the ITER SDCC cluster.
 
   # Load compatible IMAS-Python, IMAS-Core and ParaView modules, like:
   module load IMAS-AL-Core/5.4.3-foss-2023b IMAS-Python/2.0.0-foss-2023b \
-  ParaView/5.12.0-foss-2023b
+    ParaView/5.12.0-foss-2023b
   # create virtual environment and install dependencies
   python3 -m venv ./venv
   . venv/bin/activate
@@ -177,7 +174,7 @@ IMAS-Paraview plugins on the ITER SDCC cluster.
 
   # Load the required modules
   module load IMAS-AL-Core/5.4.3-foss-2023b IMAS-Python/2.0.0-foss-2023b \
-  ParaView/5.12.0-foss-2023b
+    ParaView/5.12.0-foss-2023b
   # Export the environment variables
   export PV_PLUGIN_PATH=$PWD/imas_paraview/plugins:$PV_PLUGIN_PATH
   export PYTHONPATH=$PWD:$PYTHONPATH
@@ -205,7 +202,3 @@ IMAS-Paraview plugins on the ITER SDCC cluster.
 
   make -C docs html
   # You can now open ./docs/_build/html/index.html
-
-..
-  TODO: add local installing documentation, maybe wait until ggd-vtk goes open source?
-  As it needs to be installed with IMAS-Python.
