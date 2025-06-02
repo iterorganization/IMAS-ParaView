@@ -10,7 +10,7 @@ try:
 except ImportError:
     __version__ = "unknown"
 
-# Setup logger for GGDVTK module
+# Setup logger
 logger = logging.getLogger("imas_paraview")
 handler = VTKHandler()
 logger.addHandler(handler)
