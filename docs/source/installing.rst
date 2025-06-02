@@ -45,7 +45,7 @@ Installation on Ubuntu 24.04
       pip install uv
 
 4.  Use ``uv`` to create a virtual environment with Python 3.10 (which is the version
-    used by ParaView) and the required packages.
+    used by ParaView) and install the required packages.
 
     Note: you will need the ``imas_core`` package to load IMAS data that is stored in
     the HDF5 or MDSplus backends. Unfortunately, this component is not publicly
@@ -76,6 +76,49 @@ Installation on Ubuntu 24.04
       export LD_PRELOAD="/lib/x86_64-linux-gnu/libhdf5_serial.so.103"
       ./ParaView-5.13.3-MPI-Linux-Python3.10-x86_64/bin/paraview
 
+
+Installation on Ubuntu 22.04
+----------------------------
+
+1.  Download ParaView 5.13.3 from the Paraview website:
+    https://www.paraview.org/download/?version=v5.13&filter=Linux
+
+2.  Unzip the paraview package:
+
+    .. code-block:: bash
+    
+      tar -xzvf ParaView-5.13.3-MPI-Linux-Python3.10-x86_64.tar.gz
+
+3.  Create a virtual environment and the install the required packages.
+
+    Note: you will need the ``imas_core`` package to load IMAS data that is stored in
+    the HDF5 or MDSplus backends. Unfortunately, this component is not publicly
+    available, but can be installed provided you have access to its git repository.
+    See
+    https://sharepoint.iter.org/departments/POP/CM/IMDesign/Code%20Documentation/ACCESS-LAYER-doc/python/dev/building_installing.html#prerequisites
+    (behind login wall) for the prerequisites.
+
+    .. code-block:: bash
+
+      python -m venv venv
+      . venv/bin/activate
+      pip install git+https://github.com/iterorganization/IMAS-ParaView.git
+      # Uninstall VTK, this would conflict with ParaView's built-in VTK module
+      pip uninstall vtk
+      # Optional: install imas-core package from the ITER git:
+      git clone ssh://git@git.iter.org/imas/al-core.git -b main
+      pip install ./al-core
+
+4.  Set required environment variables and run ParaView:
+
+    .. code-block:: bash
+
+      export PYTHONPATH="$PWD/venv/lib/python3.10/site-packages/"
+      export PV_PLUGIN_PATH="$PWD/venv/lib/python3.10/site-packages/imas_paraview/plugins"
+      # This LD_PRELOAD is required when loading data with the imas_core HDF5 backend.
+      # Note that it may break any built-in ParaView HDF5 support...
+      export LD_PRELOAD="/lib/x86_64-linux-gnu/libhdf5_serial.so.103"
+      ./ParaView-5.13.3-MPI-Linux-Python3.10-x86_64/bin/paraview
 
 Development installation on SDCC
 --------------------------------
