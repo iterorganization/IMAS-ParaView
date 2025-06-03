@@ -36,7 +36,7 @@
     // "install_command": ["in-dir={env_dir} python -mpip install {wheel_file}"],
     // "uninstall_command": ["return-code=any python -mpip uninstall -y {project}"],
 
-    // List of branches to benchmark. If not provided, defaults to "master"
+    // List of branches to benchmark. If not provided, defaults to "main"
     // (for git) or "default" (for mercurial).
     "branches": ["develop", "main"],
 
