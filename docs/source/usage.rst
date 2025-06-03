@@ -1,6 +1,6 @@
 .. _`usage`:
 
-Using the Paraview readers
+Using the Paraview Plugins
 ==========================
 
 This section will cover how to use the Paraview plugins, for both the GGD plugins, as 
@@ -22,7 +22,16 @@ non-GGD Readers
    :maxdepth: 2
 
    1d_profiles_reader
+   profiles_2d_reader
    beam_reader
    los_reader
    position_reader
    wall_limiter_reader
+
+Filters
+-------
+
+.. toctree::
+   :maxdepth: 2
+
+   1d_profiles_mapper

@@ -27,12 +27,6 @@ clean: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 	rm -rf $(GENERATEDDIR)
 
-# This recipe generates source files, so put result in source
-# Seems to overwrite autosummary documentation though! So not using this rn
-MODULE_EXCLUDE="../tests/**"
-apidocs: Makefile
-	sphinx-apidoc --implicit-namespaces -o "$(GENERATEDDIR)" "$(PROJECT_ROOT)/vtkggdtools/" $(MODULE_EXCLUDE)
-
 # Sphinx will run this automatically
 autogen: Makefile
 	sphinx-autogen -o "$(GENERATEDDIR)" $(SOURCEDIR)/*.rst

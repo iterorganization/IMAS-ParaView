@@ -6,16 +6,16 @@ This page go over how to use the CLI interface to convert a GGD to VTK.
 
 Convert GGD to VTK using the CLI
 --------------------------------
-GGD-VTK supports converting the GGD of an IDS to VTK format from a command-line interface (CLI).
+IMAS-ParaView supports converting the GGD of an IDS to VTK format from a command-line interface (CLI).
 This can be done by using the `ggd2vtk` tool. 
 
-.. tip:: Detailed usage of the CLI tool can be found by running ``vtkggdtools ggd2vtk --help``
+.. tip:: Detailed usage of the CLI tool can be found by running ``ggd2vtk --help``
 
 Example usage:
 
 .. code-block:: bash
 
-    vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles output_dir
+    ggd2vtk imas:hdf5?path=testdb#edge_profiles output_dir
 
 This will create the following tree file structure:
 
@@ -48,7 +48,7 @@ convert all time steps instead, use the ``-a`` or ``--all-times`` flag.
 
 .. code-block:: bash
 
-    $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -a
+    $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -a
 
 
 .. note:: If you intend to convert a large chunk of the entire GGD dataset, it may be 
@@ -66,19 +66,19 @@ To convert index 5:
 
 .. code-block:: bash
 
-    $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 5
+    $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 5
 
 To convert indices 5, 8, and 9:
 
 .. code-block:: bash
 
-    $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 5,8,9
+    $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 5,8,9
 
 To convert a range of indices, such as 2 upto 6 (including 2 and 6):
 
 .. code-block:: bash
 
-    $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 2:6
+    $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -i 2:6
 
 Time-based slicing
 ^^^^^^^^^^^^^^^^^^
@@ -90,19 +90,19 @@ To convert time step at 5.5s:
 
 .. code-block:: bash
 
-    $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 5.5
+    $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 5.5
 
 To convert time steps 5.5s, 8s, and 9.1s:
 
 .. code-block:: bash
 
-    $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 5.5,8,9.1
+    $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 5.5,8,9.1
 
 To convert all time steps that fall between 2.2s and 6.6s:
 
 .. code-block:: bash
 
-    $ vtkggdtools ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 2.2:6.6
+    $ ggd2vtk imas:hdf5?path=testdb#edge_profiles test_dir -t 2.2:6.6
 
 .. note:: If the specified time step is not found in the IDS, the time step before the
    specified time step will be used instead.
