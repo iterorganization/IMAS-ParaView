@@ -103,9 +103,9 @@ jobs:
     - name: Fetch develop/master branches
       run: |
         git fetch origin develop:refs/remotes/origin/develop
-        git fetch origin master:refs/remotes/origin/master
+        git fetch origin main:refs/remotes/origin/main
         git show-ref --verify --quiet refs/heads/develop || git branch develop origin/develop
-        git show-ref --verify --quiet refs/heads/master || git branch master origin/master
+        git show-ref --verify --quiet refs/heads/main || git branch main origin/main
 
     - name: Set up Python
       uses: actions/setup-python@v3
@@ -125,7 +125,7 @@ jobs:
       run: |
         asv run -v --show-stderr --skip-existing-successful HEAD^!
         asv run -v --show-stderr --skip-existing-successful develop^!
-        asv run -v --show-stderr --skip-existing-successful master^!
+        asv run -v --show-stderr --skip-existing-successful main^!
 
     - name: Compare results
       run: |
