@@ -102,7 +102,7 @@ class Converter:
             logger.warning("Could not load a valid GGD grid.")
             return None
 
-        if self.grid_ggd.path:
+        if hasattr(self.grid_ggd, "path") and self.grid_ggd.path:
             self.reference_grid_path = self.grid_ggd.path
             self._replace_grid_with_reference()
         else:
