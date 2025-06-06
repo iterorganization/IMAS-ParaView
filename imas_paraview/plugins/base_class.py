@@ -148,6 +148,9 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             if self._dbentry is not None:
                 self._dbentry.close()
                 self._ids = self._dbentry = None
+                self._selectable = []
+                self._selected = []
+                self._ids_list = []
             self._uri_error = ""
             if self._uri:
                 # Try to open the DBEntry
@@ -156,9 +159,6 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                     logger.info(f'Successfully opened URI "{self._uri}".')
                 except Exception as exc:
                     self._uri_error = str(exc)
-                    self._selectable = []
-                    self._selected = []
-                    self._ids_list = []
             self._update_ids_list()
             self.Modified()
 
@@ -281,7 +281,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         selecting a URI to load the Data Entry), or when the loaded Data Entry contains
         no IDSs supported by this plugin.
         """
-        if value not in self._ids_list or value == "<Select IDS>":
+        if value == "<Select IDS>":
             self._selectable = []
             self._selected = []
             value = ""
