@@ -281,7 +281,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         selecting a URI to load the Data Entry), or when the loaded Data Entry contains
         no IDSs supported by this plugin.
         """
-        if value not in self._ids_list or value == "<Select IDS>":
+        if value == "<Select IDS>":
             self._selectable = []
             self._selected = []
             value = ""
