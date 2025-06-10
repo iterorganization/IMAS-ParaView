@@ -28,9 +28,8 @@ In this subsection, we load the JOREK grid and visualize the electron temperatur
 #. Set the ``N plane`` to 3 and the ``Phi range`` from 0 to 180 degrees in the Bezier interpolation settings.
 
 .. figure:: images/training/jorek_electron_temp.png
-   :width: 400px
 
-   JOREK GGD showing the electron temperature.
+   JOREK GGD showing the electron temperature. Data provided by J. Artola.
 
 Loading the Wall Current
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -51,9 +50,8 @@ In this subsection, we load the wall currents of the simulation using the GGD Re
 #. To distinguish between the wall currents and the electron temperature grid, change the wall current color map. Edit the color map, select ``Select a color map from default presets``, and choose a different color map.
 
 .. figure:: images/training/jorek_wall_currents.png
-   :width: 400px
 
-   JOREK GGD showing the electron temperature surrounded by the wall showing the total current.
+   JOREK GGD showing the electron temperature surrounded by the wall showing the total current. Data provided by J. Artola.
 
 Temporal Interpolation and Animation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -71,6 +69,5 @@ In this subsection, we create an animation of the loaded electron temperature an
 The resulting animation is shown below:
 
 .. figure:: images/training/jorek.gif
-   :width: 400px
 
-   Animation of the electron temperature and wall currents.
+   Animation of the electron temperature and wall currents. Data provided by J. Artola.

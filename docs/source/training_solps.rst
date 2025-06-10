@@ -3,7 +3,7 @@
 SOLPS-ITER Case
 ---------------
 
-TODO overview description
+In this example, we load and visualize a SOLPS-ITER case using the GGD grid available from the IMAS database. We first visualize the electron pressure from the edge_profiles IDS. Next, we extract subgrids of the GGD grid using the MultiBlock Inspector. Finally, we visualize the pressure of the Ne+9 ions and the electric potential on the extracted subgrids.
 
 Loading the Electron Pressure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -27,9 +27,8 @@ In this subsection, we load the SOLPS GGD grid and visualize the electron pressu
 
 
 .. figure:: images/training/solps_electron_pressure.png
-   :width: 400px
 
-   Edge Profiles GGD showing the electron pressure.
+   Edge Profiles GGD showing the electron pressure. Data provided by X. Bonnin.
 
 Extracting subgrids from GGD
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -41,9 +40,8 @@ In this subsection, we will extract the inner SOL, core and separatrix GGD subgr
 
 
 .. figure:: images/training/solps_multiblock.png
-   :width: 400px
 
-   Electron Pressure defined on the core, SOL and separatrix.
+   Electron Pressure defined on the core, SOL and separatrix. Data provided by X. Bonnin.
 
 
 Visualizing other attributes
@@ -63,9 +61,9 @@ In this subsection we will visualize the GGD values for other quantities, namely
    :header-rows: 0
 
    * - .. figure:: images/training/solps_ne9.png
-         :height: 400px
+         :height: 600px
      - .. figure:: images/training/solps_phi.png
-         :height: 400px
-   * - Grid showing the pressure of the Ne+9 ion.
-     - Grid showing the electric potential.
+         :height: 600px
+   * - Grid showing the pressure of the Ne+9 ion. Data provided by X. Bonnin.
+     - Grid showing the electric potential. Data provided by X. Bonnin.
 
