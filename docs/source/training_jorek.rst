@@ -17,7 +17,7 @@ Loading the Electron Temperature
 In this subsection, we load the JOREK grid and visualize the electron temperatures on this grid.
 
 #. Navigate to *Sources > IMAS Tools* and select the JOREK Reader.
-#. Enter the URI shown above in the ``Enter URI`` field of the reader plugin.
+#. Enter the URI shown above in the ``Enter URI`` field of the JOREK reader plugin.
 #. Select the ``plasma_profiles/1`` IDS in the IDS/Occurrence dropdown menu.
 #. Select ``Apply`` to load the plasma profiles GGD grid.
 #. After the GGD grid is loaded, bring the grid into view by aligning the viewpoint in the positive Y direction using the following button: |ico1|.

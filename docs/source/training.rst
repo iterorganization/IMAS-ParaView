@@ -9,7 +9,7 @@ These steps assume that you have IMAS-ParaView up and running, for this see :ref
 .. toctree::
    :maxdepth: 2
 
-   training_jorek
    training_solps
+   training_jorek
    training_md
    training_jintrac
