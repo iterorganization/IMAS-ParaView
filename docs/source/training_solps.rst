@@ -5,7 +5,7 @@ SOLPS-ITER Case
 
 In this example, we load and visualize a SOLPS-ITER case using the GGD grid available from the IMAS database. We first visualize the electron pressure from the edge_profiles IDS. Next, we extract subgrids of the GGD grid using the MultiBlock Inspector. Finally, we visualize the pressure of the Ne+9 ions and the electric potential on the extracted subgrids.
 
-The ParaView state file is available TODO
+The ParaView state file is available :download:`here <pv_states/solps_state.pvsm>`.
 
 Loading the Electron Pressure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
