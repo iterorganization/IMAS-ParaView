@@ -12,6 +12,8 @@ The following URI will be used:
 
 .. |ico1| image:: images/rotate_axis.png
 
+The ParaView state file is available TODO
+
 Loading the Electron Temperature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In this subsection, we load the JOREK grid and visualize the electron temperatures on this grid.
