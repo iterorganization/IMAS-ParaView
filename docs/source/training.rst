@@ -67,7 +67,14 @@ In this subsection, we create an animation of the loaded electron temperature an
 #. The clip must be applied to the Temporal Interpolator filter instead. Right-click the clip filter, select ``Copy Pipeline``, select the temporal interpolator, and select ``Paste Pipeline``. Ensure the wall currents are selected again in the coloring section. The old clip filter can now be removed.
 #. Verify that both temporal interpolators are working by opening *View > Time Manager* and checking if the two temporal interpolators have the same number of time steps and that the time steps are of equal size.
 #. Create an animation of the JOREK electron temperature and wall currents over time. Place the objects in the viewpoints in the desired orientation for the video. To create a video, go to *File > Save Animation*, provide a directory and a name for the video, and select ``OK``.
-#. In the pop-up window, video settings such as image resolution and compression can be changed. In this example, only change the frame rate to 20. Press ``OK`` to start generating the animation. This may take a while.
+#. In the pop-up window, video settings such as image resolution and compression can be changed. In this example, only change the frame rate to 10. Press ``OK`` to start generating the animation. This may take a while.
+
+The resulting animation is shown below:
+
+.. figure:: images/jorek.gif
+   :width: 400px
+
+   Animation of the electron temperature and wall currents.
 
 Machine Description case
 ------------------------
