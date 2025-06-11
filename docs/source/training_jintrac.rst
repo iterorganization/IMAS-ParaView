@@ -4,12 +4,6 @@ JINTRAC case
 ------------
 In this example, we will visualize the electron temperature GGD of the edge profiles IDS, as well as the 1D core profiles. We will use the psi grid from the equilibrium IDS to map the 1D electron temperature profiles onto a 2D grid. By doing this, we can visualize the electron temperature both in the edge plasma, as well as in the core in a single image.
 
-The following URI will be used:
-
-.. code-block:: bash
-
-   imas:hdf5?path=/work/imas/shared/TEST/simulations/test/8743dad6d7f211ef8fd59440c9e7706c/imasdb/iter/3/53298/2
-
 The ParaView state file is available :download:`here <pv_states/jintrac_state.pvsm>`.
 
 Loading the Edge Profiles Electron Temperature
@@ -19,7 +13,11 @@ This subsection covers loading and visualizing the electron temperature in the e
 .. |ico1| image:: images/rotate_axis.png
 
 #. Navigate to *Sources > IMAS Tools* and select the GGD Reader.
-#. Enter the URI shown above in the ``Enter URI`` field of the GGD reader plugin.
+#. Enter the following URI in the ``Enter URI`` field of the GGD reader plugin:
+
+   .. code-block:: bash
+
+      imas:hdf5?path=/work/imas/shared/TEST/simulations/test/8743dad6d7f211ef8fd59440c9e7706c/imasdb/iter/3/53298/2
 #. Select the `edge_profiles` IDS in the IDS/Occurrence dropdown menu.
 #. Select ``Apply`` to load the edge profiles GGD grid.
 #. After the GGD grid is loaded, bring the grid into view by aligning the viewpoint in the positive Y direction using the following button: |ico1|.
@@ -32,7 +30,11 @@ Loading the Electron Temperature 1d Profile
 This subsection covers loading the 1D electron temperature profiles, and plotting it in a line chart with the normalized toroidal flux coordinate (``rho_tor_norm``) on the x-axis.
 
 #. Navigate to *Sources > IMAS Tools* and select the 1D Profiles Reader.
-#. Enter the URI shown above in the ``Enter URI`` field of the 1D Profiles reader plugin.
+#. Enter the following URI in the ``Enter URI`` field of the 1D Profiles reader plugin:
+
+   .. code-block:: bash
+
+      imas:hdf5?path=/work/imas/shared/TEST/simulations/test/8743dad6d7f211ef8fd59440c9e7706c/imasdb/iter/3/53298/2
 #. Select the `core_profiles` IDS in the IDS/Occurrence dropdown menu.
 #. Select ``Apply`` to load the available core profiles.
 #. Select the ``Electrons Temperature`` from the attribute array selection window.
@@ -45,7 +47,11 @@ Loading the Poloidal Flux 2D Profile
 This subsection covers loading and visualizing the poloidal flux from the equilibrium IDS to create the 2D plane for mapping 1D profiles.
 
 #. Navigate to *Sources > IMAS Tools* and select the 2D Profiles Reader.
-#. Enter the URI shown above in the ``Enter URI`` field of the 2D Profiles reader plugin.
+#. Enter the following URI in the ``Enter URI`` field of the 2D Profiles reader plugin:
+
+   .. code-block:: bash
+
+      imas:hdf5?path=/work/imas/shared/TEST/simulations/test/8743dad6d7f211ef8fd59440c9e7706c/imasdb/iter/3/53298/2
 #. Select the `equilibrium` IDS in the IDS/Occurrence dropdown menu.
 #. Select ``Apply`` to load the equilibrium 2D profiles.
 #. Select the ``Psi`` from the attribute array selection window.

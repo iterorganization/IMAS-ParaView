@@ -4,13 +4,6 @@ JOREK Case
 ----------
 In this example, we visualize a JOREK disruption case available from the `confluence page <https://confluence.iter.org/display/IMP/The+JOREK+disruption+cases>`_. We will visualize the electron temperature from the ``plasma_profiles`` IDS and the corresponding current magnitude in the surrounding wall from the ``wall`` IDS. We will create an animation to visualize how these change over time.
 
-The following URI will be used:
-
-.. code-block:: bash
-
-   imas:hdf5?user=public;pulse=112111;run=2;database=ITER_DISRUPTIONS;version=4
-
-
 The ParaView state file is available :download:`here <pv_states/jorek_state.pvsm>`.
 
 Loading the Electron Temperature
@@ -20,14 +13,19 @@ In this subsection, we load the JOREK grid and visualize the electron temperatur
 .. |ico1| image:: images/rotate_axis.png
 
 #. Navigate to *Sources > IMAS Tools* and select the JOREK Reader.
-#. Enter the URI shown above in the ``Enter URI`` field of the JOREK reader plugin.
+#. Enter the following URI in the ``Enter URI`` field of the JOREK reader plugin:
+
+   .. code-block:: bash
+
+      imas:hdf5?user=public;pulse=112111;run=2;database=ITER_DISRUPTIONS;version=4
+
 #. Select the ``plasma_profiles/1`` IDS in the IDS/Occurrence dropdown menu.
 #. Select ``Apply`` to load the plasma profiles GGD grid.
 #. After the GGD grid is loaded, bring the grid into view by aligning the viewpoint in the positive Y direction using the following button: |ico1|.
 #. Select the ``Electrons Temperature`` from the attribute array selection window.
 #. Select ``Apply`` to load the electron temperature values on the grid.
 #. Select ``Electrons Temperature [eV]`` in the coloring dropdown to visualize the electron temperature.
-#. Enable log scale coloring by editing the color map and selecting ``Use Log Scale When Mapping Data To Colors``.
+#. Enable log scale coloring by selecting ``Edit`` under the *Coloring* section. In the *Color Map Editor* on the right enable ``Use Log Scale When Mapping Data To Colors``.
 #. Set the ``N plane`` to 3 and the ``Phi range`` from 0 to 180 degrees in the Bezier interpolation settings.
 
 .. figure:: images/training/jorek_electron_temp.png
@@ -42,7 +40,12 @@ In this subsection, we load the wall currents of the simulation using the GGD Re
 .. |ico2| image:: images/clip.png
 
 #. Navigate to *Sources > IMAS Tools* and select the GGD Reader.
-#. Enter the URI shown above in the ``Enter URI`` field of the reader plugin.
+#. Enter the following URI in the ``Enter URI`` field of the GGD reader plugin:
+
+   .. code-block:: bash
+
+      imas:hdf5?user=public;pulse=112111;run=2;database=ITER_DISRUPTIONS;version=4
+
 #. Select the ``wall`` IDS in the IDS/Occurrence dropdown menu.
 #. Select ``Apply`` to load the wall grid.
 #. Select ``J_total`` from the attribute array selection window.

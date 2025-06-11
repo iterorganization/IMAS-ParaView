@@ -3,7 +3,7 @@
 SOLPS-ITER Case
 ---------------
 
-In this example, we load and visualize a SOLPS-ITER case using the GGD grid available from the IMAS database. We first visualize the electron pressure from the edge_profiles IDS. Next, we extract subgrids of the GGD grid using the MultiBlock Inspector. Finally, we visualize the pressure of the Ne+9 ions and the electric potential on the extracted subgrids.
+In this example, we load and visualize a SOLPS-ITER case using the GGD grid available from the IMAS database. We first visualize the electron pressure from the ``edge_profiles`` IDS. Next, we extract subgrids of the GGD grid using the MultiBlock Inspector. Finally, we will visualize the pressure of the Ne+9 ions and the electric potential on the extracted subgrids.
 
 The ParaView state file is available :download:`here <pv_states/solps_state.pvsm>`.
 
@@ -38,7 +38,6 @@ In this subsection, we will extract the inner SOL, core and separatrix GGD subgr
 
 #. We can view the different types of subgrids that are stored in the GGD by using the MultiBlock Inspector. This can be found under *View > MultiBlock Inspector*.
 #. The MultiBlock Inspector shows the different subgrids that are stored in this GGD object. In our case, we want to load the ``SOL``, ``CORE`` and ``SEPARATRIX`` subgrids. Select those using MultiBlock Inspector and ensure all other subgrids are deselected.
-#. Click on Extract Blocks to create an Extract Block filter on the GGD reader, and select ``Apply`` to extract only the selected subgrids.
 
 
 .. figure:: images/training/solps_multiblock.png
@@ -50,10 +49,15 @@ Visualizing other attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In this subsection we will visualize the GGD values for other quantities, namely the pressure of the Ne+9, and the electric potential.
 
-#. First, we will visualize the pressure of the Ne+9 ions on the GGD grid. The attribute names follow the path names given by the Data Dictionary. For example, the `Ne+9 pressure <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/edge_profiles.html#edge_profiles-ggd-ion-state-pressure>`_ is stored in the Data Dictionary under the path ``ggd(itime)/ion(i1)/state(i2)/pressure(i3)``, as a result to load these we need to select the ``Ion State Pressure`` in the Select attribute arrays selection. 
+#. Start by selecting all the subgrids again in the MultiBlock Inspector and then close the MultiBlock Inspector. You should now see the full GGD grid again.
+#. We will visualize the pressure of the Ne+9 ions on the GGD grid. Select the ``Ion State Pressure`` in the Select attribute array selection.
+
+   .. note::
+      The attribute names follow the path names given by the Data Dictionary. 
+      For example, the `Ne+9 pressure <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/edge_profiles.html#edge_profiles-ggd-ion-state-pressure>`_ is stored in the Data Dictionary under the path ``ggd(itime)/ion(i1)/state(i2)/pressure(i3)``, as a result to load these we need to select the ``Ion State Pressure`` in the Select attribute arrays selection. 
 #. Click on ``Apply`` to load the ion pressures arrays.
 #. Select ``Ion (Ne) State (Ne+9) Pressure [Pa]`` in the coloring dropdown to visualize the pressure of the Ne+9 ions.
-#. Enable log scale coloring by editing the color map and selecting ``Use Log Scale When Mapping Data To Colors``.
+#. Enable log scale coloring by selecting ``Edit`` under the *Coloring* section. In the *Color Map Editor* on the right enable ``Use Log Scale When Mapping Data To Colors``.
 #. Next we will load the electric potential, Phi. Select ``Phi_potential`` in the attribute array selection. 
 #. Click on ``Apply`` to load the electric potential.
 #. Select ``Phi_potential [V]`` in the coloring dropdown to visualize the electric potential.
