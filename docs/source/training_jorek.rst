@@ -10,13 +10,14 @@ The following URI will be used:
 
    imas:hdf5?user=public;pulse=112111;run=2;database=ITER_DISRUPTIONS;version=4
 
-.. |ico1| image:: images/rotate_axis.png
 
 The ParaView state file is available :download:`here <pv_states/jorek_state.pvsm>`.
 
 Loading the Electron Temperature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In this subsection, we load the JOREK grid and visualize the electron temperatures on this grid.
+
+.. |ico1| image:: images/rotate_axis.png
 
 #. Navigate to *Sources > IMAS Tools* and select the JOREK Reader.
 #. Enter the URI shown above in the ``Enter URI`` field of the JOREK reader plugin.
