@@ -73,27 +73,22 @@ def get_grid_ggd(ids, ggd_idx=0):
 
     node = ids
     for path in grid_path.split("/"):
-        try:
-            node = node[path]
-        except ValueError:
-            logger.warning(
-                "Could not find a valid grid_ggd to load, because node "
-                f"{node.metadata.name} does not have a {path}."
-            )
-            return None
-
-        try:
-            node = node[ggd_idx]
-        except (LookupError, ValueError):
-            # if node at ggd_idx does not exist, instead try at index 0
-            try:
+        node = node[path]
+        if node.metadata.ndim == 0:
+            pass  # Current node is a structure
+        elif node.metadata.coordinate1.is_time_coordinate:
+            # Time dependent array of structure
+            if 0 <= ggd_idx < len(node):
+                node = node[ggd_idx]
+            else:
                 node = node[0]
                 logger.warning(
                     f"The GGD grid was not found at time index {ggd_idx}, so first "
                     "grid was loaded instead."
                 )
-            except (LookupError, ValueError):
-                pass  # apparently this was not an AoS :)
+        else:
+            # FIXME: Another array of structure, taking the first for now...
+            node = node[0]
 
     return node
 
