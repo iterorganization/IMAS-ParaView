@@ -4,7 +4,7 @@ JINTRAC case
 ------------
 In this example, we will visualize the electron temperature GGD of the edge profiles IDS, as well as the 1D core profiles. We will use the psi grid from the equilibrium IDS to map the 1D electron temperature profiles onto a 2D grid. By doing this, we can visualize the electron temperature both in the edge plasma, as well as in the core in a single image.
 
-The ParaView state file is available :download:`here <pv_states/jintrac_state.pvsm>`.
+It is recommended to go through the steps below by hand, however if you do not want to follow the steps, a ParaView state file containing this example is made available :download:`here <pv_states/jintrac_state.pvsm>`.
 
 Loading the Edge Profiles Electron Temperature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -25,6 +25,10 @@ This subsection covers loading and visualizing the electron temperature in the e
 #. Select ``Apply`` to load the electron temperature values on the grid.
 #. Select ``Electrons Temperature [eV]`` in the coloring dropdown to visualize the electron temperature.
 
+.. figure:: images/training/jintrac_electron_temp.png
+
+   GGD grid of the edge profiles containing the electron temperature. Data provided by S.H. Kim.
+
 Loading the Electron Temperature 1d Profile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This subsection covers loading the 1D electron temperature profiles, and plotting it in a line chart with the normalized toroidal flux coordinate (``rho_tor_norm``) on the x-axis.
@@ -41,6 +45,10 @@ This subsection covers loading the 1D electron temperature profiles, and plottin
 #. Select ``Apply`` to load the electron temperature 1D profile.
 #. To plot the 1D profile, we will apply a plotting filter. This can be found under *Filters > Data Analysis > Plot Data*. Select ``Apply`` to apply filter.
 #. In the filter properties, uncheck ``Use Index For X Axis`` and in the ``X Array Name`` dropdown select ``rho_tor_norm``. Also uncheck ``rho_tor_norm`` from the Series Parameters. You should now have a line chart of the electron temperature with the normalized toroidal flux coordinate on the x-axis.
+
+.. figure:: images/training/jintrac_profile1d.png
+
+   GGD grid of the edge profiles containing the electron temperature (left). 1D core profile of the electron temperature (right). Data provided by S.H. Kim.
 
 Loading the Poloidal Flux 2D Profile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -60,6 +68,10 @@ This subsection covers loading and visualizing the poloidal flux from the equili
 #. Select the 1D Profiles Reader, and select the ``Grid Psi``
 
 
+.. figure:: images/training/jintrac_profile2d.png
+
+   2D profile showing the poloidal flux. Data provided by S.H. Kim.
+
 Mapping 1D Profiles onto 2D Equilibrium Grid
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This subsection covers the mapping of the 1D electron temperature profile onto the 2D equilibrium grid to produce a 2D profile of the electron temperature.
@@ -75,3 +87,6 @@ This subsection covers the mapping of the 1D electron temperature profile onto t
 #. The data sets now have separate color bar ranges, so we can manually set these to the same range. For this, select the 1D Profiles Mapper filter and select the rescale to custom data range: |ico2|. Set the range from 0 to 25000.
 #. Repeat previous step for the GGD Reader, and remove the visibility of one of the colorbars, using the following button: |ico3|.
 
+.. figure:: images/training/jintrac_mapper.png
+
+   GGD grid of the edge profiles containing the electron temperature, the 1D core profile on the right as been mapped to 2D. Data provided by S.H. Kim.
