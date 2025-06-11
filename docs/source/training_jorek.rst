@@ -57,7 +57,7 @@ In this subsection, we load the wall currents of the simulation using the GGD Re
 
 .. figure:: images/training/jorek_wall_currents.png
 
-   JOREK GGD showing the electron temperature surrounded by the wall showing the total current. Data provided by J. Artola.
+   JOREK GGD showing the electron temperature surrounded by total current in the inner vacuum vessel (``t=0.309984``). Data provided by J. Artola.
 
 Temporal Interpolation and Animation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
