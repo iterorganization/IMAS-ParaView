@@ -55,7 +55,7 @@ def get_ggd_path(ids_metadata) -> Optional[str]:
     return None
 
 
-def get_grid_ggd(ids, ggd_idx=0):
+def get_grid_ggd(ids, ggd_idx=0, parent_idx=0):
     """Finds and returns the grid_ggd within IDS at the time index ggd_idx. If the
     grid_ggd at ggd_idx time index does not exist, it tries to return the first
     grid_ggd. If this does not exist, it returns None.
@@ -63,6 +63,9 @@ def get_grid_ggd(ids, ggd_idx=0):
     Args:
         ids: The IDS for which to return the grid_gdd.
         ggd_idx: Time index for which to load the grid.
+        parent_idx: Index for any non-time-dependent parent Array of Structures.
+            For example ``description_ggd[parent_idx].grid_ggd[ggd_idx]`` in the wall
+            IDS.
 
     Returns:
         The grid_ggd node found, or None if not found.
@@ -73,27 +76,21 @@ def get_grid_ggd(ids, ggd_idx=0):
 
     node = ids
     for path in grid_path.split("/"):
-        try:
-            node = node[path]
-        except ValueError:
-            logger.warning(
-                "Could not find a valid grid_ggd to load, because node "
-                f"{node.metadata.name} does not have a {path}."
-            )
-            return None
-
-        try:
-            node = node[ggd_idx]
-        except (LookupError, ValueError):
-            # if node at ggd_idx does not exist, instead try at index 0
-            try:
+        node = node[path]
+        if node.metadata.ndim == 0:
+            pass  # Current node is a structure
+        elif node.metadata.coordinate1.is_time_coordinate:
+            # Time dependent array of structure
+            if 0 <= ggd_idx < len(node):
+                node = node[ggd_idx]
+            else:
                 node = node[0]
                 logger.warning(
                     f"The GGD grid was not found at time index {ggd_idx}, so first "
                     "grid was loaded instead."
                 )
-            except (LookupError, ValueError):
-                pass  # apparently this was not an AoS :)
+        else:
+            node = node[parent_idx]
 
     return node
 

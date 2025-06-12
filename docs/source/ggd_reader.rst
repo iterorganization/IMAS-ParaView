@@ -108,3 +108,20 @@ The selected quantities can now be visualized using Paraview's selection drop-do
    may be beneficial to load all data up front. This can be done by enabling the `Preload Data`
    checkbox in the plugin settings.
 
+
+Sub index
+---------
+
+You may have noticed the greyed-out dropdown labeled "Sub index" in the previous
+sections. This dropdown allows you to select different parent structures that may
+contain a GGD grid, but only applies to some IDSs.
+
+One of these IDSs is the ``wall`` IDS, where the GGD grids are defined inside the
+``description_ggd`` array. You can use this dropdown to select which array element
+should be visualized:
+
+.. figure:: images/sub_index.png
+
+   Choose between visualizing the grid from ``description_ggd[0]`` or
+   ``description_ggd[1]``. The meaning of the different indices is dependent on the data
+   provider.
