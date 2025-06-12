@@ -45,6 +45,8 @@ else:
 class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     """GGD Reader based on IMAS-Python"""
 
+    _show_parent_indices_dropdown = False
+
     def __init_subclass__(cls, use_bezier=False, is_time_dependent=False, **kwargs):
         # Flag to classify time dependent plugins
         cls.is_time_dependent = is_time_dependent
@@ -303,11 +305,8 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     )
     def P11_GetParentIndices(self):
         """Return a list of parent indices, if applicable for the selected IDS."""
-        # This is only relevant for the GGD readers
-        from imas_paraview.plugins.ggd_base_reader import GGDBaseReader
-
         arr = vtkStringArray()
-        if isinstance(self, GGDBaseReader) and self._ids:
+        if self._show_parent_indices_dropdown and self._ids:
             try:
                 grid_ggd = get_grid_ggd(self._ids)
             except Exception:
@@ -329,12 +328,20 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
 
     @stringvector(name="ParentIndex", label="Sub index")
     @stringlistdomain("ParentIndices", name="parent_indices")
+    @genericdecorator(mode="visibility", property="ParentIndexVisible", value="1")
     def P11_SetParentIndex(self, value):
+        """Select structure index to extract the GGD grid from. This is only applicable
+        to some IDSs, such as 'wall'."""
         # Extract index from the selected text
         index = 0
         if "[" in value:
             index = int(value[value.rfind("[") + 1 : -1])
         self._update_property("_selected_parent_index", index)
+
+    @intvector(name="ParentIndexVisible", information_only=1, panel_visibility="never")
+    def P11_GetParentIndexVisible(self):
+        # Only show the Sub index dropdown (previous method) for the GGDReader
+        return int(self._show_parent_indices_dropdown)
 
     @arrayselectiondomain(
         property_name="AttributeArray",
