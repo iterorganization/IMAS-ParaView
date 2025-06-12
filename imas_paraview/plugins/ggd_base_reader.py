@@ -59,6 +59,7 @@ class GGDBaseReader(GGDVTKPluginBase):
             plane_config=plane_config,
             outInfo=outInfo,
             progress=progress,
+            parent_idx=self._selected_parent_index,
         )
 
         if output is None:

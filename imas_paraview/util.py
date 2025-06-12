@@ -55,7 +55,7 @@ def get_ggd_path(ids_metadata) -> Optional[str]:
     return None
 
 
-def get_grid_ggd(ids, ggd_idx=0):
+def get_grid_ggd(ids, ggd_idx=0, parent_idx=0):
     """Finds and returns the grid_ggd within IDS at the time index ggd_idx. If the
     grid_ggd at ggd_idx time index does not exist, it tries to return the first
     grid_ggd. If this does not exist, it returns None.
@@ -63,6 +63,9 @@ def get_grid_ggd(ids, ggd_idx=0):
     Args:
         ids: The IDS for which to return the grid_gdd.
         ggd_idx: Time index for which to load the grid.
+        parent_idx: Index for any non-time-dependent parent Array of Structures.
+            For example ``description_ggd[parent_idx].grid_ggd[ggd_idx]`` in the wall
+            IDS.
 
     Returns:
         The grid_ggd node found, or None if not found.
@@ -87,8 +90,7 @@ def get_grid_ggd(ids, ggd_idx=0):
                     "grid was loaded instead."
                 )
         else:
-            # FIXME: Another array of structure, taking the first for now...
-            node = node[0]
+            node = node[parent_idx]
 
     return node
 

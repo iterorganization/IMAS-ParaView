@@ -24,6 +24,7 @@ from imas_paraview.paraview_support.servermanager_tools import (
     stringlistdomain,
     stringvector,
 )
+from imas_paraview.util import get_grid_ggd
 
 logger = logging.getLogger("imas_paraview")
 
@@ -102,6 +103,8 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
 
         # Load ggd_idx from paraview UI
         self._time_steps = []
+        # Selected parent index
+        self._selected_parent_index = 0
 
         # Values to fill the array selector with
         self._selectable = []
@@ -295,6 +298,41 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             arr.InsertNextValue(val)
         return arr
 
+    @stringvector(
+        name="ParentIndices", information_only=1, si_class="vtkSIDataArrayProperty"
+    )
+    def P11_GetParentIndices(self):
+        """Return a list of parent indices, if applicable for the selected IDS."""
+        arr = vtkStringArray()
+        if self._ids:
+            try:
+                grid_ggd = get_grid_ggd(self._ids)
+            except Exception:
+                logger.error("Could not get parent indices", exc_info=1)
+                return arr
+            # Try to find any non-time-dependent indices in the parents
+            node = grid_ggd
+            while node:
+                parent = imas.util.get_parent(node)
+                # if parent and node have the same metadata, it means node = parent[idx]
+                if parent and parent.metadata is node.metadata:
+                    if not node.metadata.coordinate1.is_time_coordinate:
+                        for i in range(len(parent)):
+                            arr.InsertNextValue(f"{node.metadata.name}[{i}]")
+                node = parent
+        if arr.GetNumberOfValues() == 0:
+            arr.InsertNextValue("N/A")
+        return arr
+
+    @stringvector(name="ParentIndex", label="Sub index")
+    @stringlistdomain("ParentIndices", name="parent_indices")
+    def P11_SetParentIndex(self, value):
+        # Extract index from the selected text
+        index = 0
+        if "[" in value:
+            index = int(value[value.rfind("[") + 1 : -1])
+        self._update_property("_selected_parent_index", index)
+
     @arrayselectiondomain(
         property_name="AttributeArray",
         name="AttributeArraySelector",
@@ -427,6 +465,8 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         [
             "IDSAndOccurrence",
             "IDSList",
+            "ParentIndices",
+            "ParentIndex",
             "AttributeArraySelector",
             "ShowAll",
             "LazyLoading",
