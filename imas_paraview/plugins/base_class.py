@@ -303,8 +303,11 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     )
     def P11_GetParentIndices(self):
         """Return a list of parent indices, if applicable for the selected IDS."""
+        # This is only relevant for the GGD readers
+        from imas_paraview.plugins.ggd_base_reader import GGDBaseReader
+
         arr = vtkStringArray()
-        if self._ids:
+        if isinstance(self, GGDBaseReader) and self._ids:
             try:
                 grid_ggd = get_grid_ggd(self._ids)
             except Exception:
