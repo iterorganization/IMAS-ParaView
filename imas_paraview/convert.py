@@ -70,6 +70,7 @@ class Converter:
         plane_config: InterpSettings = InterpSettings(),
         outInfo=None,
         progress=None,
+        parent_idx=0,
     ):
         """Converts the GGD of an IDS to VTK format.
 
@@ -97,12 +98,12 @@ class Converter:
         if self.time_idx is None:
             return None
 
-        self.grid_ggd = get_grid_ggd(self.ids, self.time_idx)
+        self.grid_ggd = get_grid_ggd(self.ids, self.time_idx, parent_idx)
         if self.grid_ggd is None:
             logger.warning("Could not load a valid GGD grid.")
             return None
 
-        if self.grid_ggd.path:
+        if hasattr(self.grid_ggd, "path") and self.grid_ggd.path:
             self.reference_grid_path = self.grid_ggd.path
             self._replace_grid_with_reference()
         else:

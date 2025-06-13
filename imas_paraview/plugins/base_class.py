@@ -24,6 +24,7 @@ from imas_paraview.paraview_support.servermanager_tools import (
     stringlistdomain,
     stringvector,
 )
+from imas_paraview.util import get_grid_ggd
 
 logger = logging.getLogger("imas_paraview")
 
@@ -43,6 +44,8 @@ else:
 
 class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     """GGD Reader based on IMAS-Python"""
+
+    _show_parent_indices_dropdown = False
 
     def __init_subclass__(cls, use_bezier=False, is_time_dependent=False, **kwargs):
         # Flag to classify time dependent plugins
@@ -102,6 +105,8 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
 
         # Load ggd_idx from paraview UI
         self._time_steps = []
+        # Selected parent index
+        self._selected_parent_index = 0
 
         # Values to fill the array selector with
         self._selectable = []
@@ -148,6 +153,9 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             if self._dbentry is not None:
                 self._dbentry.close()
                 self._ids = self._dbentry = None
+                self._selectable = []
+                self._selected = []
+                self._ids_list = []
             self._uri_error = ""
             if self._uri:
                 # Try to open the DBEntry
@@ -156,9 +164,6 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                     logger.info(f'Successfully opened URI "{self._uri}".')
                 except Exception as exc:
                     self._uri_error = str(exc)
-                    self._selectable = []
-                    self._selected = []
-                    self._ids_list = []
             self._update_ids_list()
             self.Modified()
 
@@ -281,7 +286,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         selecting a URI to load the Data Entry), or when the loaded Data Entry contains
         no IDSs supported by this plugin.
         """
-        if value not in self._ids_list or value == "<Select IDS>":
+        if value == "<Select IDS>":
             self._selectable = []
             self._selected = []
             value = ""
@@ -294,6 +299,49 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         for val in self._ids_list:
             arr.InsertNextValue(val)
         return arr
+
+    @stringvector(
+        name="ParentIndices", information_only=1, si_class="vtkSIDataArrayProperty"
+    )
+    def P11_GetParentIndices(self):
+        """Return a list of parent indices, if applicable for the selected IDS."""
+        arr = vtkStringArray()
+        if self._show_parent_indices_dropdown and self._ids:
+            try:
+                grid_ggd = get_grid_ggd(self._ids)
+            except Exception:
+                logger.error("Could not get parent indices", exc_info=1)
+                return arr
+            # Try to find any non-time-dependent indices in the parents
+            node = grid_ggd
+            while node:
+                parent = imas.util.get_parent(node)
+                # if parent and node have the same metadata, it means node = parent[idx]
+                if parent and parent.metadata is node.metadata:
+                    if not node.metadata.coordinate1.is_time_coordinate:
+                        for i in range(len(parent)):
+                            arr.InsertNextValue(f"{node.metadata.name}[{i}]")
+                node = parent
+        if arr.GetNumberOfValues() == 0:
+            arr.InsertNextValue("N/A")
+        return arr
+
+    @stringvector(name="ParentIndex", label="Sub index")
+    @stringlistdomain("ParentIndices", name="parent_indices")
+    @genericdecorator(mode="visibility", property="ParentIndexVisible", value="1")
+    def P11_SetParentIndex(self, value):
+        """Select structure index to extract the GGD grid from. This is only applicable
+        to some IDSs, such as 'wall'."""
+        # Extract index from the selected text
+        index = 0
+        if "[" in value:
+            index = int(value[value.rfind("[") + 1 : -1])
+        self._update_property("_selected_parent_index", index)
+
+    @intvector(name="ParentIndexVisible", information_only=1, panel_visibility="never")
+    def P11_GetParentIndexVisible(self):
+        # Only show the Sub index dropdown (previous method) for the GGDReader
+        return int(self._show_parent_indices_dropdown)
 
     @arrayselectiondomain(
         property_name="AttributeArray",
@@ -427,6 +475,8 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         [
             "IDSAndOccurrence",
             "IDSList",
+            "ParentIndices",
+            "ParentIndex",
             "AttributeArraySelector",
             "ShowAll",
             "LazyLoading",

@@ -44,6 +44,8 @@ EXPERIMENTAL_IDS_NAMES = [
 @smproxy.source(label="GGD Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class GGDReader(GGDBaseReader, is_time_dependent=True):
+    _show_parent_indices_dropdown = True
+
     def __init__(self):
         supported_ids = EXPERIMENTAL_IDS_NAMES + SUPPORTED_IDS_NAMES
         super().__init__(supported_ids)

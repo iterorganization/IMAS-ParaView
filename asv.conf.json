@@ -7,7 +7,7 @@
     "project": "ggdvtktools",
 
     // The project's homepage
-    "project_url": "https://git.iter.org/projects/IMEX/repos/ggd-vtk/browse",
+    "project_url": "https://github.com/iterorganization/IMAS-ParaView",
 
     // The URL or local path of the source code repository for the
     // project being benchmarked
@@ -36,9 +36,9 @@
     // "install_command": ["in-dir={env_dir} python -mpip install {wheel_file}"],
     // "uninstall_command": ["return-code=any python -mpip uninstall -y {project}"],
 
-    // List of branches to benchmark. If not provided, defaults to "master"
+    // List of branches to benchmark. If not provided, defaults to "main"
     // (for git) or "default" (for mercurial).
-    "branches": ["develop", "master"],
+    "branches": ["develop", "main"],
 
     // The DVCS being used.  If not set, it will be automatically
     // determined from "repo" by looking at the protocol in the URL

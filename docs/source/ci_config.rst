@@ -39,7 +39,7 @@ Testing
 
 Benchmarking
     Runs ASV benchmarks on the CI server. Benchmarks compare current changes against
-    `develop`, `master`, and HEAD.
+    `develop`, `main`, and HEAD.
 
     Includes setup of a reproducible machine configuration and publishes HTML results.
 
