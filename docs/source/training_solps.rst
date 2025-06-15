@@ -3,9 +3,13 @@
 SOLPS-ITER Case
 ---------------
 
-In this example, we will load and visualize a SOLPS-ITER GGD grid and several quantities defined on this GGD grid. We first visualize the electron pressure from the ``edge_profiles`` IDS. Next, we learn how to extract grid subsets of the GGD grid using the MultiBlock Inspector. Finally, we will visualize the density of the Ne and the D ion side-by-side, and visualize the ratio of the two using ParaView's calculator functionality.
+In this example, we will load and visualize a SOLPS-ITER GGD grid and several quantities defined on this GGD grid. We first visualize the electron pressure from the ``edge_profiles`` IDS. 
 
-It is recommended to go through the steps below by hand, however if you do not want to follow the steps, a ParaView state file containing this example is made available :download:`here <pv_states/solps_state.pvsm>`.
+Next, we learn how to extract grid subsets of the GGD grid using the MultiBlock Inspector. `GGD grid subsets <https://imas-data-dictionary.readthedocs.io/en/latest/ggd_guide/doc.html#grid-subset-aos>`_ represent a portion of the contents of a larger full grid, usually intended for more accurate analysis of an exactly specified piece of the grid. Which grid subsets are available depends on the data provider (in this case SOLPS). 
+
+Finally, we will visualize the density of the Ne and the D ion side-by-side, and visualize the ratio of the two using ParaView's calculator functionality.
+
+You can download the ParaView state file for this example :download:`here <pv_states/solps_state.pvsm>`. However, we recommend you to manually follow the steps outlined below.
 
 Loading the Electron Pressure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -14,7 +18,7 @@ In this subsection, we will load the SOLPS GGD grid and visualize the electron p
 .. |ico1| image:: images/rotate_axis.png
 
 #. Navigate to *Sources > IMAS Tools* and select the GGD Reader.
-#. Enter the following URI in the ``Enter URI`` field of the GGD reader plugin:
+#. Enter the following URI in the ``Enter URI`` field of the GGD reader plugin, and select ``Apply``:
 
    .. code-block:: bash
 
@@ -37,7 +41,7 @@ Extracting grid subsets from GGD
 In this subsection, we will learn how to extract grid subsets from a GGD grid. Specifically, we will extract the inner SOL, core and separatrix GGD grid subsets. For more information on the GGD format and how it is structured, see the `Data Dictionary documentation <https://imas-data-dictionary.readthedocs.io/en/latest/ggd_guide/doc.html>`_.
 
 #. We can view the different types of grid subsets that are stored in the GGD by using the MultiBlock Inspector. This can be found under *View > MultiBlock Inspector*.
-#. The MultiBlock Inspector shows the different grid subsets that are stored in this GGD object. In our case, we want to load the ``SOL``, ``CORE`` and ``SEPARATRIX`` grid subsets. Select those using MultiBlock Inspector and ensure all other grid subsets are deselected. You should now see the electron pressure for only the selected grid subsets.
+#. The MultiBlock Inspector shows the different grid subsets that are stored in this GGD object. In our case, we want to view only ``SOL``, ``CORE`` and ``SEPARATRIX`` grid subsets. Select those using MultiBlock Inspector and ensure all other grid subsets are deselected. You should now see the electron pressure for only the selected grid subsets.
 
 
 .. figure:: images/training/solps_multiblock.png

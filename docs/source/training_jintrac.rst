@@ -4,7 +4,7 @@ JINTRAC case
 ------------
 In this example, we will visualize the electron temperature GGD of the edge profiles IDS, as well as the 1D core profiles. We will use the psi grid from the equilibrium IDS to map the 1D electron temperature profiles onto a 2D grid. By doing this, we can visualize the electron temperature both in the edge plasma, as well as in the core in a single image.
 
-It is recommended to go through the steps below by hand, however if you do not want to follow the steps, a ParaView state file containing this example is made available :download:`here <pv_states/jintrac_state.pvsm>`.
+You can download the ParaView state file for this example :download:`here <pv_states/jintrac_state.pvsm>`. However, we recommend you to manually follow the steps outlined below.
 
 Loading the Edge Profiles Electron Temperature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -13,7 +13,7 @@ This subsection covers loading and visualizing the electron temperature in the e
 .. |ico1| image:: images/rotate_axis.png
 
 #. Navigate to *Sources > IMAS Tools* and select the GGD Reader.
-#. Enter the following URI in the ``Enter URI`` field of the GGD reader plugin:
+#. Enter the following URI in the ``Enter URI`` field of the GGD reader plugin, and press ``Apply``:
 
    .. code-block:: bash
 
@@ -55,7 +55,7 @@ Loading the Poloidal Flux 2D Profile
 This subsection covers loading and visualizing the poloidal flux from the equilibrium IDS to create the 2D plane for mapping 1D profiles.
 
 #. Navigate to *Sources > IMAS Tools* and select the 2D Profiles Reader.
-#. Enter the following URI in the ``Enter URI`` field of the 2D Profiles reader plugin:
+#. Enter the following URI in the ``Enter URI`` field of the 2D Profiles reader plugin, and press ``Apply``:
 
    .. code-block:: bash
 

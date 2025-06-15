@@ -4,7 +4,7 @@ JOREK Case
 ----------
 In this example, we will visualize a JOREK disruption case. A number of JOREK disruption cases are available on the `confluence page <https://confluence.iter.org/display/IMP/The+JOREK+disruption+cases>`_. We will visualize the electron temperature from the ``plasma_profiles`` IDS and the corresponding current magnitude in the inner vacuum vessel the ``wall`` IDS. We will create an animation to visualize how these change over time.
 
-It is recommended to go through the steps below by hand, however if you do not want to follow the steps, a ParaView state file containing this example is made available :download:`here <pv_states/jorek_state.pvsm>`.
+You can download the ParaView state file for this example :download:`here <pv_states/jorek_state.pvsm>`. However, we recommend you to manually follow the steps outlined below.
 
 Loading the Electron Temperature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -12,15 +12,26 @@ In this subsection, we load the JOREK grid and visualize the electron temperatur
 
 .. |ico1| image:: images/rotate_axis.png
 
-#. Navigate to *Sources > IMAS Tools* and select the JOREK Reader.
-#. Enter the following URI in the ``Enter URI`` field of the JOREK reader plugin:
+#. The JOREK grid uses a combined finite-element and Fourier-series discretization. Bicubic finite elements describe fields in the poloidal plane, while a Fourier series handles variation in the toroidal direction. The standard GGD reader cannot process this grid structure natively, therefore the JOREK reader was made available to load the JOREK datasets. To load it, navigate to *Sources > IMAS Tools* and select the JOREK Reader.
+#. Instead of loading the data set by entering the URI, we will now manually input the required fields. To do so select the ``Enter pulse, run, ..`` option in the Data entry URI dropdown. Fill in the following fields, and afterwards press ``Apply`` to load the URI:
 
-   .. code-block:: bash
+   .. list-table::
 
-      imas:hdf5?user=public;pulse=112111;run=2;database=ITER_DISRUPTIONS;version=4
+      * - Backend
+        - HDF5
+      * - Database
+        - ITER_DISRUPTIONS
+      * - Pulse
+        - 112111
+      * - Run
+        - 2
+      * - User
+        - public
+      * - Version
+        - 4
 
-#. Select the ``plasma_profiles/1`` IDS in the IDS/Occurrence dropdown menu.
-#. Select ``Apply`` to load the plasma profiles GGD grid.
+#. Select the ``plasma_profiles/1`` IDS in the IDS/Occurrence dropdown menu. Please refer to the `confluence page <https://confluence.iter.org/display/IMP/The+JOREK+disruption+cases>`_ for the meaning of different occurrences for this dataset.
+#. Select ``Apply`` to load the plasma profiles GGD grid. Note, this dataset is quite large (~9GB) so it might take some time to load.
 #. After the GGD grid is loaded, bring the grid into view by aligning the viewpoint in the positive Y direction using the following button: |ico1|.
 #. Select the ``Electrons Temperature`` from the attribute array selection window.
 #. Select ``Apply`` to load the electron temperature values on the grid.
@@ -40,7 +51,7 @@ In this subsection, we load the wall currents of the simulation using the GGD Re
 .. |ico2| image:: images/clip.png
 
 #. Navigate to *Sources > IMAS Tools* and select the GGD Reader.
-#. Enter the following URI in the ``Enter URI`` field of the GGD reader plugin:
+#. We will now load the same data entry as in the previous subsection, but we will enter it using the URI string option. To do so, enter the following URI in the ``Enter URI`` field of the GGD reader plugin, and press ``Apply``:
 
    .. code-block:: bash
 

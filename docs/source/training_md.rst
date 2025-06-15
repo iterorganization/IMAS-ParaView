@@ -5,7 +5,7 @@ Machine Description case
 
 In this example we will combine multiple IMAS-ParaView non-GGD plugins to read ITER machine description data. We will create an animation where we orbit the camera around the machine description data, so we can see the different structures clearly from every angle.
 
-It is recommended to go through the steps below by hand, however if you do not want to follow the steps, a ParaView state file containing this example is made available :download:`here <pv_states/md_state.pvsm>`.
+You can download the ParaView state file for this example :download:`here <pv_states/md_state.pvsm>`. However, we recommend you to manually follow the steps outlined below.
 
 Loading the Wall data
 ^^^^^^^^^^^^^^^^^^^^^
