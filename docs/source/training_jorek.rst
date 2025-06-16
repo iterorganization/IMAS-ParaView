@@ -2,18 +2,18 @@
 
 JOREK Case
 ----------
-In this example, we will visualize a JOREK disruption case. A number of JOREK disruption cases are available on the `confluence page <https://confluence.iter.org/display/IMP/The+JOREK+disruption+cases>`_. We will visualize the electron temperature from the ``plasma_profiles`` IDS and the corresponding current magnitude in the inner vacuum vessel the ``wall`` IDS. We will create an animation to visualize how these change over time.
+In this example, we will visualize a JOREK disruption case. A number of JOREK disruption cases are available on the `confluence page <https://confluence.iter.org/display/IMP/The+JOREK+disruption+cases>`_. We will visualize the electron temperature from the ``plasma_profiles`` IDS and the corresponding current magnitude in the inner vacuum vessel of the ``wall`` IDS. We will create an animation to visualize how these change over time.
 
-You can download the ParaView state file for this example :download:`here <pv_states/jorek_state.pvsm>`. However, we recommend you to manually follow the steps outlined below.
+You can download the ParaView state file for this example :download:`here <pv_states/jorek_state.pvsm>`. However, we recommend that you manually follow the steps outlined below.
 
 Loading the Electron Temperature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In this subsection, we load the JOREK grid and visualize the electron temperatures on this grid.
+In this subsection, we load the JOREK grid and visualize the electron temperature on this grid.
 
 .. |ico1| image:: images/rotate_axis.png
 
-#. The JOREK grid uses a combined finite-element and Fourier-series discretization. Bicubic finite elements describe fields in the poloidal plane, while a Fourier series handles variation in the toroidal direction. The standard GGD reader cannot process this grid structure natively, therefore the JOREK reader was made available to load the JOREK datasets. To load it, navigate to *Sources > IMAS Tools* and select the JOREK Reader.
-#. Instead of loading the data set by entering the URI, we will now manually input the required fields. To do so select the ``Enter pulse, run, ..`` option in the Data entry URI dropdown. Fill in the following fields, and afterwards press ``Apply`` to load the URI:
+#. The JOREK grid uses a combined finite-element and Fourier-series discretization. Bicubic finite elements describe fields in the poloidal plane, while a Fourier series handles variation in the toroidal direction. The standard GGD reader cannot process this grid structure natively, therefore, the JOREK reader was made available to load the JOREK datasets. To load it, navigate to *Sources > IMAS Tools* and select the JOREK Reader.
+#. Instead of loading the data set by entering the URI, we will now manually input the required fields. To do so, select the ``Enter pulse, run, ..`` option in the Data entry URI dropdown. Fill in the following fields, and then press ``Apply`` to load the URI:
 
    .. list-table::
 
@@ -31,12 +31,12 @@ In this subsection, we load the JOREK grid and visualize the electron temperatur
         - 4
 
 #. Select the ``plasma_profiles/1`` IDS in the IDS/Occurrence dropdown menu. Please refer to the `confluence page <https://confluence.iter.org/display/IMP/The+JOREK+disruption+cases>`_ for the meaning of different occurrences for this dataset.
-#. Select ``Apply`` to load the plasma profiles GGD grid. Note, this dataset is quite large (~9GB) so it might take some time to load.
+#. Select ``Apply`` to load the plasma profiles GGD grid. Note: this dataset is quite large (~9GB) so it might take some time to load.
 #. After the GGD grid is loaded, bring the grid into view by aligning the viewpoint in the positive Y direction using the following button: |ico1|.
 #. Select the ``Electrons Temperature`` from the attribute array selection window.
 #. Select ``Apply`` to load the electron temperature values on the grid.
 #. Select ``Electrons Temperature [eV]`` in the coloring dropdown to visualize the electron temperature.
-#. Enable log scale coloring by selecting ``Edit`` under the *Coloring* section. In the *Color Map Editor* on the right enable ``Use Log Scale When Mapping Data To Colors``.
+#. Enable log scale coloring by selecting ``Edit`` under the *Coloring* section. In the *Color Map Editor* on the right, enable ``Use Log Scale When Mapping Data To Colors``.
 #. Set the ``N plane`` to 3 and the ``Phi range`` from 0 to 180 degrees in the Bezier interpolation settings.
 
 .. figure:: images/training/jorek_electron_temp.png
@@ -45,7 +45,7 @@ In this subsection, we load the JOREK grid and visualize the electron temperatur
 
 Loading the Wall Current
 ^^^^^^^^^^^^^^^^^^^^^^^^
-In this subsection, we load the wall currents of the simulation using the GGD Reader and apply a clip mask.
+In this subsection, we load the wall currents in the inner vacuum vessel using the GGD Reader and apply a clip mask.
 
 
 .. |ico2| image:: images/clip.png

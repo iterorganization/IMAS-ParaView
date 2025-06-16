@@ -7,9 +7,9 @@ In this example, we will load and visualize a SOLPS-ITER GGD grid and several qu
 
 Next, we learn how to extract grid subsets of the GGD grid using the MultiBlock Inspector. `GGD grid subsets <https://imas-data-dictionary.readthedocs.io/en/latest/ggd_guide/doc.html#grid-subset-aos>`_ represent a portion of the contents of a larger full grid, usually intended for more accurate analysis of an exactly specified piece of the grid. Which grid subsets are available depends on the data provider (in this case SOLPS). 
 
-Finally, we will visualize the density of the Ne and the D ion side-by-side, and visualize the ratio of the two using ParaView's calculator functionality.
+Finally, we will visualize the density of the Ne and the D ions side-by-side, and visualize the ratio of the two using ParaView's calculator functionality.
 
-You can download the ParaView state file for this example :download:`here <pv_states/solps_state.pvsm>`. However, we recommend you to manually follow the steps outlined below.
+You can download the ParaView state file for this example :download:`here <pv_states/solps_state.pvsm>`. However, we recommend that you manually follow the steps outlined below.
 
 Loading the Electron Pressure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -56,15 +56,15 @@ This subsection demonstrates how to visualize the density of Deuterium (D) and N
 .. |ico2| image:: images/training/split.png
 
 #. Start by selecting all the grid subsets again in the MultiBlock Inspector and then close the MultiBlock Inspector. You should now see the full GGD grid again.
-#. We will visualize the pressure density of the Ne and D ions on the GGD grid. Select the ``Ion Density`` in the Select attribute array selection.
-#. Click on ``Apply`` to load the ion pressures.
+#. We will visualize the density of the Ne and D ions on the GGD grid. Select the ``Ion Density`` in the Select attribute array selection.
+#. Click on ``Apply`` to load the ion densities.
 #. You should now see both ``Ion (D) Density [m^-3]`` and ``Ion (Ne) Density [m^-3]`` options in the coloring dropdown. We want to visualize them side by side. To do so, open a new RenderView by pressing the following button: |ico2|.
-#. In the *Create View* section select the ``Render View`` button to create a new RenderView, and ensure you enable view of the GGD reader by selecting the eye icon.
-#. Select the left render view, and select the D density in the coloring section. Similarly, select the right render view and select the Ne density int the coloring section.
+#. In the *Create View* section select the ``Render View`` button to create a new RenderView, and ensure you enable viewing of the GGD reader by selecting the eye icon.
+#. Select the left render view, and select the D density in the coloring section. Similarly, select the right render view and select the Ne density in the coloring section.
 #. We will now create another render view, in which we will show the ratio of the Ne / D ion density. First, create a new RenderView like before, select the GGD reader and apply the calculator tool, under **Filters >  Data Analysis > Calculator**.
-#. In the calculator properties, change the **Attribute Type** to Cell Data, set the result array name to ``Ne / D Density``. Next, under the **Scalars** dropdown, select the ``Ion (Ne) Density [m^-3]``, then the division symbol, followed by ``ion (D) Density [m^-3]``. The calculator input should now show: ``"Ion (Ne) Density [m^-3]"/"Ion (D) Density [m^-3]"``.
+#. In the calculator properties, change the **Attribute Type** to Cell Data, set the result array name to ``Ne / D Density``. Next, under the **Scalars** dropdown, select the ``Ion (Ne) Density [m^-3]``, then the division symbol, followed by ``Ion (D) Density [m^-3]``. The calculator input should now show: ``"Ion (Ne) Density [m^-3]"/"Ion (D) Density [m^-3]"``.
 #. Select the ``Apply`` button, and select the ``Ne / D Density`` in the coloring dropdown menu.
 
 .. figure:: images/training/ne_d_ratio.png
 
-   Grid showing the Deuterium density (left), the Neon density (middle), and the ratio of Deuterium over Neon density (right). Data provided by X. Bonnin.
+   Grid showing the Deuterium density (left), the Neon density (middle), and the ratio of Neon over Deuterium density (right). Data provided by X. Bonnin.

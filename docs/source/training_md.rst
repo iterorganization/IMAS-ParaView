@@ -5,11 +5,11 @@ Machine Description case
 
 In this example we will combine multiple IMAS-ParaView non-GGD plugins to read ITER machine description data. We will create an animation where we orbit the camera around the machine description data, so we can see the different structures clearly from every angle.
 
-You can download the ParaView state file for this example :download:`here <pv_states/md_state.pvsm>`. However, we recommend you to manually follow the steps outlined below.
+You can download the ParaView state file for this example :download:`here <pv_states/md_state.pvsm>`. However, we recommend that you manually follow the steps outlined below.
 
 Loading the Wall data
 ^^^^^^^^^^^^^^^^^^^^^
-In this subsection we will visualize the divertor and first wall structures, and create a rotational extrusion to rotate them around their center axis.
+In this subsection, we will visualize the divertor and first wall structures, and create a rotational extrusion to rotate them around their center axis.
 
 
 .. |ico1| image:: images/rotate_axis.png
@@ -26,7 +26,7 @@ In this subsection we will visualize the divertor and first wall structures, and
 #. After the structures are loaded, bring them into view by aligning the viewpoint in the positive Y direction using the following button: |ico1|.
 #. We will now rotate the divertor and first wall around their center axis. For this, we will use the Rotational Extrusion filter. Select the *Filters > Search...* tab, and type ``Rotational Extrusion`` and select the filter.
 #. Set the resolution to 50, and the angle to 360. Press ``Apply`` to apply the rotational extrusion filter.
-#. We will now fix the legend labels for the blocks, select ``Edit`` under the coloring section, and remove all the categories for numbers higher than 1, and select the minus icon.
+#. We will now fix the legend labels for the blocks, select ``Edit`` under the coloring section and remove all the categories for numbers higher than 1, and select the minus icon.
 #. Now rename the annotations for the 0 and 1 blocks to ``Divertor`` and ``First Wall``, respectively.
 #. Lastly, set the opacity to 0.5, so we can visualize the inside of the wall as well.
  
@@ -87,7 +87,7 @@ Create an Animation with Orbiting Camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #. Open the Time Manager under *View > Time Manager*
-#. At the bottom besides the *Animations* tab, select *Camera* and *Follow Path*. Then press the plus-icon to create a new camera animation.
+#. At the bottom besides the *Animations* tab, select *Camera* and *Follow Path*. Then press the plus icon to create a new camera animation.
 #. Double-click the ``Camera - RenderView1`` camera animation that you created. Select the first time value and select ``Create Orbit``. Here, ensure the normal vector is set to 0,0,1.
 #. Increase the number of frames to 100 in the Time Manager.
 #. Save the animation by going to *File > Save Animation*, enter a directory and name for the video, and in the *Save Animation Options* increase the frame rate to 20.

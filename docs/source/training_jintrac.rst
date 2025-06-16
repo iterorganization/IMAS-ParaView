@@ -2,9 +2,9 @@
 
 JINTRAC case
 ------------
-In this example, we will visualize the electron temperature GGD of the edge profiles IDS, as well as the 1D core profiles. We will use the psi grid from the equilibrium IDS to map the 1D electron temperature profiles onto a 2D grid. By doing this, we can visualize the electron temperature both in the edge plasma, as well as in the core in a single image.
+In this example, we will visualize the electron temperature GGD of the edge profiles IDS, as well as the 1D core profiles. We will use the psi grid from the equilibrium IDS to map the 1D electron temperature profiles onto a 2D grid. By doing this, we can visualize the electron temperature both in the edge plasma and in the core in a single image.
 
-You can download the ParaView state file for this example :download:`here <pv_states/jintrac_state.pvsm>`. However, we recommend you to manually follow the steps outlined below.
+You can download the ParaView state file for this example :download:`here <pv_states/jintrac_state.pvsm>`. However, we recommend that you manually follow the steps outlined below.
 
 Loading the Edge Profiles Electron Temperature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ This subsection covers loading and visualizing the electron temperature in the e
 
 Loading the Electron Temperature 1d Profile
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-This subsection covers loading the 1D electron temperature profiles, and plotting it in a line chart with the normalized toroidal flux coordinate (``rho_tor_norm``) on the x-axis.
+This subsection covers loading the 1D electron temperature profile, and plotting it in a line chart with the normalized toroidal flux coordinate (``rho_tor_norm``) on the x-axis.
 
 #. Navigate to *Sources > IMAS Tools* and select the 1D Profiles Reader.
 #. Enter the following URI in the ``Enter URI`` field of the 1D Profiles reader plugin:
@@ -43,7 +43,7 @@ This subsection covers loading the 1D electron temperature profiles, and plottin
 #. Select ``Apply`` to load the available core profiles.
 #. Select the ``Electrons Temperature`` from the attribute array selection window.
 #. Select ``Apply`` to load the electron temperature 1D profile.
-#. To plot the 1D profile, we will apply a plotting filter. This can be found under *Filters > Data Analysis > Plot Data*. Select ``Apply`` to apply filter.
+#. To plot the 1D profile, we will apply a plotting filter. This can be found under *Filters > Data Analysis > Plot Data*. Select ``Apply`` to apply the filter.
 #. In the filter properties, uncheck ``Use Index For X Axis`` and in the ``X Array Name`` dropdown select ``rho_tor_norm``. Also uncheck ``rho_tor_norm`` from the Series Parameters. You should now have a line chart of the electron temperature with the normalized toroidal flux coordinate on the x-axis.
 
 .. figure:: images/training/jintrac_profile1d.png
@@ -80,12 +80,12 @@ This subsection covers the mapping of the 1D electron temperature profile onto t
 .. |ico3| image:: images/training/colorbar.png
 
 #. Select the 1D Profiles Reader and apply the following filter: *Filters > IMAS Tools > 1D Profiles Mapper*.
-#. In the pop-up window, we must select which source contain the psi grid and which contains the 1D profile. So select the 2D Profiles Reader for the psi grid, and the 1D Profiles Reader for the 1D profile. Press ``OK`` to confirm the selection.
+#. In the pop-up window, we must select which source contains the psi grid and which contains the 1D profile. So select the 2D Profiles Reader for the psi grid, and the 1D Profiles Reader for the 1D profile. Press ``OK`` to confirm the selection.
 #. Select ``Apply`` to apply the 1D Profiles Mapper filter.
 #. Select the ``Electrons Temperature`` in the ``Select 1D Profiles`` selection box. You will now see the 1D profile mapped onto a 2D grid. 
 #. Values outside the valid psi range are colored yellow by default, but we can make them transparent instead. To do this, select ``Edit`` under the Coloring section and set the ``Nan Opacity`` to 0. You should now see that the 1D profile is mapped within the edge profiles of the GGD Reader.
-#. The data sets now have separate color bar ranges, so we can manually set these to the same range. For this, select the 1D Profiles Mapper filter and select the rescale to custom data range: |ico2|. Set the range from 0 to 25000.
-#. Repeat previous step for the GGD Reader, and remove the visibility of one of the colorbars, using the following button: |ico3|.
+#. The data sets now have separate color bar ranges, so we can manually set these to the same range. For this, select the 1D Profiles Mapper filter and select the **rescale to custom data range** button: |ico2|. Set the range from 0 to 25000.
+#. Repeat the previous step for the GGD Reader, and remove the visibility of one of the colorbars, using the following button: |ico3|.
 
 .. figure:: images/training/jintrac_mapper.png
 
