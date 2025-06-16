@@ -33,6 +33,7 @@ Manual
 
    usage
    cli
+   training
 
 .. toctree::
    :caption: API docs

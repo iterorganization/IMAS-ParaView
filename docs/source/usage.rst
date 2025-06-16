@@ -4,7 +4,7 @@ Using the Paraview Plugins
 ==========================
 
 This section will cover how to use the Paraview plugins, for both the GGD plugins, as 
-well as loading non-GGD data.
+well as loading non-GGD data. More concrete examples can be found in the :ref:`training` section.
 
 GGD Readers
 -----------

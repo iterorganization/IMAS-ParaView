@@ -9,8 +9,8 @@ steps below and simply load the module as follows:
 .. code-block:: bash
 
   module load IMAS-ParaView
-  # Launch Paraview
-  paraview
+  # Run paraview (add vglrun to enable hardware acceleration)
+  vglrun paraview
   # Open the "Sources" tab in the top left, and ensure you see "IMAS Tools" in 
   # the drop down menu.
   # The command-line interface can be started using:
