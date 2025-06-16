@@ -77,8 +77,9 @@ In this subsection, we create an animation of the loaded electron temperature an
 #. To visualize the current time in the video, add a time value in the corner of the viewer using *Sources > Annotation > Annotate Time*. Press ``Apply`` to apply the time annotation source.
 #. Select the JOREKReader and apply a ``Temporal Interpolator`` filter found under *Filters > Temporal > Temporal Interpolator*.
 #. Set the ``Discrete Time Step Interval`` to 0.01, and select ``Apply`` to apply the temporal interpolation.
-#. Repeat the previous two steps for the GGDReader containing the wall currents.
-#. The clip must be applied to the Temporal Interpolator filter instead. Right-click the clip filter, select ``Copy Pipeline``, select the temporal interpolator, and select ``Paste Pipeline``. Ensure the wall currents are selected again in the coloring section. The old clip filter can now be removed.
+#. Now we will do the same for the wall currents, select the created Clip filter a ``Temporal Interpolator`` filter found under *Filters > Temporal > Temporal Interpolator*. 
+#. Set the ``Discrete Time Step Interval`` to 0.01, and select ``Apply`` to apply the temporal interpolation for the wall currents.
+#. Right click on the clip filter in the pipeline, and deselect the ``Ignore Time`` checkbox.
 #. Verify that both temporal interpolators are working by opening *View > Time Manager* and checking if the two temporal interpolators have the same number of time steps and that the time steps are of equal size.
 #. Create an animation of the JOREK electron temperature and wall currents over time. Place the objects in the viewpoints in the desired orientation for the video. To create a video, go to *File > Save Animation*, provide a directory and a name for the video, and select ``OK``.
 #. In the pop-up window, video settings such as image resolution and compression can be changed. In this example, we set the frame rate to 5 and the frame window from 25 to 50. Press ``OK`` to start generating the animation. This may take a while.
