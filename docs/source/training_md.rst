@@ -9,7 +9,7 @@ You can download the ParaView state file for this example :download:`here <pv_st
 
 Loading the Wall data
 ^^^^^^^^^^^^^^^^^^^^^
-In this subsection, we will visualize the divertor and first wall structures, and create a rotational extrusion to rotate them around their center axis.
+In this subsection, we will visualize the divertor and first wall structures, and create a rotational extrusion to rotate them around the central axis.
 
 
 .. |ico1| image:: images/rotate_axis.png
@@ -24,11 +24,11 @@ In this subsection, we will visualize the divertor and first wall structures, an
 #. Since this URI only contains a single supported IDS for this reader, the wall IDS, it is automatically selected for you. You should see the *Divertor* and *First Wall* attributes appear in the attribute array selection, select them both.
 #. Select ``Apply`` to load the *Divertor* and *First Wall* structures.
 #. After the structures are loaded, bring them into view by aligning the viewpoint in the positive Y direction using the following button: |ico1|.
-#. We will now rotate the divertor and first wall around their center axis. For this, we will use the Rotational Extrusion filter. Select the *Filters > Search...* tab, and type ``Rotational Extrusion`` and select the filter.
+#. We will now rotate the divertor and first wall around the central axis. For this, we will use the Rotational Extrusion filter. Select the *Filters > Search...* menu, type ``Rotational Extrusion`` and select the filter.
 #. Set the resolution to 50, and the angle to 360. Press ``Apply`` to apply the rotational extrusion filter.
 #. We will now fix the legend labels for the blocks, select ``Edit`` under the coloring section and remove all the categories for numbers higher than 1, and select the minus icon.
 #. Now rename the annotations for the 0 and 1 blocks to ``Divertor`` and ``First Wall``, respectively.
-#. Lastly, set the opacity to 0.5, so we can visualize the inside of the wall as well.
+#. Lastly, set the opacity to 0.5, so we can view the inside of the wall.
  
 .. figure:: images/training/md_wall_limiter.png
 

@@ -27,7 +27,7 @@ In this subsection, we will load the SOLPS GGD grid and visualize the electron p
 #. Select the ``edge_profiles`` IDS in the IDS/Occurrence dropdown menu.
 #. Select ``Apply`` to load the edge profiles GGD grid.
 #. After the GGD grid is loaded, bring the grid into view by aligning the viewpoint in the positive Y direction using the following button: |ico1|.
-#. Select the ``Electrons Pressure`` from the attribute array selection window.
+#. Select the ``Electrons Pressure`` from the :ref:`attribute array selection <loading-an-ids>` window.
 #. Select ``Apply`` to load the electron pressure values on the grid.
 #. Select ``Electrons Pressure [Pa]`` in the coloring dropdown to visualize the electron pressure.
 

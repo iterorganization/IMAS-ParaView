@@ -2,7 +2,7 @@
 
 JOREK Case
 ----------
-In this example, we will visualize a JOREK disruption case. A number of JOREK disruption cases are available on the `confluence page <https://confluence.iter.org/display/IMP/The+JOREK+disruption+cases>`_. We will visualize the electron temperature from the ``plasma_profiles`` IDS and the corresponding current magnitude in the inner vacuum vessel of the ``wall`` IDS. We will create an animation to visualize how these change over time.
+In this example, we will visualize a JOREK disruption case. A number of JOREK disruption cases are available on `this confluence page <https://confluence.iter.org/display/IMP/The+JOREK+disruption+cases>`_ (behind login wall). We will visualize the electron temperature from the ``plasma_profiles`` IDS and the corresponding current magnitude in the inner vacuum vessel of the ``wall`` IDS. We will create an animation to visualize how these change over time.
 
 You can download the ParaView state file for this example :download:`here <pv_states/jorek_state.pvsm>`. However, we recommend that you manually follow the steps outlined below.
 
@@ -12,7 +12,7 @@ In this subsection, we load the JOREK grid and visualize the electron temperatur
 
 .. |ico1| image:: images/rotate_axis.png
 
-#. The JOREK grid uses a combined finite-element and Fourier-series discretization. Bicubic finite elements describe fields in the poloidal plane, while a Fourier series handles variation in the toroidal direction. The standard GGD reader cannot process this grid structure natively, therefore, the JOREK reader was made available to load the JOREK datasets. To load it, navigate to *Sources > IMAS Tools* and select the JOREK Reader.
+#. The JOREK grid uses a combined finite-element and Fourier-series discretization. Bicubic finite elements describe fields in the poloidal plane, while a Fourier series handles variation in the toroidal direction. The standard GGD reader cannot process this grid structure, therefore, the JOREK reader was made available to load JOREK datasets. To load it, navigate to *Sources > IMAS Tools* and select the JOREK Reader.
 #. Instead of loading the data set by entering the URI, we will now manually input the required fields. To do so, select the ``Enter pulse, run, ..`` option in the Data entry URI dropdown. Fill in the following fields, and then press ``Apply`` to load the URI:
 
    .. list-table::
@@ -77,7 +77,7 @@ In this subsection, we create an animation of the loaded electron temperature an
 #. To visualize the current time in the video, add a time value in the corner of the viewer using *Sources > Annotation > Annotate Time*. Press ``Apply`` to apply the time annotation source.
 #. Select the JOREKReader and apply a ``Temporal Interpolator`` filter found under *Filters > Temporal > Temporal Interpolator*.
 #. Set the ``Discrete Time Step Interval`` to 0.01, and select ``Apply`` to apply the temporal interpolation.
-#. Now we will do the same for the wall currents, select the created Clip filter a ``Temporal Interpolator`` filter found under *Filters > Temporal > Temporal Interpolator*. 
+#. Now we will do the same for the wall currents. Select the created Clip filter and apply another ``Temporal Interpolator`` filter found under *Filters > Temporal > Temporal Interpolator*. 
 #. Set the ``Discrete Time Step Interval`` to 0.01, and select ``Apply`` to apply the temporal interpolation for the wall currents.
 #. Right click on the clip filter in the pipeline, and deselect the ``Ignore Time`` checkbox.
 #. Verify that both temporal interpolators are working by opening *View > Time Manager* and checking if the two temporal interpolators have the same number of time steps and that the time steps are of equal size.
