@@ -32,7 +32,7 @@ In this subsection, we will visualize the divertor and first wall structures, an
  
 .. figure:: images/training/md_wall_limiter.png
 
-   The first wall and divertor structures extruded around the center axis. Data provided by J. Artola.
+   The first wall and divertor structures extruded around the center axis. Data provided by X. Bonnin.
 
 Loading the EC launcher beams
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -48,7 +48,7 @@ Loading the EC launcher beams
 
 .. figure:: images/training/md_beams.png
 
-   The EC launcher beams are added in cyan. Data provided by J. Artola.
+   The EC launcher beams are added in cyan. Data provided by M. Schneider.
    
 Loading the Interferometer lines of sight
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -64,7 +64,7 @@ Loading the Interferometer lines of sight
 
 .. figure:: images/training/md_los.png
 
-   The interferometer lines of sight are added in yellow. Data provided by J. Artola.
+   The interferometer lines of sight are added in yellow. Data provided by A. Medvedeva.
 
 Loading the Magnetics Coil Positions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -81,7 +81,7 @@ Loading the Magnetics Coil Positions
 
 .. figure:: images/training/md_position.png
 
-   The magnetic coil positions are added in green. Data provided by J. Artola.
+   The magnetic coil positions are added in green. Data provided by M. Hosokawa.
 
 Create an Animation with Orbiting Camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
