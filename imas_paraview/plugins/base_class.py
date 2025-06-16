@@ -517,8 +517,9 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 self._ids.ids_properties.homogeneous_time
                 == imas.ids_defs.IDS_TIME_MODE_HETEROGENEOUS
             ):
-                logger.error("Heterogeneous IDSs are currently not supported.")
-                return 1
+                logger.warning(
+                    "Heterogeneous IDSs are currently not supported. The global time array will be used instead."
+                )
             self._time_steps = self._ids.time
 
             # Pass time steps to Paraview
