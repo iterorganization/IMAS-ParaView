@@ -327,6 +327,7 @@ class PlasmaStateReader:
             "poloidal",
             "toroidal",
             "r",
+            "phi",
             "z",
         ]:
             try:
