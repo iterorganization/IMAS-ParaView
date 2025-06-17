@@ -320,22 +320,13 @@ class PlasmaStateReader:
 
         # Only add the components that have data:
         components = dict()  # name and values
-        for component_name in [
-            "radial",
-            "diamagnetic",
-            "parallel",
-            "poloidal",
-            "toroidal",
-            "r",
-            "phi",
-            "z",
-        ]:
-            try:
-                values = getattr(aos_vector_node[subset_idx], component_name)
-            except (IndexError, AttributeError):
-                continue
-            if len(values):
-                components[component_name] = values
+
+        # Search for filled 1D vector components
+        for component in aos_vector_node[subset_idx]:
+            metadata = component.metadata
+            if metadata.data_type == IDSDataType.FLT and metadata.ndim == 1:
+                if len(component):
+                    components[metadata.name] = component.value
 
         vtk_arr = vtkDoubleArray()
         vtk_arr.SetName(name)
