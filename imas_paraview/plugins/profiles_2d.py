@@ -258,28 +258,26 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         return vtk_scalars
 
     def _create_ugrid(self, vtk_points, vtk_scalars):
-        """Create a vtkUnstructuredGrid of the given profile.
+        """Create a vtkUnstructuredGrid using VTK_QUAD cells from the structured 2D grid."""
 
-        Args:
-            profile: The profile to create a ugrid for.
-
-        Returns:
-            The created unstructured grid.
-        """
-
-        ugrid = vtk.vtkUnstructuredGrid()
-        ugrid.GetPointData().SetScalars(vtk_scalars)
-
-        num_points = vtk_points.GetNumberOfPoints()
-        cells = vtk.vtkCellArray()
-
-        for i in range(num_points):
-            vertex = vtk.vtkVertex()
-            vertex.GetPointIds().SetId(0, i)
-            cells.InsertNextCell(vertex)
-
+        n_rows, n_cols = self.r.shape
         ugrid = vtk.vtkUnstructuredGrid()
         ugrid.SetPoints(vtk_points)
         ugrid.GetPointData().SetScalars(vtk_scalars)
-        ugrid.SetCells(vtk.VTK_VERTEX, cells)
+
+        cells = vtk.vtkCellArray()
+
+        def get_index(i, j):
+            return i * n_cols + j
+
+        for i in range(n_rows - 1):
+            for j in range(n_cols - 1):
+                quad = vtk.vtkQuad()
+                quad.GetPointIds().SetId(0, get_index(i, j))
+                quad.GetPointIds().SetId(1, get_index(i, j + 1))
+                quad.GetPointIds().SetId(2, get_index(i + 1, j + 1))
+                quad.GetPointIds().SetId(3, get_index(i + 1, j))
+                cells.InsertNextCell(quad)
+
+        ugrid.SetCells(vtk.VTK_QUAD, cells)
         return ugrid
