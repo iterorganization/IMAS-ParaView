@@ -258,7 +258,13 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         return vtk_scalars
 
     def _create_ugrid(self, vtk_points, vtk_scalars):
-        """Create a vtkUnstructuredGrid using VTK_QUAD cells from the structured 2D grid."""
+        """Create a vtkUnstructuredGrid using VTK_QUAD cells from the structured 2D
+        grid.
+
+        Args:
+            vtk_points: The VTK points representing the grid vertices.
+            vtk_scalars: The scalar field values to assign to the grid points.
+        """
 
         n_rows, n_cols = self.r.shape
         ugrid = vtk.vtkUnstructuredGrid()
