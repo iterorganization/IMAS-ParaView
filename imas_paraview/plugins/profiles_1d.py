@@ -1,31 +1,20 @@
 """Plugin to view profiles_1D nodes"""
 
 import logging
-from dataclasses import dataclass
 
-import numpy as np
 from imas.ids_struct_array import IDSStructArray
 from imas.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules.vtkCommonDataModel import vtkTable
 
-from imas_paraview.ids_util import create_name_recursive, get_object_by_name
+from imas_paraview.ids_util import create_name_recursive
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import find_closest_indices
 
 logger = logging.getLogger("imas_paraview")
 
 PROFILES_1D_IDS_NAMES = ["core_profiles", "core_sources"]
-
-
-@dataclass
-class Profile_1d:
-    """Data class that stores 1d profiles, along with its name and coordinate array."""
-
-    name: str
-    coordinates: np.ndarray
-    profile: np.ndarray
 
 
 @smproxy.source(label="1D Profiles Reader")
@@ -35,9 +24,7 @@ class Profiles1DReader(GGDVTKPluginBase, is_time_dependent=True):
 
     def __init__(self):
         super().__init__("vtkTable", PROFILES_1D_IDS_NAMES)
-
-    def GetAttributeArrayName(self, idx) -> str:
-        return self._selectable[idx].name
+        self.selectable_map = {}
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
@@ -69,39 +56,37 @@ class Profiles1DReader(GGDVTKPluginBase, is_time_dependent=True):
         """
         prev_x = None
         for profile_name in self._selected:
-            profile = get_object_by_name(self._selectable, profile_name)
-            if profile is None:
-                logger.warning(
-                    f"Could not find a matching profile with name {profile_name}"
-                )
+            profile = self.selectable_map[profile_name]
+
+            if len(profile) == 0:
+                logger.warning(f"The selected profile {profile_name} is empty.")
                 continue
 
-            if len(profile.profile) == 0:
-                logger.warning(f"The selected profile {profile.name} is empty.")
-                continue
-            if len(profile.coordinates) != len(profile.profile):
+            path = profile.metadata.coordinate1.references[0]
+            coordinates = path.goto(profile)
+            if len(coordinates) != len(profile):
                 logger.warning(
                     "The length of the linked coordinate array does not match."
                 )
                 continue
 
             logger.info(f"Selected {profile_name}.")
-            y_values = self._create_vtk_double_array(profile.profile, profile.name)
+            y_values = self._create_vtk_double_array(profile, profile_name)
             output.AddColumn(y_values)
 
             # If multiple profiles are selected, check if their coordinates match
             if prev_x is None:
                 x_values = self._create_vtk_double_array(
-                    profile.coordinates, profile.coordinates.metadata.name
+                    coordinates, coordinates.metadata.name
                 )
                 output.AddColumn(x_values)
             else:
-                if profile.coordinates is not prev_x:
+                if coordinates is not prev_x:
                     raise RuntimeError(
                         "The X values for the selected profiles do not match. "
                         "Select the profiles one by one instead."
                     )
-            prev_x = profile.coordinates
+            prev_x = coordinates
 
     def _create_vtk_double_array(self, values, name):
         """Creates a vtkDoubleArray with the given name and values.
@@ -174,17 +159,13 @@ class Profiles1DReader(GGDVTKPluginBase, is_time_dependent=True):
             A list of `Profile_1d` objects created from the provided profiles that
                   contain valid coordinates.
         """
-        profile_list = []
+        self.selectable_map = {}
         for profile in profiles:
             # Only store the profile if it contains coordinates
             if profile.metadata.coordinate1.references:
-                path = profile.metadata.coordinate1.references[0]
-                coordinates = path.goto(profile)
                 name = create_name_recursive(profile)
-
-                profile = Profile_1d(name, coordinates, profile)
-                profile_list.append(profile)
-        return profile_list
+                self.selectable_map[name] = profile
+        return list(self.selectable_map)
 
     def _recursive_find_profiles(self, node):
         """Recursively traverses through the IDS node searching for filled 1d profiles.

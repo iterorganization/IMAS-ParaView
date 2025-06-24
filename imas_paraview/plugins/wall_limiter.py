@@ -1,25 +1,14 @@
 """Plugin to view limiter structures of 2d wall descriptions nodes"""
 
 import logging
-from dataclasses import dataclass
 
-from imas.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
-from imas_paraview.ids_util import get_object_by_name
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import points_to_vtkpoly
 
 logger = logging.getLogger("imas_paraview")
-
-
-@dataclass
-class Limiter:
-    """Data class that stores limiter units, along with its name."""
-
-    name: str
-    unit: IDSStructure
 
 
 @smproxy.source(label="Wall Limiter Reader")
@@ -30,9 +19,7 @@ class WallLimiterReader(GGDVTKPluginBase):
 
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", ["wall"])
-
-    def GetAttributeArrayName(self, idx) -> str:
-        return self._selectable[idx].name
+        self.selectable_map = {}
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
@@ -56,7 +43,7 @@ class WallLimiterReader(GGDVTKPluginBase):
             raise ValueError("This IDS does not contain a description_2d node")
 
         descriptions = self._ids.description_2d
-        self._selectable = []
+        self.selectable_map = {}
 
         for i, description in enumerate(descriptions):
             description_name = description.type.name
@@ -87,8 +74,8 @@ class WallLimiterReader(GGDVTKPluginBase):
                 name = " / ".join(
                     [str(description_name), str(type_name), str(unit_name)]
                 )
-                selectable = Limiter(name, unit)
-                self._selectable.append(selectable)
+                self.selectable_map[name] = unit
+        self._selectable = list(self.selectable_map)
 
     def _load_limiters(self, output):
         """Go through the list of selected limiters, and load each of them in a
@@ -98,10 +85,7 @@ class WallLimiterReader(GGDVTKPluginBase):
             output: The vtkMultiBlockDataSet containing the limiter contours.
         """
         for i, limiter_name in enumerate(self._selected):
-            limiter = get_object_by_name(self._selectable, limiter_name)
-            if limiter is None:
-                raise ValueError(f"Could not find {limiter_name}")
-
+            limiter = self.selectable_map[limiter_name]
             logger.info(f"Selected {limiter.name}")
             vtk_poly = self._create_contour(limiter)
             output.SetBlock(i, vtk_poly)

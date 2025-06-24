@@ -1,5 +1,4 @@
 import logging
-from dataclasses import dataclass
 
 import numpy as np
 import vtk
@@ -12,7 +11,7 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPartitionedDataSetCollection,
 )
 
-from imas_paraview.ids_util import create_name_recursive, get_object_by_name
+from imas_paraview.ids_util import create_name_recursive
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import find_closest_indices
 
@@ -28,14 +27,6 @@ PROFILES_2D_IDS_NAMES = [
 ]
 
 
-@dataclass
-class Profile_2d:
-    """Data class that stores a profiles_2d node, along with its name."""
-
-    name: str
-    profile: np.ndarray
-
-
 @smproxy.source(label="2D Profiles Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
@@ -47,9 +38,7 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         self.z = np.array([])
         self._filled_profiles = []
         self._all_profiles = []
-
-    def GetAttributeArrayName(self, idx) -> str:
-        return self._selectable[idx].name
+        self.selectable_map = {}
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
@@ -174,12 +163,11 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         Returns:
             A list of `Profile_2d` objects created from the provided profiles
         """
-        profile_list = []
+        self.selectable_map = {}
         for profile in profiles:
             name = create_name_recursive(profile)
-            profile = Profile_2d(name, profile)
-            profile_list.append(profile)
-        return profile_list
+            self.selectable_map[name] = profile
+        return list(self.selectable_map)
 
     def _recursively_find_profiles(self, node):
         """Recursively traverses through the IDS node searching for filled 2d profiles.
@@ -214,13 +202,10 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         vtk_points = self._create_vtkpoints()
 
         for i, profile_name in enumerate(self._selected):
-            profile = get_object_by_name(self._selectable, profile_name)
-            if profile is None:
-                raise ValueError(f"Could not find {profile_name}")
+            profile = self.selectable_map[profile_name]
+            logger.info(f"Selected {profile_name}")
 
-            logger.info(f"Selected {profile.name}")
-
-            vtk_scalars = self._create_vtkscalars(profile)
+            vtk_scalars = self._create_vtkscalars(profile, profile_name)
             vtk_ugrid = self._create_ugrid(vtk_points, vtk_scalars)
 
             partitioned_dataset = vtkPartitionedDataSet()
@@ -242,7 +227,7 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         vtk_points.SetData(numpy_to_vtk(points.astype(np.float64), deep=True))
         return vtk_points
 
-    def _create_vtkscalars(self, profile):
+    def _create_vtkscalars(self, profile, name):
         """Create VTK array containing the values of the profile at the grid.
 
         Args:
@@ -251,10 +236,10 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         Returns:
             The converted VTK array.
         """
-        values_flat = profile.profile.ravel()
+        values_flat = profile.ravel()
         vtk_scalars = numpy_to_vtk(values_flat.astype(np.float64), deep=True)
-        units = profile.profile.metadata.units
-        vtk_scalars.SetName(f"{profile.name} [{units}]")
+        units = profile.metadata.units
+        vtk_scalars.SetName(f"{name} [{units}]")
         return vtk_scalars
 
     def _create_ugrid(self, vtk_points, vtk_scalars):

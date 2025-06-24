@@ -369,7 +369,6 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     def GetNumberOfAttributeArrays(self):
         return len(self._selectable)
 
-    @abstractmethod
     def GetAttributeArrayName(self, idx) -> str:
         """Retrieve the name of the attribute array at a specified index.
         This method should be implemented by subclasses to return the name
@@ -381,7 +380,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         Returns:
             The name of the attribute array corresponding to the given index.
         """
-        pass
+        return self._selectable[idx]
 
     def GetAttributeArrayStatus(self, *args):
         return 1
