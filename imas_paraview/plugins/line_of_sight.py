@@ -126,7 +126,7 @@ class LineOfSightReader(GGDVTKPluginBase):
             x + self.scaling_factor * y for x, y in zip(first_point, line1_direction)
         )
 
-    def _create_vtk_los(self, channel):
+    def _create_vtk_los(self, los):
         """Create a vtkPolyData containing a line, based on the r, phi, and z
         coordinates in the line of sight structures. The r-, phi-, and z-coordinates are
         converted to cartesian and stored as vtkPoints and connected using vtkLines,
@@ -148,12 +148,11 @@ class LineOfSightReader(GGDVTKPluginBase):
                   +
                    4
         Args:
-            channel: containing a line_of_sight structure.
+            los: line_of_sight structure.
 
         Returns:
             vtkPolyData containing line_of_sight data.
         """
-        los = channel.line_of_sight
         points = [None] * 5
         points[0] = los.first_point
         points[1] = los.second_point
