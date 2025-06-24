@@ -154,7 +154,6 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 self._dbentry.close()
                 self._ids = self._dbentry = None
                 self._selectable = []
-                self._selected = []
                 self._ids_list = []
             self._uri_error = ""
             if self._uri:
@@ -288,7 +287,6 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         """
         if value == "<Select IDS>":
             self._selectable = []
-            self._selected = []
             value = ""
         self._update_property("_ids_and_occurrence", value, self._clear_ids)
 
@@ -504,11 +502,13 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         if idsname not in self._ids_list:
             logger.warning("Could not find the selected IDS.")
             self._selectable = []
-            self._selected = []
             return 1
 
         self._load_ids_from_backend()
         self.request_information()
+        # Update selected array (e.g. when URI or IDS has changed) to ensure only
+        # selectables are selected:
+        self._selected = [item for item in self._selected if item in self._selectable]
 
         # TODO: Add support for IDSs with heterogeneous time mode
         if self.is_time_dependent:
