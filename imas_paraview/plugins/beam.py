@@ -81,8 +81,8 @@ class BeamReader(GGDVTKPluginBase, is_time_dependent=True):
         """
         for i, beam_name in enumerate(self._selected):
             beam = self.selectable_map[beam_name]
-            logger.info(f"Selected {beam.name}")
-            vtk_poly = self._create_vtk_beam(beam.beam, time_idx)
+            logger.info(f"Selected {beam_name}")
+            vtk_poly = self._create_vtk_beam(beam, time_idx)
             output.SetBlock(i, vtk_poly)
 
     def _create_vtk_beam(self, beam, time_idx):

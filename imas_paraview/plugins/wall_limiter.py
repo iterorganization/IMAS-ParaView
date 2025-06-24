@@ -90,7 +90,7 @@ class WallLimiterReader(GGDVTKPluginBase):
             vtk_poly = self._create_contour(limiter)
             output.SetBlock(i, vtk_poly)
 
-    def _create_contour(self, limiter):
+    def _create_contour(self, unit):
         """Create a contour based on the r,z coordinates in the limiter.
         The r,z-coordinates are stored as vtkPoints, and connected using vtkLines, which
         are both stored in a vtkPolyData object. If the contour is closed, the start
@@ -104,13 +104,13 @@ class WallLimiterReader(GGDVTKPluginBase):
         """
         # closed was removed in DD4 - data providers need to repeat the first point
         # for closed outlines, which Just Works with our is_closed=False logic
-        if getattr(limiter.unit, "closed", 0) == 0:
+        if getattr(unit, "closed", 0) == 0:
             is_closed = False
         else:
             is_closed = True
 
-        r = limiter.unit.outline.r
-        z = limiter.unit.outline.z
+        r = unit.outline.r
+        z = unit.outline.z
         points = [(ri, 0.0, zi) for ri, zi in zip(r, z)]
 
         assert len(r) == len(z), "r and z must have the same length."

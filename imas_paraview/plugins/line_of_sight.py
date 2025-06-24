@@ -104,7 +104,7 @@ class LineOfSightReader(GGDVTKPluginBase):
         """
         for i, channel_name in enumerate(self._selected):
             channel = self.selectable_map[channel_name]
-            logger.info(f"Selected {channel.name}")
+            logger.info(f"Selected {channel_name}")
             vtk_poly = self._create_vtk_los(channel)
             output.SetBlock(i, vtk_poly)
 
