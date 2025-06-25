@@ -16,3 +16,4 @@ At the start of each section, a ParaView ``.pvsm`` state file is also provided f
    training_jorek
    training_md
    training_jintrac
+   training_batch
