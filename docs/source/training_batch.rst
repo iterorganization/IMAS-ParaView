@@ -65,7 +65,7 @@ Running the Batch Script
         - SOLPS example case for pulse 123363.
         - SOLPS example case for pulse 123364.
 
-#. Alternatively, if you are dealing with a large data set or you want to load many different URIs, it is possible to run using a SLURM job. For example:
+#. Alternatively, if you are working with a large data set in an HPC environment or you want to load many different URIs, it is possible to submit this script to a batch system. For example, using SLURM:
 
    .. code-block:: bash
 
