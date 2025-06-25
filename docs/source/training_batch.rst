@@ -35,12 +35,9 @@ In this subsection we will create a python batch script which will load the prev
        # Repeat for each IMAS-ParaView source
        for source in GetSources().values():
            if hasattr(source, "EnterURI"):
-               # Store the selected attributes before updating the URI
-               data_arrays = list(source.SelectattributeArrays)
-               # Update the entered URI
+               # Update the entered URI in the GGD reader source
                source.EnterURI = uri
-               # Restore the selected attributes
-               source.SelectattributeArrays = data_arrays
+
            elif hasattr(source, "Text"):
                # Update the text field in the text source
                source.Text = f"Pulse: {pulse}"
