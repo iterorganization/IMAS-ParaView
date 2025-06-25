@@ -3,7 +3,7 @@
 Batch Processing
 ----------------
 
-In this section we will learn how to create batch processes. We will create a ParaView state file, and a write a python batch script, with which we can reproduce the same screenshot for multiple different URIs.
+In this section we will learn how to batch process data. We will create a ParaView state file, and write a python batch script, with which we can reproduce the same screenshot for multiple different URIs.
 
 Creation of ParaView state file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
