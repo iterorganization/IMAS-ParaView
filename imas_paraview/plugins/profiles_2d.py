@@ -271,19 +271,22 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         ugrid.SetPoints(vtk_points)
         ugrid.GetPointData().SetScalars(vtk_scalars)
 
+        num_quads = (n_rows - 1) * (n_cols - 1)
+        ids = np.arange(num_quads, dtype=np.int64)
+        r = ids // (n_cols - 1)
+        c = ids % (n_cols - 1)
+
+        base = r * n_cols + c
+        all_quads = np.column_stack([base, base + 1, base + n_cols + 1, base + n_cols])
+
+        cells_vtk = np.column_stack(
+            [np.full(num_quads, 4, dtype=np.int64), all_quads]
+        ).ravel()
+
         cells = vtk.vtkCellArray()
-
-        def get_index(i, j):
-            return i * n_cols + j
-
-        for i in range(n_rows - 1):
-            for j in range(n_cols - 1):
-                quad = vtk.vtkQuad()
-                quad.GetPointIds().SetId(0, get_index(i, j))
-                quad.GetPointIds().SetId(1, get_index(i, j + 1))
-                quad.GetPointIds().SetId(2, get_index(i + 1, j + 1))
-                quad.GetPointIds().SetId(3, get_index(i + 1, j))
-                cells.InsertNextCell(quad)
-
+        cells.SetCells(
+            num_quads,
+            numpy_to_vtk(cells_vtk, deep=True, array_type=vtk.VTK_ID_TYPE),
+        )
         ugrid.SetCells(vtk.VTK_QUAD, cells)
         return ugrid
