@@ -258,28 +258,35 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         return vtk_scalars
 
     def _create_ugrid(self, vtk_points, vtk_scalars):
-        """Create a vtkUnstructuredGrid of the given profile.
+        """Create a vtkUnstructuredGrid using VTK_QUAD cells from the structured 2D
+        grid.
 
         Args:
-            profile: The profile to create a ugrid for.
-
-        Returns:
-            The created unstructured grid.
+            vtk_points: The VTK points representing the grid vertices.
+            vtk_scalars: The scalar field values to assign to the grid points.
         """
 
-        ugrid = vtk.vtkUnstructuredGrid()
-        ugrid.GetPointData().SetScalars(vtk_scalars)
-
-        num_points = vtk_points.GetNumberOfPoints()
-        cells = vtk.vtkCellArray()
-
-        for i in range(num_points):
-            vertex = vtk.vtkVertex()
-            vertex.GetPointIds().SetId(0, i)
-            cells.InsertNextCell(vertex)
-
+        n_rows, n_cols = self.r.shape
         ugrid = vtk.vtkUnstructuredGrid()
         ugrid.SetPoints(vtk_points)
         ugrid.GetPointData().SetScalars(vtk_scalars)
-        ugrid.SetCells(vtk.VTK_VERTEX, cells)
+
+        num_quads = (n_rows - 1) * (n_cols - 1)
+        ids = np.arange(num_quads, dtype=np.int64)
+        r = ids // (n_cols - 1)
+        c = ids % (n_cols - 1)
+
+        base = r * n_cols + c
+        all_quads = np.column_stack([base, base + 1, base + n_cols + 1, base + n_cols])
+
+        cells_vtk = np.column_stack(
+            [np.full(num_quads, 4, dtype=np.int64), all_quads]
+        ).ravel()
+
+        cells = vtk.vtkCellArray()
+        cells.SetCells(
+            num_quads,
+            numpy_to_vtk(cells_vtk, deep=True, array_type=vtk.VTK_ID_TYPE),
+        )
+        ugrid.SetCells(vtk.VTK_QUAD, cells)
         return ugrid
