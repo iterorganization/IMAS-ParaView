@@ -22,9 +22,9 @@ def test_load_los():
         reader.setup_ids()
 
         los1 = ids.channel[0].line_of_sight
-        name1 = ids.channel[0].name
+        name1 = str(ids.channel[0].name)
         los2 = ids.channel[1].line_of_sight
-        name2 = ids.channel[1].name
+        name2 = str(ids.channel[1].name)
 
         # 1 selection
         output = vtkMultiBlockDataSet()
@@ -43,9 +43,7 @@ def test_load_los():
 
         # All selected
         output = vtkMultiBlockDataSet()
-        reader._selected = []
-        for channel in ids.channel:
-            reader._selected.append(channel.name)
+        reader._selected = [str(channel.name) for channel in ids.channel]
         reader._load_los(output)
         assert output.GetNumberOfBlocks() == len(ids.channel)
         for i, channel in enumerate(ids.channel):
@@ -69,8 +67,8 @@ def test_load_los_ece():
         # this ece IDS does not have line_of_sight structures for each channel,
         # instead the global line_of_sight is used
         los = ids.line_of_sight
-        name1 = ids.channel[0].name
-        name2 = ids.channel[1].name
+        name1 = str(ids.channel[0].name)
+        name2 = str(ids.channel[1].name)
 
         # 1 selection
         output = vtkMultiBlockDataSet()
@@ -89,9 +87,7 @@ def test_load_los_ece():
 
         # All selected
         output = vtkMultiBlockDataSet()
-        reader._selected = []
-        for channel in ids.channel:
-            reader._selected.append(channel.name)
+        reader._selected = [str(channel.name) for channel in ids.channel]
         reader._load_los(output)
         assert output.GetNumberOfBlocks() == len(ids.channel)
         for i, channel in enumerate(ids.channel):

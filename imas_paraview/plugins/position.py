@@ -2,30 +2,18 @@
 probes."""
 
 import logging
-from dataclasses import dataclass
 
-from imas.ids_structure import IDSStructArray, IDSStructure
+from imas.ids_structure import IDSStructArray
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import vtkPolyData
 
-from imas_paraview.ids_util import get_object_by_name
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import pol_to_cart
 
 logger = logging.getLogger("imas_paraview")
 
 SUPPORTED_IDS_NAMES = ["barometry", "langmuir_probes", "magnetics"]
-
-
-@dataclass
-class PositionStructure:
-    """Data class that stores positional IDS structures, along with its name. For
-    barometry the structures are gauges, for langmuire probes, the structures are
-    embedded probes"""
-
-    name: str
-    position_structure: IDSStructure
 
 
 @smproxy.source(label="Position Reader")
@@ -35,9 +23,7 @@ class PositionReader(GGDVTKPluginBase):
 
     def __init__(self):
         super().__init__("vtkPolyData", SUPPORTED_IDS_NAMES)
-
-    def GetAttributeArrayName(self, idx) -> str:
-        return self._selectable[idx].name
+        self.selectable_map = {}
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
@@ -55,7 +41,7 @@ class PositionReader(GGDVTKPluginBase):
         """
         assert self._ids is not None, "IDS cannot be empty during setup."
 
-        self._selectable = []
+        self.selectable_map = {}
 
         if self._ids.metadata.name == "barometry":
             aos_list = [self._ids.gauge]
@@ -94,8 +80,8 @@ class PositionReader(GGDVTKPluginBase):
                     if not identifier == "":
                         name = f"{name} / {identifier}"
 
-                selectable = PositionStructure(name, structure)
-                self._selectable.append(selectable)
+                self.selectable_map[str(name)] = structure
+        self._selectable = list(self.selectable_map)
 
     def _load_position(self, output):
         """Go through the list of selected position structures, and load each of them
@@ -106,13 +92,9 @@ class PositionReader(GGDVTKPluginBase):
         """
         points = vtkPoints()
         for name in self._selected:
-            pos_struct = get_object_by_name(self._selectable, name)
-
-            if pos_struct is None:
-                raise ValueError(f"Could not find {name}")
-
-            pos = pos_struct.position_structure.position
-            logger.info(f"Selected {pos_struct.name}")
+            pos_struct = self.selectable_map[name]
+            pos = pos_struct.position
+            logger.info(f"Selected {name}")
 
             if isinstance(pos, IDSStructArray):
                 for pos_struct in pos:

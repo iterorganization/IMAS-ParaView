@@ -20,8 +20,8 @@ def test_load_beam():
         reader._ids = ids
         reader.setup_ids()
         time_idx = 0
-        name1 = ids.beam[0].name
-        name2 = ids.beam[1].name
+        name1 = str(ids.beam[0].name)
+        name2 = str(ids.beam[1].name)
 
         # 1 selection
         output = vtkMultiBlockDataSet()
@@ -37,8 +37,6 @@ def test_load_beam():
 
         # All selected
         output = vtkMultiBlockDataSet()
-        reader._selected = []
-        for beam in ids.beam:
-            reader._selected.append(beam.name)
+        reader._selected = [str(beam.name) for beam in ids.beam]
         reader._load_beam(output, time_idx)
         assert output.GetNumberOfBlocks() == len(ids.beam)
