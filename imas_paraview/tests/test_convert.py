@@ -1,11 +1,11 @@
 import imas
 import pytest
-from imas.ids_defs import IDS_TIME_MODE_HOMOGENEOUS
+from imas.ids_defs import IDS_TIME_MODE_HOMOGENEOUS, IDS_TIME_MODE_HETEROGENEOUS
 from imas.ids_path import IDSPath
 
 from imas_paraview.convert import Converter
 from imas_paraview.io.read_ps import PlasmaStateReader
-from imas_paraview.tests.fill_ggd import fill_ids
+from imas_paraview.tests.fill_ggd import fill_ids, fill_NxN_grid, fill_scalar_quantity
 from imas_paraview.util import get_grid_ggd
 
 
@@ -77,6 +77,35 @@ def test_ggd_to_vtk_out_of_bounds(dummy_ids_five_steps):
     converter = Converter(dummy_ids_five_steps)
     vtk_object = converter.ggd_to_vtk(time_idx=time_idx)
     assert vtk_object is None
+
+
+def test_ggd_to_vtk_heterogeneous():
+    ids = imas.IDSFactory(version="3.41.0").new("edge_profiles")
+    ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HETEROGENEOUS
+    # 5 data points, two grids:
+    ids.time = [0.0, 0.1, 0.2, 0.3, 0.4]
+    ids.ggd.resize(5)
+    for ggd, time in zip(ids.ggd, ids.time):
+        ggd.time = time
+
+    ids.grid_ggd.resize(2)
+    ids.grid_ggd[0].time = 0
+    ids.grid_ggd[1].time = 0.2
+
+    num_vertices, num_edges, num_faces = fill_NxN_grid(ids.grid_ggd[0], 2)
+    for i in range(2):
+        fill_scalar_quantity(ids.ggd[i].zeff, num_vertices, num_edges, num_faces)
+    num_vertices, num_edges, num_faces = fill_NxN_grid(ids.grid_ggd[1], 3)
+    for i in range(2, 5):
+        fill_scalar_quantity(ids.ggd[i].zeff, num_vertices, num_edges, num_faces)
+
+    converter = Converter(ids)
+    for i in range(5):
+        vtk_object = converter.ggd_to_vtk(time_idx=i)
+        assert vtk_object is not None
+
+        num_faces = vtk_object.GetPartition(2, 0).GetNumberOfCells()
+        assert num_faces == (1 if i < 2 else 4)
 
 
 def test_ggd_to_vtk_subset():
