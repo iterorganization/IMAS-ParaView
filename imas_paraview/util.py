@@ -55,14 +55,14 @@ def get_ggd_path(ids_metadata) -> Optional[str]:
     return None
 
 
-def get_grid_ggd(ids, ggd_idx=0, parent_idx=0):
+def get_grid_ggd(ids, time=0, parent_idx=0):
     """Finds and returns the grid_ggd within IDS at the time index ggd_idx. If the
     grid_ggd at ggd_idx time index does not exist, it tries to return the first
     grid_ggd. If this does not exist, it returns None.
 
     Args:
         ids: The IDS for which to return the grid_gdd.
-        ggd_idx: Time index for which to load the grid.
+        time: Time value for which to load the grid.
         parent_idx: Index for any non-time-dependent parent Array of Structures.
             For example ``description_ggd[parent_idx].grid_ggd[ggd_idx]`` in the wall
             IDS.
@@ -81,6 +81,11 @@ def get_grid_ggd(ids, ggd_idx=0, parent_idx=0):
             pass  # Current node is a structure
         elif node.metadata.coordinate1.is_time_coordinate:
             # Time dependent array of structure
+            # Let IMAS-Python handle the time mode (homogeneous/heterogeneous):
+            time_array = node.coordinates[0]
+            # Load closest previous time index
+            ggd_idx = np.searchsorted(time_array, time, side="right") - 1
+
             if 0 <= ggd_idx < len(node):
                 node = node[ggd_idx]
             else:

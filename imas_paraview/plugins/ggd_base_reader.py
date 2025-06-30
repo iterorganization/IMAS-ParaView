@@ -76,6 +76,17 @@ class GGDBaseReader(GGDVTKPluginBase):
             else:
                 self._selectable = self.filled_paths
 
+    def get_heterogeneous_time_array(self):
+        if self._ids.time.has_value:
+            # Assume main time array is the one we need
+            # This works for the data looked at until now (produced by JOREK).
+            # The DD allows way more complex cases, which could be implemented as well
+            # if such a case arises in the future.
+            return self._ids.time
+        raise NotImplementedError(
+            "Heterogeneous time mode with an empty time array is not implemented."
+        )
+
     def setup_ids(self):
         """
         Initializes plasma state reader and populates scalar and vector paths for

@@ -95,10 +95,12 @@ class Converter:
 
         self.progress = progress
 
-        if self.time_idx is None:
+        if self.time_idx is None or not (0 <= self.time_idx < len(self.ids.time)):
             return None
+        if time is None:
+            time = self.ids.time[self.time_idx]
 
-        self.grid_ggd = get_grid_ggd(self.ids, self.time_idx, parent_idx)
+        self.grid_ggd = get_grid_ggd(self.ids, time, parent_idx)
         if self.grid_ggd is None:
             logger.warning("Could not load a valid GGD grid.")
             return None
