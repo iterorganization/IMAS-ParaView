@@ -62,7 +62,7 @@ def get_grid_ggd(ids, time=0, parent_idx=0):
 
     Args:
         ids: The IDS for which to return the grid_gdd.
-        ggd_idx: Time index for which to load the grid.
+        time: Time value for which to load the grid.
         parent_idx: Index for any non-time-dependent parent Array of Structures.
             For example ``description_ggd[parent_idx].grid_ggd[ggd_idx]`` in the wall
             IDS.
