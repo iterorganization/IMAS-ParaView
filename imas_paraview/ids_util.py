@@ -29,8 +29,10 @@ def get_arrays_from_ids(
             encountered through which has to be traversed to reach a GGD array, said
             structure is resized to have length 1.
     Returns:
-        scalar_array_list: The GGD scalar arrays (real & complex)
-        vector_array_list: The GGD vector arrays (normal & rphiz)
+        A tuple with two elements.
+
+        - scalar_array_list: The GGD scalar arrays (real & complex)
+        - vector_array_list: The GGD vector arrays (normal & rphiz)
     """
     if scalar_array_paths is None or vector_array_paths is None:
         # Recursively search the IDS for GGD paths
