@@ -13,7 +13,7 @@ from vtkmodules.vtkCommonDataModel import (
 
 from imas_paraview.ids_util import create_name_recursive
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
-from imas_paraview.util import find_closest_indices
+from imas_paraview.util import find_closest_indices, format_units
 
 logger = logging.getLogger("imas_paraview")
 
@@ -238,8 +238,8 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         """
         values_flat = profile.ravel()
         vtk_scalars = numpy_to_vtk(values_flat.astype(np.float64), deep=True)
-        units = profile.metadata.units
-        vtk_scalars.SetName(f"{name} [{units}]")
+        units = format_units(profile)
+        vtk_scalars.SetName(f"{name} {units}")
         return vtk_scalars
 
     def _create_ugrid(self, vtk_points, vtk_scalars):
