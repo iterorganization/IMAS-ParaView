@@ -8,9 +8,9 @@ def test_load_beam():
     """Test if limiters are loaded in the VTK Multiblock Dataset."""
     reader = BeamReader()
     with DBEntry(
-        "/home/ITER/blokhus/public/imas_paraview_tests/ec_launchers.nc", "r"
+        "/home/ITER/blokhus/public/imas_paraview_tests/iter_md-120000-1304.nc", "r"
     ) as entry:
-        ids = entry.get("ec_launchers", lazy=True, autoconvert=False)
+        ids = entry.get("ec_launchers", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
         time_idx = 0

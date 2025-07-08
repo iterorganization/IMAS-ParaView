@@ -10,8 +10,10 @@ def test_load_limiters():
     """Test if limiters are loaded in the VTK Multiblock Dataset."""
     reader = WallLimiterReader()
 
-    with DBEntry("/home/ITER/blokhus/public/imas_paraview_tests/wall.nc", "r") as entry:
-        ids = entry.get("wall", lazy=True, autoconvert=False)
+    with DBEntry(
+        "/home/ITER/blokhus/public/imas_paraview_tests/iter_md-116000-5.nc", "r"
+    ) as entry:
+        ids = entry.get("wall", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
         description_name = ids.description_2d[0].type.name

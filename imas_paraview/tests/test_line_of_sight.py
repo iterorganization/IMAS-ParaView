@@ -12,9 +12,9 @@ def test_load_los():
     reader = LineOfSightReader()
 
     with DBEntry(
-        "/home/ITER/blokhus/public/imas_paraview_tests/bolometer.nc", "r"
+        "/home/ITER/blokhus/public/imas_paraview_tests/iter_md-150401-3.nc", "r"
     ) as entry:
-        ids = entry.get("bolometer", lazy=True, autoconvert=False)
+        ids = entry.get("bolometer", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
 
@@ -52,8 +52,10 @@ def test_load_los_ece():
     """Test if line_of_sight structures in ece are loaded in the VTK
     Multiblock Dataset."""
     reader = LineOfSightReader()
-    with DBEntry("/home/ITER/blokhus/public/imas_paraview_tests/ece.nc", "r") as entry:
-        ids = entry.get("ece", lazy=True, autoconvert=False)
+    with DBEntry(
+        "/home/ITER/blokhus/public/imas_paraview_tests/iter_md-150601-22.nc", "r"
+    ) as entry:
+        ids = entry.get("ece", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
 
