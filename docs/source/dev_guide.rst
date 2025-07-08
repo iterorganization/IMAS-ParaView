@@ -35,7 +35,7 @@ why they all derive from the same base class. The class diagram, at the time of 
 is as follows:
 
 - :py:class:`~imas_paraview.plugins.base_class.GGDVTKPluginBase`. This is the base
-  class, which defines all 
+  class for all IMAS data readers. See below for more details.
 
   - :py:class:`~imas_paraview.plugins.ggd_base_reader.GGDBaseReader`. This is the base
     class for plugins that read GGD data:
@@ -80,7 +80,7 @@ can be adjusted in the ParaView Properties Panel):
   items to display in this list.
 - Bézier interpolation settings. These settings are only used by the JOREK Reader.
 
-Note that all Properties / UI elements are declard on the base class. The reason is that
+Note that all Properties / UI elements are defined on the base class. The reason is that
 this is the only way to keep their ordering consistent in ParaView. The ParaView Python
 Plugin API does some interesting things with subclasses...
 
