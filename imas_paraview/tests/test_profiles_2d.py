@@ -14,9 +14,9 @@ def test_load_profiles():
     reader = Profiles2DReader()
 
     with DBEntry(
-        "/home/ITER/blokhus/public/imas_paraview_tests/equilibrium.nc", "r"
+        "/home/ITER/blokhus/public/imas_paraview_tests/iter_sce_110004-1.nc", "r"
     ) as entry:
-        ids = entry.get("equilibrium", lazy=True, autoconvert=False)
+        ids = entry.get("equilibrium", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
 
