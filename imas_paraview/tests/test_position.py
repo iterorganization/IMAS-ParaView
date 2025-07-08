@@ -1,6 +1,5 @@
 import imas
 import numpy as np
-import pytest
 from imas import DBEntry
 from vtkmodules.vtkCommonDataModel import vtkPolyData
 
@@ -8,17 +7,10 @@ from imas_paraview.plugins.position import PositionReader
 from imas_paraview.util import pol_to_cart
 
 
-@pytest.mark.skip(reason="no IMAS-Core available")
 def test_load_position_magnetics():
     """Test if positions of magnetics barometry IDS are saved into vtkPolyData."""
     reader = PositionReader()
-    entry = DBEntry(
-        (
-            "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/"
-            "/3/150100/5/"
-        ),
-        "r",
-    )
+    entry = DBEntry("/home/ITER/blokhus/public/imas_paraview_tests/magnetics.nc", "r")
     ids = entry.get("magnetics", lazy=True, autoconvert=False)
 
     reader._ids = ids
