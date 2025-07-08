@@ -36,7 +36,6 @@ def test_load_position_magnetics():
     assert np.all(np.isclose(point1, output.GetPoint(0)))
 
 
-@pytest.mark.skip(reason="no IMAS-Core available")
 def test_load_position_barometry():
     """Test if positions of gauges of barometry IDS are saved into vtkPolyData."""
     ids = imas.IDSFactory().barometry()
