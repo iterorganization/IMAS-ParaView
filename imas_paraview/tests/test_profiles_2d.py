@@ -1,6 +1,5 @@
 import imas
 import numpy as np
-import pytest
 from imas import DBEntry
 from imas.backends.imas_core.db_entry_helpers import IDS_TIME_MODE_HOMOGENEOUS
 from vtk.util.numpy_support import vtk_to_numpy
@@ -9,15 +8,13 @@ from vtkmodules.vtkCommonDataModel import vtkPartitionedDataSetCollection
 from imas_paraview.plugins.profiles_2d import Profiles2DReader
 
 
-@pytest.mark.skip(reason="no IMAS-Core available")
 def test_load_profiles():
     """Test if 2D profiles structures are loaded in the VTK
     PartitionedDatasetCollection."""
     reader = Profiles2DReader()
 
     with DBEntry(
-        "imas:hdf5?path=/work/imas/shared/imasdb/ITER_SCENARIOS/3/110004/1",
-        "r",
+        "/home/ITER/blokhus/public/imas_paraview_tests/equilibrium.nc", "r"
     ) as entry:
         ids = entry.get("equilibrium", lazy=True, autoconvert=False)
         reader._ids = ids

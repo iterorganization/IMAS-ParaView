@@ -1,20 +1,14 @@
-import pytest
 from imas import DBEntry
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
 from imas_paraview.plugins.beam import BeamReader
 
 
-@pytest.mark.skip(reason="no IMAS-Core available")
 def test_load_beam():
     """Test if limiters are loaded in the VTK Multiblock Dataset."""
     reader = BeamReader()
     with DBEntry(
-        (
-            "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/"
-            "3/120000/1304/"
-        ),
-        "r",
+        "/home/ITER/blokhus/public/imas_paraview_tests/ec_launchers.nc", "r"
     ) as entry:
         ids = entry.get("ec_launchers", lazy=True, autoconvert=False)
         reader._ids = ids
