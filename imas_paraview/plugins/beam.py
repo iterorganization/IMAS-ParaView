@@ -19,6 +19,8 @@ logger = logging.getLogger("imas_paraview")
 @smproxy.source(label="Beam Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class BeamReader(GGDVTKPluginBase, is_time_dependent=True):
+    """ParaView plugin to view beam structures in the ec_launchers IDS."""
+
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", ["ec_launchers"])
         self.distance = 10
@@ -128,7 +130,6 @@ class BeamReader(GGDVTKPluginBase, is_time_dependent=True):
             launch_pos_z: Height of the launching position
             steering_angle_pol: Steering angle of the beam in the R,Z plane
             steering_angle_tor: Steering angle of the beam away from the poloidal plane
-            distance: Distance along direction vector at which to place the second point
 
         Returns:
             tuple containing the launching position and a point into the direction of

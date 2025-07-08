@@ -23,8 +23,11 @@ class InterpSettings:
     """Data class containing Fourier interpolation settings."""
 
     n_plane: int = 0
+    """Number of interpolation planes"""
     phi_start: float = 0.0
+    """Angle of the first plane (in degrees)"""
     phi_end: float = 0.0
+    """Angle of the last plane (in degrees)"""
 
 
 class Converter:

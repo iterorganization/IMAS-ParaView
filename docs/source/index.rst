@@ -47,6 +47,7 @@ Manual
 
    code_style
    ci_config
+   dev_guide
 
 
 LICENSE

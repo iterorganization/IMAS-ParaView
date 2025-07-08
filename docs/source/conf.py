@@ -8,6 +8,7 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import datetime
 import sys
+import types
 from urllib.parse import urljoin
 
 # Sphinx extention to format xarray/pandas summaries
@@ -55,7 +56,6 @@ extlinks = {
     "dd": (dd_url + "%s", "%s"),
     "al": (al_url + "%s", "%s"),
     "pypa": ("https://packaging.python.org/%s", None),
-
 }
 
 full_version = Version(imas_paraview.__version__)
@@ -261,6 +261,23 @@ autodoc_typehints = "signature"
 
 # The documentation for these external import give errors, so we mock them
 autodoc_mock_imports = ["vtkmodules", "paraview", "vtk"]
+
+
+# Special cases for vtkAlgorithm stuff, so our decorated plugin classes show up in the
+# sphinx docs
+class DecoratorMock:
+    def __getattr__(self, name):
+        return self
+
+    def __call__(self, *args, **kwargs):
+        if args and isinstance(args[0], (type, types.FunctionType)):
+            return args[0]
+        return self
+
+
+sys.modules["paraview.util.vtkAlgorithm"] = DecoratorMock()
+sys.modules["imas_paraview.paraview_support.servermanager_tools"] = DecoratorMock()
+
 
 # Configuration of sphinx.ext.autosummary
 # https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html
