@@ -8,14 +8,12 @@ from vtkmodules.vtkCommonDataModel import vtkPartitionedDataSetCollection
 from imas_paraview.plugins.profiles_2d import Profiles2DReader
 
 
-def test_load_profiles():
+def test_load_profiles(test_data_dir):
     """Test if 2D profiles structures are loaded in the VTK
     PartitionedDatasetCollection."""
     reader = Profiles2DReader()
 
-    with DBEntry(
-        "/home/ITER/blokhus/public/imas_paraview_tests/iter_sce_110004-1.nc", "r"
-    ) as entry:
+    with DBEntry(test_data_dir / "iter_sce_110004-1.nc", "r") as entry:
         ids = entry.get("equilibrium", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()

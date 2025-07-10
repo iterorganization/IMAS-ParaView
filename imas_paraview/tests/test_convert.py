@@ -144,10 +144,8 @@ def test_ggd_to_vtk_subset_time_index(dummy_ids_five_steps):
     assert vtk_object is None
 
 
-def test_ggd_to_vtk_solps():
-    with DBEntry(
-        "/home/ITER/blokhus/public/imas_paraview_tests/iter_db-123364-1.nc", "r"
-    ) as entry:
+def test_ggd_to_vtk_solps(test_data_dir):
+    with DBEntry(test_data_dir / "iter_db-123364-1.nc", "r") as entry:
         ids = entry.get("edge_profiles", autoconvert=False)
         converter = Converter(ids)
         vtk_object = converter.ggd_to_vtk()
@@ -178,10 +176,8 @@ def test_ggd_to_vtk_solps():
         assert np.array_equal(elec_temp_face, np_vtk_face)
 
 
-def test_ggd_to_vtk_jorek():
-    with DBEntry(
-        "/home/ITER/blokhus/public/imas_paraview_tests/iter_dis-113112-1.nc", "r"
-    ) as entry:
+def test_ggd_to_vtk_jorek(test_data_dir):
+    with DBEntry(test_data_dir / "iter_dis-113112-1.nc", "r") as entry:
         ids = entry.get("plasma_profiles", autoconvert=False)
         converter = Converter(ids)
 

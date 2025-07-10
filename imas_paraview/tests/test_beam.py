@@ -4,12 +4,10 @@ from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 from imas_paraview.plugins.beam import BeamReader
 
 
-def test_load_beam():
+def test_load_beam(test_data_dir):
     """Test if limiters are loaded in the VTK Multiblock Dataset."""
     reader = BeamReader()
-    with DBEntry(
-        "/home/ITER/blokhus/public/imas_paraview_tests/iter_md-120000-1304.nc", "r"
-    ) as entry:
+    with DBEntry(test_data_dir / "iter_md-120000-1304.nc", "r") as entry:
         ids = entry.get("ec_launchers", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
