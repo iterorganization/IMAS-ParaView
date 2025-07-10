@@ -7,7 +7,7 @@ from imas.ids_defs import IDS_TIME_MODE_HETEROGENEOUS, IDS_TIME_MODE_HOMOGENEOUS
 from imas.ids_path import IDSPath
 from vtk.util.numpy_support import vtk_to_numpy
 
-from imas_paraview.convert import Converter
+from imas_paraview.convert import Converter, InterpSettings
 from imas_paraview.io.read_ps import PlasmaStateReader
 from imas_paraview.tests.fill_ggd import fill_ids, fill_NxN_grid, fill_scalar_quantity
 from imas_paraview.util import get_grid_ggd
@@ -176,6 +176,23 @@ def test_ggd_to_vtk_solps():
         np_vtk_face = vtk_to_numpy(vtk_face_array)
         elec_temp_face = ids.ggd[0].electrons.temperature[4].values
         assert np.array_equal(elec_temp_face, np_vtk_face)
+
+
+def test_ggd_to_vtk_jorek():
+    with DBEntry(
+        "/home/ITER/blokhus/public/imas_paraview_tests/iter_dis-113112-1.nc", "r"
+    ) as entry:
+        ids = entry.get("plasma_profiles", autoconvert=False)
+        converter = Converter(ids)
+
+        plane_config = InterpSettings(n_plane=3, phi_start=0, phi_end=180)
+        for t in range(3):
+            vtk_object = converter.ggd_to_vtk(time_idx=t, plane_config=plane_config)
+            pd = vtk_object.GetPartitionedDataSet(0)
+            vtk_grid = pd.GetPartition(0)
+            vtk_point_data = vtk_grid.GetPointData()
+            vtk_elec = vtk_point_data.GetArray("Electrons Temperature [eV]")
+            assert vtk_elec is not None
 
 
 def assert_cache(converter, hits, misses):
