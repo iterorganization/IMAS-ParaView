@@ -1,7 +1,11 @@
 import imas
+import numpy as np
 import pytest
-from imas.ids_defs import IDS_TIME_MODE_HOMOGENEOUS, IDS_TIME_MODE_HETEROGENEOUS
+import vtk
+from imas import DBEntry
+from imas.ids_defs import IDS_TIME_MODE_HETEROGENEOUS, IDS_TIME_MODE_HOMOGENEOUS
 from imas.ids_path import IDSPath
+from vtk.util.numpy_support import vtk_to_numpy
 
 from imas_paraview.convert import Converter
 from imas_paraview.io.read_ps import PlasmaStateReader
@@ -138,6 +142,40 @@ def test_ggd_to_vtk_subset_time_index(dummy_ids_five_steps):
     converter = Converter(dummy_ids_five_steps)
     vtk_object = converter.ggd_to_vtk(time=5, time_idx=6)
     assert vtk_object is None
+
+
+def test_ggd_to_vtk_solps():
+    with DBEntry(
+        "/home/ITER/blokhus/public/imas_paraview_tests/iter_db-123364-1.nc", "r"
+    ) as entry:
+        ids = entry.get("edge_profiles", autoconvert=False)
+        converter = Converter(ids)
+        vtk_object = converter.ggd_to_vtk()
+        num_pds = vtk_object.GetNumberOfPartitionedDataSets()
+        grid_subsets = ids.grid_ggd[0].grid_subset
+        assert num_pds == len(grid_subsets)
+        # Check if names of subsets match partition names
+        for i in range(num_pds):
+            name = vtk_object.GetMetaData(i).Get(vtk.vtkCompositeDataSet.NAME())
+            assert name == grid_subsets[i].identifier.name
+
+        # Check points array
+        pd = vtk_object.GetPartitionedDataSet(0)
+        vtk_grid = pd.GetPartition(0)
+        vtk_point_data = vtk_grid.GetPointData()
+        elec_temp = ids.ggd[0].electrons.temperature[0].values
+        vtk_elec = vtk_point_data.GetArray("Electrons Temperature [eV]")
+        np_vtk_elec = vtk_to_numpy(vtk_elec)
+        assert np.array_equal(elec_temp, np_vtk_elec)
+
+        # Check cells array
+        pd = vtk_object.GetPartitionedDataSet(4)
+        vtk_grid = pd.GetPartition(0)
+        vtk_face_data = vtk_grid.GetCellData()
+        vtk_face_array = vtk_face_data.GetArray("Electrons Temperature [eV]")
+        np_vtk_face = vtk_to_numpy(vtk_face_array)
+        elec_temp_face = ids.ggd[0].electrons.temperature[4].values
+        assert np.array_equal(elec_temp_face, np_vtk_face)
 
 
 def assert_cache(converter, hits, misses):
