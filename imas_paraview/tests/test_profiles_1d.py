@@ -6,13 +6,11 @@ from vtkmodules.vtkCommonDataModel import vtkTable
 from imas_paraview.plugins.profiles_1d import Profiles1DReader
 
 
-def test_load_profiles_1d():
+def test_load_profiles_1d(test_data_dir):
     """Test if 1D profile structures are loaded in the VTK Table."""
     reader = Profiles1DReader()
 
-    with DBEntry(
-        "/home/ITER/blokhus/public/imas_paraview_tests/jintrac_53298-2.nc", "r"
-    ) as entry:
+    with DBEntry(test_data_dir / "jintrac_53298-2.nc", "r") as entry:
         ids = entry.get("core_profiles", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()

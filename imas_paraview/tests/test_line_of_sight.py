@@ -7,13 +7,11 @@ from imas_paraview.plugins.line_of_sight import LineOfSightReader
 from imas_paraview.util import pol_to_cart
 
 
-def test_load_los():
+def test_load_los(test_data_dir):
     """Test if line_of_sight structures are loaded in the VTK Multiblock Dataset."""
     reader = LineOfSightReader()
 
-    with DBEntry(
-        "/home/ITER/blokhus/public/imas_paraview_tests/iter_md-150401-3.nc", "r"
-    ) as entry:
+    with DBEntry(test_data_dir / "iter_md-150401-3.nc", "r") as entry:
         ids = entry.get("bolometer", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
@@ -48,13 +46,11 @@ def test_load_los():
             assert_values_match(los, output.GetBlock(i))
 
 
-def test_load_los_ece():
+def test_load_los_ece(test_data_dir):
     """Test if line_of_sight structures in ece are loaded in the VTK
     Multiblock Dataset."""
     reader = LineOfSightReader()
-    with DBEntry(
-        "/home/ITER/blokhus/public/imas_paraview_tests/iter_md-150601-22.nc", "r"
-    ) as entry:
+    with DBEntry(test_data_dir / "iter_md-150601-22.nc", "r") as entry:
         ids = entry.get("ece", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()

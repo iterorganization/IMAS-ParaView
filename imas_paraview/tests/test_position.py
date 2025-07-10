@@ -7,12 +7,10 @@ from imas_paraview.plugins.position import PositionReader
 from imas_paraview.util import pol_to_cart
 
 
-def test_load_position_magnetics():
+def test_load_position_magnetics(test_data_dir):
     """Test if positions of magnetics barometry IDS are saved into vtkPolyData."""
     reader = PositionReader()
-    entry = DBEntry(
-        "/home/ITER/blokhus/public/imas_paraview_tests/iter_md-150100-5.nc", "r"
-    )
+    entry = DBEntry(test_data_dir / "iter_md-150100-5.nc", "r")
     ids = entry.get("magnetics", autoconvert=False)
 
     reader._ids = ids

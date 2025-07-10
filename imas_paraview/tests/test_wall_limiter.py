@@ -6,13 +6,11 @@ from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 from imas_paraview.plugins.wall_limiter import WallLimiterReader
 
 
-def test_load_limiters():
+def test_load_limiters(test_data_dir):
     """Test if limiters are loaded in the VTK Multiblock Dataset."""
     reader = WallLimiterReader()
 
-    with DBEntry(
-        "/home/ITER/blokhus/public/imas_paraview_tests/iter_md-116000-5.nc", "r"
-    ) as entry:
+    with DBEntry(test_data_dir / "iter_md-116000-5.nc", "r") as entry:
         ids = entry.get("wall", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
