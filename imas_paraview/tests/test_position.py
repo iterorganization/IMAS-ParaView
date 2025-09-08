@@ -10,7 +10,7 @@ from imas_paraview.util import pol_to_cart
 def test_load_position_magnetics(test_data_dir):
     """Test if positions of magnetics barometry IDS are saved into vtkPolyData."""
     reader = PositionReader()
-    entry = DBEntry(test_data_dir / "iter_md-150100-5.nc", "r")
+    entry = DBEntry(test_data_dir / "iter_md_magnetics_150100_5.nc", "r")
     ids = entry.get("magnetics", autoconvert=False)
 
     reader._ids = ids
@@ -19,7 +19,7 @@ def test_load_position_magnetics(test_data_dir):
     r1 = ids.b_field_pol_probe[0].position.r
     phi1 = ids.b_field_pol_probe[0].position.phi
     z1 = ids.b_field_pol_probe[0].position.z
-    name1 = f"{ids.b_field_pol_probe[0].name} / {ids.b_field_pol_probe[0].identifier}"
+    name1 = f"{ids.b_field_pol_probe[0].name}"
     point1 = (*pol_to_cart(r1, phi1), z1)
     output = vtkPolyData()
     reader._selected = [name1]

@@ -45,6 +45,49 @@ jobs:
         python-version: '3.10'
         cache: 'pip'  # caching pip dependencies
 
+    - name: Define dataset list and cache key
+      id: datasets
+      run: |
+        urls=(
+          https://zenodo.org/record/17062700/files/iter_disruption_113112_1.nc
+          https://zenodo.org/record/17062700/files/iter_scenario_123364_1.nc
+          https://zenodo.org/record/17062700/files/iter_scenario_53298_seq1_DD4.nc
+          https://zenodo.org/record/15525525/files/iter_md_bolometer_150401_3.nc
+          https://zenodo.org/record/15525525/files/iter_md_ec_launchers_120000_1304.nc
+          https://zenodo.org/record/15525525/files/iter_md_ece_150601_22.nc
+          https://zenodo.org/record/15525525/files/iter_md_magnetics_150100_5.nc
+          https://zenodo.org/record/15525525/files/iter_md_wall_116000_5.nc
+          https://zenodo.org/record/15525525/files/iter_md_wall_116100_2001.nc
+        )
+        echo "files=${urls[*]}" >> $GITHUB_OUTPUT
+
+        # Generate a hash key from the URLs list, this is used for caching
+        key=$(echo "${urls[*]}" | sha256sum | cut -d ' ' -f1)
+        echo "key=${key}" >> $GITHUB_OUTPUT
+
+    - name: Restore Zenodo datasets from cache
+      id: cache-datasets-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: data
+        key: ${{ steps.datasets.outputs.key }}
+
+    - if: ${{ steps.cache-datasets-restore.outputs.cache-hit != 'true' }}
+      name: Download datasets if not cached
+      run: |
+        mkdir -p data
+        for url in ${{ steps.datasets.outputs.files }}; do
+          echo "Downloading $(basename $url) ..."
+          wget -P data/ "$url"
+        done
+
+    - if: ${{ steps.cache-datasets-restore.outputs.cache-hit != 'true' }}
+      name: Save Zenodo datasets to cache
+      uses: actions/cache/save@v4
+      with:
+        path: data
+        key: ${{ steps.datasets.outputs.key }}      
+        
     - name: Cache paraview
       id: cache-paraview
       uses: actions/cache/restore@v4
@@ -70,6 +113,7 @@ jobs:
     - name: Install dependencies
       run: |
         # Install dependencies required for running paraview gui in xfvb-run:
+        sudo apt update
         sudo apt install -y libqt5gui5-gles
 
         # Install python dependencies

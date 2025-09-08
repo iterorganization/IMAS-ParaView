@@ -14,7 +14,7 @@ logger = logging.getLogger("imas_paraview")
 
 @pytest.fixture()
 def test_data_dir():
-    return Path("/home/ITER/blokhus/public/imas_paraview_tests")
+    return Path("data/")
 
 
 def set_environment():
