@@ -145,7 +145,7 @@ def test_ggd_to_vtk_subset_time_index(dummy_ids_five_steps):
 
 
 def test_ggd_to_vtk_solps(test_data_dir):
-    with DBEntry(test_data_dir / "iter_db-123364-1.nc", "r") as entry:
+    with DBEntry(test_data_dir / "iter_scenario_123364_1.nc", "r") as entry:
         ids = entry.get("edge_profiles", autoconvert=False)
         converter = Converter(ids)
         vtk_object = converter.ggd_to_vtk()
@@ -177,8 +177,8 @@ def test_ggd_to_vtk_solps(test_data_dir):
 
 
 def test_ggd_to_vtk_jorek(test_data_dir):
-    with DBEntry(test_data_dir / "iter_dis-113112-1.nc", "r") as entry:
-        ids = entry.get("plasma_profiles", autoconvert=False)
+    with DBEntry(test_data_dir / "iter_disruption_113112_1.nc", "r") as entry:
+        ids = entry.get("plasma_profiles", autoconvert=False, occurrence=1)
         converter = Converter(ids)
 
         plane_config = InterpSettings(n_plane=3, phi_start=0, phi_end=180)

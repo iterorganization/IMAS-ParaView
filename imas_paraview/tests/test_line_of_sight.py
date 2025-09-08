@@ -11,7 +11,7 @@ def test_load_los(test_data_dir):
     """Test if line_of_sight structures are loaded in the VTK Multiblock Dataset."""
     reader = LineOfSightReader()
 
-    with DBEntry(test_data_dir / "iter_md-150401-3.nc", "r") as entry:
+    with DBEntry(test_data_dir / "iter_md_bolometer_150401_3.nc", "r") as entry:
         ids = entry.get("bolometer", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
@@ -50,7 +50,7 @@ def test_load_los_ece(test_data_dir):
     """Test if line_of_sight structures in ece are loaded in the VTK
     Multiblock Dataset."""
     reader = LineOfSightReader()
-    with DBEntry(test_data_dir / "iter_md-150601-22.nc", "r") as entry:
+    with DBEntry(test_data_dir / "iter_md_ece_150601_22.nc", "r") as entry:
         ids = entry.get("ece", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()

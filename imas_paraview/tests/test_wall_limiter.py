@@ -10,7 +10,7 @@ def test_load_limiters(test_data_dir):
     """Test if limiters are loaded in the VTK Multiblock Dataset."""
     reader = WallLimiterReader()
 
-    with DBEntry(test_data_dir / "iter_md-116000-5.nc", "r") as entry:
+    with DBEntry(test_data_dir / "iter_md_wall_116000_5.nc", "r") as entry:
         ids = entry.get("wall", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()

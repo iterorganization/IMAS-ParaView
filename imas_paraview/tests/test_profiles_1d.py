@@ -10,7 +10,7 @@ def test_load_profiles_1d(test_data_dir):
     """Test if 1D profile structures are loaded in the VTK Table."""
     reader = Profiles1DReader()
 
-    with DBEntry(test_data_dir / "jintrac_53298-2.nc", "r") as entry:
+    with DBEntry(test_data_dir / "iter_scenario_53298_seq1_DD4.nc", "r") as entry:
         ids = entry.get("core_profiles", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
