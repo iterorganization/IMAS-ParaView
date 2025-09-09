@@ -13,16 +13,15 @@ def test_load_profiles(test_data_dir):
     PartitionedDatasetCollection."""
     reader = Profiles2DReader()
 
-    with DBEntry(test_data_dir / "iter_sce_110004-1.nc", "r") as entry:
+    with DBEntry(test_data_dir / "iter_scenario_53298_seq1_DD4.nc", "r") as entry:
         ids = entry.get("equilibrium", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
 
         profile1 = ids.time_slice[0].profiles_2d[0].psi
         name1 = "Psi"
-        profile2 = ids.time_slice[0].profiles_2d[0].j_tor
-        name2 = "J_tor"
-
+        profile2 = ids.time_slice[0].profiles_2d[0].b_field_phi
+        name2 = "B_field_phi"
         # 1 selection
         output = vtkPartitionedDataSetCollection()
         reader._selected = [name1]
