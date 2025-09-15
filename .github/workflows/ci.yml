@@ -3,7 +3,7 @@ name: CI
 on: push
 
 env:
-  # Zenodo record ID for test datasets
+  # Zenodo record IDs for test datasets
   ZENODO_MD_ID: 17113713
   ZENODO_SCENARIOS_ID: 17062700
 
@@ -70,14 +70,14 @@ jobs:
         key=$(echo "${urls[*]}" | sha256sum | cut -d ' ' -f1)
         echo "key=${key}" >> $GITHUB_OUTPUT
 
-    - name: Restore Zenodo datasets from cache
-      id: cache-datasets-restore
-      uses: actions/cache/restore@v4
+    - name: Cache Zenodo datasets
+      id: cache-datasets
+      uses: actions/cache@v4
       with:
         path: data
         key: ${{ steps.datasets.outputs.key }}
 
-    - if: ${{ steps.cache-datasets-restore.outputs.cache-hit != 'true' }}
+    - if: ${{ steps.cache-datasets.outputs.cache-hit != 'true' }}
       name: Download datasets if not cached
       run: |
         mkdir -p data
@@ -85,13 +85,6 @@ jobs:
           echo "Downloading $(basename $url) ..."
           wget -P data/ "$url"
         done
-
-    - if: ${{ steps.cache-datasets-restore.outputs.cache-hit != 'true' }}
-      name: Save Zenodo datasets to cache
-      uses: actions/cache/save@v4
-      with:
-        path: data
-        key: ${{ steps.datasets.outputs.key }}      
         
     - name: Cache paraview
       id: cache-paraview
