@@ -1,0 +1,9 @@
+https://zenodo.org/record/17062700/files/iter_disruption_113112_1.nc
+https://zenodo.org/record/17062700/files/iter_scenario_123364_1.nc
+https://zenodo.org/record/17062700/files/iter_scenario_53298_seq1_DD4.nc
+https://zenodo.org/record/17113713/files/iter_md_bolometer_150401_3.nc
+https://zenodo.org/record/17113713/files/iter_md_ec_launchers_120000_1304.nc
+https://zenodo.org/record/17113713/files/iter_md_ece_150601_22.nc
+https://zenodo.org/record/17113713/files/iter_md_magnetics_150100_5.nc
+https://zenodo.org/record/17113713/files/iter_md_wall_116000_5.nc
+https://zenodo.org/record/17113713/files/iter_md_wall_116100_2001.nc
