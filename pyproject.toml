@@ -57,7 +57,7 @@ where = ["."]
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--strict-markers"
-markers = ["integration"]
+markers = ["integration","external_data"]
 testpaths = "imas_paraview/tests"
 
 [tool.setuptools_scm]

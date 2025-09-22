@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from imas import DBEntry
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkTable
@@ -6,6 +7,7 @@ from vtkmodules.vtkCommonDataModel import vtkTable
 from imas_paraview.plugins.profiles_1d import Profiles1DReader
 
 
+@pytest.mark.external_data
 def test_load_profiles_1d(test_data_dir):
     """Test if 1D profile structures are loaded in the VTK Table."""
     reader = Profiles1DReader()
