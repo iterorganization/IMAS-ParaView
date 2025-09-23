@@ -144,6 +144,7 @@ def test_ggd_to_vtk_subset_time_index(dummy_ids_five_steps):
     assert vtk_object is None
 
 
+@pytest.mark.external_data
 def test_ggd_to_vtk_solps(test_data_dir):
     with DBEntry(test_data_dir / "iter_scenario_123364_1.nc", "r") as entry:
         ids = entry.get("edge_profiles", autoconvert=False)
@@ -176,6 +177,7 @@ def test_ggd_to_vtk_solps(test_data_dir):
         assert np.array_equal(elec_temp_face, np_vtk_face)
 
 
+@pytest.mark.external_data
 def test_ggd_to_vtk_jorek(test_data_dir):
     with DBEntry(test_data_dir / "iter_disruption_113112_1.nc", "r") as entry:
         ids = entry.get("plasma_profiles", autoconvert=False, occurrence=1)

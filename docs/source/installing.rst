@@ -191,9 +191,19 @@ IMAS-Paraview plugins on the ITER SDCC cluster.
 
   # The integration tests require X virtual framebuffer to be installed
   module load Xvfb/21.1.9-GCCcore-13.2.0
+
+  # The tests require downloading external IDSs from Zenodo
+  wget -P data/ -i zenodo_datasets.txt
+
+  # Run the tests
   python -m pytest
-  # Alternatively, if you want to skip running the integration tests
-  python -m pytest -m "not integration"
+
+* Alternatively, if you want to skip running the integration tests and the 
+  tests that contain external data:
+
+.. code-block:: bash
+
+  python -m pytest -m "not integration and not external_data"
 
 * To build the IMAS-ParaView documentation, ensure the optional docs dependencies are pip 
   installed (or simply use all, to install all optional dependencies).

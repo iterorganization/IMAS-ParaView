@@ -1,9 +1,11 @@
+import pytest
 from imas import DBEntry
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
 from imas_paraview.plugins.beam import BeamReader
 
 
+@pytest.mark.external_data
 def test_load_beam(test_data_dir):
     """Test if limiters are loaded in the VTK Multiblock Dataset."""
     reader = BeamReader()
