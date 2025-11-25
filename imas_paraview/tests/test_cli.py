@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 from click import UsageError
 from click.testing import CliRunner
+from conftest import DD_VERSION
 
 from imas_paraview.cli import (
     cli,
@@ -28,7 +29,7 @@ def test_version():
 
 def test_ggd2vtk(tmp_path, dummy_ids):
     uri = f"{tmp_path}/testdb.nc"
-    with imas.DBEntry(uri, "w") as dbentry:
+    with imas.DBEntry(uri, "w", dd_version=DD_VERSION) as dbentry:
         dbentry.put(dummy_ids)
 
     runner = CliRunner()

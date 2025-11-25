@@ -11,6 +11,8 @@ from imas_paraview.tests.fill_ggd import fill_ids
 
 logger = logging.getLogger("imas_paraview")
 
+DD_VERSION = "3.42.0"
+
 
 @pytest.fixture()
 def test_data_dir():
@@ -41,7 +43,6 @@ def pytest_sessionstart(session):
     set_environment()
 
     # Generate test data
-    DD_VERSION = "3.42.0"
     ids = imas.IDSFactory(version=DD_VERSION).new("edge_profiles")
     fill_ids(ids, time_steps=10, grid_size=5)
 
@@ -82,7 +83,7 @@ def dummy_ids(ids_name):
     """Creates a dummy IDS object with a dummy grid and random GGD values for
     testing purposes."""
 
-    ids = imas.IDSFactory().new(ids_name)
+    ids = imas.IDSFactory(version=DD_VERSION).new(ids_name)
     fill_ids(ids)
     ids.validate()
     return ids
@@ -93,7 +94,7 @@ def dummy_ids_five_steps(ids_name):
     """Creates a dummy IDS object containing five time steps with a dummy grid and
     random GGD values for testing purposes."""
 
-    ids = imas.IDSFactory().new(ids_name)
+    ids = imas.IDSFactory(version=DD_VERSION).new(ids_name)
     fill_ids(ids, time_steps=5)
     ids.validate()
     return ids
