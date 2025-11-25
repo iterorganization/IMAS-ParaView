@@ -1,9 +1,7 @@
 """Plugin to view line of sight IDS structures in Paraview."""
 
 import logging
-from dataclasses import dataclass
 
-from imas.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
@@ -13,7 +11,6 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPolyData,
 )
 
-from imas_paraview.ids_util import get_object_by_name
 from imas_paraview.paraview_support.servermanager_tools import (
     doublevector,
     propertygroup,
@@ -38,14 +35,6 @@ SUPPORTED_LINE_OF_SIGHT_IDS = [
 ]
 
 
-@dataclass
-class LineOfSight:
-    """Data class that stores ``line_of_sight`` IDS structures, along with its name."""
-
-    name: str
-    line_of_sight: IDSStructure
-
-
 @smproxy.source(label="Line of Sight Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class LineOfSightReader(GGDVTKPluginBase):
@@ -54,6 +43,7 @@ class LineOfSightReader(GGDVTKPluginBase):
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", SUPPORTED_LINE_OF_SIGHT_IDS)
         self.scaling_factor = 1
+        self.selectable_map = {}
 
     @doublevector(label="Scaling Factor", name="scaling_factor", default_values=1)
     def P99_SetScalingFactor(self, val):
@@ -63,9 +53,6 @@ class LineOfSightReader(GGDVTKPluginBase):
     @propertygroup("Line of Sight Settings", ["scaling_factor"])
     def PG3_LineOfSightGroup(self):
         """Dummy function to define a PropertyGroup."""
-
-    def GetAttributeArrayName(self, idx) -> str:
-        return self._selectable[idx].name
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
@@ -84,7 +71,7 @@ class LineOfSightReader(GGDVTKPluginBase):
         """
         assert self._ids is not None, "IDS cannot be empty during setup."
 
-        self._selectable = []
+        self.selectable_map = {}
 
         channels = self._ids.channel
 
@@ -103,10 +90,10 @@ class LineOfSightReader(GGDVTKPluginBase):
                 not hasattr(channel, "line_of_sight")
                 or not channel.line_of_sight.first_point.r.has_value
             ):
-                selectable = LineOfSight(str(channel_name), self._ids.line_of_sight)
+                self.selectable_map[str(channel_name)] = self._ids.line_of_sight
             else:
-                selectable = LineOfSight(str(channel_name), channel.line_of_sight)
-            self._selectable.append(selectable)
+                self.selectable_map[str(channel_name)] = channel.line_of_sight
+        self._selectable = list(self.selectable_map)
 
     def _load_los(self, output):
         """Go through the list of selected line_of_sights, and load each of them in a
@@ -116,11 +103,8 @@ class LineOfSightReader(GGDVTKPluginBase):
             output: The vtkMultiBlockDataSet containing the line_of_sights.
         """
         for i, channel_name in enumerate(self._selected):
-            channel = get_object_by_name(self._selectable, channel_name)
-            if channel is None:
-                raise ValueError(f"Could not find {channel_name}")
-
-            logger.info(f"Selected {channel.name}")
+            channel = self.selectable_map[channel_name]
+            logger.info(f"Selected {channel_name}")
             vtk_poly = self._create_vtk_los(channel)
             output.SetBlock(i, vtk_poly)
 
@@ -142,7 +126,7 @@ class LineOfSightReader(GGDVTKPluginBase):
             x + self.scaling_factor * y for x, y in zip(first_point, line1_direction)
         )
 
-    def _create_vtk_los(self, channel):
+    def _create_vtk_los(self, los):
         """Create a vtkPolyData containing a line, based on the r, phi, and z
         coordinates in the line of sight structures. The r-, phi-, and z-coordinates are
         converted to cartesian and stored as vtkPoints and connected using vtkLines,
@@ -164,12 +148,11 @@ class LineOfSightReader(GGDVTKPluginBase):
                   +
                    4
         Args:
-            channel: containing a line_of_sight structure.
+            los: line_of_sight structure.
 
         Returns:
             vtkPolyData containing line_of_sight data.
         """
-        los = channel.line_of_sight
         points = [None] * 5
         points[0] = los.first_point
         points[1] = los.second_point

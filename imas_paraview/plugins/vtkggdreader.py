@@ -44,6 +44,8 @@ EXPERIMENTAL_IDS_NAMES = [
 @smproxy.source(label="GGD Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class GGDReader(GGDBaseReader, is_time_dependent=True):
+    """ParaView plugin to view (spatial) GGD structures grids and associated data."""
+
     _show_parent_indices_dropdown = True
 
     def __init__(self):

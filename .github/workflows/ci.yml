@@ -45,6 +45,32 @@ jobs:
         python-version: '3.10'
         cache: 'pip'  # caching pip dependencies
 
+    - name: Define dataset list and cache key
+      id: datasets
+      run: |
+        urls=($(cat zenodo_datasets.txt))
+        echo "files=${urls[*]}" >> $GITHUB_OUTPUT
+
+        # Generate a hash key from the URLs list, this is used for caching
+        key=$(echo "${urls[*]}" | sha256sum | cut -d ' ' -f1)
+        echo "key=${key}" >> $GITHUB_OUTPUT
+
+    - name: Cache Zenodo datasets
+      id: cache-datasets
+      uses: actions/cache@v4
+      with:
+        path: data
+        key: ${{ steps.datasets.outputs.key }}
+
+    - if: ${{ steps.cache-datasets.outputs.cache-hit != 'true' }}
+      name: Download datasets if not cached
+      run: |
+        mkdir -p data
+        for url in ${{ steps.datasets.outputs.files }}; do
+          echo "Downloading $(basename $url) ..."
+          wget -P data/ "$url"
+        done
+        
     - name: Cache paraview
       id: cache-paraview
       uses: actions/cache/restore@v4
@@ -67,11 +93,14 @@ jobs:
         key: ${{ steps.cache-paraview.outputs.cache-primary-key }}
         path: paraview/
 
-    - name: Install dependencies
-      run: |
-        # Install dependencies required for running paraview gui in xfvb-run:
-        sudo apt install -y libqt5gui5-gles
+    - name: Cache and Install Dependencies
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: libqt5gui5-gles
+        version: 1.0
 
+    - name: Install Python dependencies
+      run: |
         # Install python dependencies
         python -m venv venv
         . venv/bin/activate

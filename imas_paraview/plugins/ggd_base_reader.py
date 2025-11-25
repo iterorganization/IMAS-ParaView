@@ -18,9 +18,8 @@ class GGDBaseReader(GGDVTKPluginBase):
         # GGD arrays to load
         self._all_vector_paths = []
         self._all_scalar_paths = []
-
-    def GetAttributeArrayName(self, idx) -> str:
-        return self._name_from_idspath(self._selectable[idx])
+        self.all_paths = []
+        self.filled_paths = []
 
     def RequestDataObject(self, request, inInfo, outInfo):
         output = vtkPartitionedDataSetCollection()
@@ -73,10 +72,20 @@ class GGDBaseReader(GGDVTKPluginBase):
         """
         if self._ids is not None:
             if self.show_all:
-                self._selectable = self._all_vector_paths + self._all_scalar_paths
+                self._selectable = self.all_paths
             else:
-                self._selectable = self._filled_vector_paths + self._filled_scalar_paths
-        pass
+                self._selectable = self.filled_paths
+
+    def get_heterogeneous_time_array(self):
+        if self._ids.time.has_value:
+            # Assume main time array is the one we need
+            # This works for the data looked at until now (produced by JOREK).
+            # The DD allows way more complex cases, which could be implemented as well
+            # if such a case arises in the future.
+            return self._ids.time
+        raise NotImplementedError(
+            "Heterogeneous time mode with an empty time array is not implemented."
+        )
 
     def setup_ids(self):
         """
@@ -92,6 +101,14 @@ class GGDBaseReader(GGDVTKPluginBase):
                 self._filled_scalar_paths,
                 self._filled_vector_paths,
             ) = ps_reader.load_paths_from_ids()
+            self.all_paths = [
+                self._name_from_idspath(path)
+                for path in self._all_vector_paths + self._all_scalar_paths
+            ]
+            self.filled_paths = [
+                self._name_from_idspath(path)
+                for path in self._filled_vector_paths + self._filled_scalar_paths
+            ]
 
     def _name_from_idspath(self, path):
         """Converts an IDSPath to a string by removing 'ggd' and capitalizing each part

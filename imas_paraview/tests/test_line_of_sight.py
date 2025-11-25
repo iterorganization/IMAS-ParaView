@@ -8,23 +8,20 @@ from imas_paraview.plugins.line_of_sight import LineOfSightReader
 from imas_paraview.util import pol_to_cart
 
 
-@pytest.mark.skip(reason="no IMAS-Core available")
-def test_load_los():
+@pytest.mark.external_data
+def test_load_los(test_data_dir):
     """Test if line_of_sight structures are loaded in the VTK Multiblock Dataset."""
     reader = LineOfSightReader()
 
-    with DBEntry(
-        "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/3/150401/3/",
-        "r",
-    ) as entry:
-        ids = entry.get("bolometer", lazy=True, autoconvert=False)
+    with DBEntry(test_data_dir / "iter_md_bolometer_150401_3.nc", "r") as entry:
+        ids = entry.get("bolometer", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
 
         los1 = ids.channel[0].line_of_sight
-        name1 = ids.channel[0].name
+        name1 = str(ids.channel[0].name)
         los2 = ids.channel[1].line_of_sight
-        name2 = ids.channel[1].name
+        name2 = str(ids.channel[1].name)
 
         # 1 selection
         output = vtkMultiBlockDataSet()
@@ -43,9 +40,7 @@ def test_load_los():
 
         # All selected
         output = vtkMultiBlockDataSet()
-        reader._selected = []
-        for channel in ids.channel:
-            reader._selected.append(channel.name)
+        reader._selected = [str(channel.name) for channel in ids.channel]
         reader._load_los(output)
         assert output.GetNumberOfBlocks() == len(ids.channel)
         for i, channel in enumerate(ids.channel):
@@ -53,24 +48,21 @@ def test_load_los():
             assert_values_match(los, output.GetBlock(i))
 
 
-@pytest.mark.skip(reason="no IMAS-Core available")
-def test_load_los_ece():
+@pytest.mark.external_data
+def test_load_los_ece(test_data_dir):
     """Test if line_of_sight structures in ece are loaded in the VTK
     Multiblock Dataset."""
     reader = LineOfSightReader()
-    with DBEntry(
-        "imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/3/150601/22",
-        "r",
-    ) as entry:
-        ids = entry.get("ece", lazy=True, autoconvert=False)
+    with DBEntry(test_data_dir / "iter_md_ece_150601_22.nc", "r") as entry:
+        ids = entry.get("ece", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
 
         # this ece IDS does not have line_of_sight structures for each channel,
         # instead the global line_of_sight is used
         los = ids.line_of_sight
-        name1 = ids.channel[0].name
-        name2 = ids.channel[1].name
+        name1 = str(ids.channel[0].name)
+        name2 = str(ids.channel[1].name)
 
         # 1 selection
         output = vtkMultiBlockDataSet()
@@ -89,9 +81,7 @@ def test_load_los_ece():
 
         # All selected
         output = vtkMultiBlockDataSet()
-        reader._selected = []
-        for channel in ids.channel:
-            reader._selected.append(channel.name)
+        reader._selected = [str(channel.name) for channel in ids.channel]
         reader._load_los(output)
         assert output.GetNumberOfBlocks() == len(ids.channel)
         for i, channel in enumerate(ids.channel):

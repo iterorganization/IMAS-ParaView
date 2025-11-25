@@ -9,25 +9,21 @@ from vtkmodules.vtkCommonDataModel import vtkPartitionedDataSetCollection
 from imas_paraview.plugins.profiles_2d import Profiles2DReader
 
 
-@pytest.mark.skip(reason="no IMAS-Core available")
-def test_load_profiles():
+@pytest.mark.external_data
+def test_load_profiles(test_data_dir):
     """Test if 2D profiles structures are loaded in the VTK
     PartitionedDatasetCollection."""
     reader = Profiles2DReader()
 
-    with DBEntry(
-        "imas:hdf5?path=/work/imas/shared/imasdb/ITER_SCENARIOS/3/110004/1",
-        "r",
-    ) as entry:
-        ids = entry.get("equilibrium", lazy=True, autoconvert=False)
+    with DBEntry(test_data_dir / "iter_scenario_53298_seq1_DD4.nc", "r") as entry:
+        ids = entry.get("equilibrium", autoconvert=False)
         reader._ids = ids
         reader.setup_ids()
 
         profile1 = ids.time_slice[0].profiles_2d[0].psi
         name1 = "Psi"
-        profile2 = ids.time_slice[0].profiles_2d[0].j_tor
-        name2 = "J_tor"
-
+        profile2 = ids.time_slice[0].profiles_2d[0].b_field_phi
+        name2 = "B_field_phi"
         # 1 selection
         output = vtkPartitionedDataSetCollection()
         reader._selected = [name1]

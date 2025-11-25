@@ -9,8 +9,12 @@ import pytest
 from imas_paraview.plugins.vtkggdreader import SUPPORTED_IDS_NAMES
 from imas_paraview.tests.fill_ggd import fill_ids
 
-
 logger = logging.getLogger("imas_paraview")
+
+
+@pytest.fixture()
+def test_data_dir():
+    return Path("data/")
 
 
 def set_environment():

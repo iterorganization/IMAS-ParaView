@@ -220,21 +220,19 @@ def parse_uri(uri):
     Parses the URI and extracts the fragment part of the URI.
 
     Example:
-        Given the URI:
-            uri = "imas:hdf5?path=testdb#edge_profiles:1"
-
-        Returns:
-            uri_no_frag = "imas:hdf5?path=testdb"
-            ids_name = "edge_profiles"
-            occurrence = 1
+        >>> uri = "imas:hdf5?path=testdb#edge_profiles:1"
+        >>> parse_uri(uri)
+        ("imas:hdf5?path=testdb", "edge_profiles", 1)
 
     Args:
         uri: URI to parse, should contain a fragment denoting the IDS name.
 
     Returns:
-        uri_no_frag: URI without fragment part
-        ids_name: Name of the IDS.
-        occurrence: Occurrence number of the IDS.
+        A tuple with three elements.
+
+        - uri_no_frag: URI without fragment part
+        - ids_name: Name of the IDS.
+        - occurrence: Occurrence number of the IDS.
     """
     if "#" in uri:
         split_uri = uri.split("#")

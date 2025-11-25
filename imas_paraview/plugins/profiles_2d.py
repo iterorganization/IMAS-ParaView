@@ -1,5 +1,4 @@
 import logging
-from dataclasses import dataclass
 
 import numpy as np
 import vtk
@@ -12,7 +11,7 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPartitionedDataSetCollection,
 )
 
-from imas_paraview.ids_util import create_name_recursive, get_object_by_name
+from imas_paraview.ids_util import create_name_recursive
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import find_closest_indices
 
@@ -28,14 +27,6 @@ PROFILES_2D_IDS_NAMES = [
 ]
 
 
-@dataclass
-class Profile_2d:
-    """Data class that stores a profiles_2d node, along with its name."""
-
-    name: str
-    profile: np.ndarray
-
-
 @smproxy.source(label="2D Profiles Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
@@ -47,9 +38,7 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         self.z = np.array([])
         self._filled_profiles = []
         self._all_profiles = []
-
-    def GetAttributeArrayName(self, idx) -> str:
-        return self._selectable[idx].name
+        self.selectable_map = {}
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
@@ -174,12 +163,11 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         Returns:
             A list of `Profile_2d` objects created from the provided profiles
         """
-        profile_list = []
+        self.selectable_map = {}
         for profile in profiles:
             name = create_name_recursive(profile)
-            profile = Profile_2d(name, profile)
-            profile_list.append(profile)
-        return profile_list
+            self.selectable_map[name] = profile
+        return list(self.selectable_map)
 
     def _recursively_find_profiles(self, node):
         """Recursively traverses through the IDS node searching for filled 2d profiles.
@@ -214,13 +202,10 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         vtk_points = self._create_vtkpoints()
 
         for i, profile_name in enumerate(self._selected):
-            profile = get_object_by_name(self._selectable, profile_name)
-            if profile is None:
-                raise ValueError(f"Could not find {profile_name}")
+            profile = self.selectable_map[profile_name]
+            logger.info(f"Selected {profile_name}")
 
-            logger.info(f"Selected {profile.name}")
-
-            vtk_scalars = self._create_vtkscalars(profile)
+            vtk_scalars = self._create_vtkscalars(profile, profile_name)
             vtk_ugrid = self._create_ugrid(vtk_points, vtk_scalars)
 
             partitioned_dataset = vtkPartitionedDataSet()
@@ -242,7 +227,7 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         vtk_points.SetData(numpy_to_vtk(points.astype(np.float64), deep=True))
         return vtk_points
 
-    def _create_vtkscalars(self, profile):
+    def _create_vtkscalars(self, profile, name):
         """Create VTK array containing the values of the profile at the grid.
 
         Args:
@@ -251,35 +236,42 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
         Returns:
             The converted VTK array.
         """
-        values_flat = profile.profile.ravel()
+        values_flat = profile.ravel()
         vtk_scalars = numpy_to_vtk(values_flat.astype(np.float64), deep=True)
-        units = profile.profile.metadata.units
-        vtk_scalars.SetName(f"{profile.name} [{units}]")
+        units = profile.metadata.units
+        vtk_scalars.SetName(f"{name} [{units}]")
         return vtk_scalars
 
     def _create_ugrid(self, vtk_points, vtk_scalars):
-        """Create a vtkUnstructuredGrid of the given profile.
+        """Create a vtkUnstructuredGrid using VTK_QUAD cells from the structured 2D
+        grid.
 
         Args:
-            profile: The profile to create a ugrid for.
-
-        Returns:
-            The created unstructured grid.
+            vtk_points: The VTK points representing the grid vertices.
+            vtk_scalars: The scalar field values to assign to the grid points.
         """
 
-        ugrid = vtk.vtkUnstructuredGrid()
-        ugrid.GetPointData().SetScalars(vtk_scalars)
-
-        num_points = vtk_points.GetNumberOfPoints()
-        cells = vtk.vtkCellArray()
-
-        for i in range(num_points):
-            vertex = vtk.vtkVertex()
-            vertex.GetPointIds().SetId(0, i)
-            cells.InsertNextCell(vertex)
-
+        n_rows, n_cols = self.r.shape
         ugrid = vtk.vtkUnstructuredGrid()
         ugrid.SetPoints(vtk_points)
         ugrid.GetPointData().SetScalars(vtk_scalars)
-        ugrid.SetCells(vtk.VTK_VERTEX, cells)
+
+        num_quads = (n_rows - 1) * (n_cols - 1)
+        ids = np.arange(num_quads, dtype=np.int64)
+        r = ids // (n_cols - 1)
+        c = ids % (n_cols - 1)
+
+        base = r * n_cols + c
+        all_quads = np.column_stack([base, base + 1, base + n_cols + 1, base + n_cols])
+
+        cells_vtk = np.column_stack(
+            [np.full(num_quads, 4, dtype=np.int64), all_quads]
+        ).ravel()
+
+        cells = vtk.vtkCellArray()
+        cells.SetCells(
+            num_quads,
+            numpy_to_vtk(cells_vtk, deep=True, array_type=vtk.VTK_ID_TYPE),
+        )
+        ugrid.SetCells(vtk.VTK_QUAD, cells)
         return ugrid

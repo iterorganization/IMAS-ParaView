@@ -6,6 +6,11 @@ from abc import ABC, abstractmethod
 
 import imas
 import imas.ids_defs
+from imas.ids_defs import (
+    IDS_TIME_MODE_HETEROGENEOUS,
+    IDS_TIME_MODE_HOMOGENEOUS,
+    IDS_TIME_MODE_INDEPENDENT,
+)
 from paraview.util.vtkAlgorithm import smdomain, smhint, smproperty
 from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
 from vtkmodules.vtkCommonCore import vtkStringArray
@@ -154,7 +159,6 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 self._dbentry.close()
                 self._ids = self._dbentry = None
                 self._selectable = []
-                self._selected = []
                 self._ids_list = []
             self._uri_error = ""
             if self._uri:
@@ -288,7 +292,6 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         """
         if value == "<Select IDS>":
             self._selectable = []
-            self._selected = []
             value = ""
         self._update_property("_ids_and_occurrence", value, self._clear_ids)
 
@@ -369,11 +372,8 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
     def GetNumberOfAttributeArrays(self):
         return len(self._selectable)
 
-    @abstractmethod
     def GetAttributeArrayName(self, idx) -> str:
         """Retrieve the name of the attribute array at a specified index.
-        This method should be implemented by subclasses to return the name
-        of an attribute array based on its index.
 
         Args:
             idx: The index of the attribute array.
@@ -381,7 +381,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         Returns:
             The name of the attribute array corresponding to the given index.
         """
-        pass
+        return self._selectable[idx]
 
     def GetAttributeArrayStatus(self, *args):
         return 1
@@ -505,21 +505,29 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         if idsname not in self._ids_list:
             logger.warning("Could not find the selected IDS.")
             self._selectable = []
-            self._selected = []
             return 1
 
         self._load_ids_from_backend()
         self.request_information()
+        # Update selected array (e.g. when URI or IDS has changed) to ensure only
+        # selectables are selected:
+        self._selected = [item for item in self._selected if item in self._selectable]
 
-        # TODO: Add support for IDSs with heterogeneous time mode
         if self.is_time_dependent:
-            if (
-                self._ids.ids_properties.homogeneous_time
-                == imas.ids_defs.IDS_TIME_MODE_HETEROGENEOUS
-            ):
-                logger.error("Heterogeneous IDSs are currently not supported.")
-                return 1
-            self._time_steps = self._ids.time
+            time_mode = self._ids.ids_properties.homogeneous_time
+            if time_mode == IDS_TIME_MODE_INDEPENDENT:
+                # This IDS doesn't contain time-dependent data
+                self._time_steps = []
+            elif time_mode == IDS_TIME_MODE_HETEROGENEOUS:
+                # We need to ask the subclass implementation which time array to look at
+                self._time_steps = self.get_heterogeneous_time_array()
+            else:
+                if time_mode != IDS_TIME_MODE_HOMOGENEOUS:
+                    logger.warning(
+                        "Unexpected ids_properties.homogeneous_time: %i", time_mode
+                    )
+                # Use root time array
+                self._time_steps = self._ids.time
 
             # Pass time steps to Paraview
             executive = self.GetExecutive()
@@ -527,10 +535,11 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             outInfo.Remove(executive.TIME_STEPS())
             outInfo.Remove(executive.TIME_RANGE())
 
-            for time_step in self._time_steps:
-                outInfo.Append(executive.TIME_STEPS(), time_step)
-            outInfo.Append(executive.TIME_RANGE(), self._time_steps[0])
-            outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
+            if self._time_steps:
+                for time_step in self._time_steps:
+                    outInfo.Append(executive.TIME_STEPS(), time_step)
+                outInfo.Append(executive.TIME_RANGE(), self._time_steps[0])
+                outInfo.Append(executive.TIME_RANGE(), self._time_steps[-1])
         return 1
 
     def _load_ids_from_backend(self):
@@ -555,6 +564,14 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             )
             self.setup_ids()
             self.converter = Converter(self._ids, dbentry=self._dbentry)
+
+    @abstractmethod
+    def get_heterogeneous_time_array(self):
+        """Return the time array when the IDS uses heterogeneous time."""
+        raise NotImplementedError(
+            "The IDS uses heterogeneous time mode, which is not implemented for this "
+            "reader."
+        )
 
     def request_information(self):
         """

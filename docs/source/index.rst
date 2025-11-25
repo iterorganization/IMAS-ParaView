@@ -33,6 +33,7 @@ Manual
 
    usage
    cli
+   training
 
 .. toctree::
    :caption: API docs
@@ -46,6 +47,7 @@ Manual
 
    code_style
    ci_config
+   dev_guide
 
 
 LICENSE

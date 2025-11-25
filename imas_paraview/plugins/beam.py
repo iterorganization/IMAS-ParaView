@@ -1,14 +1,11 @@
 """Plugin to view beam structures of ec_launchers IDS in Paraview."""
 
 import logging
-from dataclasses import dataclass
 
 import numpy as np
-from imas.ids_structure import IDSStructure
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
-from imas_paraview.ids_util import get_object_by_name
 from imas_paraview.paraview_support.servermanager_tools import (
     doublevector,
     propertygroup,
@@ -19,20 +16,15 @@ from imas_paraview.util import find_closest_indices, points_to_vtkpoly, pol_to_c
 logger = logging.getLogger("imas_paraview")
 
 
-@dataclass
-class Beam:
-    """Data class that stores ``beam`` IDS structures, along with its name."""
-
-    name: str
-    beam: IDSStructure
-
-
 @smproxy.source(label="Beam Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class BeamReader(GGDVTKPluginBase, is_time_dependent=True):
+    """ParaView plugin to view beam structures in the ec_launchers IDS."""
+
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", ["ec_launchers"])
         self.distance = 10
+        self.selectable_map = {}
 
     @doublevector(label="Beam Distance", name="beam_distance", default_values=10)
     def P99_SetDistance(self, val):
@@ -42,9 +34,6 @@ class BeamReader(GGDVTKPluginBase, is_time_dependent=True):
     @propertygroup("Beam settings", ["beam_distance"])
     def PG3_BeamGroup(self):
         """Dummy function to define a PropertyGroup."""
-
-    def GetAttributeArrayName(self, idx) -> str:
-        return self._selectable[idx].name
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
@@ -71,7 +60,7 @@ class BeamReader(GGDVTKPluginBase, is_time_dependent=True):
         """
         assert self._ids is not None, "IDS cannot be empty during setup."
 
-        self._selectable = []
+        self.selectable_map = {}
 
         beams = self._ids.beam
 
@@ -82,9 +71,8 @@ class BeamReader(GGDVTKPluginBase, is_time_dependent=True):
                 logger.warning(
                     f"Found a channel without a name, it will be loaded as {beam_name}."
                 )
-
-            selectable = Beam(str(beam_name), beam)
-            self._selectable.append(selectable)
+            self.selectable_map[str(beam_name)] = beam
+        self._selectable = list(self.selectable_map)
 
     def _load_beam(self, output, time_idx):
         """Go through the list of selected beams, and load each of them in a
@@ -94,12 +82,9 @@ class BeamReader(GGDVTKPluginBase, is_time_dependent=True):
             output: The vtkMultiBlockDataSet containing the beams.
         """
         for i, beam_name in enumerate(self._selected):
-            beam = get_object_by_name(self._selectable, beam_name)
-            if beam is None:
-                raise ValueError(f"Could not find {beam_name}")
-
-            logger.info(f"Selected {beam.name}")
-            vtk_poly = self._create_vtk_beam(beam.beam, time_idx)
+            beam = self.selectable_map[beam_name]
+            logger.info(f"Selected {beam_name}")
+            vtk_poly = self._create_vtk_beam(beam, time_idx)
             output.SetBlock(i, vtk_poly)
 
     def _create_vtk_beam(self, beam, time_idx):
@@ -145,7 +130,6 @@ class BeamReader(GGDVTKPluginBase, is_time_dependent=True):
             launch_pos_z: Height of the launching position
             steering_angle_pol: Steering angle of the beam in the R,Z plane
             steering_angle_tor: Steering angle of the beam away from the poloidal plane
-            distance: Distance along direction vector at which to place the second point
 
         Returns:
             tuple containing the launching position and a point into the direction of

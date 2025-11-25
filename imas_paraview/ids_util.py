@@ -29,8 +29,10 @@ def get_arrays_from_ids(
             encountered through which has to be traversed to reach a GGD array, said
             structure is resized to have length 1.
     Returns:
-        scalar_array_list: The GGD scalar arrays (real & complex)
-        vector_array_list: The GGD vector arrays (normal & rphiz)
+        A tuple with two elements.
+
+        - scalar_array_list: The GGD scalar arrays (real & complex)
+        - vector_array_list: The GGD vector arrays (normal & rphiz)
     """
     if scalar_array_paths is None or vector_array_paths is None:
         # Recursively search the IDS for GGD paths
@@ -148,19 +150,3 @@ def create_name_recursive(node):
 
     name = name.strip()
     return name
-
-
-def get_object_by_name(selectable, obj_name):
-    """Search through a list of selectable attributes in the array selection domain
-    and return the object IDS structure which matches the selected object name.
-
-    Args:
-        obj_name: Name of the object to search for.
-
-    Returns:
-        object with the corresponding name, or None if no match is found
-    """
-    for obj in selectable:
-        if obj_name == obj.name:
-            return obj
-    return None
