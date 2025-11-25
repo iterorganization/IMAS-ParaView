@@ -57,7 +57,7 @@ jobs:
 
     - name: Cache Zenodo datasets
       id: cache-datasets
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: data
         key: ${{ steps.datasets.outputs.key }}
@@ -70,7 +70,15 @@ jobs:
           echo "Downloading $(basename $url) ..."
           wget -P data/ "$url"
         done
-        
+
+    - name: Always save Zenodo datasets (even if pytest would fail)
+      id: cache-datasets-save
+      if: always() && steps.cache-datasets.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ steps.cache-datasets.outputs.cache-primary-key }}
+        path: data
+
     - name: Cache paraview
       id: cache-paraview
       uses: actions/cache/restore@v4
