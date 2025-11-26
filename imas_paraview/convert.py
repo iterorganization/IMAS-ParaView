@@ -254,13 +254,12 @@ class Converter:
             self._set_partition(0, ugrids[-1], -1)
             self.ps_reader.read_plasma_state(-1, ugrids[-1])
         elif self.ids.metadata.name == "wall":
-            # FIXME: what if num_subsets is 2 or 3?
-            self.output.SetNumberOfPartitionedDataSets(num_subsets - 3)
+            self.output.SetNumberOfPartitionedDataSets(num_subsets + 1)
             self._set_partition(0, ugrids[-1], -1)
             self.ps_reader.read_plasma_state(-1, ugrids[-1])
 
-            for subset_idx in range(4, num_subsets):
-                self._set_partition(subset_idx - 3, ugrids[subset_idx], subset_idx)
+            for subset_idx in range(num_subsets):
+                self._set_partition(subset_idx + 1, ugrids[subset_idx], subset_idx)
                 self.ps_reader.read_plasma_state(subset_idx, ugrids[subset_idx])
                 if self.progress:
                     self.progress.increment(0.5 / num_subsets)
