@@ -10,13 +10,17 @@ from typing import Any, Callable
 from vtkmodules.vtkCommonCore import vtkIdList, vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     VTK_EMPTY_CELL,
+    VTK_HEXAHEDRON,
     VTK_LINE,
     VTK_POLY_LINE,
     VTK_POLYGON,
     VTK_POLYHEDRON,
+    VTK_PYRAMID,
     VTK_QUAD,
+    VTK_TETRA,
     VTK_TRIANGLE,
     VTK_VERTEX,
+    VTK_WEDGE,
     vtkUnstructuredGrid,
 )
 
@@ -243,7 +247,16 @@ def _get_vtk_cell_type(dimension: int, npts: int) -> int:
             return VTK_POLYGON
 
     elif dimension == 3:
-        return VTK_POLYHEDRON
+        if npts == 4:
+            return VTK_TETRA
+        elif npts == 5:
+            return VTK_PYRAMID
+        elif npts == 6:
+            return VTK_WEDGE
+        elif npts == 8:
+            return VTK_HEXAHEDRON
+        else:
+            return VTK_POLYHEDRON
 
     else:
         return VTK_EMPTY_CELL
