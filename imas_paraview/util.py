@@ -8,9 +8,46 @@ from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkLine, vtkPolyData
 logger = logging.getLogger("imas_paraview")
 
 
+# Translation table to convert numbers and the - sign to their superscript character
+_SUPERSCRIPTS = str.maketrans(
+    {
+        "-": "⁻",
+        "0": "⁰",
+        "1": "¹",
+        "2": "²",
+        "3": "³",
+        "4": "⁴",
+        "5": "⁵",
+        "6": "⁶",
+        "7": "⁷",
+        "8": "⁸",
+        "9": "⁹",
+    }
+)
+
+
 def format_units(node) -> str:
-    """Return the unit of the node surrounded by square brackets."""
-    return f"[{node.metadata.units}]"
+    """Nicely format units
+
+    Use superscript characters for exponentiation, use a center dot instead of a lower
+    dot for composite units, and surround the units with quare brackets.
+
+    Args:
+        node: IDS element
+
+    Example:
+        >>> ids = imas.IDSFactory("4.0.0").core_profiles()
+        >>> ids.profiles_1d.resize(1)
+        >>> ids.profiles_1d[0].ion.resize(1)
+        >>> format_units(ids.profiles_1d[0].ion[0].velocity)
+        '[m·s⁻¹]'
+    """
+    units = node.metadata.units
+    units = "·".join(
+        f"{base}{exponent.translate(_SUPERSCRIPTS)}"
+        for base, _, exponent in (s.partition("^") for s in units.split("."))
+    )
+    return f"[{units}]"
 
 
 def iter_metadata_tree(meta):
