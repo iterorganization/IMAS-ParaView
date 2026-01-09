@@ -47,6 +47,8 @@ class PositionReader(GGDVTKPluginBase):
             aos_list = [self._ids.gauge]
         elif self._ids.metadata.name == "langmuir_probes":
             aos_list = [self._ids.embedded]
+        elif self._ids.metadata.name == "ts":
+            aos_list = [self._ids.channel]
         elif self._ids.metadata.name == "magnetics":
             aos_list = []
             # Depending on the DD version, some attributes might not exist
