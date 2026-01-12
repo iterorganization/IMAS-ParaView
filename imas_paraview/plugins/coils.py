@@ -40,30 +40,26 @@ class CoilsReader(GGDVTKPluginBase):
         self.selectable_map = {}
 
         if self._ids.metadata.name == "pf_active":
-            self._load_pf_active_coils()
+            self._load_coils_or_loops(self._ids.coil, "coil")
         elif self._ids.metadata.name == "pf_passive":
-            raise NotImplementedError("not implemented")
+            self._load_coils_or_loops(self._ids.loop, "loop")
         elif self._ids.metadata.name == "coils_non_axisymmetric":
             raise NotImplementedError("not implemented")
 
-    def _load_pf_active_coils(self):
-        for i, coil in enumerate(self._ids.coil):
-            coil_name = coil.name
-            if not coil_name:
-                coil_name = f"coil {i}"
-                logger.warning(f"PF active coil without name found. Using {coil_name}")
-
-            if len(coil.element) == 0:
-                logger.warning(
-                    f"{coil_name} has no elements, skipping selectable entries"
-                )
+    def _load_coils_or_loops(self, items, item_type):
+        for i, item in enumerate(items):
+            item_name = item.name
+            if not item_name:
+                item_name = f"{item_type} {i}"
+                logger.warning(f"{item_type} without name found. Using {item_name}")
+            if len(item.element) == 0:
+                logger.warning(f"{item_name} has no elements, skipping it.")
                 continue
 
-            self.selectable_map[str(coil_name)] = coil
-
+            self.selectable_map[str(item_name)] = item
         self._selectable = list(self.selectable_map.keys())
 
-    def _create_rectangular_coil(self, element):
+    def _create_rectangle(self, element):
         rect = element.geometry.rectangle
         r, z, width, height = rect.r, rect.z, rect.width, rect.height
 
@@ -93,7 +89,7 @@ class CoilsReader(GGDVTKPluginBase):
         poly.SetLines(cells)
         return poly
 
-    def _create_annulus_coil(self, element, resolution=10):
+    def _create_annulus(self, element, resolution=10):
         ann = element.geometry.annulus
         r0, z0, r_in, r_out = ann.r, ann.z, ann.radius_inner, ann.radius_outer
 
@@ -123,6 +119,77 @@ class CoilsReader(GGDVTKPluginBase):
         poly.SetLines(cells)
         return poly
 
+    def _create_thick_line(self, element):
+        tl = element.geometry.thick_line
+        p1 = tl.first_point
+        p2 = tl.second_point
+        thickness = tl.thickness
+
+        dr = p2.r - p1.r
+        dz = p2.z - p1.z
+        length = np.hypot(dr, dz)
+        if length == 0.0:
+            logger.warning("Thick line with zero length, skipping")
+            return None
+
+        perp_r = -dz / length
+        perp_z = dr / length
+
+        offset_r = perp_r * thickness / 2.0
+        offset_z = perp_z * thickness / 2.0
+
+        corners = [
+            (p1.r + offset_r, 0.0, p1.z + offset_z),
+            (p2.r + offset_r, 0.0, p2.z + offset_z),
+            (p2.r - offset_r, 0.0, p2.z - offset_z),
+            (p1.r - offset_r, 0.0, p1.z - offset_z),
+            (p1.r + offset_r, 0.0, p1.z + offset_z),  # close loop
+        ]
+
+        pts = vtkPoints()
+        cells = vtkCellArray()
+        cells.InsertNextCell(len(corners))
+        for r_i, y_i, z_i in corners:
+            pts.InsertNextPoint(r_i, y_i, z_i)
+            cells.InsertCellPoint(pts.GetNumberOfPoints() - 1)
+
+        poly = vtkPolyData()
+        poly.SetPoints(pts)
+        poly.SetLines(cells)
+        return poly
+
+    def _create_oblique(self, element):
+        ob = element.geometry.oblique
+        r0, z0 = ob.r, ob.z
+        la, lb = ob.length_alpha, ob.length_beta
+        alpha, beta = ob.alpha, ob.beta
+
+        # TODO: validate these points, looks weird on 116001/3
+        dr_alpha = la * np.cos(alpha)
+        dz_alpha = la * np.sin(alpha)
+
+        dr_beta = lb * np.sin(beta)
+        dz_beta = lb * np.cos(beta)
+
+        corners = [
+            (r0, 0.0, z0),
+            (r0 + dr_alpha, 0.0, z0 + dz_alpha),
+            (r0 + dr_alpha + dr_beta, 0.0, z0 + dz_alpha + dz_beta),
+            (r0 + dr_beta, 0.0, z0 + dz_beta),
+            (r0, 0.0, z0),
+        ]
+
+        pts = vtkPoints()
+        cells = vtkCellArray()
+        cells.InsertNextCell(len(corners))
+        for r_i, y_i, z_i in corners:
+            pts.InsertNextPoint(r_i, y_i, z_i)
+            cells.InsertCellPoint(pts.GetNumberOfPoints() - 1)
+        poly = vtkPolyData()
+        poly.SetPoints(pts)
+        poly.SetLines(cells)
+        return poly
+
     def _create_coil_vtk_objects(self, output: vtkMultiBlockDataSet):
         block_index = 0
 
@@ -131,10 +198,14 @@ class CoilsReader(GGDVTKPluginBase):
             for element in coil.element:
                 geom_type = element.geometry.geometry_type
 
-                if geom_type == 2:  # rectangle
-                    vtk_coil = self._create_rectangular_coil(element)
-                elif geom_type == 5:  # annulus
-                    vtk_coil = self._create_annulus_coil(element)
+                if geom_type == 2:
+                    vtk_coil = self._create_rectangle(element)
+                elif geom_type == 3:
+                    vtk_coil = self._create_oblique(element)
+                elif geom_type == 5:
+                    vtk_coil = self._create_annulus(element)
+                elif geom_type == 6:
+                    vtk_coil = self._create_thick_line(element)
                 else:
                     logger.warning(
                         f"{coil_name} has unsupported geometry type: {geom_type}, skipping"
