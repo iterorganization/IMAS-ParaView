@@ -1,4 +1,5 @@
-"""Plugin to view coils and their conductors"""
+"""Plugin to visualize coils and loops from the pf_active, pf_passive and
+coils_non_axisymmetric IDSs"""
 
 import logging
 
@@ -17,6 +18,10 @@ logger = logging.getLogger("imas_paraview")
 
 SUPPORTED_IDS_NAMES = ["pf_active", "pf_passive", "coils_non_axisymmetric"]
 
+# TODO: implement coils_non_axisymmetric IDS
+# TODO: add tests
+# TODO: add documentation
+
 
 @smproxy.source(label="Coils Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
@@ -31,67 +36,144 @@ class CoilsReader(GGDVTKPluginBase):
 
         if len(self._selected) > 0:
             output = vtkMultiBlockDataSet.GetData(outInfo)
-            self._create_coil_vtk_objects(output)
+
+            if self._ids.metadata.name in ["pf_active", "pf_passive"]:
+                self._convert_to_vtk(output)
         return 1
 
     def setup_ids(self):
+        """Select which coils or loops names to show in the array domain selector."""
         assert self._ids is not None, "IDS cannot be empty during setup."
 
         self.selectable_map = {}
 
         if self._ids.metadata.name == "pf_active":
-            self._load_coils_or_loops(self._ids.coil, "coil")
+            self._load_ids_quantities(self._ids.coil)
         elif self._ids.metadata.name == "pf_passive":
-            self._load_coils_or_loops(self._ids.loop, "loop")
+            self._load_ids_quantities(self._ids.loop, default_name="Loop")
         elif self._ids.metadata.name == "coils_non_axisymmetric":
-            raise NotImplementedError("not implemented")
+            raise NotImplementedError(
+                "loading 'coils_non_axisymmetric' IDS is not implemented yet"
+            )
 
-    def _load_coils_or_loops(self, items, item_type):
-        for i, item in enumerate(items):
-            item_name = item.name
-            if not item_name:
-                item_name = f"{item_type} {i}"
-                logger.warning(f"{item_type} without name found. Using {item_name}")
-            if len(item.element) == 0:
-                logger.warning(f"{item_name} has no elements, skipping it.")
+    def _load_ids_quantities(self, ids_quantity, default_name="Coil"):
+        """Populate selectable elements from IDS content.
+
+        Args:
+            ids_quantity: Coil or loop array of structure of an IDS.
+            default_name: Default name of the quantity.
+        """
+        for i, quantity in enumerate(ids_quantity):
+            quantity_name = quantity.name
+            if not quantity_name:
+                quantity_name = f"{default_name} {i}"
+                logger.warning(
+                    f"{default_name} without name found. "
+                    f"Renaming it to {quantity_name!r}"
+                )
+            if len(quantity.element) == 0:
+                logger.warning(f"{quantity_name!r} has no elements, skipping it.")
                 continue
 
-            self.selectable_map[str(item_name)] = item
+            self.selectable_map[str(quantity_name)] = quantity
         self._selectable = list(self.selectable_map.keys())
 
-    def _create_rectangle(self, element):
-        rect = element.geometry.rectangle
-        r, z, width, height = rect.r, rect.z, rect.width, rect.height
+    def _convert_to_vtk(self, output: vtkMultiBlockDataSet):
+        """Convert each selected IDS quantity into a vtk object based on its geometry
+        type, and store in as a separate block in the output vtkMultiBlockDataSet.
+
+        Args:
+            output: The vtkMultiBlockDataSet containing the converted vtk objects.
+        """
+        block_id = 0
+        for quantity_name in self._selected:
+            quantity = self.selectable_map[quantity_name]
+            for element in quantity.element:
+                geom_type = element.geometry.geometry_type
+
+                if geom_type == 2:
+                    vtk_coil = self._create_rectangle(element.geometry.rectangle)
+                elif geom_type == 3:
+                    vtk_coil = self._create_oblique(element.geometry.oblique)
+                elif geom_type == 5:
+                    vtk_coil = self._create_annulus(element.geometry.annulus)
+                elif geom_type == 6:
+                    vtk_coil = self._create_thick_line(element.geometry.thick_line)
+                else:
+                    logger.warning(
+                        f"{quantity_name!r} has unsupported geometry type: {geom_type},"
+                        " it will be skipped."
+                    )
+                    continue
+
+                output.SetBlock(block_id, vtk_coil)
+                block_id += 1
+
+            logger.info(
+                f"Loaded {quantity_name!r} with {len(quantity.element)} element(s)."
+            )
+
+    def _polyline_from_points(self, points):
+        """Create a vtk polyline by connecting a list of points.
+
+        Args:
+            points: List of tuples containing x,y,z-coordinates of the points.
+        """
+        pts = vtkPoints()
+        cells = vtkCellArray()
+        cells.InsertNextCell(len(points))
+        for x_i, y_i, z_i in points:
+            pts.InsertNextPoint(x_i, y_i, z_i)
+            cells.InsertCellPoint(pts.GetNumberOfPoints() - 1)
+        poly = vtkPolyData()
+        poly.SetPoints(pts)
+        poly.SetLines(cells)
+        return poly
+
+    def _create_rectangle(self, rectangle):
+        """Create vtkPolyData object from rectangle geometry"""
+        r, z = rectangle.r, rectangle.z
+        width, height = rectangle.width, rectangle.height
 
         r0 = r - width / 2.0
         r1 = r + width / 2.0
         z0 = z - height / 2.0
         z1 = z + height / 2.0
 
-        pts = vtkPoints()
-        cells = vtkCellArray()
-
-        rectangle_pts = [
-            (r0, z0),
-            (r1, z0),
-            (r1, z1),
-            (r0, z1),
-            (r0, z0),  # close loop
+        points = [
+            (r0, 0.0, z0),
+            (r1, 0.0, z0),
+            (r1, 0.0, z1),
+            (r0, 0.0, z1),
+            (r0, 0.0, z0),  # close the loop
         ]
+        return self._polyline_from_points(points)
 
-        cells.InsertNextCell(len(rectangle_pts))
-        for r_i, z_i in rectangle_pts:
-            pts.InsertNextPoint(r_i, 0.0, z_i)
-            cells.InsertCellPoint(pts.GetNumberOfPoints() - 1)
+    def _create_oblique(self, oblique):
+        """Create vtkPolyData object from oblique geometry"""
+        r0, z0 = oblique.r, oblique.z
+        la, lb = oblique.length_alpha, oblique.length_beta
+        alpha, beta = oblique.alpha, oblique.beta
 
-        poly = vtkPolyData()
-        poly.SetPoints(pts)
-        poly.SetLines(cells)
-        return poly
+        dr_alpha = la * np.cos(alpha)
+        dz_alpha = la * np.sin(alpha)
 
-    def _create_annulus(self, element, resolution=10):
-        ann = element.geometry.annulus
-        r0, z0, r_in, r_out = ann.r, ann.z, ann.radius_inner, ann.radius_outer
+        dr_beta = lb * np.sin(beta)
+        dz_beta = lb * np.cos(beta)
+
+        points = [
+            (r0, 0.0, z0),
+            (r0 + dr_alpha, 0.0, z0 + dz_alpha),
+            (r0 + dr_alpha + dr_beta, 0.0, z0 + dz_alpha + dz_beta),
+            (r0 + dr_beta, 0.0, z0 + dz_beta),
+            (r0, 0.0, z0),  # close the loop
+        ]
+        return self._polyline_from_points(points)
+
+    def _create_annulus(self, annulus, resolution=10):
+        """Create vtkPolyData object from annulus geometry"""
+        r0, z0 = annulus.r, annulus.z
+        r_in, r_out = annulus.radius_inner, annulus.radius_outer
 
         outer_ids = []
         inner_ids = []
@@ -114,16 +196,16 @@ class CoilsReader(GGDVTKPluginBase):
         fill_cells(cells, outer_ids)
         fill_cells(cells, inner_ids)
 
-        poly = vtkPolyData()
-        poly.SetPoints(pts)
-        poly.SetLines(cells)
-        return poly
+        polydata = vtkPolyData()
+        polydata.SetPoints(pts)
+        polydata.SetLines(cells)
+        return polydata
 
-    def _create_thick_line(self, element):
-        tl = element.geometry.thick_line
-        p1 = tl.first_point
-        p2 = tl.second_point
-        thickness = tl.thickness
+    def _create_thick_line(self, thick_line):
+        """Create vtkPolyData object from thick_line geometry"""
+        p1 = thick_line.first_point
+        p2 = thick_line.second_point
+        thickness = thick_line.thickness
 
         dr = p2.r - p1.r
         dz = p2.z - p1.z
@@ -145,77 +227,4 @@ class CoilsReader(GGDVTKPluginBase):
             (p1.r - offset_r, 0.0, p1.z - offset_z),
             (p1.r + offset_r, 0.0, p1.z + offset_z),  # close loop
         ]
-
-        pts = vtkPoints()
-        cells = vtkCellArray()
-        cells.InsertNextCell(len(corners))
-        for r_i, y_i, z_i in corners:
-            pts.InsertNextPoint(r_i, y_i, z_i)
-            cells.InsertCellPoint(pts.GetNumberOfPoints() - 1)
-
-        poly = vtkPolyData()
-        poly.SetPoints(pts)
-        poly.SetLines(cells)
-        return poly
-
-    def _create_oblique(self, element):
-        ob = element.geometry.oblique
-        r0, z0 = ob.r, ob.z
-        la, lb = ob.length_alpha, ob.length_beta
-        alpha, beta = ob.alpha, ob.beta
-
-        # TODO: validate these points, looks weird on 116001/3
-        dr_alpha = la * np.cos(alpha)
-        dz_alpha = la * np.sin(alpha)
-
-        dr_beta = lb * np.sin(beta)
-        dz_beta = lb * np.cos(beta)
-
-        corners = [
-            (r0, 0.0, z0),
-            (r0 + dr_alpha, 0.0, z0 + dz_alpha),
-            (r0 + dr_alpha + dr_beta, 0.0, z0 + dz_alpha + dz_beta),
-            (r0 + dr_beta, 0.0, z0 + dz_beta),
-            (r0, 0.0, z0),
-        ]
-
-        pts = vtkPoints()
-        cells = vtkCellArray()
-        cells.InsertNextCell(len(corners))
-        for r_i, y_i, z_i in corners:
-            pts.InsertNextPoint(r_i, y_i, z_i)
-            cells.InsertCellPoint(pts.GetNumberOfPoints() - 1)
-        poly = vtkPolyData()
-        poly.SetPoints(pts)
-        poly.SetLines(cells)
-        return poly
-
-    def _create_coil_vtk_objects(self, output: vtkMultiBlockDataSet):
-        block_index = 0
-
-        for coil_name in self._selected:
-            coil = self.selectable_map[coil_name]
-            for element in coil.element:
-                geom_type = element.geometry.geometry_type
-
-                if geom_type == 2:
-                    vtk_coil = self._create_rectangle(element)
-                elif geom_type == 3:
-                    vtk_coil = self._create_oblique(element)
-                elif geom_type == 5:
-                    vtk_coil = self._create_annulus(element)
-                elif geom_type == 6:
-                    vtk_coil = self._create_thick_line(element)
-                else:
-                    logger.warning(
-                        f"{coil_name} has unsupported geometry type: {geom_type}, skipping"
-                    )
-                    continue
-
-                output.SetBlock(block_index, vtk_coil)
-                output.GetMetaData(block_index).Set(output.NAME(), str(coil_name))
-                block_index += 1
-
-            logger.info(
-                f"Loaded PF coil {coil_name} with {len(coil.element)} element(s)"
-            )
+        return self._polyline_from_points(corners)
