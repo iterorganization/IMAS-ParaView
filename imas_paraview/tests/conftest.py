@@ -56,17 +56,18 @@ def pytest_sessionstart(session):
         )
         return
 
-    # Write test file as MDSPlus
-    with imas.DBEntry(
-        "imas:mdsplus?path=mdsplus_testdb", "w", dd_version=DD_VERSION
-    ) as dbentry:
-        dbentry.put(ids)
-
-    # Write test file as HDF5
-    with imas.DBEntry(
-        "imas:hdf5?path=hdf5_testdb", "w", dd_version=DD_VERSION
-    ) as dbentry:
-        dbentry.put(ids)
+    # TODO: Enable hdf5/mdsplus integration tests using open-source imas-core
+    # # Write test file as MDSPlus
+    # with imas.DBEntry(
+    #     "imas:mdsplus?path=mdsplus_testdb", "w", dd_version=DD_VERSION
+    # ) as dbentry:
+    #     dbentry.put(ids)
+    #
+    # # Write test file as HDF5
+    # with imas.DBEntry(
+    #     "imas:hdf5?path=hdf5_testdb", "w", dd_version=DD_VERSION
+    # ) as dbentry:
+    #     dbentry.put(ids)
 
     print("Test environment setup complete.")
 
