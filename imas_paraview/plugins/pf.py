@@ -18,7 +18,6 @@ logger = logging.getLogger("imas_paraview")
 
 SUPPORTED_IDS_NAMES = ["pf_active", "pf_passive"]
 
-# TODO: add tests
 # TODO: add documentation
 
 
@@ -153,7 +152,7 @@ class PFReader(GGDVTKPluginBase):
         dr_alpha = la * np.cos(alpha)
         dz_alpha = la * np.sin(alpha)
 
-        dr_beta = lb * np.sin(beta)
+        dr_beta = -lb * np.sin(beta)
         dz_beta = lb * np.cos(beta)
 
         points = [
