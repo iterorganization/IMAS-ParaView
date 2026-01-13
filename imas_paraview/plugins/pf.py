@@ -1,5 +1,5 @@
-"""Plugin to visualize coils and loops from the pf_active, pf_passive and
-coils_non_axisymmetric IDSs"""
+"""Plugin to visualize the axisymmetric active poloidal field coils from the pf_active
+IDS, and the axisymmetric passive conductors from the pf_active IDS."""
 
 import logging
 
@@ -16,16 +16,15 @@ from imas_paraview.plugins.base_class import GGDVTKPluginBase
 
 logger = logging.getLogger("imas_paraview")
 
-SUPPORTED_IDS_NAMES = ["pf_active", "pf_passive", "coils_non_axisymmetric"]
+SUPPORTED_IDS_NAMES = ["pf_active", "pf_passive"]
 
-# TODO: implement coils_non_axisymmetric IDS
 # TODO: add tests
 # TODO: add documentation
 
 
-@smproxy.source(label="Coils Reader")
+@smproxy.source(label="PF Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
-class CoilsReader(GGDVTKPluginBase):
+class PFReader(GGDVTKPluginBase):
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", SUPPORTED_IDS_NAMES)
         self.selectable_map = {}
@@ -36,9 +35,7 @@ class CoilsReader(GGDVTKPluginBase):
 
         if len(self._selected) > 0:
             output = vtkMultiBlockDataSet.GetData(outInfo)
-
-            if self._ids.metadata.name in ["pf_active", "pf_passive"]:
-                self._convert_to_vtk(output)
+            self._convert_to_vtk(output)
         return 1
 
     def setup_ids(self):
@@ -51,10 +48,8 @@ class CoilsReader(GGDVTKPluginBase):
             self._load_ids_quantities(self._ids.coil)
         elif self._ids.metadata.name == "pf_passive":
             self._load_ids_quantities(self._ids.loop, default_name="Loop")
-        elif self._ids.metadata.name == "coils_non_axisymmetric":
-            raise NotImplementedError(
-                "loading 'coils_non_axisymmetric' IDS is not implemented yet"
-            )
+        else:
+            raise NotImplementedError(f"Unable to load {self._ids.metadata.name}.")
 
     def _load_ids_quantities(self, ids_quantity, default_name="Coil"):
         """Populate selectable elements from IDS content.
