@@ -175,55 +175,60 @@ class PFReader(GGDVTKPluginBase):
         z = arcs_of_circle.z
         radii = arcs_of_circle.curvature_radii
 
-        n = len(r)
-        points = []
+        r1, z1 = r, z
+        r2, z2 = np.roll(r, -1), np.roll(z, -1)
 
-        for i in range(n):
-            r1, z1 = r[i], z[i]
-            r2, z2 = r[(i + 1) % n], z[(i + 1) % n]
-            radius = abs(radii[i])
-            curvature_sign = np.sign(radii[i])
-            print(curvature_sign)
+        radius = np.abs(radii)
+        curvature_sign = np.sign(radii)
 
-            dr = r2 - r1
-            dz = z2 - z1
+        dr = r2 - r1
+        dz = z2 - z1
 
-            # Arc chord length
-            d = np.hypot(dr, dz)
-            if d > 2.0 * radius:
-                logger.warning("Arc chord is longer than diameter, skipping element")
-                return None
+        # Arc chord length
+        d = np.hypot(dr, dz)
 
-            # Midpoint of the chord
-            mr = (r1 + r2) / 2
-            mz = (z1 + z2) / 2
+        if np.any(d > 2.0 * radius):
+            logger.warning("Arc chord is longer than diameter, skipping element")
+            return None
 
-            # Distance from midpoint to circle center
-            h = np.sqrt(radius**2 - (d / 2.0) ** 2)
+        # Midpoint of chords
+        mr = (r1 + r2) / 2
+        mz = (z1 + z2) / 2
 
-            # Unit perpendicular vector
-            nr = -dz / d
-            nz = dr / d
+        # Distance from midpoint to circle center
+        h = np.sqrt(radius**2 - (d / 2.0) ** 2)
 
-            # Center of the circle
-            cr = mr + curvature_sign * h * nr
-            cz = mz + curvature_sign * h * nz
+        # Unit perpendicular vectors
+        nr = -dz / d
+        nz = dr / d
 
-            # Angles of endpoints relative to center
-            theta1 = np.arctan2(z1 - cz, r1 - cr)
-            theta2 = np.arctan2(z2 - cz, r2 - cr)
+        # Centers of circles
+        cr = mr + curvature_sign * h * nr
+        cz = mz + curvature_sign * h * nz
 
-            if curvature_sign > 0 and theta2 < theta1:
-                theta2 += 2 * np.pi
-            elif curvature_sign < 0 and theta2 > theta1:
-                theta2 -= 2 * np.pi
+        # Angles of endpoints relative to centers
+        theta1 = np.arctan2(z1 - cz, r1 - cr)
+        theta2 = np.arctan2(z2 - cz, r2 - cr)
 
-            for j in range(self.resolution):
-                t = j / self.resolution
-                theta = theta1 + t * (theta2 - theta1)
-                point_r = cr + radius * np.cos(theta)
-                point_z = cz + radius * np.sin(theta)
-                points.append((point_r, 0.0, point_z))
+        mask_pos = (curvature_sign > 0) & (theta2 < theta1)
+        mask_neg = (curvature_sign < 0) & (theta2 > theta1)
+        theta2[mask_pos] += 2 * np.pi
+        theta2[mask_neg] -= 2 * np.pi
+
+        t = np.linspace(0, 1, self.resolution, endpoint=False)
+
+        theta = theta1[:, None] + t[None, :] * (theta2 - theta1)[:, None]
+
+        points_r = cr[:, None] + radius[:, None] * np.cos(theta)
+        points_z = cz[:, None] + radius[:, None] * np.sin(theta)
+
+        points = np.column_stack(
+            [
+                points_r.ravel(),
+                np.zeros(len(r) * self.resolution),
+                points_z.ravel(),
+            ]
+        )
 
         return points_to_vtkpoly(points, is_closed=True)
 
@@ -235,11 +240,11 @@ class PFReader(GGDVTKPluginBase):
         theta = np.linspace(0, 2.0 * np.pi, self.resolution, endpoint=False)
         c = np.cos(theta)
         s = np.sin(theta)
-        outer_points = np.column_stack(
-            [r0 + r_out * c, np.zeros(self.resolution), z0 + r_out * s]
-        )
         inner_points = np.column_stack(
             [r0 + r_in * c, np.zeros(self.resolution), z0 + r_in * s]
+        )
+        outer_points = np.column_stack(
+            [r0 + r_out * c, np.zeros(self.resolution), z0 + r_out * s]
         )
         pts = vtkPoints()
         pts.SetData(numpy_to_vtk(np.vstack([inner_points, outer_points])))
