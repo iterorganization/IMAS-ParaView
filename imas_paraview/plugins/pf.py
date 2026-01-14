@@ -65,11 +65,12 @@ class PFReader(GGDVTKPluginBase):
             if not quantity_name:
                 quantity_name = f"{default_name} {i}"
                 logger.warning(
-                    f"{default_name} without name found. "
-                    f"Renaming it to {quantity_name!r}"
+                    "%s without name found. Renaming it to %r",
+                    default_name,
+                    quantity_name,
                 )
             if len(quantity.element) == 0:
-                logger.warning(f"{quantity_name!r} has no elements, skipping it.")
+                logger.warning("%r has no elements, skipping it.", quantity_name)
                 continue
 
             self.selectable_map[str(quantity_name)] = quantity
@@ -113,8 +114,9 @@ class PFReader(GGDVTKPluginBase):
                     vtk_geom = self._create_thick_line(element.geometry.thick_line)
                 else:
                     logger.warning(
-                        f"{quantity_name!r} has unsupported geometry type: {geom_type},"
-                        " it will be skipped."
+                        "%r has unsupported geometry type: %s, it will be skipped.",
+                        quantity_name,
+                        geom_type,
                     )
                     continue
 
@@ -122,7 +124,7 @@ class PFReader(GGDVTKPluginBase):
                 block_id += 1
 
             logger.info(
-                f"Loaded {quantity_name!r} with {len(quantity.element)} element(s)."
+                "Loaded %r with %s element(s).", quantity_name, len(quantity.element)
             )
 
     def _create_outline(self, outline):
