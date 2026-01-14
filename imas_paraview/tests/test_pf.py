@@ -36,6 +36,23 @@ def get_line_cells(poly):
     return ids
 
 
+def test_outline_geometry(ids_geometry):
+    outline = ids_geometry.outline
+    outline.r = [0.0, 1.0, 2.0, 3.0]
+    outline.z = [4.0, 5.0, 6.0, 7.0]
+    result = PFReader()._create_outline(outline)
+
+    points = get_points(result)
+    assert len(points) == 4
+    assert points[0] == (0.0, 0.0, 4.0)
+    assert points[1] == (1.0, 0.0, 5.0)
+    assert points[2] == (2.0, 0.0, 6.0)
+    assert points[3] == (3.0, 0.0, 7.0)
+
+    cells = get_line_cells(result)
+    assert len(cells) == 4
+
+
 def test_rectangle_geometry(ids_geometry):
     rectangle = ids_geometry.rectangle
     rectangle.r = 1.0
@@ -44,12 +61,12 @@ def test_rectangle_geometry(ids_geometry):
     rectangle.height = 4.0
     result = PFReader()._create_rectangle(rectangle)
 
-    pts = get_points(result)
-    assert len(pts) == 4
-    assert pts[0] == (-0.5, 0.0, 0.0)
-    assert pts[1] == (2.5, 0.0, 0.0)
-    assert pts[2] == (2.5, 0.0, 4.0)
-    assert pts[3] == (-0.5, 0.0, 4.0)
+    points = get_points(result)
+    assert len(points) == 4
+    assert points[0] == (-0.5, 0.0, 0.0)
+    assert points[1] == (2.5, 0.0, 0.0)
+    assert points[2] == (2.5, 0.0, 4.0)
+    assert points[3] == (-0.5, 0.0, 4.0)
 
     cells = get_line_cells(result)
     assert len(cells) == 4
@@ -65,8 +82,8 @@ def test_oblique_geometry(ids_geometry):
     oblique.beta = -np.pi / 6.0
     result = PFReader()._create_oblique(oblique)
 
-    pts = get_points(result)
-    assert len(pts) == 4
+    points = get_points(result)
+    assert len(points) == 4
     expected_pts = np.array(
         [
             [1.0, 0.0, 2.0],
@@ -75,10 +92,30 @@ def test_oblique_geometry(ids_geometry):
             [3.0, 0.0, 2.0 + 2.0 * np.sqrt(3)],
         ]
     )
-    assert np.allclose(np.array(pts), expected_pts)
+    assert np.allclose(np.array(points), expected_pts)
 
     cells = get_line_cells(result)
     assert len(cells) == 4
+
+
+def test_arcs_of_circle_geometry(ids_geometry):
+    arcs = ids_geometry.arcs_of_circle
+    arcs.r = [0.0, 1.0]
+    arcs.z = [0.0, 0.0]
+    arcs.curvature_radii = [0.5, 0.5]
+    resolution = 10
+
+    result = PFReader()._create_arcs_of_circle(arcs, resolution=resolution)
+    points = get_points(result)
+
+    # All points should lie on a circle
+    center = np.array([0.5, 0.0, 0.0])
+    for p in points:
+        assert np.linalg.norm(np.array(p) - center) == pytest.approx(0.5)
+    assert len(points) == 2 * resolution
+
+    cells = get_line_cells(result)
+    assert len(cells) == 2 * resolution
 
 
 def test_annulus_geometry(ids_geometry):
@@ -90,16 +127,16 @@ def test_annulus_geometry(ids_geometry):
     resolution = 10
     result = PFReader()._create_annulus(annulus, resolution=resolution)
 
-    pts = get_points(result)
-    assert len(pts) == resolution * 2
+    points = get_points(result)
+    assert len(points) == resolution * 2
 
     # Check if radius is correct
     center = np.array([1.0, 0.0, 2.0])
-    outer_pts = pts[0::2]
-    inner_pts = pts[1::2]
-    for p in outer_pts:
+    outer_points = points[0::2]
+    inner_points = points[1::2]
+    for p in outer_points:
         assert np.linalg.norm(np.array(p) - center) == pytest.approx(4.0)
-    for p in inner_pts:
+    for p in inner_points:
         assert np.linalg.norm(np.array(p) - center) == pytest.approx(3.0)
 
     cells = get_line_cells(result)
@@ -117,8 +154,8 @@ def test_thick_line_geometry(ids_geometry):
     thick_line.thickness = 2 * np.sqrt(2.0)
     result = PFReader()._create_thick_line(thick_line)
 
-    pts = get_points(result)
-    assert len(pts) == 4
+    points = get_points(result)
+    assert len(points) == 4
     expected_pts = np.array(
         [
             [0.0, 0.0, 3.0],
@@ -127,7 +164,7 @@ def test_thick_line_geometry(ids_geometry):
             [2.0, 0.0, 1.0],
         ]
     )
-    assert np.allclose(np.array(pts), expected_pts)
+    assert np.allclose(np.array(points), expected_pts)
 
     cells = get_line_cells(result)
     assert len(cells) == 4

@@ -84,10 +84,16 @@ class PFReader(GGDVTKPluginBase):
             for element in quantity.element:
                 geom_type = element.geometry.geometry_type
 
-                if geom_type == 2:
+                if geom_type == 1:
+                    vtk_geom = self._create_outline(element.geometry.outline)
+                elif geom_type == 2:
                     vtk_geom = self._create_rectangle(element.geometry.rectangle)
                 elif geom_type == 3:
                     vtk_geom = self._create_oblique(element.geometry.oblique)
+                elif geom_type == 4:
+                    vtk_geom = self._create_arcs_of_circle(
+                        element.geometry.arcs_of_circle
+                    )
                 elif geom_type == 5:
                     vtk_geom = self._create_annulus(element.geometry.annulus)
                 elif geom_type == 6:
@@ -105,6 +111,12 @@ class PFReader(GGDVTKPluginBase):
             logger.info(
                 f"Loaded {quantity_name!r} with {len(quantity.element)} element(s)."
             )
+
+    def _create_outline(self, outline):
+        """Create vtkPolyData object from outline geometry"""
+        r, z = outline.r, outline.z
+        points = [(r_i, 0.0, z_i) for r_i, z_i in zip(r, z)]
+        return points_to_vtkpoly(points, is_closed=True)
 
     def _create_rectangle(self, rectangle):
         """Create vtkPolyData object from rectangle geometry"""
@@ -142,6 +154,64 @@ class PFReader(GGDVTKPluginBase):
             (r0 + dr_alpha + dr_beta, 0.0, z0 + dz_alpha + dz_beta),
             (r0 + dr_beta, 0.0, z0 + dz_beta),
         ]
+        return points_to_vtkpoly(points, is_closed=True)
+
+    def _create_arcs_of_circle(self, arcs_of_circle, resolution=10):
+        """Create vtkPolyData object from arcs_of_circle geometry."""
+        r = arcs_of_circle.r
+        z = arcs_of_circle.z
+        radii = arcs_of_circle.curvature_radii
+
+        n = len(r)
+        points = []
+
+        for i in range(n):
+            r1, z1 = r[i], z[i]
+            r2, z2 = r[(i + 1) % n], z[(i + 1) % n]
+            radius = abs(radii[i])
+            curvature_sign = np.sign(radii[i])
+            print(curvature_sign)
+
+            dr = r2 - r1
+            dz = z2 - z1
+
+            # Arc chord length
+            d = np.hypot(dr, dz)
+            if d > 2.0 * radius:
+                logger.warning("Arc chord is longer than diameter, skipping element")
+                return None
+
+            # Midpoint of the chord
+            mr = (r1 + r2) / 2
+            mz = (z1 + z2) / 2
+
+            # Distance from midpoint to circle center
+            h = np.sqrt(radius**2 - (d / 2.0) ** 2)
+
+            # Unit perpendicular vector
+            nr = -dz / d
+            nz = dr / d
+
+            # Center of the circle
+            cr = mr + curvature_sign * h * nr
+            cz = mz + curvature_sign * h * nz
+
+            # Angles of endpoints relative to center
+            theta1 = np.arctan2(z1 - cz, r1 - cr)
+            theta2 = np.arctan2(z2 - cz, r2 - cr)
+
+            if curvature_sign > 0 and theta2 < theta1:
+                theta2 += 2 * np.pi
+            elif curvature_sign < 0 and theta2 > theta1:
+                theta2 -= 2 * np.pi
+
+            for j in range(resolution):
+                t = j / resolution
+                theta = theta1 + t * (theta2 - theta1)
+                point_r = cr + radius * np.cos(theta)
+                point_z = cz + radius * np.sin(theta)
+                points.append((point_r, 0.0, point_z))
+
         return points_to_vtkpoly(points, is_closed=True)
 
     def _create_annulus(self, annulus, resolution=10):
