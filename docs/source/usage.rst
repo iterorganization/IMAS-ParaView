@@ -25,6 +25,7 @@ non-GGD Readers
    profiles_2d_reader
    beam_reader
    los_reader
+   pf_reader
    position_reader
    wall_limiter_reader
 

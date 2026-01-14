@@ -1,5 +1,5 @@
 """Plugin to visualize the axisymmetric active poloidal field coils from the pf_active
-IDS, and the axisymmetric passive conductors from the pf_active IDS."""
+IDS, and the axisymmetric passive conductors from the pf_passive IDS."""
 
 import logging
 
@@ -17,8 +17,6 @@ from imas_paraview.plugins.base_class import GGDVTKPluginBase
 logger = logging.getLogger("imas_paraview")
 
 SUPPORTED_IDS_NAMES = ["pf_active", "pf_passive"]
-
-# TODO: add documentation
 
 
 @smproxy.source(label="PF Reader")
