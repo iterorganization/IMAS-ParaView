@@ -5,6 +5,7 @@ import logging
 
 import numpy as np
 from paraview.util.vtkAlgorithm import smhint, smproxy
+from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     vtkCellArray,
@@ -12,6 +13,7 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPolyData,
 )
 
+from imas_paraview.paraview_support.servermanager_tools import intvector, propertygroup
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import points_to_vtkpoly
 
@@ -26,6 +28,17 @@ class PFReader(GGDVTKPluginBase):
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", SUPPORTED_IDS_NAMES)
         self.selectable_map = {}
+        self.resolution = 10
+
+    @intvector(label="Resolution", name="resolution", default_values=10)
+    def P99_SetResolution(self, val):
+        """Sets the number of points for the 'arcs_of_circle' and 'annulus' geometry
+        types, if they are available in the loaded IDS."""
+        self._update_property("resolution", val)
+
+    @propertygroup("PF Reader Settings", ["resolution"])
+    def PG3_PFReaderGroup(self):
+        """Dummy function to define a PropertyGroup."""
 
     def setup_ids(self):
         """Select which coil or loop names to show in the array domain selector."""
@@ -34,13 +47,13 @@ class PFReader(GGDVTKPluginBase):
         self.selectable_map = {}
 
         if self._ids.metadata.name == "pf_active":
-            self._load_ids_quantities(self._ids.coil)
+            self._load_ids_quantities(self._ids.coil, "Coil")
         elif self._ids.metadata.name == "pf_passive":
-            self._load_ids_quantities(self._ids.loop, default_name="Loop")
+            self._load_ids_quantities(self._ids.loop, "Loop")
         else:
             raise NotImplementedError(f"Unable to load {self._ids.metadata.name}.")
 
-    def _load_ids_quantities(self, ids_quantity, default_name="Coil"):
+    def _load_ids_quantities(self, ids_quantity, default_name):
         """Populate selectable elements from the IDS content.
 
         Args:
@@ -115,7 +128,7 @@ class PFReader(GGDVTKPluginBase):
     def _create_outline(self, outline):
         """Create vtkPolyData object from outline geometry"""
         r, z = outline.r, outline.z
-        points = [(r_i, 0.0, z_i) for r_i, z_i in zip(r, z)]
+        points = [(r_i, 0.0, z_i) for r_i, z_i in zip(r, z, strict=True)]
         return points_to_vtkpoly(points, is_closed=True)
 
     def _create_rectangle(self, rectangle):
@@ -156,7 +169,7 @@ class PFReader(GGDVTKPluginBase):
         ]
         return points_to_vtkpoly(points, is_closed=True)
 
-    def _create_arcs_of_circle(self, arcs_of_circle, resolution=10):
+    def _create_arcs_of_circle(self, arcs_of_circle):
         """Create vtkPolyData object from arcs_of_circle geometry."""
         r = arcs_of_circle.r
         z = arcs_of_circle.z
@@ -205,8 +218,8 @@ class PFReader(GGDVTKPluginBase):
             elif curvature_sign < 0 and theta2 > theta1:
                 theta2 -= 2 * np.pi
 
-            for j in range(resolution):
-                t = j / resolution
+            for j in range(self.resolution):
+                t = j / self.resolution
                 theta = theta1 + t * (theta2 - theta1)
                 point_r = cr + radius * np.cos(theta)
                 point_z = cz + radius * np.sin(theta)
@@ -214,31 +227,32 @@ class PFReader(GGDVTKPluginBase):
 
         return points_to_vtkpoly(points, is_closed=True)
 
-    def _create_annulus(self, annulus, resolution=10):
+    def _create_annulus(self, annulus):
         """Create vtkPolyData object from annulus geometry"""
         r0, z0 = annulus.r, annulus.z
         r_in, r_out = annulus.radius_inner, annulus.radius_outer
 
-        outer_ids = []
-        inner_ids = []
+        theta = np.linspace(0, 2.0 * np.pi, self.resolution, endpoint=False)
+        c = np.cos(theta)
+        s = np.sin(theta)
+        outer_points = np.column_stack(
+            [r0 + r_out * c, np.zeros(self.resolution), z0 + r_out * s]
+        )
+        inner_points = np.column_stack(
+            [r0 + r_in * c, np.zeros(self.resolution), z0 + r_in * s]
+        )
         pts = vtkPoints()
+        pts.SetData(numpy_to_vtk(np.vstack([inner_points, outer_points])))
 
-        for i in range(resolution):
-            theta = 2.0 * np.pi * i / resolution
-            c = np.cos(theta)
-            s = np.sin(theta)
-            outer_ids.append(pts.InsertNextPoint(r0 + r_out * c, 0.0, z0 + r_out * s))
-            inner_ids.append(pts.InsertNextPoint(r0 + r_in * c, 0.0, z0 + r_in * s))
+        inner_ids = np.arange(self.resolution)
+        outer_ids = np.arange(self.resolution, 2 * self.resolution)
 
-        def fill_cells(cells, point_ids):
-            cells.InsertNextCell(resolution + 1)
-            for point_id in point_ids:
-                cells.InsertCellPoint(point_id)
-            cells.InsertCellPoint(point_ids[0])
+        inner_loop = np.append(inner_ids, inner_ids[0])
+        outer_loop = np.append(outer_ids, outer_ids[0])
 
         cells = vtkCellArray()
-        fill_cells(cells, outer_ids)
-        fill_cells(cells, inner_ids)
+        cells.InsertNextCell(self.resolution + 1, inner_loop)
+        cells.InsertNextCell(self.resolution + 1, outer_loop)
 
         polydata = vtkPolyData()
         polydata.SetPoints(pts)

@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 import vtk
 from conftest import DD_VERSION
+from vtkmodules.util.numpy_support import vtk_to_numpy
 
 from imas_paraview.plugins.pf import PFReader
 
@@ -21,8 +22,8 @@ def ids_geometry(request):
 
 
 def get_points(poly):
-    pts = poly.GetPoints()
-    return [pts.GetPoint(i) for i in range(pts.GetNumberOfPoints())]
+    points = poly.GetPoints()
+    return vtk_to_numpy(points.GetData())
 
 
 def get_line_cells(poly):
@@ -44,10 +45,10 @@ def test_outline_geometry(ids_geometry):
 
     points = get_points(result)
     assert len(points) == 4
-    assert points[0] == (0.0, 0.0, 4.0)
-    assert points[1] == (1.0, 0.0, 5.0)
-    assert points[2] == (2.0, 0.0, 6.0)
-    assert points[3] == (3.0, 0.0, 7.0)
+    assert np.array_equal(points[0], [0.0, 0.0, 4.0])
+    assert np.array_equal(points[1], [1.0, 0.0, 5.0])
+    assert np.array_equal(points[2], [2.0, 0.0, 6.0])
+    assert np.array_equal(points[3], [3.0, 0.0, 7.0])
 
     cells = get_line_cells(result)
     assert len(cells) == 4
@@ -63,10 +64,10 @@ def test_rectangle_geometry(ids_geometry):
 
     points = get_points(result)
     assert len(points) == 4
-    assert points[0] == (-0.5, 0.0, 0.0)
-    assert points[1] == (2.5, 0.0, 0.0)
-    assert points[2] == (2.5, 0.0, 4.0)
-    assert points[3] == (-0.5, 0.0, 4.0)
+    assert np.array_equal(points[0], [-0.5, 0.0, 0.0])
+    assert np.array_equal(points[1], [2.5, 0.0, 0.0])
+    assert np.array_equal(points[2], [2.5, 0.0, 4.0])
+    assert np.array_equal(points[3], [-0.5, 0.0, 4.0])
 
     cells = get_line_cells(result)
     assert len(cells) == 4
@@ -84,14 +85,12 @@ def test_oblique_geometry(ids_geometry):
 
     points = get_points(result)
     assert len(points) == 4
-    expected_pts = np.array(
-        [
-            [1.0, 0.0, 2.0],
-            [1.0 + 1.5 * np.sqrt(3), 0.0, 3.5],
-            [3.0 + 1.5 * np.sqrt(3), 0.0, 3.5 + 2.0 * np.sqrt(3)],
-            [3.0, 0.0, 2.0 + 2.0 * np.sqrt(3)],
-        ]
-    )
+    expected_pts = [
+        [1.0, 0.0, 2.0],
+        [1.0 + 1.5 * np.sqrt(3), 0.0, 3.5],
+        [3.0 + 1.5 * np.sqrt(3), 0.0, 3.5 + 2.0 * np.sqrt(3)],
+        [3.0, 0.0, 2.0 + 2.0 * np.sqrt(3)],
+    ]
     assert np.allclose(np.array(points), expected_pts)
 
     cells = get_line_cells(result)
@@ -105,7 +104,9 @@ def test_arcs_of_circle_geometry(ids_geometry):
     arcs.curvature_radii = [0.5, 0.5]
     resolution = 10
 
-    result = PFReader()._create_arcs_of_circle(arcs, resolution=resolution)
+    reader = PFReader()
+    reader.resolution = resolution
+    result = reader._create_arcs_of_circle(arcs)
     points = get_points(result)
 
     # All points should lie on a circle
@@ -125,15 +126,17 @@ def test_annulus_geometry(ids_geometry):
     annulus.radius_inner = 3.0
     annulus.radius_outer = 4.0
     resolution = 10
-    result = PFReader()._create_annulus(annulus, resolution=resolution)
+    reader = PFReader()
+    reader.resolution = resolution
+    result = reader._create_annulus(annulus)
 
     points = get_points(result)
     assert len(points) == resolution * 2
 
     # Check if radius is correct
     center = np.array([1.0, 0.0, 2.0])
-    outer_points = points[0::2]
-    inner_points = points[1::2]
+    outer_points = points[resolution:]
+    inner_points = points[:resolution]
     for p in outer_points:
         assert np.linalg.norm(np.array(p) - center) == pytest.approx(4.0)
     for p in inner_points:
@@ -156,14 +159,12 @@ def test_thick_line_geometry(ids_geometry):
 
     points = get_points(result)
     assert len(points) == 4
-    expected_pts = np.array(
-        [
-            [0.0, 0.0, 3.0],
-            [2.0, 0.0, 5.0],
-            [4.0, 0.0, 3.0],
-            [2.0, 0.0, 1.0],
-        ]
-    )
+    expected_pts = [
+        [0.0, 0.0, 3.0],
+        [2.0, 0.0, 5.0],
+        [4.0, 0.0, 3.0],
+        [2.0, 0.0, 1.0],
+    ]
     assert np.allclose(np.array(points), expected_pts)
 
     cells = get_line_cells(result)
