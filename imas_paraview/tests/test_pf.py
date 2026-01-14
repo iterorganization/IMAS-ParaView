@@ -3,7 +3,6 @@ import numpy as np
 import pytest
 import vtk
 from conftest import DD_VERSION
-from vtkmodules.vtkCommonDataModel import vtkPolyData
 
 from imas_paraview.plugins.pf import PFReader
 
