@@ -4,12 +4,12 @@ PF Reader
 =========
 
 This page explains how to use the PF Reader to visualize the axisymmetric active poloidal 
-field coils, and axisymmetric passive conductors structures.
+field coils, as well as axisymmetric passive conductor structures.
 
 Supported IDSs
 --------------
 
-Currently, the following IDS and structures are supported in the PF Reader:
+The following IDS and structures are supported in the PF Reader:
 
 .. list-table::
    :widths: auto

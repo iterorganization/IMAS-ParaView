@@ -1,5 +1,5 @@
-"""Plugin to visualize the axisymmetric active poloidal field coils from the pf_active
-IDS, and the axisymmetric passive conductors from the pf_passive IDS."""
+"""Plugin to visualize the axisymmetric active poloidal field coils in the pf_active
+IDS, as well as the axisymmetric passive conductors in the pf_passive IDS."""
 
 import logging
 
@@ -13,6 +13,7 @@ from vtkmodules.vtkCommonDataModel import (
 )
 
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
+from imas_paraview.util import points_to_vtkpoly
 
 logger = logging.getLogger("imas_paraview")
 
@@ -26,17 +27,8 @@ class PFReader(GGDVTKPluginBase):
         super().__init__("vtkMultiBlockDataSet", SUPPORTED_IDS_NAMES)
         self.selectable_map = {}
 
-    def RequestData(self, request, inInfo, outInfo):
-        if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
-            return 1
-
-        if len(self._selected) > 0:
-            output = vtkMultiBlockDataSet.GetData(outInfo)
-            self._convert_to_vtk(output)
-        return 1
-
     def setup_ids(self):
-        """Select which coils or loops names to show in the array domain selector."""
+        """Select which coil or loop names to show in the array domain selector."""
         assert self._ids is not None, "IDS cannot be empty during setup."
 
         self.selectable_map = {}
@@ -49,10 +41,10 @@ class PFReader(GGDVTKPluginBase):
             raise NotImplementedError(f"Unable to load {self._ids.metadata.name}.")
 
     def _load_ids_quantities(self, ids_quantity, default_name="Coil"):
-        """Populate selectable elements from IDS content.
+        """Populate selectable elements from the IDS content.
 
         Args:
-            ids_quantity: Coil or loop array of structure of an IDS.
+            ids_quantity: Coil or loop AoS of an IDS.
             default_name: Default name of the quantity.
         """
         for i, quantity in enumerate(ids_quantity):
@@ -70,9 +62,18 @@ class PFReader(GGDVTKPluginBase):
             self.selectable_map[str(quantity_name)] = quantity
         self._selectable = list(self.selectable_map.keys())
 
+    def RequestData(self, request, inInfo, outInfo):
+        if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
+            return 1
+
+        if len(self._selected) > 0:
+            output = vtkMultiBlockDataSet.GetData(outInfo)
+            self._convert_to_vtk(output)
+        return 1
+
     def _convert_to_vtk(self, output: vtkMultiBlockDataSet):
         """Convert each selected IDS quantity into a vtk object based on its geometry
-        type, and store in as a separate block in the output vtkMultiBlockDataSet.
+        type, and store it as a separate block in the output vtkMultiBlockDataSet.
 
         Args:
             output: The vtkMultiBlockDataSet containing the converted vtk objects.
@@ -84,13 +85,13 @@ class PFReader(GGDVTKPluginBase):
                 geom_type = element.geometry.geometry_type
 
                 if geom_type == 2:
-                    vtk_coil = self._create_rectangle(element.geometry.rectangle)
+                    vtk_geom = self._create_rectangle(element.geometry.rectangle)
                 elif geom_type == 3:
-                    vtk_coil = self._create_oblique(element.geometry.oblique)
+                    vtk_geom = self._create_oblique(element.geometry.oblique)
                 elif geom_type == 5:
-                    vtk_coil = self._create_annulus(element.geometry.annulus)
+                    vtk_geom = self._create_annulus(element.geometry.annulus)
                 elif geom_type == 6:
-                    vtk_coil = self._create_thick_line(element.geometry.thick_line)
+                    vtk_geom = self._create_thick_line(element.geometry.thick_line)
                 else:
                     logger.warning(
                         f"{quantity_name!r} has unsupported geometry type: {geom_type},"
@@ -98,29 +99,12 @@ class PFReader(GGDVTKPluginBase):
                     )
                     continue
 
-                output.SetBlock(block_id, vtk_coil)
+                output.SetBlock(block_id, vtk_geom)
                 block_id += 1
 
             logger.info(
                 f"Loaded {quantity_name!r} with {len(quantity.element)} element(s)."
             )
-
-    def _polyline_from_points(self, points):
-        """Create a vtk polyline by connecting a list of points.
-
-        Args:
-            points: List of tuples containing x,y,z-coordinates of the points.
-        """
-        pts = vtkPoints()
-        cells = vtkCellArray()
-        cells.InsertNextCell(len(points))
-        for x_i, y_i, z_i in points:
-            pts.InsertNextPoint(x_i, y_i, z_i)
-            cells.InsertCellPoint(pts.GetNumberOfPoints() - 1)
-        poly = vtkPolyData()
-        poly.SetPoints(pts)
-        poly.SetLines(cells)
-        return poly
 
     def _create_rectangle(self, rectangle):
         """Create vtkPolyData object from rectangle geometry"""
@@ -137,9 +121,8 @@ class PFReader(GGDVTKPluginBase):
             (r1, 0.0, z0),
             (r1, 0.0, z1),
             (r0, 0.0, z1),
-            (r0, 0.0, z0),  # close the loop
         ]
-        return self._polyline_from_points(points)
+        return points_to_vtkpoly(points, is_closed=True)
 
     def _create_oblique(self, oblique):
         """Create vtkPolyData object from oblique geometry"""
@@ -158,9 +141,8 @@ class PFReader(GGDVTKPluginBase):
             (r0 + dr_alpha, 0.0, z0 + dz_alpha),
             (r0 + dr_alpha + dr_beta, 0.0, z0 + dz_alpha + dz_beta),
             (r0 + dr_beta, 0.0, z0 + dz_beta),
-            (r0, 0.0, z0),  # close the loop
         ]
-        return self._polyline_from_points(points)
+        return points_to_vtkpoly(points, is_closed=True)
 
     def _create_annulus(self, annulus, resolution=10):
         """Create vtkPolyData object from annulus geometry"""
@@ -212,11 +194,10 @@ class PFReader(GGDVTKPluginBase):
         offset_r = perp_r * thickness / 2.0
         offset_z = perp_z * thickness / 2.0
 
-        corners = [
+        points = [
             (p1.r + offset_r, 0.0, p1.z + offset_z),
             (p2.r + offset_r, 0.0, p2.z + offset_z),
             (p2.r - offset_r, 0.0, p2.z - offset_z),
             (p1.r - offset_r, 0.0, p1.z - offset_z),
-            (p1.r + offset_r, 0.0, p1.z + offset_z),  # close loop
         ]
-        return self._polyline_from_points(corners)
+        return points_to_vtkpoly(points, is_closed=True)

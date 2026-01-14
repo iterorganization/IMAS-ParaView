@@ -21,12 +21,12 @@ def ids_geometry(request):
     return node[0].element[0].geometry
 
 
-def get_points(poly: vtkPolyData):
+def get_points(poly):
     pts = poly.GetPoints()
     return [pts.GetPoint(i) for i in range(pts.GetNumberOfPoints())]
 
 
-def get_line_cells(poly: vtkPolyData):
+def get_line_cells(poly):
     cells = poly.GetLines()
     ids = []
     cells.InitTraversal()
@@ -46,16 +46,14 @@ def test_rectangle_geometry(ids_geometry):
     result = PFReader()._create_rectangle(rectangle)
 
     pts = get_points(result)
-    assert len(pts) == 5
+    assert len(pts) == 4
     assert pts[0] == (-0.5, 0.0, 0.0)
     assert pts[1] == (2.5, 0.0, 0.0)
     assert pts[2] == (2.5, 0.0, 4.0)
     assert pts[3] == (-0.5, 0.0, 4.0)
-    assert pts[4] == (-0.5, 0.0, 0.0)
 
     cells = get_line_cells(result)
-    assert len(cells) == 1
-    assert len(cells[0]) == 5
+    assert len(cells) == 4
 
 
 def test_oblique_geometry(ids_geometry):
@@ -69,21 +67,19 @@ def test_oblique_geometry(ids_geometry):
     result = PFReader()._create_oblique(oblique)
 
     pts = get_points(result)
-    assert len(pts) == 5
+    assert len(pts) == 4
     expected_pts = np.array(
         [
             [1.0, 0.0, 2.0],
             [1.0 + 1.5 * np.sqrt(3), 0.0, 3.5],
             [3.0 + 1.5 * np.sqrt(3), 0.0, 3.5 + 2.0 * np.sqrt(3)],
             [3.0, 0.0, 2.0 + 2.0 * np.sqrt(3)],
-            [1.0, 0.0, 2.0],
         ]
     )
     assert np.allclose(np.array(pts), expected_pts)
 
     cells = get_line_cells(result)
-    assert len(cells) == 1
-    assert len(cells[0]) == 5
+    assert len(cells) == 4
 
 
 def test_annulus_geometry(ids_geometry):
@@ -123,18 +119,16 @@ def test_thick_line_geometry(ids_geometry):
     result = PFReader()._create_thick_line(thick_line)
 
     pts = get_points(result)
-    assert len(pts) == 5
+    assert len(pts) == 4
     expected_pts = np.array(
         [
             [0.0, 0.0, 3.0],
             [2.0, 0.0, 5.0],
             [4.0, 0.0, 3.0],
             [2.0, 0.0, 1.0],
-            [0.0, 0.0, 3.0],
         ]
     )
     assert np.allclose(np.array(pts), expected_pts)
 
     cells = get_line_cells(result)
-    assert len(cells) == 1
-    assert len(cells[0]) == 5
+    assert len(cells) == 4
