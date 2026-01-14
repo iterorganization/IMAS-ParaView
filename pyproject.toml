@@ -66,3 +66,6 @@ local_scheme = "no-local-version"
 
 [tool.ruff]
 exclude = ["imas_paraview/_version.py"]
+
+[tool.ruff.lint]
+select = ["G004"]
