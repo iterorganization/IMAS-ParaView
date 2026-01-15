@@ -114,6 +114,8 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
                         elem_points = self._create_line_segment(elements, elem_idx)
                     elif elem_type == 2:
                         elem_points = self._create_arc_of_circle(elements, elem_idx)
+                    elif elem_type == 3:
+                        elem_points = self._create_circle(elements, elem_idx)
                     else:
                         logger.warning(
                             "%s conductor %d element %d has unsupported element "
@@ -155,33 +157,28 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
                 len(coil.conductor),
             )
 
-    def _create_line_segment(self, elements, idx):
-        r_start = elements.start_points.r[idx]
-        phi_start = elements.start_points.phi[idx]
-        z_start = elements.start_points.z[idx]
-
-        r_end = elements.end_points.r[idx]
-        phi_end = elements.end_points.phi[idx]
-        z_end = elements.end_points.z[idx]
-
-        x_start, y_start = pol_to_cart(r_start, phi_start)
-        x_end, y_end = pol_to_cart(r_end, phi_end)
-
-        return np.array([[x_start, y_start, z_start], [x_end, y_end, z_end]])
-
     def _pol_to_cart3d(self, point, idx):
         x, y = pol_to_cart(point.r[idx], point.phi[idx])
         return np.array([x, y, point.z[idx]])
 
+    def _create_line_segment(self, elements, idx):
+        p_start = self._pol_to_cart3d(elements.start_points, idx)
+        p_end = self._pol_to_cart3d(elements.end_points, idx)
+        return np.array([p_start, p_end])
+
     def _create_arc_of_circle(self, elements, idx):
+        return self._create_circular_geometry(elements, idx, is_full_circle=False)
+
+    def _create_circle(self, elements, idx):
+        return self._create_circular_geometry(elements, idx, is_full_circle=True)
+
+    def _create_circular_geometry(self, elements, idx, is_full_circle):
         p_start = self._pol_to_cart3d(elements.start_points, idx)
         p_intermediate = self._pol_to_cart3d(elements.intermediate_points, idx)
-        p_end = self._pol_to_cart3d(elements.end_points, idx)
         p_centre = self._pol_to_cart3d(elements.centres, idx)
 
-        # Vectors from center of circle to start/end points
+        # Vector from center of circle to start point
         v_start = p_start - p_centre
-        v_end = p_end - p_centre
         radius = np.linalg.norm(v_start)
         v_start /= radius
 
@@ -191,10 +188,15 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         # Tangent at start point
         tangent = np.cross(-v_start, binormal)
 
-        # Sweep circle arc from start to end point
-        angle = np.arctan2(np.dot(v_end, tangent), np.dot(v_end, v_start))
-        if angle < 0:
-            angle += 2 * np.pi
+        if is_full_circle:
+            max_angle = 2 * np.pi
+        else:
+            # Sweep circle arc from start to end point
+            p_end = self._pol_to_cart3d(elements.end_points, idx)
+            v_end = p_end - p_centre
+            max_angle = np.arctan2(np.dot(v_end, tangent), np.dot(v_end, v_start))
+            if max_angle < 0:
+                max_angle += 2 * np.pi
 
-        t = np.linspace(0, angle, self.resolution)[:, np.newaxis]
+        t = np.linspace(0, max_angle, self.resolution)[:, np.newaxis]
         return p_centre + radius * (np.cos(t) * v_start + np.sin(t) * tangent)
