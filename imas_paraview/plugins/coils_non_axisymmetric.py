@@ -23,6 +23,7 @@ SUPPORTED_IDS_NAMES = ["coils_non_axisymmetric"]
 
 # TODO: add tests
 # TODO: add docs
+# TODO: implement cross section
 
 
 @smproxy.source(label="Non-Axisymmetric Coils Reader")
@@ -61,7 +62,8 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
 
     def _load_coils(self, ids_quantity):
         for i, coil in enumerate(ids_quantity):
-            coil_name = coil.name
+            # Coil names are not unique in some machine description IDSs
+            coil_name = f"{coil.name} / {coil.identifier}"
             if not coil_name:
                 coil_name = f"coil {i}"
                 logger.warning(
@@ -109,7 +111,6 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
                 for elem_idx, elem_type in enumerate(elements.types):
                     elem_points = np.array([])
 
-                    # TODO: implement cross section
                     if elem_type == 1:
                         elem_points = self._create_line_segment(elements, elem_idx)
                     elif elem_type == 2:
