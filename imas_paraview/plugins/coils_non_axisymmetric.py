@@ -5,6 +5,7 @@ import logging
 
 import numpy as np
 from paraview.util.vtkAlgorithm import smhint, smproxy
+from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     vtkCellArray,
@@ -12,7 +13,9 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPolyData,
 )
 
+from imas_paraview.paraview_support.servermanager_tools import intvector, propertygroup
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
+from imas_paraview.util import pol_to_cart
 
 logger = logging.getLogger("imas_paraview")
 
@@ -28,6 +31,17 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", SUPPORTED_IDS_NAMES)
         self.selectable_map = {}
+        self.resolution = 10
+
+    @intvector(label="Resolution", name="resolution", default_values=10)
+    def P99_SetResolution(self, val):
+        """Sets the number of points for 'arcs_of_circle' geometry type, if it is
+        available in the loaded IDS."""
+        self._update_property("resolution", val)
+
+    @propertygroup("Non-Axisymmetric Coils Reader Settings", ["resolution"])
+    def PG3_CoilsNonAxisymmetricReaderGroup(self):
+        """Dummy function to define a PropertyGroup."""
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
@@ -45,17 +59,17 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         self.selectable_map = {}
         self._load_coils(self._ids.coil)
 
-    def _load_coils(self, ids_quantityuantity):
-        for i, coil in enumerate(ids_quantityuantity):
+    def _load_coils(self, ids_quantity):
+        for i, coil in enumerate(ids_quantity):
             coil_name = coil.name
             if not coil_name:
                 coil_name = f"coil {i}"
                 logger.warning(
-                    f"Non-axisymmetric coil without name found. Using {coil_name}"
+                    "Non-axisymmetric coil without name found. Using %s", coil_name
                 )
 
             if len(coil.conductor) == 0:
-                logger.warning(f"{coil_name} has no conductors, skipping it.")
+                logger.warning("%s has no conductors, skipping it.", coil_name)
                 continue
 
             has_elements = False
@@ -66,7 +80,7 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
 
             if not has_elements:
                 logger.warning(
-                    f"{coil_name} has no elements in any conductor, skipping it."
+                    "%s has no elements in any conductor, skipping it.", coil_name
                 )
                 continue
 
@@ -74,56 +88,74 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         self._selectable = list(self.selectable_map.keys())
 
     def _convert_to_vtk(self, output: vtkMultiBlockDataSet):
-        """Create VTK objects for non-axisymmetric coils with 3D conductor elements"""
         block_index = 0
-
         for coil_name in self._selected:
             coil = self.selectable_map[coil_name]
-
             for conductor_idx, conductor in enumerate(coil.conductor):
                 elements = conductor.elements
+                conductor_points = []
+                lines = vtkCellArray()
 
                 if len(elements.types) == 0:
+                    logger.warning(
+                        "elements of conductor %d does not have types, skipping",
+                        conductor_idx,
+                    )
                     continue
 
-                pts = vtkPoints()
-                cells = vtkCellArray()
-
+                point_id = 0
                 num_elements_added = 0
-                for elem_idx in range(len(elements.types)):
-                    elem_type = elements.types[elem_idx]
 
+                for elem_idx, elem_type in enumerate(elements.types):
+                    elem_points = np.array([])
+
+                    # TODO: implement cross section
                     if elem_type == 1:
-                        if self._add_line_segment(pts, cells, elements, elem_idx):
-                            num_elements_added += 1
-                    # elif elem_type == 2:  # Arc of circle
-                    #     if self._add_arc_3d(pts, cells, elements, elem_idx):
-                    #         num_elements_added += 1
+                        elem_points = self._create_line_segment(elements, elem_idx)
+                    elif elem_type == 2:
+                        elem_points = self._create_arc_of_circle(elements, elem_idx)
                     else:
                         logger.warning(
-                            f"{coil_name} conductor {conductor_idx} element {elem_idx} has "
-                            f"unsupported element type {elem_type}: skipping"
+                            "%s conductor %d element %d has unsupported element "
+                            "type %d, skipping",
+                            coil_name,
+                            conductor_idx,
+                            elem_idx,
+                            elem_type,
                         )
 
-                if pts.GetNumberOfPoints() > 0:
-                    poly = vtkPolyData()
-                    poly.SetPoints(pts)
-                    poly.SetLines(cells)
+                    if len(elem_points) != 0:
+                        conductor_points.append(elem_points)
+                        num_pts = len(elem_points)
+                        lines.InsertNextCell(num_pts)
+                        for i in range(num_pts):
+                            lines.InsertCellPoint(point_id + i)
+                        point_id += num_pts
+                        num_elements_added += 1
 
-                    output.SetBlock(block_index, poly)
-                    conductor_name = f"{coil_name}_conductor_{conductor_idx}"
-                    output.GetMetaData(block_index).Set(output.NAME(), conductor_name)
-                    block_index += 1
+                if not conductor_points:
+                    continue
 
-                    logger.info(
-                        f"Loaded {coil_name} conductor {conductor_idx} with {num_elements_added} element(s)"
-                    )
-
+                vtk_pts = vtkPoints()
+                vtk_pts.SetData(numpy_to_vtk(np.vstack(conductor_points)))
+                poly = vtkPolyData()
+                poly.SetPoints(vtk_pts)
+                poly.SetLines(lines)
+                output.SetBlock(block_index, poly)
+                block_index += 1
+                logger.info(
+                    "Loaded conductor %d from coil %r with %d element(s)",
+                    conductor_idx,
+                    coil_name,
+                    num_elements_added,
+                )
             logger.info(
-                f"Loaded non-axisymmetric coil {coil_name} with {len(coil.conductor)} conductor(s)"
+                "Loaded non-axisymmetric coil %s with %d conductor(s)",
+                coil_name,
+                len(coil.conductor),
             )
 
-    def _add_line_segment(self, pts, cells, elements, idx, resolution=10):
+    def _create_line_segment(self, elements, idx):
         r_start = elements.start_points.r[idx]
         phi_start = elements.start_points.phi[idx]
         z_start = elements.start_points.z[idx]
@@ -132,139 +164,37 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         phi_end = elements.end_points.phi[idx]
         z_end = elements.end_points.z[idx]
 
-        cells.InsertNextCell(resolution + 1)
-        for i in range(resolution + 1):
-            t = i / resolution
-            r = r_start + t * (r_end - r_start)
-            phi = phi_start + t * (phi_end - phi_start)
-            z = z_start + t * (z_end - z_start)
+        x_start, y_start = pol_to_cart(r_start, phi_start)
+        x_end, y_end = pol_to_cart(r_end, phi_end)
 
-            x = r * np.cos(phi)
-            y = r * np.sin(phi)
+        return np.array([[x_start, y_start, z_start], [x_end, y_end, z_end]])
 
-            pts.InsertNextPoint(x, y, z)
-            cells.InsertCellPoint(pts.GetNumberOfPoints() - 1)
+    def _pol_to_cart3d(self, point, idx):
+        x, y = pol_to_cart(point.r[idx], point.phi[idx])
+        return np.array([x, y, point.z[idx]])
 
-        return True
+    def _create_arc_of_circle(self, elements, idx):
+        p_start = self._pol_to_cart3d(elements.start_points, idx)
+        p_intermediate = self._pol_to_cart3d(elements.intermediate_points, idx)
+        p_end = self._pol_to_cart3d(elements.end_points, idx)
+        p_centre = self._pol_to_cart3d(elements.centres, idx)
 
-    def _add_arc_3d(self, pts, cells, elements, idx, resolution=20):
-        """Add an arc of circle in 3D (r, phi, z) coordinates to the points and cells"""
-        r_start = elements.start_points.r[idx]
-        phi_start = elements.start_points.phi[idx]
-        z_start = elements.start_points.z[idx]
+        # Vectors from center of circle to start/end points
+        v_start = p_start - p_centre
+        v_end = p_end - p_centre
+        radius = np.linalg.norm(v_start)
+        v_start /= radius
 
-        r_mid = elements.intermediate_points.r[idx]
-        phi_mid = elements.intermediate_points.phi[idx]
-        z_mid = elements.intermediate_points.z[idx]
+        binormal = np.cross(v_start, p_intermediate - p_centre)
+        binormal /= np.linalg.norm(binormal)
 
-        r_end = elements.end_points.r[idx]
-        phi_end = elements.end_points.phi[idx]
-        z_end = elements.end_points.z[idx]
+        # Tangent at start point
+        tangent = np.cross(-v_start, binormal)
 
-        r_center = elements.centres.r[idx]
-        phi_center = elements.centres.phi[idx]
-        z_center = elements.centres.z[idx]
+        # Sweep circle arc from start to end point
+        angle = np.arctan2(np.dot(v_end, tangent), np.dot(v_end, v_start))
+        if angle < 0:
+            angle += 2 * np.pi
 
-        # Check for invalid data (placeholder value is -9e40)
-        if (
-            abs(r_start) > 1e30
-            or abs(r_mid) > 1e30
-            or abs(r_end) > 1e30
-            or abs(r_center) > 1e30
-        ):
-            logger.warning(f"Arc element {idx} has invalid data, skipping")
-            return False
-
-        # Convert cylindrical to Cartesian
-        x_start = r_start * np.cos(phi_start)
-        y_start = r_start * np.sin(phi_start)
-
-        x_mid = r_mid * np.cos(phi_mid)
-        y_mid = r_mid * np.sin(phi_mid)
-
-        x_end = r_end * np.cos(phi_end)
-        y_end = r_end * np.sin(phi_end)
-
-        x_center = r_center * np.cos(phi_center)
-        y_center = r_center * np.sin(phi_center)
-
-        # Calculate vectors from center to start and mid points
-        vec_start = np.array(
-            [x_start - x_center, y_start - y_center, z_start - z_center]
-        )
-        vec_mid = np.array([x_mid - x_center, y_mid - y_center, z_mid - z_center])
-        vec_end = np.array([x_end - x_center, y_end - y_center, z_end - z_center])
-
-        radius = np.linalg.norm(vec_start)
-
-        if radius < 1e-10:
-            logger.warning(f"Arc element {idx} has zero radius, skipping")
-            return False
-
-        # Calculate the normal to the plane of the arc (binormal)
-        binormal = np.cross(vec_start, vec_mid)
-        binormal_norm = np.linalg.norm(binormal)
-
-        if binormal_norm < 1e-10:
-            logger.warning(f"Arc element {idx} has collinear points, skipping")
-            return False
-
-        binormal = binormal / binormal_norm
-
-        # Calculate angles
-        # Normalize vectors
-        vec_start_norm = vec_start / np.linalg.norm(vec_start)
-        vec_mid_norm = vec_mid / np.linalg.norm(vec_mid)
-        vec_end_norm = vec_end / np.linalg.norm(vec_end)
-
-        # Calculate angle from start to end going through mid
-        # Use atan2 for proper quadrant handling
-        def angle_in_plane(vec):
-            """Calculate angle of vector in the plane defined by binormal"""
-            # Project vector onto plane and get angle
-            local_x = vec_start_norm
-            local_y = np.cross(binormal, vec_start_norm)
-            x_comp = np.dot(vec, local_x)
-            y_comp = np.dot(vec, local_y)
-            return np.arctan2(y_comp, x_comp)
-
-        angle_start = 0.0
-        angle_mid = angle_in_plane(vec_mid_norm)
-        angle_end = angle_in_plane(vec_end_norm)
-
-        # Ensure we go through the intermediate point (aperture < pi)
-        if angle_mid < 0:
-            angle_mid += 2 * np.pi
-        if angle_end < 0:
-            angle_end += 2 * np.pi
-
-        # If end angle is less than mid, we need to wrap around
-        if angle_end < angle_mid:
-            angle_end += 2 * np.pi
-
-        # Create arc points
-        cells.InsertNextCell(resolution + 1)
-        for i in range(resolution + 1):
-            t = i / resolution
-            angle = angle_start + t * (angle_end - angle_start)
-
-            # Rotate vec_start around binormal by angle
-            cos_a = np.cos(angle)
-            sin_a = np.sin(angle)
-
-            # Rodrigues' rotation formula
-            vec_rotated = (
-                vec_start * cos_a
-                + np.cross(binormal, vec_start) * sin_a
-                + binormal * np.dot(binormal, vec_start) * (1 - cos_a)
-            )
-
-            # Add center offset
-            x = x_center + vec_rotated[0]
-            y = y_center + vec_rotated[1]
-            z = z_center + vec_rotated[2]
-
-            pts.InsertNextPoint(x, y, z)
-            cells.InsertCellPoint(pts.GetNumberOfPoints() - 1)
-
-        return True
+        t = np.linspace(0, angle, self.resolution)[:, np.newaxis]
+        return p_centre + radius * (np.cos(t) * v_start + np.sin(t) * tangent)
