@@ -16,7 +16,6 @@ logger = logging.getLogger("imas_paraview")
 
 SUPPORTED_IDS_NAMES = ["coils_non_axisymmetric"]
 
-# TODO: add tests
 # TODO: add docs / docstrings
 
 
@@ -179,6 +178,7 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
 
         if is_full_circle:
             max_angle = 2 * np.pi
+            t = np.linspace(0, max_angle, self.resolution + 1, endpoint=True)[:, None]
         else:
             # Sweep circle arc from start to end point
             p_end = self._pol_to_cart3d(elements.end_points, idx)
@@ -186,16 +186,15 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             max_angle = np.arctan2(np.dot(v_end, tangent), np.dot(v_end, v_start))
             if max_angle < 0:
                 max_angle += 2 * np.pi
-
-        t = np.linspace(0, max_angle, self.resolution)[:, np.newaxis]
+            t = np.linspace(0, max_angle, self.resolution)[:, np.newaxis]
         return p_centre + radius * (np.cos(t) * v_start + np.sin(t) * tangent)
 
     def _add_cross_section(self, input_poly_line, conductor, elem_idx):
         cross_section_idx = 0 if len(conductor.cross_section) == 1 else elem_idx
         cross_section = conductor.cross_section[cross_section_idx]
 
-        if cross_section.geometry_type.index == 5:
-            return self._apply_annulus_filter(input_poly_line, cross_section)
+        if cross_section.geometry_type.index == 5:  # Annulus
+            return self._add_annulus_cross_section(input_poly_line, cross_section)
         else:
             logger.warning(
                 "Cross-section %d is not supported, it will be represented as a line ",
@@ -203,7 +202,7 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             )
             return input_poly_line
 
-    def _apply_annulus_filter(self, poly_line, cross_section):
+    def _add_annulus_cross_section(self, poly_line, cross_section):
         outer_tube = vtkTubeFilter()
         outer_tube.SetInputData(poly_line)
         outer_tube.SetRadius(cross_section.width / 2.0)
