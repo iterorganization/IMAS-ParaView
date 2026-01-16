@@ -27,6 +27,7 @@ non-GGD Readers
    los_reader
    position_reader
    wall_limiter_reader
+   coils_non_axi_reader
 
 Filters
 -------

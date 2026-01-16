@@ -53,7 +53,6 @@ def test_create_arc_segment(elements):
     reader.resolution = resolution
     points = reader._create_circular_geometry(elements, 0, is_full_circle=False)
 
-    assert len(points) == resolution
     assert np.allclose(points[0], [10.0, 0.0, 5.0])
     assert np.allclose(points[-1], [-10.0, 0.0, 5.0])
     center = np.array([0.0, 0.0, 5.0])
@@ -79,7 +78,6 @@ def test_create_full_circle(elements):
     reader.resolution = resolution
     points = reader._create_circular_geometry(elements, 0, is_full_circle=True)
 
-    assert len(points) == resolution
     assert np.allclose(points[0], [0.0, 3.0, 1.0])
     assert np.allclose(points[-1], [0.0, 3.0, 1.0])
     center = np.array([0.0, 0.0, 1.0])

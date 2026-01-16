@@ -1,5 +1,4 @@
-"""Plugin to visualize coils and loops from the pf_active, pf_passive and
-coils_non_axisymmetric IDSs"""
+"""Plugin to visualize coil conductors geometries from the coils_non_axisymmetric IDS"""
 
 import logging
 
@@ -16,8 +15,6 @@ logger = logging.getLogger("imas_paraview")
 
 SUPPORTED_IDS_NAMES = ["coils_non_axisymmetric"]
 
-# TODO: add docs / docstrings
-
 
 @smproxy.source(label="Non-Axisymmetric Coils Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
@@ -25,13 +22,13 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", SUPPORTED_IDS_NAMES)
         self.selectable_map = {}
-        self.resolution = 10
-        self.cs_resolution = 10
+        self.resolution = 10  # Resolution for arcs_of_circle and full_circle geometries
+        self.cs_resolution = 10  # Cross-sectional resolution
 
     @intvector(label="Resolution", name="resolution", default_values=10)
     def P98_SetResolution(self, val):
-        """Sets the number of points for interpolating the 'arcs_of_circle' and
-        'circle' geometrical element type, if they are available in the loaded IDS."""
+        """Sets the number of points for interpolating the 'arcs of circle' and 'full
+        circle' geometrical element type, if they are available in the loaded IDS."""
         self._update_property("resolution", val)
 
     @intvector(
@@ -59,20 +56,20 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         return 1
 
     def setup_ids(self):
+        """Select which coils to show in the array domain selector. Skips coils without
+        any conductor elements."""
         assert self._ids is not None, "IDS cannot be empty during setup."
 
         self.selectable_map = {}
-        self._load_coils(self._ids.coil)
-
-    def _load_coils(self, ids_quantity):
-        for i, coil in enumerate(ids_quantity):
-            # Coil names are not unique in some machine description IDSs
-            coil_name = f"{coil.name} / {coil.identifier}"
+        for i, coil in enumerate(self._ids.coil):
+            coil_name = coil.name
             if not coil_name:
                 coil_name = f"coil {i}"
                 logger.warning(
                     "Non-axisymmetric coil without name found. Using %r", coil_name
                 )
+            # Coil names are not unique in some machine description IDSs
+            coil_name = f"{coil_name} / {coil.identifier}"
 
             if len(coil.conductor) == 0:
                 logger.warning("%r has no conductors, skipping it.", coil_name)
@@ -94,6 +91,11 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         self._selectable = list(self.selectable_map.keys())
 
     def _convert_to_vtk(self, output: vtkMultiBlockDataSet):
+        """Convert selected coil conductors to a VTK multi-block dataset.
+
+        Args:
+            output: vtkMultiBlockDataSet where each conductor will be added as a block.
+        """
         block_index = 0
         for coil_name in self._selected:
             coil = self.selectable_map[coil_name]
@@ -118,6 +120,15 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             )
 
     def create_conductor_geometry(self, conductor):
+        """Create VTK geometry representation of the conductor.
+
+        Args:
+            conductor: Conductor IDS object containing geometrical elements and
+                optionally cross-sections.
+
+        Returns:
+            vtkAppendPolyData containing the complete conductor geometry.
+        """
         elements = conductor.elements
         conductor_block = vtkAppendPolyData()
 
@@ -152,15 +163,35 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         return conductor_block.GetOutput()
 
     def _pol_to_cart3d(self, point, idx):
+        """Convert cylindrical coordinates of a point to cartesian coordinates."""
         x, y = pol_to_cart(point.r[idx], point.phi[idx])
         return np.array([x, y, point.z[idx]])
 
     def _create_line_segment(self, elements, idx):
+        """Create line segment points for a conductor element.
+
+        Args:
+            elements: Element IDS quantity with start and end points.
+            idx: Index of the element.
+
+        Returns:
+            Array of points for the line segment.
+        """
         p_start = self._pol_to_cart3d(elements.start_points, idx)
         p_end = self._pol_to_cart3d(elements.end_points, idx)
         return np.array([p_start, p_end])
 
     def _create_circular_geometry(self, elements, idx, is_full_circle):
+        """Create points for circular conductor elements.
+
+        Args:
+            elements: Element container with start, intermediate, and center points.
+            idx: Index of the element.
+            is_full_circle: True if full circle, False if arc of circle.
+
+        Returns:
+            Array of points representing the circular geometry.
+        """
         p_start = self._pol_to_cart3d(elements.start_points, idx)
         p_intermediate = self._pol_to_cart3d(elements.intermediate_points, idx)
         p_centre = self._pol_to_cart3d(elements.centres, idx)
@@ -190,6 +221,16 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         return p_centre + radius * (np.cos(t) * v_start + np.sin(t) * tangent)
 
     def _add_cross_section(self, input_poly_line, conductor, elem_idx):
+        """Add cross-sectional representation to a conductor polyline.
+
+        Args:
+            input_poly_line: VTK polyline of the conductor element.
+            conductor: Conductor object containing cross-sections.
+            elem_idx: Index of the conductor element.
+
+        Returns:
+            VTK polydata with cross-section geometry.
+        """
         cross_section_idx = 0 if len(conductor.cross_section) == 1 else elem_idx
         cross_section = conductor.cross_section[cross_section_idx]
 
@@ -203,6 +244,15 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             return input_poly_line
 
     def _add_annulus_cross_section(self, poly_line, cross_section):
+        """Create annular cross-section around a polyline using VTK tube filters.
+
+        Args:
+            poly_line: VTK polyline representing conductor element.
+            cross_section: Cross-section object containing inner radius and width.
+
+        Returns:
+            VTK polydata representing the annulus geometry.
+        """
         outer_tube = vtkTubeFilter()
         outer_tube.SetInputData(poly_line)
         outer_tube.SetRadius(cross_section.width / 2.0)
