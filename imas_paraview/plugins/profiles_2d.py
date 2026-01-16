@@ -73,7 +73,7 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
 
         if self._ids.metadata.name == "equilibrium":
             if not time_idx < len(self._ids.time_slice):
-                logger.error(f"There is no profiles_2d at time step {time_idx}")
+                logger.error("There is no profiles_2d at time step %d", time_idx)
                 return
             for profile in self._ids.time_slice[time_idx].profiles_2d:
                 self._search_valid_profile(profile)
@@ -82,7 +82,7 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
                     break
         else:
             if not time_idx < len(self._ids.profiles_2d):
-                logger.error(f"There is no profiles_2d at time step {time_idx}")
+                logger.error("There is no profiles_2d at time step %d", time_idx)
                 return
             profile = self._ids.profiles_2d[time_idx]
             self._search_valid_profile(profile)
@@ -122,8 +122,9 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
             grid_type = profile.grid_type.index
             if grid_type != 1:
                 logger.debug(
-                    f"Found a grid type with identifier index of {grid_type}. "
-                    "Only rectangular profiles (index = 1) are supported."
+                    "Found a grid type with identifier index of %d. "
+                    "Only rectangular profiles (index = 1) are supported.",
+                    grid_type,
                 )
                 return
             self.r = np.tile(profile.grid.dim1, (len(profile.grid.dim2), 1))
@@ -203,7 +204,7 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
 
         for i, profile_name in enumerate(self._selected):
             profile = self.selectable_map[profile_name]
-            logger.info(f"Selected {profile_name}")
+            logger.info("Selected %s", profile_name)
 
             vtk_scalars = self._create_vtkscalars(profile, profile_name)
             vtk_ugrid = self._create_ugrid(vtk_points, vtk_scalars)

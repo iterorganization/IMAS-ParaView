@@ -380,7 +380,7 @@ def fill_ids(ids, time_steps=1, grid_size=2):
 
     # Skip filling grid_ggd if it does not exist
     if grid_ggd is None:
-        logger.warning(f"{ids.metadata.name} has no grid_ggd")
+        logger.warning("%s has no grid_ggd", ids.metadata.name)
     else:
         # Create time steps
         ids.time = [float(t) for t in range(time_steps)]
@@ -399,7 +399,7 @@ def fill_ids(ids, time_steps=1, grid_size=2):
             num_vertices, num_edges, num_faces = fill_NxN_grid(
                 grid_ggd_aos[i], grid_size
             )
-            logger.debug(f"filled grid_ggd at index {i}.")
+            logger.debug("filled grid_ggd at index %d.", i)
         fill_ggd_data(ids, num_vertices, num_edges, num_faces)
 
     fill_ids_specific(ids)

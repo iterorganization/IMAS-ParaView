@@ -50,17 +50,17 @@ class Converter:
             index_list: A list of time indices to convert. By default only the first
                 time step is converted.
         """
-        logger.info(f"Creating a output directory at {output_path}")
+        logger.info("Creating a output directory at %s", output_path)
         output_path.mkdir(parents=True, exist_ok=True)
         output_path = output_path / self.ids.metadata.name
         if any(index >= len(self.ids.time) for index in index_list):
             raise RuntimeError("A provided index is out of bounds.")
 
         for index in index_list:
-            logger.info(f"Converting time step {self.ids.time[index]}...")
+            logger.info("Converting time step %f...", self.ids.time[index])
             vtk_object = self.ggd_to_vtk(time_idx=index)
             if vtk_object is None:
-                logger.warning(f"Could not convert GGD at time index {index} to VTK.")
+                logger.warning("Could not convert GGD at time index %d to VTK.", index)
                 continue
             self._write_vtk_to_xml(vtk_object, Path(f"{output_path}_{index}"))
 
@@ -136,7 +136,7 @@ class Converter:
         Retrieve the GGD grid from a reference IDS path and replace the current grid.
         """
         path = self.grid_ggd.path
-        logger.info(f"Fetching the GGD grid from the reference: '{path}'")
+        logger.info("Fetching the GGD grid from the reference: %r", path)
         path = path.strip("#")
         ids_name, path = path.split("/", 1)
         if ids_name not in self.dbentry.factory.ids_names():
@@ -188,15 +188,18 @@ class Converter:
             else:
                 time_idx = indices[0]
             logger.info(
-                f"Converting timestep: t = {self.ids.time[time_idx]} at index = "
-                f"{time_idx}"
+                "Converting timestep: t = %f at index = %d",
+                self.ids.time[time_idx],
+                time_idx,
             )
             return time_idx
         else:
             time_idx = len(self.ids.time) // 2
             logger.info(
-                "No time or time index provided, so converting the middle time "
-                f"step: t = {self.ids.time[time_idx]} at index {time_idx}."
+                "No time or time index provided, so converting the middle time step: "
+                "t = %f at index %d.",
+                self.ids.time[time_idx],
+                time_idx,
             )
             return time_idx
 
@@ -351,9 +354,9 @@ class Converter:
             logger.error("Cannot write None object to XML.")
             return
 
-        logger.info(f"Writing VTK file to {output_path}...")
+        logger.info("Writing VTK file to %r...", output_path)
         writer = vtkXMLPartitionedDataSetCollectionWriter()
         writer.SetInputData(vtk_object)
         writer.SetFileName(output_path.with_suffix(".vtpc"))
         writer.Write()
-        logger.info(f"Successfully wrote VTK object to {output_path}")
+        logger.info("Successfully wrote VTK object to %r", output_path)

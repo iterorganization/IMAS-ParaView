@@ -63,7 +63,7 @@ def fill_vtk_points(
         progress: Progress indicator for Paraview.
     """
     num_objects0d = len(grid_ggd.space[space_idx].objects_per_dimension[0].object)
-    logger.info(f"Reading {num_objects0d} points from grid_ggd/space[{space_idx}]")
+    logger.info("Reading %d points from grid_ggd/space[%d]", num_objects0d, space_idx)
 
     s = 1  # scale objects from mm to m
     if len(grid_ggd.space[space_idx].objects_per_dimension[0].object[0].geometry) == 0:
@@ -147,10 +147,12 @@ def _fill_vtk_cell_array_from_gs(
     num_gs_el = len(grid_subset.element)
 
     if hasattr(grid_subset, "identifier"):
-        logger.info(f"Reading {num_gs_el} elements from {grid_subset.identifier.name}")
+        logger.info(
+            "Reading %d elements from %s", num_gs_el, grid_subset.identifier.name
+        )
     else:
         logger.info(
-            f"Reading {num_gs_el} elements from grid_ggd/grid_subset[{subset_idx}]"
+            "Reading %d elements from grid_ggd/grid_subset[%d]", num_gs_el, subset_idx
         )
 
     ugrid.AllocateEstimate(num_gs_el, 10)

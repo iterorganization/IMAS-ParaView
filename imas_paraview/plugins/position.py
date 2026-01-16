@@ -72,7 +72,7 @@ class PositionReader(GGDVTKPluginBase):
                 if name == "":
                     name = f"device {i}"
                     logger.warning(
-                        f"Found a device without a name, it will be loaded as {name}."
+                        "Found a device without a name, it will be loaded as %s.", name
                     )
 
                 if hasattr(structure, "identifier"):
@@ -94,7 +94,7 @@ class PositionReader(GGDVTKPluginBase):
         for name in self._selected:
             pos_struct = self.selectable_map[name]
             pos = pos_struct.position
-            logger.info(f"Selected {name}")
+            logger.info("Selected %s", name)
 
             if isinstance(pos, IDSStructArray):
                 for pos_struct in pos:

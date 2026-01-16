@@ -45,7 +45,9 @@ def read_plasma_state(grid_ggd, ps_reader, plane_config, ugrid):
         elif hasattr(attribute_array[0], "phi_coefficients"):
             scalar_data = attribute_array[0].phi_coefficients
         else:
-            logger.warning(f"Could not load the coefficients for {name}, it is ignored")
+            logger.warning(
+                "Could not load the coefficients for %s, it is ignored", name
+            )
             continue
         nam.append(name)
         if np.size(val_tor1) == 0:

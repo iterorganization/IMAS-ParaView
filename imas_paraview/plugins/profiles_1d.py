@@ -59,7 +59,7 @@ class Profiles1DReader(GGDVTKPluginBase, is_time_dependent=True):
             profile = self.selectable_map[profile_name]
 
             if len(profile) == 0:
-                logger.warning(f"The selected profile {profile_name} is empty.")
+                logger.warning("The selected profile %s is empty.", profile_name)
                 continue
 
             path = profile.metadata.coordinate1.references[0]
@@ -70,7 +70,7 @@ class Profiles1DReader(GGDVTKPluginBase, is_time_dependent=True):
                 )
                 continue
 
-            logger.info(f"Selected {profile_name}.")
+            logger.info("Selected %s.", profile_name)
             y_values = self._create_vtk_double_array(profile, profile_name)
             output.AddColumn(y_values)
 

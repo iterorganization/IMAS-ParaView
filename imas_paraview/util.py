@@ -91,8 +91,9 @@ def get_grid_ggd(ids, time=0, parent_idx=0):
             else:
                 node = node[0]
                 logger.warning(
-                    f"The GGD grid was not found at time index {ggd_idx}, so first "
-                    "grid was loaded instead."
+                    "The GGD grid was not found at time index %d, so first "
+                    "grid was loaded instead.",
+                    ggd_idx,
                 )
         else:
             node = node[parent_idx]
