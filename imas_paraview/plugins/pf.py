@@ -217,21 +217,12 @@ class PFReader(GGDVTKPluginBase):
         theta2[mask_pos] += 2 * np.pi
         theta2[mask_neg] -= 2 * np.pi
 
-        t = np.linspace(0, 1, self.resolution, endpoint=False)
-
-        theta = theta1[:, None] + t[None, :] * (theta2 - theta1)[:, None]
+        theta = np.linspace(theta1, theta2, self.resolution, endpoint=False).T
 
         points_r = cr[:, None] + radius[:, None] * np.cos(theta)
         points_z = cz[:, None] + radius[:, None] * np.sin(theta)
 
-        points = np.column_stack(
-            [
-                points_r.ravel(),
-                np.zeros(len(r) * self.resolution),
-                points_z.ravel(),
-            ]
-        )
-
+        points = self._stack_r_z(points_r.ravel(), points_z.ravel())
         return points_to_vtkpoly(points, is_closed=True)
 
     def _create_annulus(self, annulus):
@@ -240,16 +231,16 @@ class PFReader(GGDVTKPluginBase):
         r_in, r_out = annulus.radius_inner, annulus.radius_outer
 
         theta = np.linspace(0, 2.0 * np.pi, self.resolution, endpoint=False)
-        c = np.cos(theta)
-        s = np.sin(theta)
-        inner_points = np.column_stack(
-            [r0 + r_in * c, np.zeros(self.resolution), z0 + r_in * s]
+
+        inner_points = self._stack_r_z(
+            r0 + r_in * np.cos(theta), z0 + r_in * np.sin(theta)
         )
-        outer_points = np.column_stack(
-            [r0 + r_out * c, np.zeros(self.resolution), z0 + r_out * s]
+        outer_points = self._stack_r_z(
+            r0 + r_out * np.cos(theta), z0 + r_out * np.sin(theta)
         )
-        pts = vtkPoints()
-        pts.SetData(numpy_to_vtk(np.vstack([inner_points, outer_points])))
+
+        points = vtkPoints()
+        points.SetData(numpy_to_vtk(np.vstack([inner_points, outer_points])))
 
         inner_ids = np.arange(self.resolution)
         outer_ids = np.arange(self.resolution, 2 * self.resolution)
@@ -262,7 +253,7 @@ class PFReader(GGDVTKPluginBase):
         cells.InsertNextCell(self.resolution + 1, outer_loop)
 
         polydata = vtkPolyData()
-        polydata.SetPoints(pts)
+        polydata.SetPoints(points)
         polydata.SetLines(cells)
         return polydata
 
@@ -292,3 +283,6 @@ class PFReader(GGDVTKPluginBase):
             (p1.r - offset_r, 0.0, p1.z - offset_z),
         ]
         return points_to_vtkpoly(points, is_closed=True)
+
+    def _stack_r_z(self, r, z):
+        return np.column_stack((r, np.zeros_like(r), z))
