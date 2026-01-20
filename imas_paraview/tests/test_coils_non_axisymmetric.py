@@ -31,7 +31,7 @@ def test_create_line_segment(elements):
     assert np.allclose(points[1], [0.0, 10.0, 3.0])
 
 
-def test_create_arc_segment(elements):
+def test_arc_of_circle_horizontal(elements):
     elements.start_points.r = [10.0]
     elements.start_points.phi = [0.0]
     elements.start_points.z = [5.0]
@@ -55,17 +55,71 @@ def test_create_arc_segment(elements):
 
     assert np.allclose(points[0], [10.0, 0.0, 5.0])
     assert np.allclose(points[-1], [-10.0, 0.0, 5.0])
+    assert np.all(points[:, 2] == 5.0)
     center = np.array([0.0, 0.0, 5.0])
     for p in points:  # All points should lie on a circle
         assert np.linalg.norm(np.array(p) - center) == pytest.approx(10.0)
 
 
-def test_create_full_circle(elements):
+def test_arc_of_circle_vertical(elements):
+    elements.start_points.r = [0.0]
+    elements.start_points.phi = [0.0]
+    elements.start_points.z = [-6.0]
+
+    elements.intermediate_points.r = [5.0]
+    elements.intermediate_points.phi = [0.0]
+    elements.intermediate_points.z = [-1.0]
+
+    elements.end_points.r = [0.0]
+    elements.end_points.phi = [0.0]
+    elements.end_points.z = [4.0]
+
+    elements.centres.r = [0.0]
+    elements.centres.phi = [0.0]
+    elements.centres.z = [-1.0]
+
+    resolution = 10
+    reader = CoilsNonAxisymmetricReader()
+    reader.resolution = resolution
+    points = reader._create_circular_geometry(elements, 0, is_full_circle=False)
+
+    assert np.allclose(points[0], [0.0, 0.0, -6.0])
+    assert np.allclose(points[-1], [0.0, 0.0, 4.0])
+    assert np.all(points[:, 1] == 0.0)
+    center = np.array([0.0, 0.0, -1.0])
+    for p in points:  # All points should lie on a circle
+        assert np.linalg.norm(np.array(p) - center) == pytest.approx(5.0)
+
+
+def test_invalid_arc_of_circle(elements):
+    elements.start_points.r = [10.0]
+    elements.start_points.phi = [0.0]
+    elements.start_points.z = [5.0]
+
+    elements.intermediate_points.r = [10.0]
+    elements.intermediate_points.phi = [np.pi / 2]
+    elements.intermediate_points.z = [5.0]
+
+    elements.end_points.r = [11.0]  # invalid end point
+    elements.end_points.phi = [np.pi]
+    elements.end_points.z = [5.0]
+
+    elements.centres.r = [0.0]
+    elements.centres.phi = [0.0]
+    elements.centres.z = [5.0]
+
+    reader = CoilsNonAxisymmetricReader()
+    points = reader._create_circular_geometry(elements, 0, is_full_circle=False)
+    # | start_point - centre | != | end_point - centre |
+    assert points is None
+
+
+def test_full_circle(elements):
     elements.start_points.r = [3.0]
     elements.start_points.phi = [np.pi / 2]
     elements.start_points.z = [1.0]
 
-    elements.intermediate_points.r = [5.0]
+    elements.intermediate_points.r = [3.0]
     elements.intermediate_points.phi = [np.pi / 4]
     elements.intermediate_points.z = [1.0]
 
@@ -83,3 +137,22 @@ def test_create_full_circle(elements):
     center = np.array([0.0, 0.0, 1.0])
     for p in points:  # All points should lie on a circle
         assert np.linalg.norm(np.array(p) - center) == pytest.approx(3.0)
+
+
+def test_invalid_full_circle(elements):
+    elements.start_points.r = [3.0]
+    elements.start_points.phi = [0.0]
+    elements.start_points.z = [0.0]
+
+    elements.intermediate_points.r = [4.0]  # invalid intermediate point
+    elements.intermediate_points.phi = [np.pi]
+    elements.intermediate_points.z = [0.0]
+
+    elements.centres.r = [0.0]
+    elements.centres.phi = [0.0]
+    elements.centres.z = [0.0]
+
+    reader = CoilsNonAxisymmetricReader()
+    points = reader._create_circular_geometry(elements, 0, is_full_circle=True)
+    # | start_point - centre | != | intermediate_point - centre |
+    assert points is None

@@ -104,7 +104,7 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             coil = self.selectable_map[coil_name]
             logger.info("Loading non-axisymmetric coil %r...", coil_name)
 
-            for conductor in coil.conductor:
+            for cond_idx, conductor in enumerate(coil.conductor):
                 if len(conductor.elements.types) == 0:
                     logger.warning(
                         "The geometrical elements of the conductor do not have a type, "
@@ -113,13 +113,20 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
                     continue
 
                 conductor_vtk_geometry = self.create_conductor_geometry(conductor)
+                if conductor_vtk_geometry is None:
+                    logger.warning(
+                        "Conductor %d does not have a valid geometry, skipping",
+                        cond_idx,
+                        coil_name,
+                    )
+                    continue
                 output.SetBlock(block_index, conductor_vtk_geometry)
                 block_index += 1
 
             logger.info(
                 "Loaded non-axisymmetric coil %r with %d conductor(s)",
                 coil_name,
-                len(coil.conductor),
+                block_index,
             )
 
     def create_conductor_geometry(self, conductor):
@@ -130,11 +137,13 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
                 optionally cross-sections.
 
         Returns:
-            vtkAppendPolyData containing the complete conductor geometry.
+            vtkAppendPolyData containing the complete conductor geometry, or None if
+            there are no valid elements.
         """
         elements = conductor.elements
         conductor_block = vtkAppendPolyData()
 
+        has_input = False
         for elem_idx, elem_type in enumerate(elements.types):
             if elem_type == 1:  # Line segment
                 elem_points = self._create_line_segment(elements, elem_idx)
@@ -154,6 +163,11 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
                 )
                 continue
 
+            if elem_points is None:
+                logger.warning(
+                    "element %d has an invalid geometrical element, skipping", elem_idx
+                )
+                continue
             vtk_conductor = points_to_vtkpoly(elem_points)
 
             if len(conductor.cross_section) > 0:
@@ -163,11 +177,18 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             else:
                 logger.warning(
                     "Conductor element %d does not have a cross-section, only the "
-                    "centerline will be shown.",
+                    "centreline will be shown.",
                     elem_idx,
                 )
 
             conductor_block.AddInputData(vtk_conductor)
+            has_input = True
+
+        if not has_input:
+            logger.warning(
+                "Conductor does not have any valid geometrical elements, skipping"
+            )
+            return None
         conductor_block.Update()
         return conductor_block.GetOutput()
 
@@ -199,7 +220,8 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             is_full_circle: True if full circle, False if arc of circle.
 
         Returns:
-            Array of points representing the circular geometry.
+            Array of points representing the circular geometry, or None if
+            the circular element is invalid.
         """
         p_start = self._pol_to_cart3d(elements.start_points, idx)
         p_intermediate = self._pol_to_cart3d(elements.intermediate_points, idx)
@@ -209,6 +231,14 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         v_start = p_start - p_centre
         radius = np.linalg.norm(v_start)
         v_start /= radius
+
+        if not np.isclose(radius, np.linalg.norm(p_intermediate - p_centre)):
+            logger.warning(
+                "Start and intermediate point of element %d are not equidistant from "
+                "the centre point",
+                idx,
+            )
+            return None
 
         binormal = np.cross(v_start, p_intermediate - p_centre)
         binormal /= np.linalg.norm(binormal)
@@ -223,6 +253,15 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             # Sweep circle arc from start to end point
             p_end = self._pol_to_cart3d(elements.end_points, idx)
             v_end = p_end - p_centre
+
+            if not np.isclose(radius, np.linalg.norm(v_end)):
+                logger.warning(
+                    "Start and end point of element %d are not equidistant from "
+                    "the centre point",
+                    idx,
+                )
+                return None
+
             max_angle = np.arctan2(np.dot(v_end, tangent), np.dot(v_end, v_start))
             if max_angle < 0:
                 max_angle += 2 * np.pi
