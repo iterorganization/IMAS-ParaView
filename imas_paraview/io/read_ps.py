@@ -321,9 +321,12 @@ class PlasmaStateReader:
         # Search for filled 1D vector components
         for component in aos_vector_node[subset_idx]:
             metadata = component.metadata
-            if metadata.data_type == IDSDataType.FLT and metadata.ndim == 1:
-                if len(component):
-                    components[metadata.name] = component.value
+            if (
+                metadata.data_type == IDSDataType.FLT
+                and metadata.ndim == 1
+                and len(component)
+            ):
+                components[metadata.name] = component.value
 
         vtk_arr = vtkDoubleArray()
         vtk_arr.SetName(name)

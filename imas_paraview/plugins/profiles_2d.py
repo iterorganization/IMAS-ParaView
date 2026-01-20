@@ -181,7 +181,7 @@ class Profiles2DReader(GGDVTKPluginBase, is_time_dependent=True):
 
         if node.metadata.name in ("grid", "r", "z"):
             return
-        elif isinstance(node, IDSStructure) or isinstance(node, IDSStructArray):
+        elif isinstance(node, (IDSStructure, IDSStructArray)):
             for subnode in node:
                 self._recursively_find_profiles(subnode)
         else:

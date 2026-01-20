@@ -13,7 +13,7 @@ def fill_NxN_grid(grid_ggd, N):
     """Fills the grid_ggd of an IDS with a uniform rectangular grid of size N x N,
     containing vertices, edges and faces.
 
-    Adapted from https://sharepoint.iter.org/departments/POP/CM/IMDesign/Data%20Model/sphinx/3.41/ggd_guide/examples.html # noqa
+    Adapted from https://imas-data-dictionary.readthedocs.io/en/latest/ggd_guide/examples.html
 
     Args:
         grid_ggd: The GGD grid that will be filled with the N x N grid.

@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from typing import Optional
 
 from vtk import vtkXMLPartitionedDataSetCollectionWriter
 from vtkmodules.vtkCommonCore import vtkPoints
@@ -41,7 +42,7 @@ class Converter:
         self.reference_grid_path = None
         self.get_grids = lru_cache(maxsize=32)(self.get_grids)
 
-    def write_to_xml(self, output_path: Path, index_list=[0]):
+    def write_to_xml(self, output_path: Path, index_list=None):
         """Convert an IDS to VTK format and write it to disk using the XML output
         writer.
 
@@ -50,6 +51,8 @@ class Converter:
             index_list: A list of time indices to convert. By default only the first
                 time step is converted.
         """
+        if index_list is None:
+            index_list = [0]
         logger.info("Creating a output directory at %s", output_path)
         output_path.mkdir(parents=True, exist_ok=True)
         output_path = output_path / self.ids.metadata.name
@@ -70,7 +73,7 @@ class Converter:
         time_idx=None,
         scalar_paths=None,
         vector_paths=None,
-        plane_config: InterpSettings = InterpSettings(),
+        plane_config: Optional[InterpSettings] = None,
         outInfo=None,
         progress=None,
         parent_idx=0,
@@ -91,6 +94,8 @@ class Converter:
         Returns:
             vtkPartitionedDataSetCollection containing the converted GGD data.
         """
+        if plane_config is None:
+            plane_config = InterpSettings()
         self.points = vtkPoints()
         self.assembly = vtkDataAssembly()
         self.time_idx = self._resolve_time_idx(time_idx, time)
@@ -126,7 +131,7 @@ class Converter:
         self.ps_reader = read_ps.PlasmaStateReader(self.ids)
         self.ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
 
-        self.is_jorek = True if plane_config.n_plane != 0 else False
+        self.is_jorek = plane_config.n_plane != 0
         self._fill_grid_and_plasma_state()
 
         return self.output
@@ -136,7 +141,7 @@ class Converter:
         Retrieve the GGD grid from a reference IDS path and replace the current grid.
         """
         path = self.grid_ggd.path
-        logger.info("Fetching the GGD grid from the reference: %r", path)
+        logger.info("Fetching the GGD grid from the reference: '%s'", path)
         path = path.strip("#")
         ids_name, path = path.split("/", 1)
         if ids_name not in self.dbentry.factory.ids_names():
@@ -155,8 +160,8 @@ class Converter:
         )
         try:
             self.grid_ggd = ids[path]
-        except KeyError:
-            raise ValueError(f"{path} does not exist in {ids}.")
+        except KeyError as err:
+            raise ValueError(f"{path} does not exist in {ids}.") from err
 
     def _resolve_time_idx(self, time_idx, time):
         """Resolves the appropriate time index based on the given time index or time
@@ -354,9 +359,9 @@ class Converter:
             logger.error("Cannot write None object to XML.")
             return
 
-        logger.info("Writing VTK file to %r...", output_path)
+        logger.info("Writing VTK file to '%s'...", output_path)
         writer = vtkXMLPartitionedDataSetCollectionWriter()
         writer.SetInputData(vtk_object)
         writer.SetFileName(output_path.with_suffix(".vtpc"))
         writer.Write()
-        logger.info("Successfully wrote VTK object to %r", output_path)
+        logger.info("Successfully wrote VTK object to '%s'", output_path)

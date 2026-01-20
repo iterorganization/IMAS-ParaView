@@ -31,9 +31,11 @@ def get_ggd_grid_path(ids_metadata) -> Optional[str]:
     # Find the DD node defining the GGD grid:
     for node in iter_metadata_tree(ids_metadata):
         structure_reference = getattr(node, "structure_reference", None)
-        if structure_reference in ["generic_grid_dynamic", "generic_grid_aos3_root"]:
-            if getattr(node, "lifecycle_status", None) != "obsolescent":
-                return node.path_string
+        if (
+            structure_reference in ["generic_grid_dynamic", "generic_grid_aos3_root"]
+            and getattr(node, "lifecycle_status", None) != "obsolescent"
+        ):
+            return node.path_string
     return None  # There are no GGD grids inside this IDS
 
 

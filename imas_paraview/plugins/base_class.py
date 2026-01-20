@@ -65,7 +65,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 callable(value)
                 and not name.startswith("__")
                 and not getattr(value, "__isabstractmethod__", False)
-                and not name == "request_information"
+                and name != "request_information"
             ):
                 if name in bezier_methods:
                     if use_bezier:
@@ -165,7 +165,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
                 # Try to open the DBEntry
                 try:
                     self._dbentry = imas.DBEntry(self._uri, "r")
-                    logger.info("Successfully opened URI %r.", self._uri)
+                    logger.info("Successfully opened URI '%s'.", self._uri)
                 except Exception as exc:
                     self._uri_error = str(exc)
             self._update_ids_list()
@@ -320,10 +320,13 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             while node:
                 parent = imas.util.get_parent(node)
                 # if parent and node have the same metadata, it means node = parent[idx]
-                if parent and parent.metadata is node.metadata:
-                    if not node.metadata.coordinate1.is_time_coordinate:
-                        for i in range(len(parent)):
-                            arr.InsertNextValue(f"{node.metadata.name}[{i}]")
+                if (
+                    parent
+                    and parent.metadata is node.metadata
+                    and not node.metadata.coordinate1.is_time_coordinate
+                ):
+                    for i in range(len(parent)):
+                        arr.InsertNextValue(f"{node.metadata.name}[{i}]")
                 node = parent
         if arr.GetNumberOfValues() == 0:
             arr.InsertNextValue("N/A")

@@ -77,7 +77,7 @@ class PositionReader(GGDVTKPluginBase):
 
                 if hasattr(structure, "identifier"):
                     identifier = structure.identifier
-                    if not identifier == "":
+                    if identifier != "":
                         name = f"{name} / {identifier}"
 
                 self.selectable_map[str(name)] = structure

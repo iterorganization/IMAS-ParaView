@@ -174,7 +174,7 @@ class Profiles1DReader(GGDVTKPluginBase, is_time_dependent=True):
         Args:
             node: the node to search through.
         """
-        if isinstance(node, IDSStructure) or isinstance(node, IDSStructArray):
+        if isinstance(node, (IDSStructure, IDSStructArray)):
             for subnode in node:
                 self._recursive_find_profiles(subnode)
         else:

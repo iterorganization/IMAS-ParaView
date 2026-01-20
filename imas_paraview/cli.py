@@ -380,10 +380,10 @@ def parse_time(ids_times, time):
         for input_time in time.split(","):
             try:
                 float(input_time)
-            except ValueError:
+            except ValueError as err:
                 raise click.UsageError(
                     "All time steps in given list must be valid floats."
-                )
+                ) from err
         time_list = [float(x.strip()) for x in time.split(",")]
         index_list = find_closest_indices(time_list, ids_times)
         indices_dict = OrderedDict.fromkeys(index_list)
@@ -405,10 +405,10 @@ def parse_time(ids_times, time):
         try:
             start = float(start_str)
             end = float(end_str)
-        except ValueError:
+        except ValueError as err:
             raise click.UsageError(
                 "The minimum and maximum range values must be valid floats."
-            )
+            ) from err
         if end < start:
             raise click.UsageError(
                 "The final time index in range must be greater than the first."
@@ -421,13 +421,13 @@ def parse_time(ids_times, time):
         try:
             time_list = [float(time)]
             index_list = find_closest_indices(time_list, ids_times)
-        except ValueError:
+        except ValueError as err:
             raise click.UsageError(
                 "Could not determine which time steps should be converted.\n"
                 "Provide either a single float ('-t 5.0'), "
                 "a list of floats ('-t 2.1,3.5,4') or "
                 "a range of floats ('-t 2.2:4.4')"
-            )
+            ) from err
     click.echo(f"Converting the following time steps: {ids_times[index_list]}")
     return index_list
 

@@ -164,7 +164,7 @@ def convert_grid_subset_to_unstructured_grid(
     else:
         alpha = (phi[1] - phi[0]) / (n_plane - 1)
         w = np.cos(np.deg2rad(alpha))
-        w1 = np.ones((np.shape(xyz)[0]))
+        w1 = np.ones(np.shape(xyz)[0])
         ien = None
         # Connectivity list of one bezier cell:
         index = np.array(

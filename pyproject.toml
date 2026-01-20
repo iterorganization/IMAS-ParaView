@@ -68,4 +68,13 @@ local_scheme = "no-local-version"
 exclude = ["imas_paraview/_version.py"]
 
 [tool.ruff.lint]
-select = ["G004"]
+select = [
+    "E", # pycodestyle
+    "F", # Pyflakes
+    "UP", # pyupgrade
+    "B", # flake8-bugbear
+    "SIM", # flake8-simplify
+    "I", # isort
+    "G", # flake8-logging-format
+]
+

@@ -105,10 +105,7 @@ class WallLimiterReader(GGDVTKPluginBase):
         """
         # closed was removed in DD4 - data providers need to repeat the first point
         # for closed outlines, which Just Works with our is_closed=False logic
-        if getattr(unit, "closed", 0) == 0:
-            is_closed = False
-        else:
-            is_closed = True
+        is_closed = getattr(unit, "closed", 0) != 0
 
         r = unit.outline.r
         z = unit.outline.z
