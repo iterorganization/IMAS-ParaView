@@ -91,6 +91,35 @@ def test_arc_of_circle_vertical(elements):
         assert np.linalg.norm(np.array(p) - center) == pytest.approx(5.0)
 
 
+def test_arc_of_circle_diagonal(elements):
+    elements.start_points.r = [5.0]
+    elements.start_points.phi = [0.0]
+    elements.start_points.z = [5.0]
+
+    elements.intermediate_points.r = [np.sqrt(2) * 5.0]
+    elements.intermediate_points.phi = [np.pi / 2]
+    elements.intermediate_points.z = [0.0]
+
+    elements.end_points.r = [5.0]
+    elements.end_points.phi = [np.pi]
+    elements.end_points.z = [-5.0]
+
+    elements.centres.r = [0.0]
+    elements.centres.phi = [0.0]
+    elements.centres.z = [0.0]
+
+    resolution = 10
+    reader = CoilsNonAxisymmetricReader()
+    reader.resolution = resolution
+    points = reader._create_circular_geometry(elements, 0, is_full_circle=False)
+
+    assert np.allclose(points[0], [5.0, 0.0, 5.0])
+    assert np.allclose(points[-1], [-5.0, 0.0, -5.0])
+    center = np.array([0.0, 0.0, 0.0])
+    for p in points:  # All points should lie on a circle
+        assert np.linalg.norm(np.array(p) - center) == pytest.approx(np.sqrt(2) * 5.0)
+
+
 def test_invalid_arc_of_circle(elements):
     elements.start_points.r = [10.0]
     elements.start_points.phi = [0.0]
@@ -111,6 +140,28 @@ def test_invalid_arc_of_circle(elements):
     reader = CoilsNonAxisymmetricReader()
     points = reader._create_circular_geometry(elements, 0, is_full_circle=False)
     # | start_point - centre | != | end_point - centre |
+    assert points is None
+
+
+def test_non_coplanar_arc_of_circle(elements):
+    elements.start_points.r = [3.0]
+    elements.start_points.phi = [0.0]
+    elements.start_points.z = [0.0]
+
+    elements.intermediate_points.r = [3.0]
+    elements.intermediate_points.phi = [np.pi / 2]
+    elements.intermediate_points.z = [0.0]
+
+    elements.end_points.r = [3.0]
+    elements.end_points.phi = [np.pi]
+    elements.end_points.z = [0.0]
+
+    elements.centres.r = [0.0]
+    elements.centres.phi = [0.0]
+    elements.centres.z = [5.0]  # centre not coplanar with start/intermediate/end points
+
+    reader = CoilsNonAxisymmetricReader()
+    points = reader._create_circular_geometry(elements, 0, is_full_circle=False)
     assert points is None
 
 

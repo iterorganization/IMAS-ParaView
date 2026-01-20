@@ -144,6 +144,23 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         conductor_block = vtkAppendPolyData()
 
         has_input = False
+        has_cross_section = False
+
+        if len(conductor.cross_section) == 1 or len(conductor.cross_section) == len(
+            elements.types
+        ):
+            has_cross_section = True
+        elif len(conductor.cross_section) == 0:
+            logger.warning(
+                "Conductor does not have a cross-section, only the centreline will "
+                "be shown.",
+            )
+        else:
+            logger.warning(
+                "Conductor must have either 1 universal cross-section or a separate "
+                "cross-section for each element. Only the centreline will be shown."
+            )
+
         for elem_idx, elem_type in enumerate(elements.types):
             if elem_type == 1:  # Line segment
                 elem_points = self._create_line_segment(elements, elem_idx)
@@ -170,15 +187,9 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
                 continue
             vtk_conductor = points_to_vtkpoly(elem_points)
 
-            if len(conductor.cross_section) > 0:
+            if has_cross_section:
                 vtk_conductor = self._add_cross_section(
                     vtk_conductor, conductor, elem_idx
-                )
-            else:
-                logger.warning(
-                    "Conductor element %d does not have a cross-section, only the "
-                    "centreline will be shown.",
-                    elem_idx,
                 )
 
             conductor_block.AddInputData(vtk_conductor)
@@ -262,12 +273,24 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
                 )
                 return None
 
+            if not self._are_points_coplanar(p_start, p_intermediate, p_end, p_centre):
+                logger.warning("Element %d points are not coplanar", idx)
+                return None
+
             max_angle = np.arctan2(np.dot(v_end, tangent), np.dot(v_end, v_start))
             if max_angle < 0:
                 max_angle += 2 * np.pi
             resolution = self.resolution
         t = np.linspace(0, max_angle, resolution)[:, None]
         return p_centre + radius * (np.cos(t) * v_start + np.sin(t) * tangent)
+
+    def _are_points_coplanar(self, p0, p1, p2, p3):
+        """Checks if 4 points are coplanar."""
+        n = np.cross(p1 - p0, p2 - p0)
+        if np.linalg.norm(n) == 0.0:
+            return False
+        dist = np.dot(p3 - p0, n)
+        return np.isclose(dist, 0.0)
 
     def _add_cross_section(self, input_poly_line, conductor, elem_idx):
         """Add cross-sectional representation to a conductor polyline.
