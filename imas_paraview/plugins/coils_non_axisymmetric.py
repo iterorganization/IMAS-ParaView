@@ -68,14 +68,14 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             if not coil_name:
                 coil_name = f"coil {i}"
                 logger.warning(
-                    "Non-axisymmetric coil without name found. Using %r", coil_name
+                    "Non-axisymmetric coil without name found. Using '%s'", coil_name
                 )
             # Coil names are not unique for DD3.x
             if hasattr(coil, "identifier"):
                 coil_name = f"{coil_name} / {coil.identifier}"
 
             if len(coil.conductor) == 0:
-                logger.warning("%r has no conductors, skipping it.", coil_name)
+                logger.warning("'%s' has no conductors, skipping it.", coil_name)
                 continue
 
             has_elements = False
@@ -86,7 +86,7 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
 
             if not has_elements:
                 logger.warning(
-                    "%r has no elements in any conductor, skipping it.", coil_name
+                    "'%s' has no elements in any conductor, skipping it.", coil_name
                 )
                 continue
 
@@ -102,7 +102,7 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         block_index = 0
         for coil_name in self._selected:
             coil = self.selectable_map[coil_name]
-            logger.info("Loading non-axisymmetric coil %r...", coil_name)
+            logger.info("Loading non-axisymmetric coil '%s'...", coil_name)
 
             for cond_idx, conductor in enumerate(coil.conductor):
                 if len(conductor.elements.types) == 0:
@@ -124,7 +124,7 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
                 block_index += 1
 
             logger.info(
-                "Loaded non-axisymmetric coil %r with %d conductor(s)",
+                "Loaded non-axisymmetric coil '%s' with %d conductor(s)",
                 coil_name,
                 block_index,
             )
