@@ -22,8 +22,10 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", SUPPORTED_IDS_NAMES)
         self.selectable_map = {}
-        self.resolution = 10  # Resolution for arcs_of_circle and full_circle geometries
-        self.cs_resolution = 10  # Cross-sectional resolution
+        self.resolution = 10
+        """Resolution for arcs_of_circle and full_circle geometries"""
+        self.cs_resolution = 10
+        """Cross-sectional resolution"""
 
     @intvector(label="Resolution", name="resolution", default_values=10)
     def P98_SetResolution(self, val):
@@ -35,7 +37,7 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         label="Cross-sectional Resolution", name="cs_resolution", default_values=10
     )
     def P99_SetCrossSectionalResolution(self, val):
-        """Sets the number of points for interpolating the 'annulus' cross-section, if
+        """Sets the number of points for interpolating a circular cross-section, if
         it is available in the loaded IDS."""
         self._update_property("cs_resolution", val)
 
@@ -68,8 +70,9 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
                 logger.warning(
                     "Non-axisymmetric coil without name found. Using %r", coil_name
                 )
-            # Coil names are not unique in some machine description IDSs
-            coil_name = f"{coil_name} / {coil.identifier}"
+            # Coil names are not unique for DD3.x
+            if hasattr(coil, "identifier"):
+                coil_name = f"{coil_name} / {coil.identifier}"
 
             if len(coil.conductor) == 0:
                 logger.warning("%r has no conductors, skipping it.", coil_name)
@@ -157,6 +160,12 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
                 vtk_conductor = self._add_cross_section(
                     vtk_conductor, conductor, elem_idx
                 )
+            else:
+                logger.warning(
+                    "Conductor element %d does not have a cross-section, only the "
+                    "centerline will be shown.",
+                    elem_idx,
+                )
 
             conductor_block.AddInputData(vtk_conductor)
         conductor_block.Update()
@@ -209,7 +218,7 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
 
         if is_full_circle:
             max_angle = 2 * np.pi
-            t = np.linspace(0, max_angle, self.resolution + 1, endpoint=True)[:, None]
+            resolution = self.resolution + 1  # include end point
         else:
             # Sweep circle arc from start to end point
             p_end = self._pol_to_cart3d(elements.end_points, idx)
@@ -217,7 +226,8 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             max_angle = np.arctan2(np.dot(v_end, tangent), np.dot(v_end, v_start))
             if max_angle < 0:
                 max_angle += 2 * np.pi
-            t = np.linspace(0, max_angle, self.resolution)[:, np.newaxis]
+            resolution = self.resolution
+        t = np.linspace(0, max_angle, resolution)[:, None]
         return p_centre + radius * (np.cos(t) * v_start + np.sin(t) * tangent)
 
     def _add_cross_section(self, input_poly_line, conductor, elem_idx):
@@ -234,8 +244,14 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         cross_section_idx = 0 if len(conductor.cross_section) == 1 else elem_idx
         cross_section = conductor.cross_section[cross_section_idx]
 
-        if cross_section.geometry_type.index == 5:  # Annulus
-            return self._add_annulus_cross_section(input_poly_line, cross_section)
+        if cross_section.geometry_type.index == 2:  # Circle
+            return self._add_circular_cross_section(
+                input_poly_line, cross_section, "circle"
+            )
+        elif cross_section.geometry_type.index == 5:  # Annulus
+            return self._add_circular_cross_section(
+                input_poly_line, cross_section, "annulus"
+            )
         else:
             logger.warning(
                 "Cross-section %d is not supported, it will be represented as a line ",
@@ -243,31 +259,34 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             )
             return input_poly_line
 
-    def _add_annulus_cross_section(self, poly_line, cross_section):
-        """Create annular cross-section around a polyline using VTK tube filters.
+    def _add_circular_cross_section(self, poly_line, cross_section, cs_type):
+        """Create a circular cross-section around a polyline using VTK tube filters.
 
         Args:
             poly_line: VTK polyline representing conductor element.
             cross_section: Cross-section object containing inner radius and width.
+            cs_type: Type of cross section to add, either "circle" or "annulus"
 
         Returns:
             VTK polydata representing the annulus geometry.
         """
+        assert cs_type in ["circle", "annulus"], "invalid cross-section type"
+        append = vtkAppendPolyData()
+
         outer_tube = vtkTubeFilter()
         outer_tube.SetInputData(poly_line)
         outer_tube.SetRadius(cross_section.width / 2.0)
         outer_tube.SetNumberOfSides(self.cs_resolution)
         outer_tube.Update()
-
-        inner_tube = vtkTubeFilter()
-        inner_tube.SetInputData(poly_line)
-        inner_tube.SetRadius(cross_section.radius_inner)
-        inner_tube.SetNumberOfSides(self.cs_resolution)
-        inner_tube.Update()
-
-        append = vtkAppendPolyData()
         append.AddInputData(outer_tube.GetOutput())
-        append.AddInputData(inner_tube.GetOutput())
-        append.Update()
 
+        if cs_type == "annulus":
+            inner_tube = vtkTubeFilter()
+            inner_tube.SetInputData(poly_line)
+            inner_tube.SetRadius(cross_section.radius_inner)
+            inner_tube.SetNumberOfSides(self.cs_resolution)
+            inner_tube.Update()
+            append.AddInputData(inner_tube.GetOutput())
+
+        append.Update()
         return append.GetOutput()
