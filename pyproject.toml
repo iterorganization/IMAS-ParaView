@@ -69,12 +69,33 @@ exclude = ["imas_paraview/_version.py"]
 
 [tool.ruff.lint]
 select = [
-    "E", # pycodestyle
-    "F", # Pyflakes
-    "UP", # pyupgrade
-    "B", # flake8-bugbear
-    "SIM", # flake8-simplify
-    "I", # isort
-    "G", # flake8-logging-format
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # eradicate
+    "ERA",
+    # flake8-comprehensions
+    "C4",
+    # flake8-logging
+    "LOG",
+    # flake8-logging-format
+    "G",
+    # flake8-tidy-imports
+    "TID",
+    # flake8-use-pathlib
+    "PTH",
+    # Refurb
+    "FURB",
+    # Ruff specific rules
+    "RUF",
 ]
 

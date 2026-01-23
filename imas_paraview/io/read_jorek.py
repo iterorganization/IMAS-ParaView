@@ -32,7 +32,7 @@ def read_plasma_state(grid_ggd, ps_reader, plane_config, ugrid):
 
     phi = [plane_config.phi_start, plane_config.phi_end]
     val_tor1 = np.array([])
-    nam = list()
+    nam = []
 
     N_vertex = len(grid_ggd.space[0].objects_per_dimension[0].object)
     array_list = ps_reader.scalar_array_list + ps_reader.vector_array_list
@@ -348,8 +348,8 @@ def interp_scalars(values, vertex, size, n_sub):
     returns:
         values: interpolated values, values[var, harmonic, element, is, it]
     """
-    # Multiply values[var,order,harm,vertex,element] with
-    # size[order, vertex, element] and bf[order, vertex, s, t]
+    # Multiply values[var,order,harm,vertex,element] with size[order, vertex, element]
+    # and bf[order, vertex, s, t]
     return np.einsum(
         "lihjk,ijk,ijmn->lhkmn", values[:, :, :, vertex - 1], size, bf(n_sub)
     )

@@ -316,7 +316,7 @@ class PlasmaStateReader:
         num_cells = ugrid.GetNumberOfCells()
 
         # Only add the components that have data:
-        components = dict()  # name and values
+        components = {}  # name and values
 
         # Search for filled 1D vector components
         for component in aos_vector_node[subset_idx]:

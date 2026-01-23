@@ -120,12 +120,8 @@ def _fill_vtk_cell_array_from_gs2(
         obj = grid[2].object[j]
         obj_nodes = obj.nodes
         obj_dimension = 2
-        # try:
-        #     obj_boundary = obj.boundary
-        # except:
-        #     obj_boundary = []
 
-        pt_ids = list(map(lambda val: val - 1, obj_nodes))
+        pt_ids = [(val - 1 for val in obj_nodes)]
         npts = len(pt_ids)
         cell_type = _get_vtk_cell_type(obj_dimension, npts)
         ugrid.InsertNextCell(cell_type, npts, pt_ids)
@@ -178,9 +174,9 @@ def _fill_vtk_cell_array_from_gs(
                 .boundary
             )
 
-            pt_ids = list(
-                map(lambda val: val - 1, obj_nodes)
-            )  # offset by -1 as fortran indexing used in IMAS( 1,...n)
+            pt_ids = [
+                (val - 1 for val in obj_nodes)
+            ]  # offset by -1 as fortran indexing used in IMAS( 1,...n)
             npts = len(pt_ids)
             cell_type = _get_vtk_cell_type(obj_dimension, npts)
 
@@ -199,9 +195,9 @@ def _fill_vtk_cell_array_from_gs(
                         .objects_per_dimension[2]
                         .object[object_2d_idx]
                     )
-                    object_2d_pt_ids = list(
-                        map(lambda val: val - 1, object_2d.nodes)
-                    )  # offset by -1
+                    object_2d_pt_ids = [
+                        (val - 1 for val in object_2d.nodes)
+                    ]  # offset by -1
                     num_face_pts = len(object_2d_pt_ids)
 
                     # the format for 3d cell point ids is

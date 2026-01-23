@@ -43,14 +43,16 @@ def test_ggd2vtk(tmp_path, dummy_ids):
     result = runner.invoke(convert_ggd_to_vtk, args)
     assert result.exit_code == 0
 
-    # The vtkXMLPartitionedDataSetCollectionWriter will output the following:
-    # .
-    # ├── test
-    # │   ├── test_0_0.vtu
-    # │   ├── test_1_0.vtu
-    # │   ├── test_2_0.vtu
-    # |   ├── ...
-    # └── test.vtpc
+    """
+    The vtkXMLPartitionedDataSetCollectionWriter will output the following:
+    .
+    ├── test
+    │   ├── test_0_0.vtu
+    │   ├── test_1_0.vtu
+    │   ├── test_2_0.vtu
+    │   ├── ...
+    └── test.vtpc
+    """
 
     # Check if vtpc file and the directory containing vtu files exists
     assert output_path.is_dir()
