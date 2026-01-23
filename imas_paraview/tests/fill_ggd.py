@@ -13,7 +13,7 @@ def fill_NxN_grid(grid_ggd, N):
     """Fills the grid_ggd of an IDS with a uniform rectangular grid of size N x N,
     containing vertices, edges and faces.
 
-    Adapted from https://sharepoint.iter.org/departments/POP/CM/IMDesign/Data%20Model/sphinx/3.41/ggd_guide/examples.html # noqa
+    Adapted from https://imas-data-dictionary.readthedocs.io/en/latest/ggd_guide/examples.html
 
     Args:
         grid_ggd: The GGD grid that will be filled with the N x N grid.
@@ -380,7 +380,7 @@ def fill_ids(ids, time_steps=1, grid_size=2):
 
     # Skip filling grid_ggd if it does not exist
     if grid_ggd is None:
-        logger.warning(f"{ids.metadata.name} has no grid_ggd")
+        logger.warning("%s has no grid_ggd", ids.metadata.name)
     else:
         # Create time steps
         ids.time = [float(t) for t in range(time_steps)]
@@ -399,7 +399,7 @@ def fill_ids(ids, time_steps=1, grid_size=2):
             num_vertices, num_edges, num_faces = fill_NxN_grid(
                 grid_ggd_aos[i], grid_size
             )
-            logger.debug(f"filled grid_ggd at index {i}.")
+            logger.debug("filled grid_ggd at index %d.", i)
         fill_ggd_data(ids, num_vertices, num_edges, num_faces)
 
     fill_ids_specific(ids)

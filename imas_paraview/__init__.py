@@ -48,6 +48,8 @@ imas_version = imas.__version__
 required_imas_python_version = "2.0.0"
 if version.parse(imas_version) < version.parse(required_imas_python_version):
     logger.warning(
-        f"IMAS-Python version {imas_version} is lower than the recommended version "
-        f"{required_imas_python_version}. Some features might not work as expected."
+        "IMAS-Python version %s is lower than the recommended version %s. "
+        "Some features might not work as expected.",
+        imas_version,
+        required_imas_python_version,
     )

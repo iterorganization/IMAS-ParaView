@@ -69,7 +69,8 @@ class BeamReader(GGDVTKPluginBase, is_time_dependent=True):
             if beam_name == "":
                 beam_name = f"beam {i}"
                 logger.warning(
-                    f"Found a channel without a name, it will be loaded as {beam_name}."
+                    "Found a channel without a name, it will be loaded as %s.",
+                    beam_name,
                 )
             self.selectable_map[str(beam_name)] = beam
         self._selectable = list(self.selectable_map)
@@ -83,7 +84,7 @@ class BeamReader(GGDVTKPluginBase, is_time_dependent=True):
         """
         for i, beam_name in enumerate(self._selected):
             beam = self.selectable_map[beam_name]
-            logger.info(f"Selected {beam_name}")
+            logger.info("Selected %s", beam_name)
             vtk_poly = self._create_vtk_beam(beam, time_idx)
             output.SetBlock(i, vtk_poly)
 
