@@ -81,8 +81,6 @@ select = [
     "SIM",
     # isort
     "I",
-    # eradicate
-    "ERA",
     # flake8-comprehensions
     "C4",
     # flake8-logging
