@@ -283,9 +283,7 @@ class PlasmaStateReader:
                         self._add_scalar_array_to_vtk_field_data(
                             aos_scalar_node[i].values, name, ugrid
                         )
-                except IndexError:
-                    logger.warning("no index %d for subset %d...", i, subset_idx)
-                except AttributeError:
+                except (IndexError, AttributeError):
                     logger.warning("no index %d for subset %d...", i, subset_idx)
         else:
             if hasattr(aos_scalar_node[subset_idx], "values") and len(
