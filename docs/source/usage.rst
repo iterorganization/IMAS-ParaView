@@ -21,6 +21,7 @@ non-GGD Readers
 .. toctree::
    :maxdepth: 1
 
+   time_dependent_0d
    1d_profiles_reader
    profiles_2d_reader
    beam_reader
