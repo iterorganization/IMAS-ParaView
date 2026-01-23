@@ -12,10 +12,7 @@ from imas_paraview.plugins.pf import PFReader
 def ids_geometry(request):
     """Returns a geometry IDS node from a pf_active or pf_passive IDS"""
     ids = imas.IDSFactory(version=DD_VERSION).new(request.param)
-    if ids.metadata.name == "pf_active":
-        node = ids.coil
-    else:
-        node = ids.loop
+    node = ids.coil if ids.metadata.name == "pf_active" else ids.loop
     node.resize(1)
     node[0].element.resize(1)
     return node[0].element[0].geometry
