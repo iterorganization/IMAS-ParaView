@@ -228,41 +228,19 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         p_start = self._pol_to_cart3d(elements.start_points, idx)
         p_intermediate = self._pol_to_cart3d(elements.intermediate_points, idx)
         p_centre = self._pol_to_cart3d(elements.centres, idx)
+        p_end = (  # End point is only defined for arc of circle
+            None if is_full_circle else self._pol_to_cart3d(elements.end_points, idx)
+        )
 
-        if not is_full_circle:
-            p_end = self._pol_to_cart3d(elements.end_points, idx)
-            v_end = p_end - p_centre
+        if not self._are_circular_points_valid(
+            p_start, p_intermediate, p_end, p_centre, is_full_circle
+        ):
+            return None
 
         # Vector from center of circle to start point
         v_start = p_start - p_centre
         radius = np.linalg.norm(v_start)
         v_start /= radius
-
-        if not np.isclose(radius, np.linalg.norm(p_intermediate - p_centre)):
-            logger.warning(
-                "Start and intermediate point of element %d of '%s' are not "
-                "equidistant from the centre point",
-                idx,
-                imas.util.get_full_path(elements),
-            )
-            return None
-        if not is_full_circle and not np.isclose(radius, np.linalg.norm(v_end)):
-            logger.warning(
-                "Start and end point of element %d of '%s' are not equidistant from "
-                "the centre point",
-                idx,
-                imas.util.get_full_path(elements),
-            )
-            return None
-        if not is_full_circle and not self._are_points_coplanar(
-            p_start, p_intermediate, p_end, p_centre
-        ):
-            logger.warning(
-                "The points from element %d of '%s' are not coplanar",
-                idx,
-                imas.util.get_full_path(elements),
-            )
-            return None
 
         binormal = np.cross(v_start, p_intermediate - p_centre)
         binormal /= np.linalg.norm(binormal)
@@ -275,6 +253,7 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             resolution = self.resolution + 1  # include end point
         else:
             # Sweep circle arc from start to end point
+            v_end = p_end - p_centre
             max_angle = np.arctan2(np.dot(v_end, tangent), np.dot(v_end, v_start))
             if max_angle < 0:
                 max_angle += 2 * np.pi
@@ -282,13 +261,56 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         t = np.linspace(0, max_angle, resolution)[:, None]
         return p_centre + radius * (np.cos(t) * v_start + np.sin(t) * tangent)
 
-    def _are_points_coplanar(self, p0, p1, p2, p3):
-        """Checks if 4 points are coplanar."""
-        n = np.cross(p1 - p0, p2 - p0)
-        if np.linalg.norm(n) == 0.0:
+    def _are_circular_points_valid(
+        self, p_start, p_intermediate, p_end, p_centre, is_full_circle
+    ):
+        """Check geometric validity of a set of points of a circular element.
+
+        Args:
+            p_start: Start point of the circular element.
+            p_intermediate: Intermediate point of the circular element.
+            p_end: End point of the circular element.
+            p_centre: Centre point of the circular element.
+            is_full_circle: True if full circle, False if arc of circle.
+
+        Returns:
+            True if points make a valid circular element, or False if they don't
+        """
+        v_start = p_start - p_centre
+        radius = np.linalg.norm(v_start)
+        r_intermediate = np.linalg.norm(p_intermediate - p_centre)
+
+        if np.isclose(radius, 0):
+            logger.warning("Start point coincides with centre: zero radius")
             return False
-        dist = np.dot(p3 - p0, n)
-        return np.isclose(dist, 0.0)
+        if not np.isclose(radius, r_intermediate):
+            logger.warning(
+                "Start and intermediate points are not equidistant from centre"
+            )
+            return False
+        if not is_full_circle:
+            r_end = np.linalg.norm(p_end - p_centre)
+            if not np.isclose(radius, r_end):
+                logger.warning("Start and end points are not equidistant from centre")
+                return False
+
+        cross = np.cross(v_start, p_intermediate - p_centre)
+        if np.linalg.norm(cross) == 0:
+            logger.warning(
+                "The plane defined by start, intermediate, and centre point is degenerate"
+            )
+            return False
+
+        if not is_full_circle:
+            triple_product = np.dot(
+                v_start, np.cross(p_intermediate - p_centre, p_end - p_centre)
+            )
+            if not np.isclose(triple_product, 0.0):
+                logger.warning(
+                    "Start, intermediate, end, and centre points are not coplanar"
+                )
+                return False
+        return True
 
     def _add_cross_section(self, input_poly_line, conductor, elem_idx):
         """Add cross-sectional representation to a conductor polyline.
