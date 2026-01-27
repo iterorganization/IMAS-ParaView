@@ -6,6 +6,7 @@ from typing import Optional
 
 import imas
 import numpy as np
+from imas.ids_base import IDSBase
 from imas.ids_data_type import IDSDataType
 from imas.ids_defs import (
     IDS_TIME_MODE_HETEROGENEOUS,
@@ -18,7 +19,7 @@ from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules.vtkCommonDataModel import vtkTable
 
-from imas_paraview.ids_util import create_name_recursive, is_time_dependent_aos
+from imas_paraview.ids_util import create_name_recursive, is_child_of_time_dependent_aos
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 
 logger = logging.getLogger("imas_paraview")
@@ -28,11 +29,17 @@ SUPPORTED_IDS_NAMES = imas.IDSFactory().ids_names()
 
 
 @dataclass
-class Quantity:
-    """Stores information about a time-dependent quantity."""
+class FilledQuantity:
+    """Stores information about a filled time-dependent quantity inside a time-dependent
+    AoS.
 
-    node: object  # The actual IDS node
-    time_slice: Optional[object] = None  # Parent time-dependent AoS (e.g., time_slice)
+    For example, the node `equilibrium['time_slice[0]/global_quantities/ip']`
+    will contain time_slice = `equilibrium['time_slice']`,
+    and `remaining_path = "global_quantities/ip"`
+    """
+
+    node: IDSBase  # The filled time-dependent IDS node
+    time_slice: Optional[IDSBase] = None  # Parent time-dependent AoS (e.g., time_slice)
     remaining_path: Optional[str] = None  # Path from time_slice to node
 
 
@@ -88,7 +95,7 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
             return
 
         parent = imas.util.get_parent(node)
-        if parent is not None and is_time_dependent_aos(node):
+        if parent is not None and is_child_of_time_dependent_aos(node):
             # Reset: this becomes our new time slice reference point
             time_slice = parent
             path_from_time_slice = ""
@@ -106,7 +113,9 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
                 self._recursively_find_time_dependent_quantities(
                     subnode, time_slice=time_slice, path_from_time_slice=new_path
                 )
-                if is_time_dependent_aos(subnode):  # Only scan the first time slice
+                if is_child_of_time_dependent_aos(
+                    subnode
+                ):  # Only scan the first time slice
                     break
         elif (
             metadata.data_type in (IDSDataType.FLT, IDSDataType.INT)
@@ -115,7 +124,7 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
             and metadata.ndim in [0, 1]
         ):
             name = f"{create_name_recursive(node)} [{node.metadata.units}]"
-            self._filled_quantities_map[name] = Quantity(
+            self._filled_quantities_map[name] = FilledQuantity(
                 node, time_slice, path_from_time_slice
             )
 
