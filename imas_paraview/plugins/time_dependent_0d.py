@@ -1,6 +1,8 @@
 """Plugin to view arbitrary 0D time-dependent data from any IDS."""
 
 import logging
+from dataclasses import dataclass
+from typing import Optional
 
 import imas
 import numpy as np
@@ -16,13 +18,22 @@ from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules.vtkCommonDataModel import vtkTable
 
-from imas_paraview.ids_util import create_name_recursive
+from imas_paraview.ids_util import create_name_recursive, is_time_dependent_aos
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 
 logger = logging.getLogger("imas_paraview")
 
 # This plugin is generic and should work with any IDS
 SUPPORTED_IDS_NAMES = imas.IDSFactory().ids_names()
+
+
+@dataclass
+class Quantity:
+    """Stores information about a time-dependent quantity."""
+
+    node: object  # The actual IDS node
+    time_slice: Optional[object] = None  # Parent time-dependent AoS (e.g., time_slice)
+    remaining_path: Optional[str] = None  # Path from time_slice to node
 
 
 @smproxy.source(label="0D Time-Dependent Data Reader")
@@ -32,8 +43,7 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
 
     def __init__(self):
         super().__init__("vtkTable", SUPPORTED_IDS_NAMES)
-        self.selectable_map = {}
-        self._filled_quantities = []
+        self._filled_quantities_map = {}
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
@@ -61,36 +71,42 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
             "Scanning IDS '%s' for time-dependent 0D data...", self._ids.metadata.name
         )
 
-        self._filled_quantities = []
+        self._filled_quantities_map = {}
         self._recursively_find_time_dependent_quantities(self._ids)
 
         logger.info(
-            f"Found {len(self._filled_quantities)} filled time-dependent quantities"
+            f"Found {len(self._filled_quantities_map)} filled time-dependent quantities"
         )
+        self._selectable = list(self._filled_quantities_map)
 
-        self.selectable_map = self._get_quantity_names()
-        self._selectable = list(self.selectable_map)
-
-    def _get_quantity_names(self):
-        selectable_map = {}
-
-        for node in self._filled_quantities:
-            name = f"{create_name_recursive(node)} [{node.metadata.units}]"
-            selectable_map[name] = node
-
-        return selectable_map
-
-    def _recursively_find_time_dependent_quantities(self, node):
+    def _recursively_find_time_dependent_quantities(
+        self, node, time_slice=None, path_from_time_slice=""
+    ):
         metadata = node.metadata
         # Time and GGD quantities
         if metadata.name in ("time", "grid_ggd", "grids_ggd", "ggd", "description_ggd"):
             return
 
-        if isinstance(node, IDSStructure) or isinstance(node, IDSStructArray):
-            for subnode in node:
-                self._recursively_find_time_dependent_quantities(subnode)
-                # Only scan the first time slice
-                if subnode.metadata.name == "time_slice":
+        parent = imas.util.get_parent(node)
+        if parent is not None and is_time_dependent_aos(node):
+            # Reset: this becomes our new time slice reference point
+            time_slice = parent
+            path_from_time_slice = ""
+
+        if isinstance(node, (IDSStructure, IDSStructArray)):
+            for i, subnode in enumerate(node):
+                if isinstance(node, IDSStructArray):
+                    new_path = f"{path_from_time_slice}[{i}]"
+                else:
+                    new_path = (
+                        f"{path_from_time_slice}/{subnode.metadata.name}"
+                        if path_from_time_slice
+                        else subnode.metadata.name
+                    )
+                self._recursively_find_time_dependent_quantities(
+                    subnode, time_slice=time_slice, path_from_time_slice=new_path
+                )
+                if is_time_dependent_aos(subnode):  # Only scan the first time slice
                     break
         elif (
             metadata.data_type in (IDSDataType.FLT, IDSDataType.INT)
@@ -98,7 +114,10 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
             and node.has_value
             and metadata.ndim in [0, 1]
         ):
-            self._filled_quantities.append(node)
+            name = f"{create_name_recursive(node)} [{node.metadata.units}]"
+            self._filled_quantities_map[name] = Quantity(
+                node, time_slice, path_from_time_slice
+            )
 
     def _load_time_dependent_data(self, output, selected_time):
         """Load the selected time-dependent quantities up to the selected time.
@@ -135,8 +154,8 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
         output.AddColumn(time_vtk)
 
         for quantity_name in self._selected:
-            node = self.selectable_map[quantity_name]
-            quantity_values = self._get_quantity_values(node, output_times)
+            node = self._filled_quantities_map[quantity_name]
+            quantity_values = self._get_quantity_values(node, len(output_times))
 
             # Create VTK array
             data_vtk = numpy_to_vtk(quantity_values, deep=1)
@@ -145,17 +164,11 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
 
             logger.info(f"Loaded {len(quantity_values)} points for '{quantity_name}'")
 
-    def _get_quantity_values(self, node, output_times):
-        if node.metadata.ndim == 1:
-            quantity_values = node[: min(len(output_times), len(node))]
+    def _get_quantity_values(self, quantity, n_steps):
+        if quantity.node.metadata.ndim == 0:
+            time_slice = quantity.time_slice
+            remaining_path = quantity.remaining_path
+            quantity_values = [time_slice[i][remaining_path] for i in range(n_steps)]
         else:
-            full_path = imas.util.get_full_path(node)
-            parts = full_path.split("time_slice", 1)
-            time_slice_path = parts[0] + "time_slice"
-            path_in_slice = parts[1].lstrip("[0]/")
-
-            quantity_values = []
-            for i in range(len(output_times)):
-                node_in_slice = self._ids[time_slice_path][i][path_in_slice]
-                quantity_values.append(node_in_slice)
+            quantity_values = quantity.node[:n_steps]
         return quantity_values

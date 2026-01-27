@@ -1,14 +1,19 @@
 import imas
 import numpy as np
+import pytest
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkTable
 
 from imas_paraview.plugins.time_dependent_0d import TimeDependent0DReader
 
 
-def test_time_array():
-    ids = imas.IDSFactory(version="4.0.0").new("wall")
-    reader = TimeDependent0DReader()
+@pytest.fixture
+def reader():
+    return TimeDependent0DReader()
+
+
+def test_time_array(reader):
+    ids = imas.IDSFactory(version="4.1.0").new("wall")
 
     n_time_points = 5
     ids.time = 1.1 * np.arange(n_time_points)
@@ -44,9 +49,8 @@ def test_time_array():
         assert np.all(gp2_col == np.array(4.4 * np.arange(i + 1)))
 
 
-def test_time_slice():
-    ids = imas.IDSFactory(version="4.0.0").new("equilibrium")
-    reader = TimeDependent0DReader()
+def test_time_slice(reader):
+    ids = imas.IDSFactory(version="4.1.0").new("equilibrium")
 
     n_time_points = 5
     ids.time = 1.1 * np.arange(n_time_points)
@@ -88,3 +92,43 @@ def test_time_slice():
         assert np.all(psi_col == np.array(4.0 * np.arange(i + 1)))
         assert np.all(gap1_col == np.array(5.0 * np.arange(i + 1)))
         assert np.all(gap2_col == np.array(6.0 * np.arange(i + 1)))
+
+
+def test_nested_aos_time_slice(reader):
+    # itime in AoS
+    ids = imas.IDSFactory(version="4.1.0").new("camera_ir")
+    n_time_points = 5
+    ids.time = 1.1 * np.arange(n_time_points)
+    ids.channel.resize(2)
+    ids.channel[0].name = "channel 1"
+    ids.channel[1].name = "channel 2"
+    for channel in ids.channel:
+        channel.camera.resize(2)
+        channel.camera[0].name = "camera 1"
+        channel.camera[1].name = "camera 2"
+        for camera in channel.camera:
+            camera.frame.resize(n_time_points)
+            for time_idx in range(n_time_points):
+                camera.frame[time_idx].filter.resize(2)
+                camera.frame[time_idx].filter[0].wavelength_central = 10
+                camera.frame[time_idx].filter[1].wavelength_central = 20
+
+    reader._ids = ids
+    reader.setup_ids()
+
+    f1_name = "Channel (Channel 1) Camera (Camera 1) Filter (#1) Wavelength_central [m]"
+    f2_name = "Channel (Channel 2) Camera (Camera 2) Filter (#2) Wavelength_central [m]"
+    reader._selected = [f1_name, f2_name]
+    for i in range(1, n_time_points):
+        output = vtkTable()
+        reader._load_time_dependent_data(output, 1.1 * i)
+
+        assert output.GetNumberOfRows() == i + 1
+        assert output.GetNumberOfColumns() == 3
+        time_col = vtk_to_numpy(output.GetColumnByName("Time [s]"))
+        f1_col = vtk_to_numpy(output.GetColumnByName(f1_name))
+        f2_col = vtk_to_numpy(output.GetColumnByName(f2_name))
+
+        assert np.all(time_col == np.array(1.1 * np.arange(i + 1)))
+        assert np.all(f1_col == 10)
+        assert np.all(f2_col == 20)
