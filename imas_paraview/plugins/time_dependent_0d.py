@@ -82,7 +82,8 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
         self._recursively_find_time_dependent_quantities(self._ids)
 
         logger.info(
-            f"Found {len(self._filled_quantities_map)} filled time-dependent quantities"
+            "Found %d filled time-dependent quantities",
+            len(self._filled_quantities_map),
         )
         self._selectable = list(self._filled_quantities_map)
 
@@ -153,7 +154,7 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
 
         time_indices = np.where(time_array <= selected_time)[0]
         if len(time_indices) == 0:
-            logger.warning(f"No data available up to time {selected_time}")
+            logger.warning("No data available up to time %f", selected_time)
             return
 
         output_times = time_array[time_indices]
@@ -171,7 +172,9 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
             data_vtk.SetName(quantity_name)
             output.AddColumn(data_vtk)
 
-            logger.info(f"Loaded {len(quantity_values)} points for '{quantity_name}'")
+            logger.info(
+                "Loaded %d points for '%s'", len(quantity_values), quantity_name
+            )
 
     def _get_quantity_values(self, quantity, n_steps):
         if quantity.node.metadata.ndim == 0:
