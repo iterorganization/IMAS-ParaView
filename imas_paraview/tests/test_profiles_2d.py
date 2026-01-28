@@ -21,9 +21,9 @@ def test_load_profiles(test_data_dir):
         reader.setup_ids()
 
         profile1 = ids.time_slice[0].profiles_2d[0].psi
-        name1 = "Psi"
+        name1 = "Profiles_2d (#1) Psi"
         profile2 = ids.time_slice[0].profiles_2d[0].b_field_phi
-        name2 = "B_field_phi"
+        name2 = "Profiles_2d (#1) B_field_phi"
         # 1 selection
         output = vtkPartitionedDataSetCollection()
         reader._selected = [name1]
@@ -70,7 +70,7 @@ def test_load_profiles_dummy_equilibrium():
     reader._ids = ids
     reader.setup_ids()
     output = vtkPartitionedDataSetCollection()
-    reader._selected = ["Psi"]
+    reader._selected = ["Profiles_2d (#1) Psi"]
     reader._load_profiles(output)
     assert output.GetNumberOfPartitionedDataSets() == 1
     profile = ids.time_slice[0].profiles_2d[0].psi

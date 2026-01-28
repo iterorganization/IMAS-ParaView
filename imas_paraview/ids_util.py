@@ -1,5 +1,6 @@
 import imas
 from imas.ids_data_type import IDSDataType
+from imas.ids_struct_array import IDSStructArray
 from imas.ids_toplevel import IDSToplevel
 
 from imas_paraview._ids_util import _get_nodes_from_path
@@ -102,6 +103,24 @@ def recursive_ggd_path_search(
         )
 
 
+def is_child_of_time_dependent_aos(node):
+    """Returns True if the provided IDS node is a child of a time-dependent AoS,
+    and False otherwise.
+
+    Examples of children of a time-dependent AoSs:
+    - equilibrium/time_slice[0]
+    - core_sources/source[0]/global_quantities[1]
+    - core_profiles/profiles_1d[2]
+    """
+    parent = imas.util.get_parent(node)
+    return (
+        hasattr(node.metadata, "coordinate1")
+        and node.metadata.coordinate1.is_time_coordinate
+        and hasattr(parent.metadata, "coordinate1")
+        and parent.metadata.coordinate1.is_time_coordinate
+    )
+
+
 def create_name_recursive(node):
     """Generates a name for an IDS node. The parents of the node are
     searched recursively until the IDS toplevel is reached. The name of the metadata
@@ -116,12 +135,9 @@ def create_name_recursive(node):
     """
     name_current_node = node.metadata.name
     name = ""
-    if (
-        name_current_node != "ggd"
-        and name_current_node != "profiles_1d"
-        and name_current_node != "profiles_2d"
-        and "time_slice" not in name_current_node
-    ):
+    parent = imas.util.get_parent(node)
+    # skip time slice quantity
+    if not is_child_of_time_dependent_aos(node):
         name_appendix = ""
 
         # Check if node has an identifier.name
@@ -136,13 +152,20 @@ def create_name_recursive(node):
         elif hasattr(node, "label"):
             name_appendix = str(node.label.value).strip()
 
+        # Add identifier if AoS has no name to ensure uniqueness
+        elif isinstance(parent, IDSStructArray):
+            # NOTE: This is O(N) in the size of the AoS
+            for index, child in enumerate(parent):
+                if child is node:
+                    name_appendix = f"#{index + 1}"
+                    break
+
         # Add identifier/name/label in between brackets to the full name
         if name_appendix != "":
             name = f"{name_current_node.capitalize()} ({name_appendix.capitalize()})"
         else:
             name = name_current_node.capitalize()
 
-    parent = imas.util.get_parent(node)
     if parent.metadata is node.metadata:
         parent = imas.util.get_parent(parent)
     if not isinstance(parent, IDSToplevel):

@@ -5,6 +5,7 @@ from imas.ids_path import IDSPath
 from imas_paraview.ids_util import (
     create_name_recursive,
     get_arrays_from_ids,
+    is_child_of_time_dependent_aos,
     recursive_ggd_path_search,
 )
 from imas_paraview.tests.fill_ggd import fill_scalar_quantity, fill_vector_quantity
@@ -158,3 +159,34 @@ def test_create_name_recursive_profiles():
     assert create_name_recursive(electrons_pressure) == "Electrons Pressure"
     assert create_name_recursive(temperature) == "Ion (D) Temperature"
     assert create_name_recursive(density) == "Ion (T) Density"
+
+
+def test_create_name_recursive_aos_no_label():
+    ids = imas.IDSFactory(version="4.1.0").new("equilibrium")
+    ids.time_slice.resize(1)
+    ids.time_slice[0].constraints.b_field_pol_probe.resize(3)
+    array1 = ids.time_slice[0].constraints.b_field_pol_probe[0].measured
+    array2 = ids.time_slice[0].constraints.b_field_pol_probe[1].measured
+    array3 = ids.time_slice[0].constraints.b_field_pol_probe[2].measured
+
+    name1 = create_name_recursive(array1)
+    name2 = create_name_recursive(array2)
+    name3 = create_name_recursive(array3)
+
+    assert name1 == "Constraints B_field_pol_probe (#1) Measured"
+    assert name2 == "Constraints B_field_pol_probe (#2) Measured"
+    assert name3 == "Constraints B_field_pol_probe (#3) Measured"
+
+
+def test_is_child_of_time_dependent_aos():
+    ids = imas.IDSFactory(version="4.1.0").new("equilibrium")
+    assert not is_child_of_time_dependent_aos(ids)
+    ids.time_slice.resize(1)
+    assert not is_child_of_time_dependent_aos(ids.time_slice)
+    assert is_child_of_time_dependent_aos(ids.time_slice[0])
+    assert not is_child_of_time_dependent_aos(ids.time_slice[0].boundary)
+    assert not is_child_of_time_dependent_aos(ids.time_slice[0].boundary)
+    ids.time_slice[0].boundary.gap.resize(1)
+    assert not is_child_of_time_dependent_aos(ids.time_slice[0].boundary.gap)
+    assert not is_child_of_time_dependent_aos(ids.time_slice[0].boundary.gap[0])
+    assert not is_child_of_time_dependent_aos(ids.time_slice[0].boundary.gap[0].r)
