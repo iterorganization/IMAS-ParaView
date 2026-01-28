@@ -93,7 +93,7 @@ def test_load_profiles_dummy_core_profiles():
     reader._ids = ids
     reader.setup_ids()
     output = vtkPartitionedDataSetCollection()
-    reader._selected = ["Ion Pressure"]
+    reader._selected = ["Ion (#1) Pressure"]
     reader._load_profiles(output)
     assert output.GetNumberOfPartitionedDataSets() == 1
     profile = profiles_2d.ion[0].pressure

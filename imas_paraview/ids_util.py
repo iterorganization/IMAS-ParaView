@@ -138,30 +138,27 @@ def create_name_recursive(node):
     parent = imas.util.get_parent(node)
     # skip time slice quantity
     if not is_child_of_time_dependent_aos(node):
-        name_appendix = ""
+        if isinstance(parent, IDSStructArray):
+            name_appendix = ""
+            # Check if node has an identifier.name
+            if hasattr(node, "identifier") and hasattr(node.identifier, "name"):
+                name_appendix = str(node.identifier.name).strip()
 
-        # Check if node has an identifier.name
-        if hasattr(node, "identifier") and hasattr(node.identifier, "name"):
-            name_appendix = str(node.identifier.name).strip()
+            # Check if node has a name
+            elif hasattr(node, "name"):
+                name_appendix = str(node.name).strip()
 
-        # Check if node has a name
-        elif hasattr(node, "name"):
-            name_appendix = str(node.name).strip()
+            # Check if node has a label
+            elif hasattr(node, "label"):
+                name_appendix = str(node.label.value).strip()
 
-        # Check if node has a label
-        elif hasattr(node, "label"):
-            name_appendix = str(node.label.value).strip()
-
-        # Add identifier if AoS has no name to ensure uniqueness
-        elif isinstance(parent, IDSStructArray):
-            # NOTE: This is O(N) in the size of the AoS
-            for index, child in enumerate(parent):
-                if child is node:
-                    name_appendix = f"#{index + 1}"
-                    break
-
-        # Add identifier/name/label in between brackets to the full name
-        if name_appendix != "":
+            # Add identifier if AoS has no name to ensure uniqueness
+            if name_appendix == "":
+                # NOTE: This is O(N) in the size of the AoS
+                for index, child in enumerate(parent):
+                    if child is node:
+                        name_appendix = f"#{index + 1}"
+                        break
             name = f"{name_current_node.capitalize()} ({name_appendix.capitalize()})"
         else:
             name = name_current_node.capitalize()
