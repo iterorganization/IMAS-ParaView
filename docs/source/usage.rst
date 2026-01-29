@@ -24,8 +24,8 @@ non-GGD Readers
    1d_profiles_reader
    profiles_2d_reader
    beam_reader
+   axisymmetric_geometry_reader
    los_reader
-   pf_reader
    position_reader
    wall_limiter_reader
 

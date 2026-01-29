@@ -5,7 +5,7 @@ import vtk
 from conftest import DD_VERSION
 from vtkmodules.util.numpy_support import vtk_to_numpy
 
-from imas_paraview.plugins.pf import PFReader
+from imas_paraview.plugins.axisymmetric_geometry import AxisymmetricGeometryReader
 
 
 @pytest.fixture(params=["pf_active", "pf_passive"])
@@ -38,7 +38,7 @@ def test_outline_geometry(ids_geometry):
     outline = ids_geometry.outline
     outline.r = [0.0, 1.0, 2.0, 3.0]
     outline.z = [4.0, 5.0, 6.0, 7.0]
-    result = PFReader()._create_outline(outline)
+    result = AxisymmetricGeometryReader()._create_outline(outline)
 
     points = get_points(result)
     assert len(points) == 4
@@ -57,7 +57,7 @@ def test_rectangle_geometry(ids_geometry):
     rectangle.z = 2.0
     rectangle.width = 3.0
     rectangle.height = 4.0
-    result = PFReader()._create_rectangle(rectangle)
+    result = AxisymmetricGeometryReader()._create_rectangle(rectangle)
 
     points = get_points(result)
     assert len(points) == 4
@@ -78,7 +78,7 @@ def test_oblique_geometry(ids_geometry):
     oblique.length_beta = 4.0
     oblique.alpha = np.pi / 6.0
     oblique.beta = -np.pi / 6.0
-    result = PFReader()._create_oblique(oblique)
+    result = AxisymmetricGeometryReader()._create_oblique(oblique)
 
     points = get_points(result)
     assert len(points) == 4
@@ -101,7 +101,7 @@ def test_arcs_of_circle_geometry(ids_geometry):
     arcs.curvature_radii = [0.5, 0.5]
     resolution = 10
 
-    reader = PFReader()
+    reader = AxisymmetricGeometryReader()
     reader.resolution = resolution
     result = reader._create_arcs_of_circle(arcs)
     points = get_points(result)
@@ -123,7 +123,7 @@ def test_annulus_geometry(ids_geometry):
     annulus.radius_inner = 3.0
     annulus.radius_outer = 4.0
     resolution = 10
-    reader = PFReader()
+    reader = AxisymmetricGeometryReader()
     reader.resolution = resolution
     result = reader._create_annulus(annulus)
 
@@ -152,7 +152,7 @@ def test_thick_line_geometry(ids_geometry):
     thick_line.second_point.r = 3.0
     thick_line.second_point.z = 4.0
     thick_line.thickness = 2 * np.sqrt(2.0)
-    result = PFReader()._create_thick_line(thick_line)
+    result = AxisymmetricGeometryReader()._create_thick_line(thick_line)
 
     points = get_points(result)
     assert len(points) == 4

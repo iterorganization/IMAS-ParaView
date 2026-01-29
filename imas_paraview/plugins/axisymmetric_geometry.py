@@ -1,5 +1,4 @@
-"""Plugin to visualize the axisymmetric active poloidal field coils in the pf_active
-IDS, as well as the axisymmetric passive conductors in the pf_passive IDS."""
+"""Plugin to visualize axisymmetric geometry structures."""
 
 import logging
 
@@ -19,12 +18,21 @@ from imas_paraview.util import points_to_vtkpoly
 
 logger = logging.getLogger("imas_paraview")
 
-SUPPORTED_IDS_NAMES = ["pf_active", "pf_passive"]
+SUPPORTED_IDS_NAMES = [
+    "pf_active",  # coil(i1)/element(i2)/geometry
+    "pf_passive",  # loop(i1)/element(i2)/geometry
+    "ferritic",  # object(i1)/axisymmetric(i2)
+    "ic_antennas",  # antenna(i1)/module(i2)/strap(i3)/geometry
+    "iron_core",  # segment(i1)/geometry
+]
+
+# TODO: add support for other IDSs, add new tests
+# TODO: add faces to vtk output
 
 
-@smproxy.source(label="PF Reader")
+@smproxy.source(label="Geometry Reader (Axisymmetric)")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
-class PFReader(GGDVTKPluginBase):
+class AxisymmetricGeometryReader(GGDVTKPluginBase):
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", SUPPORTED_IDS_NAMES)
         self.selectable_map = {}
@@ -36,8 +44,8 @@ class PFReader(GGDVTKPluginBase):
         types, if they are available in the loaded IDS."""
         self._update_property("resolution", val)
 
-    @propertygroup("PF Reader Settings", ["resolution"])
-    def PG3_PFReaderGroup(self):
+    @propertygroup("Geometry Reader (Axisymmetric) Settings", ["resolution"])
+    def PG3_AxisymmetricGeometryReaderGroup(self):
         """Dummy function to define a PropertyGroup."""
 
     def setup_ids(self):
