@@ -12,6 +12,7 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPolyData,
 )
 
+from imas_paraview.ids_util import create_name_recursive
 from imas_paraview.paraview_support.servermanager_tools import intvector, propertygroup
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import points_to_vtkpoly
@@ -26,7 +27,6 @@ SUPPORTED_IDS_NAMES = [
     "iron_core",  # segment(i1)/geometry
 ]
 
-# TODO: add support for other IDSs, add new tests
 # TODO: add faces to vtk output
 
 
@@ -54,34 +54,30 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
 
         self.selectable_map = {}
 
+        if self._ids.metadata.name not in SUPPORTED_IDS_NAMES:
+            raise NotImplementedError(f"{self._ids.metadata.name} is not supported")
+
         if self._ids.metadata.name == "pf_active":
-            self._load_ids_quantities(self._ids.coil, "Coil")
+            for coil in self._ids.coil:
+                for element in coil.element:
+                    self._add_geometry_to_map(element.geometry)
         elif self._ids.metadata.name == "pf_passive":
-            self._load_ids_quantities(self._ids.loop, "Loop")
-        else:
-            raise NotImplementedError(f"Unable to load {self._ids.metadata.name}.")
+            for loop in self._ids.loop:
+                for element in loop.element:
+                    self._add_geometry_to_map(element.geometry)
+        elif self._ids.metadata.name == "ferritic":
+            for obj in self._ids.object:
+                for axisymmetric in obj.axisymmetric:
+                    self._add_geometry_to_map(axisymmetric)
+        elif self._ids.metadata.name == "ic_antennas":
+            for antenna in self._ids.antenna:
+                for module in antenna.module:
+                    for strap in module.strap:
+                        self._add_geometry_to_map(strap.geometry)
+        elif self._ids.metadata.name == "iron_core":
+            for segment in self._ids.segment:
+                self._add_geometry_to_map(segment.geometry)
 
-    def _load_ids_quantities(self, ids_quantity, default_name):
-        """Populate selectable elements from the IDS content.
-
-        Args:
-            ids_quantity: Coil or loop AoS of an IDS.
-            default_name: Default name of the quantity.
-        """
-        for i, quantity in enumerate(ids_quantity):
-            quantity_name = quantity.name
-            if not quantity_name:
-                quantity_name = f"{default_name} {i}"
-                logger.warning(
-                    "%s without name found. Renaming it to %r",
-                    default_name,
-                    quantity_name,
-                )
-            if len(quantity.element) == 0:
-                logger.warning("%r has no elements, skipping it.", quantity_name)
-                continue
-
-            self.selectable_map[str(quantity_name)] = quantity
         self._selectable = list(self.selectable_map.keys())
 
     def RequestData(self, request, inInfo, outInfo):
@@ -93,6 +89,10 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
             self._convert_to_vtk(output)
         return 1
 
+    def _add_geometry_to_map(self, geometry):
+        quantity_name = create_name_recursive(geometry)
+        self.selectable_map[str(quantity_name)] = geometry
+
     def _convert_to_vtk(self, output: vtkMultiBlockDataSet):
         """Convert each selected IDS quantity into a vtk object based on its geometry
         type, and store it as a separate block in the output vtkMultiBlockDataSet.
@@ -100,40 +100,32 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
         Args:
             output: The vtkMultiBlockDataSet containing the converted vtk objects.
         """
-        block_id = 0
-        for quantity_name in self._selected:
+        for block_id, quantity_name in enumerate(self._selected):
             quantity = self.selectable_map[quantity_name]
-            for element in quantity.element:
-                geom_type = element.geometry.geometry_type
+            geom_type = quantity.geometry_type
 
-                if geom_type == 1:
-                    vtk_geom = self._create_outline(element.geometry.outline)
-                elif geom_type == 2:
-                    vtk_geom = self._create_rectangle(element.geometry.rectangle)
-                elif geom_type == 3:
-                    vtk_geom = self._create_oblique(element.geometry.oblique)
-                elif geom_type == 4:
-                    vtk_geom = self._create_arcs_of_circle(
-                        element.geometry.arcs_of_circle
-                    )
-                elif geom_type == 5:
-                    vtk_geom = self._create_annulus(element.geometry.annulus)
-                elif geom_type == 6:
-                    vtk_geom = self._create_thick_line(element.geometry.thick_line)
-                else:
-                    logger.warning(
-                        "%r has unsupported geometry type: %s, it will be skipped.",
-                        quantity_name,
-                        geom_type,
-                    )
-                    continue
+            if geom_type == 1:
+                vtk_geom = self._create_outline(quantity.outline)
+            elif geom_type == 2:
+                vtk_geom = self._create_rectangle(quantity.rectangle)
+            elif geom_type == 3:
+                vtk_geom = self._create_oblique(quantity.oblique)
+            elif geom_type == 4:
+                vtk_geom = self._create_arcs_of_circle(quantity.arcs_of_circle)
+            elif geom_type == 5:
+                vtk_geom = self._create_annulus(quantity.annulus)
+            elif geom_type == 6:
+                vtk_geom = self._create_thick_line(quantity.thick_line)
+            else:
+                logger.warning(
+                    "%r has unsupported geometry type: %s, it will be skipped.",
+                    quantity_name,
+                    geom_type,
+                )
+                continue
 
-                output.SetBlock(block_id, vtk_geom)
-                block_id += 1
-
-            logger.info(
-                "Loaded %r with %s element(s).", quantity_name, len(quantity.element)
-            )
+            output.SetBlock(block_id, vtk_geom)
+            logger.info("Loaded '%s'.", quantity_name)
 
     def _create_outline(self, outline):
         """Create vtkPolyData object from outline geometry"""

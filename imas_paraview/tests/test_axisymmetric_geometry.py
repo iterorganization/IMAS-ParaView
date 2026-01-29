@@ -5,17 +5,39 @@ import vtk
 from conftest import DD_VERSION
 from vtkmodules.util.numpy_support import vtk_to_numpy
 
-from imas_paraview.plugins.axisymmetric_geometry import AxisymmetricGeometryReader
+from imas_paraview.plugins.axisymmetric_geometry import (
+    SUPPORTED_IDS_NAMES,
+    AxisymmetricGeometryReader,
+)
 
 
-@pytest.fixture(params=["pf_active", "pf_passive"])
+@pytest.fixture(params=SUPPORTED_IDS_NAMES)
 def ids_geometry(request):
-    """Returns a geometry IDS node from a pf_active or pf_passive IDS"""
+    """Returns a axisymmetric geometry node from the supported IDS."""
     ids = imas.IDSFactory(version=DD_VERSION).new(request.param)
-    node = ids.coil if ids.metadata.name == "pf_active" else ids.loop
-    node.resize(1)
-    node[0].element.resize(1)
-    return node[0].element[0].geometry
+
+    if ids.metadata.name == "pf_active":
+        ids.coil.resize(1)
+        ids.coil[0].element.resize(1)
+        return ids.coil[0].element[0].geometry
+    elif ids.metadata.name == "pf_passive":
+        ids.loop.resize(1)
+        ids.loop[0].element.resize(1)
+        return ids.loop[0].element[0].geometry
+    elif ids.metadata.name == "ferritic":
+        ids.object.resize(1)
+        ids.object[0].axisymmetric.resize(1)
+        return ids.object[0].axisymmetric[0]
+    elif ids.metadata.name == "ic_antennas":
+        ids.antenna.resize(1)
+        ids.antenna[0].module.resize(1)
+        ids.antenna[0].module[0].strap.resize(1)
+        return ids.antenna[0].module[0].strap[0].geometry
+    elif ids.metadata.name == "iron_core":
+        ids.segment.resize(1)
+        return ids.segment[0].geometry
+    else:
+        raise NotImplementedError(f"Supported IDS {ids.metadata.name} is not tested!")
 
 
 def get_points(poly):
