@@ -5,7 +5,7 @@ from imas.ids_path import IDSPath
 from imas_paraview.ids_util import (
     create_name_recursive,
     get_arrays_from_ids,
-    is_child_of_time_dependent_aos,
+    is_time_dependent_aos,
     recursive_ggd_path_search,
 )
 from imas_paraview.tests.fill_ggd import fill_scalar_quantity, fill_vector_quantity
@@ -178,15 +178,15 @@ def test_create_name_recursive_aos_no_label():
     assert name3 == "Constraints B_field_pol_probe (#3) Measured"
 
 
-def test_is_child_of_time_dependent_aos():
+def test_time_dependent_aos():
     ids = imas.IDSFactory(version="4.1.0").new("equilibrium")
-    assert not is_child_of_time_dependent_aos(ids)
+    assert not is_time_dependent_aos(ids)
     ids.time_slice.resize(1)
-    assert not is_child_of_time_dependent_aos(ids.time_slice)
-    assert is_child_of_time_dependent_aos(ids.time_slice[0])
-    assert not is_child_of_time_dependent_aos(ids.time_slice[0].boundary)
-    assert not is_child_of_time_dependent_aos(ids.time_slice[0].boundary)
+    assert is_time_dependent_aos(ids.time_slice)
+    assert not is_time_dependent_aos(ids.time_slice[0])
+    assert not is_time_dependent_aos(ids.time_slice[0].boundary)
+    assert not is_time_dependent_aos(ids.time_slice[0].boundary)
     ids.time_slice[0].boundary.gap.resize(1)
-    assert not is_child_of_time_dependent_aos(ids.time_slice[0].boundary.gap)
-    assert not is_child_of_time_dependent_aos(ids.time_slice[0].boundary.gap[0])
-    assert not is_child_of_time_dependent_aos(ids.time_slice[0].boundary.gap[0].r)
+    assert not is_time_dependent_aos(ids.time_slice[0].boundary.gap)
+    assert not is_time_dependent_aos(ids.time_slice[0].boundary.gap[0])
+    assert not is_time_dependent_aos(ids.time_slice[0].boundary.gap[0].r)

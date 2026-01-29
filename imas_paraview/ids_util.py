@@ -103,21 +103,18 @@ def recursive_ggd_path_search(
         )
 
 
-def is_child_of_time_dependent_aos(node):
-    """Returns True if the provided IDS node is a child of a time-dependent AoS,
+def is_time_dependent_aos(node):
+    """Returns True if the provided IDS node is a time-dependent AoS,
     and False otherwise.
 
-    Examples of children of a time-dependent AoSs:
-    - equilibrium/time_slice[0]
-    - core_sources/source[0]/global_quantities[1]
-    - core_profiles/profiles_1d[2]
+    Examples of time-dependent AoSs:
+    - equilibrium/time_slice
+    - core_sources/source[0]/global_quantities
+    - core_profiles/profiles_1d
     """
-    parent = imas.util.get_parent(node)
     return (
-        hasattr(node.metadata, "coordinate1")
+        isinstance(node, IDSStructArray)
         and node.metadata.coordinate1.is_time_coordinate
-        and hasattr(parent.metadata, "coordinate1")
-        and parent.metadata.coordinate1.is_time_coordinate
     )
 
 
@@ -137,7 +134,7 @@ def create_name_recursive(node):
     name = ""
     parent = imas.util.get_parent(node)
     # skip time slice quantity
-    if not is_child_of_time_dependent_aos(node):
+    if not is_time_dependent_aos(parent):
         if isinstance(parent, IDSStructArray):
             name_appendix = ""
             # Check if node has an identifier.name
