@@ -1,5 +1,6 @@
 import imas
 from imas.ids_data_type import IDSDataType
+from imas.ids_struct_array import IDSStructArray
 from imas.ids_toplevel import IDSToplevel
 
 from imas_paraview._ids_util import _get_nodes_from_path
@@ -102,6 +103,21 @@ def recursive_ggd_path_search(
         )
 
 
+def is_time_dependent_aos(node):
+    """Returns True if the provided IDS node is a time-dependent AoS,
+    and False otherwise.
+
+    Examples of time-dependent AoSs:
+    - equilibrium/time_slice
+    - core_sources/source[0]/global_quantities
+    - core_profiles/profiles_1d
+    """
+    return (
+        isinstance(node, IDSStructArray)
+        and node.metadata.coordinate1.is_time_coordinate
+    )
+
+
 def create_name_recursive(node):
     """Generates a name for an IDS node. The parents of the node are
     searched recursively until the IDS toplevel is reached. The name of the metadata
@@ -116,33 +132,34 @@ def create_name_recursive(node):
     """
     name_current_node = node.metadata.name
     name = ""
-    if (
-        name_current_node != "ggd"
-        and name_current_node != "profiles_1d"
-        and name_current_node != "profiles_2d"
-        and "time_slice" not in name_current_node
-    ):
-        name_appendix = ""
+    parent = imas.util.get_parent(node)
+    # skip time slice quantity
+    if not is_time_dependent_aos(parent):
+        if isinstance(parent, IDSStructArray):
+            name_appendix = ""
+            # Check if node has an identifier.name
+            if hasattr(node, "identifier") and hasattr(node.identifier, "name"):
+                name_appendix = str(node.identifier.name).strip()
 
-        # Check if node has an identifier.name
-        if hasattr(node, "identifier") and hasattr(node.identifier, "name"):
-            name_appendix = str(node.identifier.name).strip()
+            # Check if node has a name
+            elif hasattr(node, "name"):
+                name_appendix = str(node.name).strip()
 
-        # Check if node has a name
-        elif hasattr(node, "name"):
-            name_appendix = str(node.name).strip()
+            # Check if node has a label
+            elif hasattr(node, "label"):
+                name_appendix = str(node.label.value).strip()
 
-        # Check if node has a label
-        elif hasattr(node, "label"):
-            name_appendix = str(node.label.value).strip()
-
-        # Add identifier/name/label in between brackets to the full name
-        if name_appendix != "":
+            # Add identifier if AoS has no name to ensure uniqueness
+            if name_appendix == "":
+                # NOTE: This is O(N) in the size of the AoS
+                for index, child in enumerate(parent):
+                    if child is node:
+                        name_appendix = f"#{index + 1}"
+                        break
             name = f"{name_current_node.capitalize()} ({name_appendix.capitalize()})"
         else:
             name = name_current_node.capitalize()
 
-    parent = imas.util.get_parent(node)
     if parent.metadata is node.metadata:
         parent = imas.util.get_parent(parent)
     if not isinstance(parent, IDSToplevel):
