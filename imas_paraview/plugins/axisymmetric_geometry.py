@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 from paraview.util.vtkAlgorithm import smhint, smproxy
-from vtkmodules.util.numpy_support import numpy_to_vtk
+from vtkmodules.util.numpy_support import numpy_to_vtk, numpy_to_vtkIdTypeArray
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     vtkCellArray,
@@ -27,7 +27,7 @@ SUPPORTED_IDS_NAMES = [
     "iron_core",  # segment(i1)/geometry
 ]
 
-# TODO: add faces to vtk output
+# TODO: add faces to vtk output and add tests
 
 
 @smproxy.source(label="Geometry Reader (Axisymmetric)")
@@ -91,6 +91,17 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
 
     def _add_geometry_to_map(self, geometry):
         quantity_name = create_name_recursive(geometry)
+        original_name = str(quantity_name)
+
+        # Add suffix if given name is not unique
+        if original_name in self.selectable_map:
+            counter = 1
+            while f"{original_name}#{counter}" in self.selectable_map:
+                counter += 1
+            quantity_name = f"{original_name} #{counter}"
+        else:
+            quantity_name = original_name
+
         self.selectable_map[str(quantity_name)] = geometry
 
     def _convert_to_vtk(self, output: vtkMultiBlockDataSet):
@@ -131,7 +142,7 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
         """Create vtkPolyData object from outline geometry"""
         r, z = outline.r, outline.z
         points = [(r_i, 0.0, z_i) for r_i, z_i in zip(r, z, strict=True)]
-        return points_to_vtkpoly(points, is_closed=True)
+        return points_to_vtkpoly(points, is_closed=True, is_filled=True)
 
     def _create_rectangle(self, rectangle):
         """Create vtkPolyData object from rectangle geometry"""
@@ -149,7 +160,7 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
             (r1, 0.0, z1),
             (r0, 0.0, z1),
         ]
-        return points_to_vtkpoly(points, is_closed=True)
+        return points_to_vtkpoly(points, is_closed=True, is_filled=True)
 
     def _create_oblique(self, oblique):
         """Create vtkPolyData object from oblique geometry"""
@@ -169,7 +180,7 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
             (r0 + dr_alpha + dr_beta, 0.0, z0 + dz_alpha + dz_beta),
             (r0 + dr_beta, 0.0, z0 + dz_beta),
         ]
-        return points_to_vtkpoly(points, is_closed=True)
+        return points_to_vtkpoly(points, is_closed=True, is_filled=True)
 
     def _create_arcs_of_circle(self, arcs_of_circle):
         """Create vtkPolyData object from arcs_of_circle geometry."""
@@ -223,7 +234,7 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
         points_z = cz[:, None] + radius[:, None] * np.sin(theta)
 
         points = self._stack_r_z(points_r.ravel(), points_z.ravel())
-        return points_to_vtkpoly(points, is_closed=True)
+        return points_to_vtkpoly(points, is_closed=True, is_filled=True)
 
     def _create_annulus(self, annulus):
         """Create vtkPolyData object from annulus geometry"""
@@ -242,19 +253,32 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
         points = vtkPoints()
         points.SetData(numpy_to_vtk(np.vstack([inner_points, outer_points])))
 
-        inner_ids = np.arange(self.resolution)
-        outer_ids = np.arange(self.resolution, 2 * self.resolution)
+        self.resolution = self.resolution
+        i = np.arange(self.resolution)
+        i_next = (i + 1) % self.resolution
 
-        inner_loop = np.append(inner_ids, inner_ids[0])
-        outer_loop = np.append(outer_ids, outer_ids[0])
+        inner_i = i
+        inner_next = i_next
+        outer_i = i + self.resolution
+        outer_next = i_next + self.resolution
 
-        cells = vtkCellArray()
-        cells.InsertNextCell(self.resolution + 1, inner_loop)
-        cells.InsertNextCell(self.resolution + 1, outer_loop)
+        # Create a quad face for each segment
+        cells = np.column_stack(
+            [
+                np.full(self.resolution, 4, dtype=np.int64),
+                inner_i,
+                outer_i,
+                outer_next,
+                inner_next,
+            ]
+        ).ravel()
+
+        polys = vtkCellArray()
+        polys.SetCells(self.resolution, numpy_to_vtkIdTypeArray(cells, deep=True))
 
         polydata = vtkPolyData()
         polydata.SetPoints(points)
-        polydata.SetLines(cells)
+        polydata.SetPolys(polys)
         return polydata
 
     def _create_thick_line(self, thick_line):
@@ -282,7 +306,7 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
             (p2.r - offset_r, 0.0, p2.z - offset_z),
             (p1.r - offset_r, 0.0, p1.z - offset_z),
         ]
-        return points_to_vtkpoly(points, is_closed=True)
+        return points_to_vtkpoly(points, is_closed=True, is_filled=True)
 
     def _stack_r_z(self, r, z):
         return np.column_stack((r, np.zeros_like(r), z))
