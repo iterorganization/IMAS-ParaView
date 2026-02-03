@@ -297,7 +297,8 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         cross = np.cross(v_start, p_intermediate - p_centre)
         if np.linalg.norm(cross) == 0:
             logger.warning(
-                "The plane defined by start, intermediate, and centre point is degenerate"
+                "The plane defined by start, intermediate, and centre point is "
+                "degenerate"
             )
             return False
 
