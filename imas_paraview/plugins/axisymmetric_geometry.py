@@ -96,7 +96,7 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
         # Add suffix if given name is not unique
         if original_name in self.selectable_map:
             counter = 1
-            while f"{original_name}#{counter}" in self.selectable_map:
+            while f"{original_name} #{counter}" in self.selectable_map:
                 counter += 1
             quantity_name = f"{original_name} #{counter}"
         else:
@@ -253,28 +253,22 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
         points = vtkPoints()
         points.SetData(numpy_to_vtk(np.vstack([inner_points, outer_points])))
 
-        self.resolution = self.resolution
-        i = np.arange(self.resolution)
-        i_next = (i + 1) % self.resolution
-
-        inner_i = i
-        inner_next = i_next
-        outer_i = i + self.resolution
-        outer_next = i_next + self.resolution
-
         # Create a quad face for each segment
+        idx = np.arange(self.resolution)
+        idx_next = (idx + 1) % self.resolution
+
         cells = np.column_stack(
             [
                 np.full(self.resolution, 4, dtype=np.int64),
-                inner_i,
-                outer_i,
-                outer_next,
-                inner_next,
+                idx,
+                idx + self.resolution,
+                idx_next + self.resolution,
+                idx_next,
             ]
         ).ravel()
 
         polys = vtkCellArray()
-        polys.SetCells(self.resolution, numpy_to_vtkIdTypeArray(cells, deep=True))
+        polys.SetCells(self.resolution, numpy_to_vtkIdTypeArray(cells))
 
         polydata = vtkPolyData()
         polydata.SetPoints(points)
