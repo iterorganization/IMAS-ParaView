@@ -8,10 +8,7 @@ import imas
 import numpy as np
 from imas.ids_base import IDSBase
 from imas.ids_data_type import IDSDataType
-from imas.ids_defs import (
-    IDS_TIME_MODE_HETEROGENEOUS,
-    IDS_TIME_MODE_INDEPENDENT,
-)
+from imas.ids_defs import IDS_TIME_MODE_HOMOGENEOUS
 from imas.ids_metadata import IDSType
 from imas.ids_struct_array import IDSStructArray
 from imas.ids_structure import IDSStructure
@@ -19,7 +16,7 @@ from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules.vtkCommonDataModel import vtkTable
 
-from imas_paraview.ids_util import create_name_recursive, is_child_of_time_dependent_aos
+from imas_paraview.ids_util import create_name_recursive, is_time_dependent_aos
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 
 logger = logging.getLogger("imas_paraview")
@@ -43,7 +40,8 @@ class FilledQuantity:
     remaining_path: Optional[str] = None  # Path from time_slice to node
 
 
-@smproxy.source(label="0D Time-Dependent Data Reader")
+# TODO: rename reader
+@smproxy.source(label="Scalar Time Trace Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
     """Reader for arbitrary 0D time-dependent data from any IDS."""
@@ -91,13 +89,13 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
         self, node, time_slice=None, path_from_time_slice=""
     ):
         metadata = node.metadata
-        # Time and GGD quantities
+        # Skip time and GGD quantities
         if metadata.name in ("time", "grid_ggd", "grids_ggd", "ggd", "description_ggd"):
             return
 
         parent = imas.util.get_parent(node)
-        if parent is not None and is_child_of_time_dependent_aos(node):
-            # Reset: this becomes our new time slice reference point
+        if parent is not None and is_time_dependent_aos(parent):
+            # This becomes our new time slice reference point
             time_slice = parent
             path_from_time_slice = ""
 
@@ -114,15 +112,13 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
                 self._recursively_find_time_dependent_quantities(
                     subnode, time_slice=time_slice, path_from_time_slice=new_path
                 )
-                if is_child_of_time_dependent_aos(
-                    subnode
-                ):  # Only scan the first time slice
+                if is_time_dependent_aos(node):  # Only scan the first time slice
                     break
         elif (
             metadata.data_type in (IDSDataType.FLT, IDSDataType.INT)
             and metadata.type == IDSType.DYNAMIC
             and node.has_value
-            and metadata.ndim in [0, 1]
+            and (metadata.ndim == 0 or (metadata.ndim == 1 and time_slice is None))
         ):
             name = f"{create_name_recursive(node)} [{node.metadata.units}]"
             self._filled_quantities_map[name] = FilledQuantity(
@@ -136,17 +132,10 @@ class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
             output: vtkTable to populate with data
             selected_time: The time step selected in ParaView
         """
-        # Get the time array for this IDS
-        time_mode = self._ids.ids_properties.homogeneous_time
-
-        if time_mode == IDS_TIME_MODE_INDEPENDENT:
-            logger.warning("This IDS has no time-dependent data")
+        if self._ids.ids_properties.homogeneous_time != IDS_TIME_MODE_HOMOGENEOUS:
+            logger.warning("Only IDSs homogeneous time-mode are supported.")
             return
-        elif time_mode == IDS_TIME_MODE_HETEROGENEOUS:
-            logger.warning("Heterogeneous IDSs are not supported")
-            return
-        else:
-            time_array = self._ids.time
+        time_array = self._ids.time
 
         if len(time_array) == 0:
             logger.warning("Time array is empty")
