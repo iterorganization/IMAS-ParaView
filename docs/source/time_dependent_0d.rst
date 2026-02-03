@@ -9,17 +9,18 @@ This page explains how to use the 0D Time-Dependent Data Reader to visualize 0D 
 Supported IDSs
 --------------
 
-Currently, all IDSs are supported in the 1D Profiles Reader. The reader will automatically
-scan the provided IDS for quantities which are the following: 
+All IDSs are supported in the 0D Time-Dependent Data Reader. Upon loading an IDS, 
+the reader will automatically scan the IDS for quantities which are: 
 
 - Time-dependent 
 - Either floating point or integer
-- Either 0D quantity inside a ``time_slice`` Array of Structure, or a 1D quantity with time as its coordinate.
+- Either a 0D quantity inside a time dependent Array of Structure, or a 1D quantity with time as its coordinate.
 
-Using the Position Reader
--------------------------
+Using the 0D Time-Dependent Data Reader
+---------------------------------------
 
-The Position Reader functions similarly to the GGD Reader, with the same interface and data loading workflow. 
+The 0D Time-Dependent Data Reader functions similarly to the GGD Reader, 
+with the same interface and data loading workflow. 
 This means that the steps for loading an URI, an IDS, and selecting attributes are identical. 
 Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 
@@ -28,10 +29,11 @@ Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 - :ref:`Selecting attribute arrays <selecting-ggd-arrays>`: How to choose and visualize attributes.
 
 
-Visualize the 0D time-dependent data
-------------------------------------
+Visualizing 0D time-dependent data
+----------------------------------
 
-The 0d Time-Dependent Data Reader outputs vtkTable data, which can be plotted in a 1D plot.
+The 0D Time-Dependent Data Reader outputs vtkTable data, containing the both the time array 
+and the selected quantities. quantities which can be plotted in a 1D plot.
 After loading the attribute arrays using the steps above, you can visualize the data using
 the Line Chart View in ParaView. See `Paraview's documentation <https://docs.paraview.org/en/latest/UsersGuide/displayingData.html#line-chart-view>`_ 
 to learn more about how to apply this and other views.
