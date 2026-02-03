@@ -11,6 +11,11 @@ from imas_paraview.plugins.axisymmetric_geometry import (
 )
 
 
+@pytest.fixture
+def reader():
+    return AxisymmetricGeometryReader()
+
+
 @pytest.fixture(params=SUPPORTED_IDS_NAMES)
 def ids_geometry(request):
     """Returns a axisymmetric geometry node from the supported IDS."""
@@ -45,22 +50,22 @@ def get_points(poly):
     return vtk_to_numpy(points.GetData())
 
 
-def get_line_cells(poly):
-    cells = poly.GetLines()
+def get_poly_cells(poly):
+    polys = poly.GetPolys()
     ids = []
-    cells.InitTraversal()
+    polys.InitTraversal()
 
     idlist = vtk.vtkIdList()
-    while cells.GetNextCell(idlist):
+    while polys.GetNextCell(idlist):
         ids.append([idlist.GetId(i) for i in range(idlist.GetNumberOfIds())])
     return ids
 
 
-def test_outline_geometry(ids_geometry):
+def test_outline_geometry(ids_geometry, reader):
     outline = ids_geometry.outline
     outline.r = [0.0, 1.0, 2.0, 3.0]
     outline.z = [4.0, 5.0, 6.0, 7.0]
-    result = AxisymmetricGeometryReader()._create_outline(outline)
+    result = reader._create_outline(outline)
 
     points = get_points(result)
     assert len(points) == 4
@@ -69,17 +74,18 @@ def test_outline_geometry(ids_geometry):
     assert np.array_equal(points[2], [2.0, 0.0, 6.0])
     assert np.array_equal(points[3], [3.0, 0.0, 7.0])
 
-    cells = get_line_cells(result)
-    assert len(cells) == 4
+    polys = get_poly_cells(result)
+    assert len(polys) == 1
+    assert len(polys[0]) == 4
 
 
-def test_rectangle_geometry(ids_geometry):
+def test_rectangle_geometry(ids_geometry, reader):
     rectangle = ids_geometry.rectangle
     rectangle.r = 1.0
     rectangle.z = 2.0
     rectangle.width = 3.0
     rectangle.height = 4.0
-    result = AxisymmetricGeometryReader()._create_rectangle(rectangle)
+    result = reader._create_rectangle(rectangle)
 
     points = get_points(result)
     assert len(points) == 4
@@ -88,11 +94,12 @@ def test_rectangle_geometry(ids_geometry):
     assert np.array_equal(points[2], [2.5, 0.0, 4.0])
     assert np.array_equal(points[3], [-0.5, 0.0, 4.0])
 
-    cells = get_line_cells(result)
-    assert len(cells) == 4
+    polys = get_poly_cells(result)
+    assert len(polys) == 1
+    assert len(polys[0]) == 4
 
 
-def test_oblique_geometry(ids_geometry):
+def test_oblique_geometry(ids_geometry, reader):
     oblique = ids_geometry.oblique
     oblique.r = 1.0
     oblique.z = 2.0
@@ -100,7 +107,7 @@ def test_oblique_geometry(ids_geometry):
     oblique.length_beta = 4.0
     oblique.alpha = np.pi / 6.0
     oblique.beta = -np.pi / 6.0
-    result = AxisymmetricGeometryReader()._create_oblique(oblique)
+    result = reader._create_oblique(oblique)
 
     points = get_points(result)
     assert len(points) == 4
@@ -112,18 +119,18 @@ def test_oblique_geometry(ids_geometry):
     ]
     assert np.allclose(np.array(points), expected_pts)
 
-    cells = get_line_cells(result)
-    assert len(cells) == 4
+    polys = get_poly_cells(result)
+    assert len(polys) == 1
+    assert len(polys[0]) == 4
 
 
-def test_arcs_of_circle_geometry(ids_geometry):
+def test_arcs_of_circle_geometry(ids_geometry, reader):
     arcs = ids_geometry.arcs_of_circle
     arcs.r = [0.0, 1.0]
     arcs.z = [0.0, 0.0]
     arcs.curvature_radii = [0.5, 0.5]
     resolution = 10
 
-    reader = AxisymmetricGeometryReader()
     reader.resolution = resolution
     result = reader._create_arcs_of_circle(arcs)
     points = get_points(result)
@@ -134,18 +141,18 @@ def test_arcs_of_circle_geometry(ids_geometry):
         assert np.linalg.norm(np.array(p) - center) == pytest.approx(0.5)
     assert len(points) == 2 * resolution
 
-    cells = get_line_cells(result)
-    assert len(cells) == 2 * resolution
+    polys = get_poly_cells(result)
+    assert len(polys) == 1
+    assert len(polys[0]) == 2 * resolution
 
 
-def test_annulus_geometry(ids_geometry):
+def test_annulus_geometry(ids_geometry, reader):
     annulus = ids_geometry.annulus
     annulus.r = 1.0
     annulus.z = 2.0
     annulus.radius_inner = 3.0
     annulus.radius_outer = 4.0
     resolution = 10
-    reader = AxisymmetricGeometryReader()
     reader.resolution = resolution
     result = reader._create_annulus(annulus)
 
@@ -161,20 +168,20 @@ def test_annulus_geometry(ids_geometry):
     for p in inner_points:
         assert np.linalg.norm(np.array(p) - center) == pytest.approx(3.0)
 
-    cells = get_line_cells(result)
-    assert len(cells) == 2
-    assert len(cells[0]) == resolution + 1
-    assert len(cells[1]) == resolution + 1
+    polys = get_poly_cells(result)
+    assert len(polys) == reader.resolution
+    for cell in polys:
+        assert len(cell) == 4
 
 
-def test_thick_line_geometry(ids_geometry):
+def test_thick_line_geometry(ids_geometry, reader):
     thick_line = ids_geometry.thick_line
     thick_line.first_point.r = 1.0
     thick_line.first_point.z = 2.0
     thick_line.second_point.r = 3.0
     thick_line.second_point.z = 4.0
     thick_line.thickness = 2 * np.sqrt(2.0)
-    result = AxisymmetricGeometryReader()._create_thick_line(thick_line)
+    result = reader._create_thick_line(thick_line)
 
     points = get_points(result)
     assert len(points) == 4
@@ -186,5 +193,6 @@ def test_thick_line_geometry(ids_geometry):
     ]
     assert np.allclose(np.array(points), expected_pts)
 
-    cells = get_line_cells(result)
-    assert len(cells) == 4
+    polys = get_poly_cells(result)
+    assert len(polys) == 1
+    assert len(polys[0]) == 4

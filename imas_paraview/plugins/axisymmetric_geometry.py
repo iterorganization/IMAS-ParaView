@@ -27,8 +27,6 @@ SUPPORTED_IDS_NAMES = [
     "iron_core",  # segment(i1)/geometry
 ]
 
-# TODO: add faces to vtk output and add tests
-
 
 @smproxy.source(label="Geometry Reader (Axisymmetric)")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
