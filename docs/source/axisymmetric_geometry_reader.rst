@@ -11,7 +11,6 @@ Supported IDSs
 
 The following IDS and structures are supported in the Geometry Reader (Axisymmetric):
 
-# TODO: add other supported IDSs
 .. list-table::
    :widths: auto
    :header-rows: 1
@@ -22,6 +21,12 @@ The following IDS and structures are supported in the Geometry Reader (Axisymmet
      - `coil geometries <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/pf_active.html#pf_active-coil-element-geometry>`__
    * - ``pf_passive``
      - `loop geometries <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/pf_passive.html#pf_passive-loop-element-geometry>`__
+   * - ``ferritic``
+     - `axisymmetric geometries <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/ferritic.html#ferritic-object-axisymmetric>`__
+   * - ``ic_antennas``
+     - `strap geometries <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/ic_antennas.html#ic_antennas-antenna-module-strap-geometry>`__
+   * - ``iron_core``
+     - `segment geometries <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/iron_core.html#iron_core-segment-geometry>`__
 
 Using the Geometry Reader (Axisymmetric)
 ----------------------------------------
@@ -35,4 +40,13 @@ Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 - :ref:`Loading an IDS <loading-an-ids>`: How to load a dataset and display the grid.
 - :ref:`Selecting attribute arrays <selecting-ggd-arrays>`: How to choose and visualize attributes.
 
-# TODO: add examples, resolution explanation
+Setting the Geometry Resolution
+-------------------------------
+
+The Geometry Reader (Axisymmetric) allows you to change the resolution parameter that 
+controls how many points are used to render the ``arcs_of_circle`` and ``annulus`` geometries.
+
+
+.. figure:: images/annulus_resolution.png
+
+   ``annulus`` geometry element with a resolution of 5 (left) and a resolution of 50 (right)

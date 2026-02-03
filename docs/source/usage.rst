@@ -19,7 +19,7 @@ non-GGD Readers
 ---------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    1d_profiles_reader
    profiles_2d_reader
