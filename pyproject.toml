@@ -66,3 +66,34 @@ local_scheme = "no-local-version"
 
 [tool.ruff]
 exclude = ["imas_paraview/_version.py"]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # flake8-comprehensions
+    "C4",
+    # flake8-logging
+    "LOG",
+    # flake8-logging-format
+    "G",
+    # flake8-tidy-imports
+    "TID",
+    # flake8-use-pathlib
+    "PTH",
+    # Refurb
+    "FURB",
+    # Ruff specific rules
+    "RUF",
+]
+
