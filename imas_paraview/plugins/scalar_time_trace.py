@@ -40,7 +40,6 @@ class FilledQuantity:
     remaining_path: Optional[str] = None  # Path from time_slice to node
 
 
-# TODO: rename reader
 @smproxy.source(label="Scalar Time Trace Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):

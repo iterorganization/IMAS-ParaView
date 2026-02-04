@@ -1,6 +1,7 @@
 import imas
 import numpy as np
 import pytest
+from imas.ids_defs import IDS_TIME_MODE_HOMOGENEOUS
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkTable
 
@@ -14,7 +15,7 @@ def reader():
 
 def test_time_array(reader):
     ids = imas.IDSFactory(version="4.1.0").new("wall")
-
+    ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
     n_time_points = 5
     ids.time = 1.1 * np.arange(n_time_points)
     ids.global_quantities.power_incident = 2.2 * np.arange(n_time_points)
@@ -51,7 +52,7 @@ def test_time_array(reader):
 
 def test_time_slice(reader):
     ids = imas.IDSFactory(version="4.1.0").new("equilibrium")
-
+    ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
     n_time_points = 5
     ids.time = 1.1 * np.arange(n_time_points)
     ids.time_slice.resize(n_time_points)
@@ -95,8 +96,8 @@ def test_time_slice(reader):
 
 
 def test_nested_aos_time_slice(reader):
-    # itime in AoS
     ids = imas.IDSFactory(version="4.1.0").new("camera_ir")
+    ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
     n_time_points = 5
     ids.time = 1.1 * np.arange(n_time_points)
     ids.channel.resize(2)
