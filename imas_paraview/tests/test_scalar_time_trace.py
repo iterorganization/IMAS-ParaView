@@ -13,7 +13,8 @@ def reader():
     return ScalarTimeTraceReader()
 
 
-def test_time_array(reader):
+@pytest.fixture
+def wall_ids():
     ids = imas.IDSFactory(version="4.1.0").new("wall")
     ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
     n_time_points = 5
@@ -25,15 +26,19 @@ def test_time_array(reader):
     ids.global_quantities.neutral[1].name = "neutral 2"
     ids.global_quantities.neutral[1].gas_puff = 4.4 * np.arange(n_time_points)
     ids.global_quantities.temperature = 5.5 * np.arange(n_time_points)
+    return ids
 
+
+def test_time_array(wall_ids, reader):
     pi_name = "Global_quantities Power_incident [W]"
     gp1_name = "Global_quantities Neutral (Neutral 1) Gas_puff [s^-1]"
     gp2_name = "Global_quantities Neutral (Neutral 2) Gas_puff [s^-1]"
-    reader._ids = ids
+    reader._ids = wall_ids
+
     reader.setup_ids()
 
     reader._selected = [gp1_name, gp2_name, pi_name]
-    for i in range(1, n_time_points):
+    for i in range(5):
         output = vtkTable()
         reader._load_time_dependent_data(output, 1.1 * i)
 
@@ -48,6 +53,36 @@ def test_time_array(reader):
         assert np.all(pi_col == np.array(2.2 * np.arange(i + 1)))
         assert np.all(gp1_col == np.array(3.3 * np.arange(i + 1)))
         assert np.all(gp2_col == np.array(4.4 * np.arange(i + 1)))
+
+
+def test_time_array_full_time_trace(wall_ids, reader):
+    pi_name = "Global_quantities Power_incident [W]"
+    gp1_name = "Global_quantities Neutral (Neutral 1) Gas_puff [s^-1]"
+    gp2_name = "Global_quantities Neutral (Neutral 2) Gas_puff [s^-1]"
+    reader._ids = wall_ids
+    reader.setup_ids()
+    reader._selected = [gp1_name, gp2_name, pi_name]
+    reader._show_full_time_trace = True
+    output = vtkTable()
+    reader._load_time_dependent_data(output, 2.2)
+
+    assert output.GetNumberOfRows() == 6  # 5 times + 1 duplicate
+    assert output.GetNumberOfColumns() == 5  # time + marker + 3 selected columns
+    time_col = vtk_to_numpy(output.GetColumnByName("Time [s]"))
+    pi_col = vtk_to_numpy(output.GetColumnByName(pi_name))
+    gp1_col = vtk_to_numpy(output.GetColumnByName(gp1_name))
+    gp2_col = vtk_to_numpy(output.GetColumnByName(gp2_name))
+    marker = vtk_to_numpy(output.GetColumnByName("Time Marker"))
+
+    assert np.allclose(time_col, [0, 1.1, 2.2, 2.2, 3.3, 4.4])
+    assert np.allclose(pi_col, [0.0, 2.2, 4.4, 4.4, 6.6, 8.8])
+    assert np.allclose(gp1_col, [0.0, 3.3, 6.6, 6.6, 9.9, 13.2])
+    assert np.allclose(gp2_col, [0.0, 4.4, 8.8, 8.8, 13.2, 17.6])
+    assert np.allclose(
+        marker,
+        [np.nan, np.nan, 0.0, 17.6 * 1.01, np.nan, np.nan],
+        equal_nan=True,
+    )
 
 
 def test_time_slice(reader):
@@ -76,7 +111,7 @@ def test_time_slice(reader):
     gap1_name = "Boundary Gap (Gap 1) R [m]"
     gap2_name = "Boundary Gap (Gap 2) R [m]"
     reader._selected = [psi_name, ip_name, gap1_name, gap2_name]
-    for i in range(1, n_time_points):
+    for i in range(n_time_points):
         output = vtkTable()
         reader._load_time_dependent_data(output, 1.1 * i)
 
@@ -120,7 +155,7 @@ def test_nested_aos_time_slice(reader):
     f1_name = "Channel (Channel 1) Camera (Camera 1) Filter (#1) Wavelength_central [m]"
     f2_name = "Channel (Channel 2) Camera (Camera 2) Filter (#2) Wavelength_central [m]"
     reader._selected = [f1_name, f2_name]
-    for i in range(1, n_time_points):
+    for i in range(n_time_points):
         output = vtkTable()
         reader._load_time_dependent_data(output, 1.1 * i)
 
