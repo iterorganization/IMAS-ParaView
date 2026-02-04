@@ -29,6 +29,13 @@ def wall_ids():
     return ids
 
 
+@pytest.fixture
+def eq_ids():
+    ids = imas.IDSFactory(version="4.1.0").new("equilibrium")
+    ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
+    return ids
+
+
 def test_time_array(wall_ids, reader):
     pi_name = "Global_quantities Power_incident [W]"
     gp1_name = "Global_quantities Neutral (Neutral 1) Gas_puff [s^-1]"
@@ -168,3 +175,84 @@ def test_nested_aos_time_slice(reader):
         assert np.all(time_col == np.array(1.1 * np.arange(i + 1)))
         assert np.all(f1_col == 10)
         assert np.all(f2_col == 20)
+
+
+def test_recursion_root(reader, eq_ids):
+    eq_ids.vacuum_toroidal_field.b0 = -5.3 * np.ones(5)
+    reader._ids = eq_ids
+    reader.setup_ids()
+
+    assert len(reader._filled_quantities_map) == 1
+    name = "Vacuum_toroidal_field B0 [T]"
+    filled_quantity = reader._filled_quantities_map[name]
+    assert filled_quantity.time_slice is None
+    assert filled_quantity.remaining_path == "vacuum_toroidal_field/b0"
+
+
+def test_recursion_time_slice(reader, eq_ids):
+    eq_ids.time = np.arange(3)
+    eq_ids.time_slice.resize(3)
+
+    for i, ts in enumerate(eq_ids.time_slice):
+        ts.global_quantities.ip = i
+
+    reader._ids = eq_ids
+    reader.setup_ids()
+
+    assert len(reader._filled_quantities_map) == 1
+    name = "Global_quantities Ip [A]"
+    filled_quantity = reader._filled_quantities_map[name]
+    assert filled_quantity.time_slice is eq_ids.time_slice
+    assert filled_quantity.remaining_path == "global_quantities/ip"
+
+
+def test_recursion_nested_aos(reader):
+    ids = imas.IDSFactory(version="4.1.0").new("camera_ir")
+    ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
+    ids.time = np.arange(4)
+
+    ids.channel.resize(1)
+    ids.channel[0].name = "ch1"
+    ids.channel[0].camera.resize(1)
+    ids.channel[0].camera[0].name = "cam1"
+    ids.channel[0].camera[0].frame.resize(4)
+
+    for i in range(4):
+        frame = ids.channel[0].camera[0].frame[i]
+        frame.filter.resize(1)
+        frame.filter[0].wavelength_central = 10.0
+
+    reader._ids = ids
+    reader.setup_ids()
+
+    assert len(reader._filled_quantities_map) == 1
+    name = "Channel (Ch1) Camera (Cam1) Filter (#1) Wavelength_central [m]"
+    filled_quantity = reader._filled_quantities_map[name]
+    assert filled_quantity.time_slice is ids.channel[0].camera[0].frame
+    assert filled_quantity.remaining_path == "filter[0]/wavelength_central"
+
+
+def test_recursion_boundary(reader, eq_ids):
+    eq_ids.time = np.arange(2)
+    eq_ids.time_slice.resize(2)
+
+    for time_slice in eq_ids.time_slice:
+        time_slice.boundary.psi = 1.0
+        time_slice.boundary.gap.resize(1)
+        time_slice.boundary.gap[0].r = 2.0
+
+    reader._ids = eq_ids
+    reader.setup_ids()
+
+    psi_name = "Boundary Psi [Wb]"
+    gap_name = "Boundary Gap (#1) R [m]"
+
+    assert len(reader._filled_quantities_map) == 2
+    filled_quantity_psi = reader._filled_quantities_map[psi_name]
+    filled_quantity_gap = reader._filled_quantities_map[gap_name]
+
+    assert filled_quantity_psi.time_slice is eq_ids.time_slice
+    assert filled_quantity_gap.time_slice is eq_ids.time_slice
+
+    assert filled_quantity_psi.remaining_path == "boundary/psi"
+    assert filled_quantity_gap.remaining_path == "boundary/gap[0]/r"

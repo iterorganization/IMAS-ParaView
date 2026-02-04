@@ -1,8 +1,8 @@
-"""Plugin to visualize 0D time-dependent data from any IDS."""
+"""Plugin to visualize time-dependent scalar data from any IDS as a time trace."""
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, Optional
 
 import imas
 import numpy as np
@@ -28,12 +28,12 @@ SUPPORTED_IDS_NAMES = imas.IDSFactory().ids_names()
 
 @dataclass
 class FilledQuantity:
-    """Stores information about a filled time-dependent quantity inside a time-dependent
-    AoS.
+    """Information about a filled time-dependent quantity.
 
-    For example, the node `equilibrium['time_slice[0]/global_quantities/ip']`
-    will contain time_slice = `equilibrium['time_slice']`,
-    and `remaining_path = "global_quantities/ip"`
+    For example, the quantity `equilibrium/time_slice[0]/global_quantities/ip`
+    will have:
+    - time_slice = time_slice
+    - remaining_path = "global_quantities/ip"
     """
 
     node: IDSBase  # The filled time-dependent IDS node
@@ -48,7 +48,7 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
 
     def __init__(self):
         super().__init__("vtkTable", SUPPORTED_IDS_NAMES)
-        self._filled_quantities_map = {}
+        self._filled_quantities_map: Dict[str, FilledQuantity] = {}
         self._show_full_time_trace = False
 
     @checkbox(
@@ -83,14 +83,14 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
         return 1
 
     def setup_ids(self):
-        """Scan the IDS for all 0D time-dependent quantities and populate
+        """Scan the IDS for all time-dependent scalar quantities and populate
         the selection list.
         """
         if self._ids is None:
             return
 
         logger.info(
-            "Scanning IDS '%s' for time-dependent 0D data...", self._ids.metadata.name
+            "Scanning IDS '%s' for time-dependent scalars...", self._ids.metadata.name
         )
 
         self._filled_quantities_map = {}
@@ -105,6 +105,16 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
     def _recursively_find_time_dependent_quantities(
         self, node, time_slice=None, path_from_time_slice=""
     ):
+        """Recursively traverse an IDS tree, storing the filled time-dependent scalar
+        quantities in the filled quantitities map.
+
+        Args:
+            node: Current IDS node.
+            time_slice: The dependent IDS node we are currenly inside, or None if not
+                inside a time-dependent AoS.
+            path_from_time_slice: Relative IDS path from the current time-dependent AoS
+                path to the current node.
+        """
         metadata = node.metadata
         # Skip time and GGD quantities
         if metadata.name in ("time", "grid_ggd", "grids_ggd", "ggd", "description_ggd"):
@@ -112,7 +122,7 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
 
         parent = imas.util.get_parent(node)
         if parent is not None and is_time_dependent_aos(parent):
-            # This becomes our new time slice reference point
+            # This becomes the time slice reference point
             time_slice = parent
             path_from_time_slice = ""
 
@@ -169,7 +179,7 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
 
         n_times = len(output_times)
 
-        # Add duplicate row to prevent crooked time marker line
+        # Add duplicate row to prevent slanted time marker line
         if self._show_full_time_trace:
             itime = np.searchsorted(time_array, selected_time)
             output_times = np.insert(output_times, itime, selected_time)
@@ -185,7 +195,7 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
             node = self._filled_quantities_map[quantity_name]
             quantity_values = self._get_quantity_values(node, n_times)
 
-            # Add duplicate row to prevent crooked time marker line
+            # Add duplicate row to prevent slanted time marker line
             if self._show_full_time_trace:
                 quantity_values = np.insert(
                     quantity_values, itime, quantity_values[itime]
@@ -213,11 +223,19 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
             cursor_vtk.SetName("Time Marker")
             output.AddColumn(cursor_vtk)
 
-    def _get_quantity_values(self, quantity, n_steps):
+    def _get_quantity_values(self, quantity, n_timesteps):
+        """Return the values for a filled quantity.
+
+        Args:
+            quantity: FilledQuantity describing the quantity.
+            n_timesteps: Number of time steps to extract.
+        """
         if quantity.node.metadata.ndim == 0:
             time_slice = quantity.time_slice
             remaining_path = quantity.remaining_path
-            quantity_values = [time_slice[i][remaining_path] for i in range(n_steps)]
+            quantity_values = [
+                time_slice[i][remaining_path] for i in range(n_timesteps)
+            ]
         else:
-            quantity_values = quantity.node[:n_steps]
+            quantity_values = quantity.node[:n_timesteps]
         return quantity_values
