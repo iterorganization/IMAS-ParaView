@@ -21,15 +21,15 @@ non-GGD Readers
 .. toctree::
    :maxdepth: 1
 
-   time_dependent_0d
    1d_profiles_reader
    profiles_2d_reader
    beam_reader
    axisymmetric_geometry_reader
    los_reader
-   position_reader
-   wall_limiter_reader
    coils_non_axi_reader
+   position_reader
+   scalar_time_trace
+   wall_limiter_reader
 
 Filters
 -------

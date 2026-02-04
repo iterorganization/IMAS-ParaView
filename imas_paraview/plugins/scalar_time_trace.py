@@ -1,4 +1,4 @@
-"""Plugin to view arbitrary 0D time-dependent data from any IDS."""
+"""Plugin to visualize 0D time-dependent data from any IDS."""
 
 import logging
 from dataclasses import dataclass
@@ -43,8 +43,8 @@ class FilledQuantity:
 # TODO: rename reader
 @smproxy.source(label="Scalar Time Trace Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
-class TimeDependent0DReader(GGDVTKPluginBase, is_time_dependent=True):
-    """Reader for arbitrary 0D time-dependent data from any IDS."""
+class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
+    """Reader for visualizing time-dependent scalar data from any IDS."""
 
     def __init__(self):
         super().__init__("vtkTable", SUPPORTED_IDS_NAMES)

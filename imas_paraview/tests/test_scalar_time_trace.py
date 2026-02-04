@@ -4,12 +4,12 @@ import pytest
 from vtk.util.numpy_support import vtk_to_numpy
 from vtkmodules.vtkCommonDataModel import vtkTable
 
-from imas_paraview.plugins.time_dependent_0d import TimeDependent0DReader
+from imas_paraview.plugins.scalar_time_trace import ScalarTimeTraceReader
 
 
 @pytest.fixture
 def reader():
-    return TimeDependent0DReader()
+    return ScalarTimeTraceReader()
 
 
 def test_time_array(reader):

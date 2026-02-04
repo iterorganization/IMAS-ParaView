@@ -1,25 +1,25 @@
-.. _`using the 0D Time-Dependent Data Reader`:
+.. _`using the Scalar Time Trace Reader`:
 
-0D Time-Dependent Data Reader
-=============================
+Scalar Time Trace Reader
+========================
 
-This page explains how to use the 0D Time-Dependent Data Reader to visualize 0D data changing over time.
+This page explains how to use the Scalar Time Trace Reader to visualize 0D data changing over time.
 
 
 Supported IDSs
 --------------
 
-All IDSs are supported in the 0D Time-Dependent Data Reader. Upon loading an IDS, 
+All IDSs are supported in the Scalar Time Trace Reader. Upon loading an IDS, 
 the reader will automatically scan the IDS for quantities which are: 
 
 - Time-dependent 
 - Either floating point or integer
 - Either a 0D quantity inside a time dependent Array of Structure, or a 1D quantity with time as its coordinate.
 
-Using the 0D Time-Dependent Data Reader
----------------------------------------
+Using the Scalar Time Trace Reader
+----------------------------------
 
-The 0D Time-Dependent Data Reader functions similarly to the GGD Reader, 
+The Scalar Time Trace Reader functions similarly to the GGD Reader, 
 with the same interface and data loading workflow. 
 This means that the steps for loading an URI, an IDS, and selecting attributes are identical. 
 Refer to the :ref:`using the GGD Reader` for detailed instructions on:
@@ -29,10 +29,10 @@ Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 - :ref:`Selecting attribute arrays <selecting-ggd-arrays>`: How to choose and visualize attributes.
 
 
-Visualizing 0D time-dependent data
-----------------------------------
+Visualizing a time trace
+------------------------
 
-The 0D Time-Dependent Data Reader outputs vtkTable data, containing the both the time array 
+The Scalar Time Trace Reader outputs vtkTable data, containing the both the time array 
 and the selected quantities. quantities which can be plotted in a 1D plot.
 After loading the attribute arrays using the steps above, you can visualize the data using
 the Line Chart View in ParaView. See `Paraview's documentation <https://docs.paraview.org/en/latest/UsersGuide/displayingData.html#line-chart-view>`_ 
