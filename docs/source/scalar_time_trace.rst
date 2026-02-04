@@ -32,17 +32,38 @@ Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 Visualizing a time trace
 ------------------------
 
-The Scalar Time Trace Reader outputs vtkTable data, containing the both the time array 
-and the selected quantities. quantities which can be plotted in a 1D plot.
-After loading the attribute arrays using the steps above, you can visualize the data using
-the Line Chart View in ParaView. See `Paraview's documentation <https://docs.paraview.org/en/latest/UsersGuide/displayingData.html#line-chart-view>`_ 
-to learn more about how to apply this and other views.
+The Scalar Time Trace Reader outputs vtkTable data, containing the time traces of the
+selected quantities. These quantities can be visualized in a 1d line chart plot.
+After loading the the selected quantities using the steps above, you can visualize the data using
+the 'Line Chart View' in ParaView. See `Paraview's documentation <https://docs.paraview.org/en/latest/UsersGuide/displayingData.html#line-chart-view>`_ 
+to learn more about how to apply this view.
 
 Within the Line Chart View options, disable the ``Use Index For X Axis`` option, 
-and in the drop-down menu, select the ``Time [s]`` array to use as X-axis.
-The data that should be plotted can now be selected.
+and in the drop-down menu, select the ``Time [s]`` array to use it as X-axis in the line chart.
 
 .. tip:: The Line Chart View can be opened side-by-side with other ParaView views. 
    So this reader will allow you to visualize how 0D quantities (e.g. the plasma current) 
-   evolve over time, while visualizing other time-dependent geometries (see for example
-   the :ref:`visualizations of JOREK data <training_jorek>` in the training material.)
+   evolve over time, while visualizing other time-dependent 3D geometries. 
+
+This reader supports two ways of visualizing data:
+
+#. Partial Time Trace Up to Selected Time (Default)
+
+   When the ``Show Full Time Trace`` option is disabled in the plugin properties, 
+   the reader outputs only the time steps up to the currently selected time. 
+   This provides the possibility to inspect the evolution of the selected quantities.
+#. Full Time Trace with Highlighted Current Time
+
+   When the ``Show Full Time Trace`` option is enabled, the reader outputs the complete 
+   time series for all selected quantities. In addition, a ``Time Marker`` column is added, 
+   which marks the currently selected time step. This allows the user to see the entire 
+   time series from start to finish.
+
+.. list-table::
+   :widths: 50 49
+   :header-rows: 0
+
+   * - .. figure:: images/full_time_trace_disabled.png
+     - .. figure:: images/full_time_trace_enabled.png
+   * - Plasma current over time with ``Show Full Time Trace`` disabled.
+     - Plasma current over time with ``Show Full Time Trace`` enabled.
