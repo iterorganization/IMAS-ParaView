@@ -36,9 +36,12 @@ class FilledQuantity:
     - remaining_path = "global_quantities/ip"
     """
 
-    node: IDSBase  # The filled time-dependent IDS node
-    time_slice: Optional[IDSBase] = None  # Parent time-dependent AoS (e.g., time_slice)
-    remaining_path: Optional[str] = None  # Path from time_slice to node
+    node: IDSBase
+    """The filled time-dependent IDS node"""
+    time_slice: Optional[IDSBase] = None
+    """IDS node of the time-dependent AoS parent"""
+    remaining_path: Optional[str] = None
+    """Path from the child of the time-dependent AoS to the node"""
 
 
 @smproxy.source(label="Scalar Time Trace Reader")
@@ -69,6 +72,12 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
+            return 1
+        if self._ids.ids_properties.homogeneous_time != IDS_TIME_MODE_HOMOGENEOUS:
+            logger.warning("Only IDSs with homogeneous time-mode are supported.")
+            return 1
+        if len(self._ids.time) == 0:
+            logger.warning("The IDS does not have a filled time array.")
             return 1
 
         # Retrieve the selected time step
@@ -159,72 +168,52 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
             output: vtkTable to populate with data
             selected_time: The time step selected in ParaView
         """
-        if self._ids.ids_properties.homogeneous_time != IDS_TIME_MODE_HOMOGENEOUS:
-            logger.warning("Only IDSs homogeneous time-mode are supported.")
-            return
         time_array = self._ids.time
-
-        if len(time_array) == 0:
-            logger.warning("The IDS does not have a filled time array")
-            return
-
         if self._show_full_time_trace:
-            output_times = time_array
+            itime = np.searchsorted(time_array, selected_time)
+            # Add duplicate row at selected time to prevent slanted time marker line
+            time_array = np.insert(time_array, itime, selected_time)
+            n_times = len(time_array) - 1
         else:
             time_indices = np.where(time_array <= selected_time)[0]
             if len(time_indices) == 0:
                 logger.warning("No data available up to time %f", selected_time)
                 return
-            output_times = time_array[time_indices]
+            time_array = time_array[time_indices]
+            n_times = len(time_array)
 
-        n_times = len(output_times)
+        self._add_column_to_table(output, time_array, "Time [s]")
 
-        # Add duplicate row to prevent slanted time marker line
-        if self._show_full_time_trace:
-            itime = np.searchsorted(time_array, selected_time)
-            output_times = np.insert(output_times, itime, selected_time)
-
-        time_vtk = numpy_to_vtk(output_times, deep=1)
-        time_vtk.SetName("Time [s]")
-        output.AddColumn(time_vtk)
-
-        mins = []
-        maxs = []
-
+        ymin = np.inf
+        ymax = -np.inf
         for quantity_name in self._selected:
             node = self._filled_quantities_map[quantity_name]
-            quantity_values = self._get_quantity_values(node, n_times)
+            quantity_array = self._get_quantity_array(node, n_times)
 
-            # Add duplicate row to prevent slanted time marker line
+            # Add duplicate row at selected time to prevent slanted time marker line
             if self._show_full_time_trace:
-                quantity_values = np.insert(
-                    quantity_values, itime, quantity_values[itime]
-                )
+                quantity_array = np.insert(quantity_array, itime, quantity_array[itime])
+                ymin = min(ymin, np.nanmin(quantity_array))
+                ymax = max(ymax, np.nanmax(quantity_array))
 
-            data_vtk = numpy_to_vtk(quantity_values, deep=1)
-            data_vtk.SetName(quantity_name)
-            output.AddColumn(data_vtk)
-
-            if self._show_full_time_trace:
-                mins.append(np.nanmin(quantity_values))
-                maxs.append(np.nanmax(quantity_values))
-
+            self._add_column_to_table(output, quantity_array, quantity_name)
             logger.info("Loaded '%s'", quantity_name)
 
         # Add a marker line indicating the current time
         if self._show_full_time_trace:
             cursor = np.full(n_times + 1, np.nan)
-            ymin = np.min(mins) * 0.99
-            ymax = np.max(maxs) * 1.01
-            cursor[itime] = ymin
-            cursor[itime + 1] = ymax
+            cursor[itime] = ymin * 0.99
+            cursor[itime + 1] = ymax * 1.01
+            self._add_column_to_table(output, cursor, "Time Marker")
 
-            cursor_vtk = numpy_to_vtk(cursor, deep=1)
-            cursor_vtk.SetName("Time Marker")
-            output.AddColumn(cursor_vtk)
+    def _add_column_to_table(self, output, array, name):
+        """Adds a column to a vtkTable."""
+        vtk_array = numpy_to_vtk(array, deep=1)
+        vtk_array.SetName(name)
+        output.AddColumn(vtk_array)
 
-    def _get_quantity_values(self, quantity, n_timesteps):
-        """Return the values for a filled quantity.
+    def _get_quantity_array(self, quantity, n_timesteps):
+        """Returns an array containing values of a filled quantity.
 
         Args:
             quantity: FilledQuantity describing the quantity.
@@ -233,9 +222,9 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
         if quantity.node.metadata.ndim == 0:
             time_slice = quantity.time_slice
             remaining_path = quantity.remaining_path
-            quantity_values = [
-                time_slice[i][remaining_path] for i in range(n_timesteps)
-            ]
+            quantity_values = np.array(
+                [time_slice[i][remaining_path] for i in range(n_timesteps)]
+            )
         else:
             quantity_values = quantity.node[:n_timesteps]
         return quantity_values
