@@ -125,36 +125,42 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
                 path to the current node.
         """
         metadata = node.metadata
+
         # Skip time and GGD quantities
         if metadata.name in ("time", "grid_ggd", "grids_ggd", "ggd", "description_ggd"):
             return
 
-        parent = imas.util.get_parent(node)
-        if parent is not None and is_time_dependent_aos(parent):
-            # This becomes the time slice reference point
-            time_slice = parent
-            path_from_time_slice = ""
-
-        if isinstance(node, (IDSStructure, IDSStructArray)):
-            for i, subnode in enumerate(node):
-                if isinstance(node, IDSStructArray):
+        if isinstance(node, IDSStructArray):
+            if node.has_value and is_time_dependent_aos(node):
+                assert time_slice is None
+                # Only scan the first time slice
+                self._recursively_find_time_dependent_quantities(
+                    node[0], time_slice=node, path_from_time_slice=""
+                )
+            else:
+                for i, subnode in enumerate(node):
                     new_path = f"{path_from_time_slice}[{i}]"
-                else:
-                    new_path = (
-                        f"{path_from_time_slice}/{subnode.metadata.name}"
-                        if path_from_time_slice
-                        else subnode.metadata.name
+                    self._recursively_find_time_dependent_quantities(
+                        subnode, time_slice=time_slice, path_from_time_slice=new_path
                     )
+        elif isinstance(node, IDSStructure):
+            for subnode in node:
+                new_path = (
+                    f"{path_from_time_slice}/{subnode.metadata.name}"
+                    if path_from_time_slice
+                    else subnode.metadata.name
+                )
                 self._recursively_find_time_dependent_quantities(
                     subnode, time_slice=time_slice, path_from_time_slice=new_path
                 )
-                if is_time_dependent_aos(node):  # Only scan the first time slice
-                    break
-        elif (
+        elif (  # Check if node is a time-dependent scalar quantity
             metadata.data_type in (IDSDataType.FLT, IDSDataType.INT)
             and metadata.type == IDSType.DYNAMIC
             and node.has_value
-            and (metadata.ndim == 0 or (metadata.ndim == 1 and time_slice is None))
+            and (
+                (metadata.ndim == 0 and time_slice is not None)
+                or (metadata.ndim == 1 and time_slice is None)
+            )
         ):
             name = f"{create_name_recursive(node)} [{node.metadata.units}]"
             self._filled_quantities_map[name] = FilledQuantity(
@@ -162,11 +168,14 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
             )
 
     def _load_time_dependent_data(self, output, selected_time):
-        """Load the selected time-dependent quantities up to the selected time.
+        """Populate a vtkTable with time-dependent quantities up to the selected time.
+        When the 'Show Full Time Trace' checkbox is enabled, all time slices are
+        exported, a duplicate row is inserted at the selected time step, and a time
+        marker column is added so a vertical time cursor can be drawn.
 
         Args:
             output: vtkTable to populate with data
-            selected_time: The time step selected in ParaView
+            selected_time: The currently selected time step in ParaView
         """
         time_array = self._ids.time
         if self._show_full_time_trace:
@@ -175,11 +184,10 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
             time_array = np.insert(time_array, itime, selected_time)
             n_times = len(time_array) - 1
         else:
-            time_indices = np.where(time_array <= selected_time)[0]
-            if len(time_indices) == 0:
+            time_array = time_array[time_array <= selected_time]
+            if len(time_array) == 0:
                 logger.warning("No data available up to time %f", selected_time)
                 return
-            time_array = time_array[time_indices]
             n_times = len(time_array)
 
         self._add_column_to_table(output, time_array, "Time [s]")
@@ -197,13 +205,13 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
                 ymax = max(ymax, np.nanmax(quantity_array))
 
             self._add_column_to_table(output, quantity_array, quantity_name)
-            logger.info("Loaded '%s'", quantity_name)
+            logger.debug("Loaded '%s'", quantity_name)
 
         # Add a marker line indicating the current time
         if self._show_full_time_trace:
             cursor = np.full(n_times + 1, np.nan)
-            cursor[itime] = ymin * 0.99
-            cursor[itime + 1] = ymax * 1.01
+            cursor[itime] = ymin - (ymax - ymin) / 100
+            cursor[itime + 1] = ymax + (ymax - ymin) / 100
             self._add_column_to_table(output, cursor, "Time Marker")
 
     def _add_column_to_table(self, output, array, name):

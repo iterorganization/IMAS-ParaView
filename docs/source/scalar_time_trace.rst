@@ -46,7 +46,7 @@ and in the drop-down menu, select ``Time [s]`` to display time on the horizontal
 
 .. tip:: The Line Chart View can be opened side-by-side with other ParaView views. 
    This means that this reader allows you to visualize how scalar quantities (e.g., the plasma current) 
-   evolve over time, while simultaneously displaying other time-dependent 3D geometries loaded from other readers.
+   evolve over time, while simultaneously displaying time-dependent 3D geometries loaded from other readers.
 
 This reader supports two ways of visualizing data:
 
@@ -55,6 +55,12 @@ This reader supports two ways of visualizing data:
    When the ``Show Full Time Trace`` option is disabled in the plugin properties, 
    the reader outputs only the time trace up to the currently selected time. 
    This allows you to inspect the evolution of the selected quantities.
+
+.. figure:: images/full_time_trace_disabled.png
+
+   Plasma current over time with ``Show Full Time Trace`` disabled (default), where
+   the selected time step is 70s.
+
 #. Full Time Trace with Highlighted Current Time
 
    When the ``Show Full Time Trace`` option is enabled, the reader outputs the complete 
@@ -62,11 +68,8 @@ This reader supports two ways of visualizing data:
    which marks the currently selected time step. This allows you to see the entire 
    time series from start to finish.
 
-.. list-table::
-   :widths: 50 49
-   :header-rows: 0
 
-   * - .. figure:: images/full_time_trace_disabled.png
-     - .. figure:: images/full_time_trace_enabled.png
-   * - Plasma current over time with ``Show Full Time Trace`` disabled (default).
-     - Plasma current over time with ``Show Full Time Trace`` enabled.
+.. figure:: images/full_time_trace_enabled.png
+
+    Plasma current over time with ``Show Full Time Trace`` enabled, where
+    the selected time step is 70s.

@@ -86,9 +86,7 @@ def test_time_array_full_time_trace(wall_ids, reader):
     assert np.allclose(gp1_col, [0.0, 3.3, 6.6, 6.6, 9.9, 13.2])
     assert np.allclose(gp2_col, [0.0, 4.4, 8.8, 8.8, 13.2, 17.6])
     assert np.allclose(
-        marker,
-        [np.nan, np.nan, 0.0, 17.6 * 1.01, np.nan, np.nan],
-        equal_nan=True,
+        marker, [np.nan, np.nan, -0.176, 17.776, np.nan, np.nan], equal_nan=True
     )
 
 
