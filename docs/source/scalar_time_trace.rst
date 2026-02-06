@@ -56,10 +56,10 @@ This reader supports two ways of visualizing data:
    the reader outputs only the time trace up to the currently selected time. 
    This allows you to inspect the evolution of the selected quantities.
 
-.. figure:: images/full_time_trace_disabled.png
+   .. figure:: images/full_time_trace_disabled.png
 
-   Plasma current over time with ``Show Full Time Trace`` disabled (default), where
-   the selected time step is 70s.
+      Plasma current over time with ``Show Full Time Trace`` disabled (default), where
+      the selected time step is 70s.
 
 #. Full Time Trace with Highlighted Current Time
 
@@ -68,8 +68,7 @@ This reader supports two ways of visualizing data:
    which marks the currently selected time step. This allows you to see the entire 
    time series from start to finish.
 
+   .. figure:: images/full_time_trace_enabled.png
 
-.. figure:: images/full_time_trace_enabled.png
-
-    Plasma current over time with ``Show Full Time Trace`` enabled, where
-    the selected time step is 70s.
+       Plasma current over time with ``Show Full Time Trace`` enabled, where
+       the selected time step is 70s.
