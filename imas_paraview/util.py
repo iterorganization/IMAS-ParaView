@@ -2,8 +2,9 @@ import logging
 from typing import Optional
 
 import numpy as np
+from vtkmodules.util.numpy_support import numpy_to_vtk
 from vtkmodules.vtkCommonCore import vtkPoints
-from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkLine, vtkPolyData
+from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkPolyData
 
 logger = logging.getLogger("imas_paraview")
 
@@ -31,9 +32,11 @@ def get_ggd_grid_path(ids_metadata) -> Optional[str]:
     # Find the DD node defining the GGD grid:
     for node in iter_metadata_tree(ids_metadata):
         structure_reference = getattr(node, "structure_reference", None)
-        if structure_reference in ["generic_grid_dynamic", "generic_grid_aos3_root"]:
-            if getattr(node, "lifecycle_status", None) != "obsolescent":
-                return node.path_string
+        if (
+            structure_reference in ["generic_grid_dynamic", "generic_grid_aos3_root"]
+            and getattr(node, "lifecycle_status", None) != "obsolescent"
+        ):
+            return node.path_string
     return None  # There are no GGD grids inside this IDS
 
 
@@ -91,8 +94,9 @@ def get_grid_ggd(ids, time=0, parent_idx=0):
             else:
                 node = node[0]
                 logger.warning(
-                    f"The GGD grid was not found at time index {ggd_idx}, so first "
-                    "grid was loaded instead."
+                    "The GGD grid was not found at time index %d, so first "
+                    "grid was loaded instead.",
+                    ggd_idx,
                 )
         else:
             node = node[parent_idx]
@@ -197,7 +201,7 @@ def pol_to_cart(rho, phi):
     return (x, y)
 
 
-def points_to_vtkpoly(points, is_closed=False):
+def points_to_vtkpoly(points, is_closed=False, is_filled=False):
     """Convert a list of 3D points to a vtkPoints and vtkCellArray, which are combined
     into a single VtkPolyData object. The expected format of the points is:
     [(x1,y1,z1),(x2,y2,z2),...].
@@ -207,29 +211,40 @@ def points_to_vtkpoly(points, is_closed=False):
             form (x,y,z).
         is_closed: Boolean flag whether to close the contour. If set to true, the first
             and last point are connected by a vtkLine.
+        is_filled: Boolean flag whether to fill a closed contour. If True, the
+            vtkPolyData will contain a single polygon, otherwise it will contain the
+            outline of line segments. Only allowed when is_closed=True.
 
     Returns:
         vtkPolyData containing the vtkPoints and vtkLines.
     """
+    if not is_closed and is_filled:
+        raise ValueError("Converting points to filled polygons requires is_closed=True")
+
+    points = np.asarray(points)
+    n = len(points)
+
     vtk_points = vtkPoints()
-    vtk_lines = vtkCellArray()
-    for i, point in enumerate(points):
-        vtk_points.InsertNextPoint(*point)
-        line = vtkLine()
+    vtk_points.SetData(numpy_to_vtk(points))
 
-        if i != len(points) - 1:
-            line.GetPointIds().SetId(0, i)
-            line.GetPointIds().SetId(1, i + 1)
-            vtk_lines.InsertNextCell(line)
+    poly = vtkPolyData()
+    poly.SetPoints(vtk_points)
 
-    # Close loop if the points are closed
-    if is_closed:
-        line = vtkLine()
-        line.GetPointIds().SetId(0, len(points) - 1)
-        line.GetPointIds().SetId(1, 0)
-        vtk_lines.InsertNextCell(line)
+    if is_filled:
+        # Create a single polygon cell
+        polys = vtkCellArray()
+        polys.InsertNextCell(n)
+        for i in range(n):
+            polys.InsertCellPoint(i)
+        poly.SetPolys(polys)
+    else:
+        # Create outline from line segments
+        lines = vtkCellArray()
+        n_lines = n - 1 + (1 if is_closed else 0)
+        for i in range(n_lines):
+            lines.InsertNextCell(2)
+            lines.InsertCellPoint(i % n)
+            lines.InsertCellPoint((i + 1) % n)
+        poly.SetLines(lines)
 
-    vtk_poly = vtkPolyData()
-    vtk_poly.SetPoints(vtk_points)
-    vtk_poly.SetLines(vtk_lines)
-    return vtk_poly
+    return poly

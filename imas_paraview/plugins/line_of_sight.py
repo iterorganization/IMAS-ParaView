@@ -80,8 +80,8 @@ class LineOfSightReader(GGDVTKPluginBase):
             if channel_name == "":
                 channel_name = f"channel {i}"
                 logger.warning(
-                    "Found a channel without a name, "
-                    f"it will be loaded as {channel_name}."
+                    "Found a channel without a name, it will be loaded as %s.",
+                    channel_name,
                 )
 
             # For ece, if the channel does not have a line of sight, or it is empty,
@@ -104,7 +104,7 @@ class LineOfSightReader(GGDVTKPluginBase):
         """
         for i, channel_name in enumerate(self._selected):
             channel = self.selectable_map[channel_name]
-            logger.info(f"Selected {channel_name}")
+            logger.info("Selected %s", channel_name)
             vtk_poly = self._create_vtk_los(channel)
             output.SetBlock(i, vtk_poly)
 

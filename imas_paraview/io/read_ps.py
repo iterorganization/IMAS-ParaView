@@ -96,8 +96,9 @@ class PlasmaStateReader:
             vector_array_paths=vector_array_paths,
         )
         logger.debug(
-            f"Found {len(self.scalar_array_list)} scalar arrays and "
-            f"{len(self.vector_array_list)} vector arrays in the IDS."
+            "Found %d scalar arrays and %d vector arrays in the IDS.",
+            len(self.scalar_array_list),
+            len(self.vector_array_list),
         )
 
     def read_plasma_state(self, subset_idx: int, ugrid: vtkUnstructuredGrid) -> None:
@@ -228,7 +229,7 @@ class PlasmaStateReader:
             ugrid: an instance of vtkUnstructuredGrid
         """
 
-        logger.debug(f"           {name}...")
+        logger.debug("Adding scalar array: %s...", name)
         point_data: vtkPointData = ugrid.GetPointData()
         num_points = ugrid.GetNumberOfPoints()
         cell_data: vtkCellData = ugrid.GetCellData()
@@ -268,7 +269,7 @@ class PlasmaStateReader:
             name: this becomes the array name in VTK
             ugrid: an unstructured grid instance
         """
-        logger.debug(f"           {name}...")
+        logger.debug("Adding AoS scalar array: %s...", name)
         if subset_idx >= len(aos_scalar_node):
             return
 
@@ -282,14 +283,8 @@ class PlasmaStateReader:
                         self._add_scalar_array_to_vtk_field_data(
                             aos_scalar_node[i].values, name, ugrid
                         )
-                except IndexError:
-                    logger.warning(
-                        f"           no index {i} for subset {subset_idx}..."
-                    )
-                except AttributeError:
-                    logger.warning(
-                        f"           no index {i} for subset {subset_idx}..."
-                    )
+                except (IndexError, AttributeError):
+                    logger.warning("no index %d for subset %d...", i, subset_idx)
         else:
             if hasattr(aos_scalar_node[subset_idx], "values") and len(
                 aos_scalar_node[subset_idx].values
@@ -309,7 +304,7 @@ class PlasmaStateReader:
             name: this becomes the array name in VTK
             ugrid: an unstructured grid instance
         """
-        logger.debug(f"           {name}...")
+        logger.debug("Adding AoS vector array: %s...", name)
         if subset_idx >= len(aos_vector_node):
             return
 
@@ -319,14 +314,17 @@ class PlasmaStateReader:
         num_cells = ugrid.GetNumberOfCells()
 
         # Only add the components that have data:
-        components = dict()  # name and values
+        components = {}  # name and values
 
         # Search for filled 1D vector components
         for component in aos_vector_node[subset_idx]:
             metadata = component.metadata
-            if metadata.data_type == IDSDataType.FLT and metadata.ndim == 1:
-                if len(component):
-                    components[metadata.name] = component.value
+            if (
+                metadata.data_type == IDSDataType.FLT
+                and metadata.ndim == 1
+                and len(component)
+            ):
+                components[metadata.name] = component.value
 
         vtk_arr = vtkDoubleArray()
         vtk_arr.SetName(name)

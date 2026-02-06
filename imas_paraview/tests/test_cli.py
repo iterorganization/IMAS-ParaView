@@ -46,10 +46,10 @@ def test_ggd2vtk(tmp_path, dummy_ids):
     # The vtkXMLPartitionedDataSetCollectionWriter will output the following:
     # .
     # ├── test
-    # │   ├── test_0_0.vtu
-    # │   ├── test_1_0.vtu
-    # │   ├── test_2_0.vtu
-    # |   ├── ...
+    # │   ├── test_0_0.vtu
+    # │   ├── test_1_0.vtu
+    # │   ├── test_2_0.vtu
+    # │   ├── ...
     # └── test.vtpc
 
     # Check if vtpc file and the directory containing vtu files exists
