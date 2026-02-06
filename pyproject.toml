@@ -47,6 +47,7 @@ benchmark=[
 [project.scripts]
 imas-paraview = "imas_paraview.cli:cli"
 ggd2vtk = "imas_paraview.cli:convert_ggd_to_vtk"
+vtk2ggd = "imas_paraview.cli:convert_vtk_to_ggd"
 
 [project.urls]
 homepage = "https://github.com/iterorganization/IMAS-ParaView"

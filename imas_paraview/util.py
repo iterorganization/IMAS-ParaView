@@ -2,9 +2,11 @@ import logging
 from typing import Optional
 
 import numpy as np
-from vtkmodules.util.numpy_support import numpy_to_vtk
+import vtk
+from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkPolyData
+from vtkmodules.vtkIOXML import vtkXMLPartitionedDataSetCollectionReader
 
 logger = logging.getLogger("imas_paraview")
 
@@ -248,3 +250,38 @@ def points_to_vtkpoly(points, is_closed=False, is_filled=False):
         poly.SetLines(lines)
 
     return poly
+
+
+def load_vtpc(file_path):
+    """
+    Enhanced loader that ensures time metadata is migrated
+    from the reader to the data object.
+    """
+    reader = vtkXMLPartitionedDataSetCollectionReader()
+    reader.SetFileName(str(file_path))
+    reader.UpdateInformation()
+    out_info = reader.GetOutputInformation(0)
+    has_time = out_info.Has(vtk.vtkStreamingDemandDrivenPipeline.TIME_STEPS())
+
+    time_value = None
+    if has_time:
+        time_steps = out_info.Get(vtk.vtkStreamingDemandDrivenPipeline.TIME_STEPS())
+        if time_steps:
+            time_value = time_steps[0]
+
+    reader.Update()
+    vtk_obj = reader.GetOutput()
+
+    if time_value is not None:
+        vtk_obj.GetInformation().Set(vtk.vtkDataObject.DATA_TIME_STEP(), time_value)
+
+    return vtk_obj
+
+
+def vtk_cells_to_nodes(cell_array):
+    offsets = vtk_to_numpy(cell_array.GetOffsetsArray())
+    connectivity = vtk_to_numpy(cell_array.GetConnectivityArray())
+
+    return [  # 1-based indexing
+        connectivity[offsets[i] : offsets[i + 1]] + 1 for i in range(len(offsets) - 1)
+    ]

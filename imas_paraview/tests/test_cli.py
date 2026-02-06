@@ -8,10 +8,12 @@ from conftest import DD_VERSION
 from imas_paraview.cli import (
     cli,
     convert_ggd_to_vtk,
+    convert_vtk_to_ggd,
     parse_index,
     parse_time,
     parse_uri,
 )
+from imas_paraview.tests.fill_ggd import fill_ids
 
 
 @pytest.mark.skip(reason="no IMAS-Core available")
@@ -64,6 +66,41 @@ def test_ggd2vtk(tmp_path, dummy_ids):
         for i in range(3):
             vtu_file = output_dir / f"{ids_name}_0_{i}_0.vtu"
             assert vtu_file.exists()
+
+
+def test_vtk2ggd(tmp_path):
+    # Create original IDS
+    ids_name = "edge_profiles"
+    uri = f"{tmp_path}/testdb.nc"
+    ids = imas.IDSFactory(version=DD_VERSION).new(ids_name)
+    fill_ids(
+        ids, time_steps=5, fill_ggd=False, create_3d_grid=True, dynamic_grid_size=True
+    )
+    with imas.DBEntry(uri, "w", dd_version=DD_VERSION) as dbentry:
+        dbentry.put(ids)
+
+    # Convert IDS to VTK
+    runner = CliRunner()
+    file_name = "vtk_data"
+    output_path = tmp_path / file_name
+    uri_in = f"{uri}#{ids_name}"
+    args = [uri_in, str(output_path), "--all-times"]
+    result = runner.invoke(convert_ggd_to_vtk, args)
+    assert result.exit_code == 0
+
+    # Convert VTK back to IDS
+    uri_out = f"{tmp_path}/back_converted.nc"
+    args = [str(output_path), uri_out, "--dd_version", DD_VERSION]
+    result = runner.invoke(convert_vtk_to_ggd, args)
+    assert result.exit_code == 0
+
+    with imas.DBEntry(uri_out, "r", dd_version=DD_VERSION) as dbentry:
+        ids2 = dbentry.get(ids_name)
+
+    # Work-around to test equivalence of two IDSs
+    # During reading/writing to disk identifiers index converted from int to np.int32,
+    # which do not support calling imas.util.calc_hash()
+    assert not list(imas.util.idsdiffgen(ids, ids2))
 
 
 def test_parse_uri():
