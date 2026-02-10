@@ -632,5 +632,5 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             )
             return self._time_steps[0]
         else:
-            logger.error("Selected invalid time step")
+            logger.error("Selected time step is invalid.")
             return None
