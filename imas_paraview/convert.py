@@ -110,7 +110,7 @@ class Converter:
 
         self.grid_ggd = get_grid_ggd(self.ids, time, parent_idx)
         if self.grid_ggd is None:
-            logger.warning("Could not load a valid GGD grid.")
+            logger.error("Could not load a valid GGD grid.")
             return None
 
         if hasattr(self.grid_ggd, "path") and self.grid_ggd.path:
@@ -211,10 +211,10 @@ class Converter:
     def _is_grid_valid(self):
         """Validates if the grid is properly loaded."""
         if self.grid_ggd is None:
-            logger.warning("Could not load a valid GGD grid.")
+            logger.error("Could not load a valid GGD grid.")
             return False
         if not hasattr(self.grid_ggd, "space") or len(self.grid_ggd.space) < 1:
-            logger.warning("The grid_ggd does not contain a space.")
+            logger.error("The grid_ggd does not contain a space.")
             return False
         return True
 
