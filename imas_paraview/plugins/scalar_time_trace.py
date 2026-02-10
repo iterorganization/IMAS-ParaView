@@ -74,16 +74,15 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
             return 1
         if self._ids.ids_properties.homogeneous_time != IDS_TIME_MODE_HOMOGENEOUS:
-            logger.warning("Only IDSs with homogeneous time-mode are supported.")
+            logger.error("Only IDSs with homogeneous time-mode are supported.")
             return 1
         if len(self._ids.time) == 0:
-            logger.warning("The IDS does not have a filled time array.")
+            logger.error("The IDS does not have a filled time array.")
             return 1
 
         # Retrieve the selected time step
         time = self._get_selected_time_step(outInfo)
         if time is None:
-            logger.warning("Selected invalid time step")
             return 1
 
         if len(self._selected) > 0:
@@ -186,7 +185,7 @@ class ScalarTimeTraceReader(GGDVTKPluginBase, is_time_dependent=True):
         else:
             time_array = time_array[time_array <= selected_time]
             if len(time_array) == 0:
-                logger.warning("No data available up to time %f", selected_time)
+                logger.error("No data available up to time %f", selected_time)
                 return
             n_times = len(time_array)
 

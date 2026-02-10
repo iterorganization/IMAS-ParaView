@@ -33,7 +33,6 @@ class Profiles1DReader(GGDVTKPluginBase, is_time_dependent=True):
         # Retrieve the selected time step and profiles
         time = self._get_selected_time_step(outInfo)
         if time is None:
-            logger.warning("Selected invalid time step")
             return 1
 
         index_list = find_closest_indices([time], self._ids.time)

@@ -506,7 +506,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         # Load IDS and available time steps
         idsname, _, _ = self._ids_and_occurrence.partition("/")
         if idsname not in self._ids_list:
-            logger.warning("Could not find the selected IDS.")
+            logger.error("Could not find the selected IDS.")
             self._selectable = []
             return 1
 
@@ -624,7 +624,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             logger.debug("Selected time step in Paraview: %f", time_step)
             return time_step
         elif self._time_steps:
-            logger.info(
+            logger.warning(
                 "Selected time step %f was not found in the IDS. "
                 "The first time step (%f) is loaded instead.",
                 time_step,
@@ -632,4 +632,5 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             )
             return self._time_steps[0]
         else:
+            logger.error("Selected invalid time step")
             return None
