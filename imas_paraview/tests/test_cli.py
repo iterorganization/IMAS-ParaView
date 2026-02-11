@@ -97,10 +97,8 @@ def test_vtk2ggd(tmp_path):
     with imas.DBEntry(uri_out, "r", dd_version=DD_VERSION) as dbentry:
         ids2 = dbentry.get(ids_name)
 
-    # Work-around to test equivalence of two IDSs
-    # During reading/writing to disk identifiers index converted from int to np.int32,
-    # which do not support calling imas.util.calc_hash()
-    assert not list(imas.util.idsdiffgen(ids, ids2))
+    # Check if the two IDSs are the same
+    assert list(imas.util.idsdiffgen(ids, ids2)) == []
 
 
 def test_parse_uri():

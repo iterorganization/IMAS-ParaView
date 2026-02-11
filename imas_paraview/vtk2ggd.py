@@ -163,10 +163,12 @@ class VTK2GGDConverter:
         num_partitions = vtk_pdsc.GetNumberOfPartitionedDataSets()
         grid_ggd.grid_subset.resize(num_partitions)
 
+        # TODO add pytests for grid_subsets
+
         # Use current_grid's space
-        used_offsets = {
-            d: 0 for d in range(len(grid_ggd.space[0].objects_per_dimension))
-        }
+        used_offsets = dict.fromkeys(
+            range(len(grid_ggd.space[0].objects_per_dimension)), 0
+        )
 
         for p in range(num_partitions):
             subset = grid_ggd.grid_subset[p]

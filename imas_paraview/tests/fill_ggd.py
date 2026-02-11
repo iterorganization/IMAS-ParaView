@@ -409,7 +409,7 @@ def fill_ids(
         # Create uniform grids and fill them with random GGD data
         for i in range(time_steps):
             num_vertices, num_edges, num_faces = fill_NxN_grid(
-                grid_ggd_aos[i], grid_size, create_3d_grid
+                grid_ggd_aos[i], grid_size, create_3d_grid=create_3d_grid
             )
             if dynamic_grid_size:
                 grid_size += 1

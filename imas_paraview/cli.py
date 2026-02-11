@@ -190,7 +190,8 @@ def convert_ggd_to_vtk(
     "--ids_name",
     "-n",
     type=str,
-    help="Name of the IDS (e.g., 'edge_profiles'). If not provided, it will be inferred from filenames.",
+    help="Name of the IDS (e.g., 'edge_profiles'). If not provided, it will be "
+    "inferred from filenames.",
 )
 @click.option(
     "--dd_version",
@@ -198,7 +199,7 @@ def convert_ggd_to_vtk(
     help="Specify the version of the Data Dictionary.",
 )
 def convert_vtk_to_ggd(input_path, output_uri, ids_name, dd_version):
-    """Convert VTK files (single or directory) back to a single IMAS IDS."""
+    """Convert vtkPartitionedDatasetCollections to a GGD grid in IDS."""
     sys.excepthook = _excepthook
 
     vtpc_files = []
@@ -207,7 +208,7 @@ def convert_vtk_to_ggd(input_path, output_uri, ids_name, dd_version):
         click.echo(f"Scanning directory {input_path} for VTK files...")
         # Find all .vtpc files and sort them by the trailing index (e.g., _0, _1)
         vtpc_files = sorted(
-            list(input_path.glob("*.vtpc")),
+            input_path.glob("*.vtpc"),
             key=lambda x: int(x.stem.split("_")[-1]) if "_" in x.stem else 0,
         )
         if not vtpc_files:
