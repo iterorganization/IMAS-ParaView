@@ -4,8 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-import vtk
-from vtk import vtkXMLPartitionedDataSetCollectionWriter
+from vtk import vtkDataObject, vtkXMLPartitionedDataSetCollectionWriter
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     vtkCompositeDataSet,
@@ -67,7 +66,11 @@ class Converter:
             if vtk_object is None:
                 logger.warning("Could not convert GGD at time index %d to VTK.", index)
                 continue
-            self._write_vtk_to_xml(vtk_object, Path(f"{output_path}_{index}"), time)
+
+            # Store the time value of this slice in the vtk object
+            vtk_object.GetInformation().Set(vtkDataObject.DATA_TIME_STEP(), time)
+
+            self._write_vtk_to_xml(vtk_object, Path(f"{output_path}_{index}"))
 
     def ggd_to_vtk(
         self,
@@ -342,7 +345,7 @@ class Converter:
 
         self.output.GetMetaData(partition).Set(vtkCompositeDataSet.NAME(), label)
 
-    def _write_vtk_to_xml(self, vtk_object, output_path, time):
+    def _write_vtk_to_xml(self, vtk_object, output_path):
         """Writes a VTK object to XML file, and a directory containing files for each
         grid subset. The directory structure looks as follows:
         .
@@ -361,7 +364,6 @@ class Converter:
             logger.error("Cannot write None object to XML.")
             return
 
-        vtk_object.GetInformation().Set(vtk.vtkDataObject.DATA_TIME_STEP(), time)
         logger.info("Writing VTK file to '%s'...", output_path)
         writer = vtkXMLPartitionedDataSetCollectionWriter()
         writer.SetInputData(vtk_object)

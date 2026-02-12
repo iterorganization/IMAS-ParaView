@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 import numpy as np
-import vtk
+from vtk import vtkDataObject, vtkStreamingDemandDrivenPipeline
 from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkPolyData
@@ -253,35 +253,38 @@ def points_to_vtkpoly(points, is_closed=False, is_filled=False):
 
 
 def load_vtpc(file_path):
-    """
-    Enhanced loader that ensures time metadata is migrated
-    from the reader to the data object.
+    """Load a vtkPartitionedDataSetCollection from disk.
+
+    Args:
+        file_path: The file path to the vtkPartitionedDataSetCollection.
     """
     reader = vtkXMLPartitionedDataSetCollectionReader()
     reader.SetFileName(str(file_path))
     reader.UpdateInformation()
     out_info = reader.GetOutputInformation(0)
-    has_time = out_info.Has(vtk.vtkStreamingDemandDrivenPipeline.TIME_STEPS())
 
     time_value = None
-    if has_time:
-        time_steps = out_info.Get(vtk.vtkStreamingDemandDrivenPipeline.TIME_STEPS())
+    if out_info.Has(vtkStreamingDemandDrivenPipeline.TIME_STEPS()):
+        time_steps = out_info.Get(vtkStreamingDemandDrivenPipeline.TIME_STEPS())
         if time_steps:
+            # NOTE: IMAS-ParaView exports only a single time step per
+            # vtkPartitionedDataSetCollection
             time_value = time_steps[0]
 
     reader.Update()
     vtk_obj = reader.GetOutput()
 
+    # Store time step as vtkDataObject
     if time_value is not None:
-        vtk_obj.GetInformation().Set(vtk.vtkDataObject.DATA_TIME_STEP(), time_value)
-
+        vtk_obj.GetInformation().Set(vtkDataObject.DATA_TIME_STEP(), time_value)
     return vtk_obj
 
 
 def vtk_cells_to_nodes(cell_array):
+    """Convert a VTK cell array into a list of node index (1-based) arrays."""
     offsets = vtk_to_numpy(cell_array.GetOffsetsArray())
     connectivity = vtk_to_numpy(cell_array.GetConnectivityArray())
 
-    return [  # 1-based indexing
+    return [  # GGD uses 1-based indexing
         connectivity[offsets[i] : offsets[i + 1]] + 1 for i in range(len(offsets) - 1)
     ]

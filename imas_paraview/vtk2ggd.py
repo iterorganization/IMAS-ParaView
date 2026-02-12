@@ -18,10 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class VTK2GGDConverter:
-    """
-    Handles the back-conversion of multiple VTK objects into a single
+    """Handles the conversion of multiple vtkPartitionedDataSetCollections into a single
     IMAS GGD structure with multiple time steps.
     """
+
+    # TODO: docstrings, extra unit tests, cleanup of grid subset logic
 
     def __init__(
         self,
@@ -190,10 +191,13 @@ class VTK2GGDConverter:
                 n_elem = n_cells
 
             subset.dimension = cell_dim + 1
-            norm = name.lower().replace("-", "_").replace(" ", "_")
-            sid = getattr(identifiers.ggd_subset_identifier, norm, None)
-            if sid:
-                subset.identifier = sid
+            identifier_name = name.lower().replace("-", "_").replace(" ", "_")
+            if identifier_name in [m.name for m in identifiers.ggd_subset_identifier]:
+                subset.identifier = identifiers.ggd_subset_identifier[identifier_name]
+            else:
+                subset.identifier.name = identifier_name
+                subset.identifier.index = 0
+                subset.identifier.description = "Unknown subset identifier"
 
             subset.element.resize(n_elem)
             for i in range(n_elem):

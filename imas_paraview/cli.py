@@ -184,41 +184,53 @@ def convert_ggd_to_vtk(
 
 
 @cli.command("vtk2ggd")
-@click.argument("input_path", type=Path)
-@click.argument("output_uri", type=str)
+@click.argument("path", type=Path)
+@click.argument("uri", type=str)
 @click.option(
     "--ids_name",
-    "-n",
     type=str,
-    help="Name of the IDS (e.g., 'edge_profiles'). If not provided, it will be "
-    "inferred from filenames.",
+    help="Name of the IDS, if not provided, it will be inferred from filenames.",
 )
 @click.option(
     "--dd_version",
     type=str,
-    help="Specify the version of the Data Dictionary.",
+    help="Specify the version of the Data Dictionary to export the IDS to.",
 )
-def convert_vtk_to_ggd(input_path, output_uri, ids_name, dd_version):
-    """Convert vtkPartitionedDatasetCollections to a GGD grid in IDS."""
+def convert_vtk_to_ggd(path, uri, ids_name, dd_version):
+    """Convert a file series of .vtpc files, or a single .vtpc containing
+    unstructured grids to a GGD grid in an IDS.
+
+    \b
+    Arguments:
+    \b
+    path            Path to a single .vtpc file, or to the directory containing a series
+                    of .vtpc files.
+    uri             Output URI to store the IDS.
+    """
     sys.excepthook = _excepthook
 
     vtpc_files = []
 
-    if input_path.is_dir():
-        click.echo(f"Scanning directory {input_path} for VTK files...")
+    if path.is_dir():  # The input is a file series
+        click.echo(f"Scanning directory {path} for VTK files...")
         # Find all .vtpc files and sort them by the trailing index (e.g., _0, _1)
         vtpc_files = sorted(
-            input_path.glob("*.vtpc"),
+            path.glob("*.vtpc"),
             key=lambda x: int(x.stem.split("_")[-1]) if "_" in x.stem else 0,
         )
         if not vtpc_files:
-            raise click.UsageError(f"No .vtpc files found in {input_path}")
+            raise click.UsageError(f"No .vtpc files found in {path}")
 
         # Infer ids_name from the first file (edge_profiles_0.vtpc -> edge_profiles)
         if not ids_name:
             ids_name = vtpc_files[0].stem.rsplit("_", 1)[0]
+            if ids_name not in imas.IDSFactory().ids_names():
+                raise click.UsageError(
+                    f"Could not infer IDS name from file names: {ids_name} is not a "
+                    "valid IDS name. Use '--ids_name' to set the required IDS name"
+                )
     else:
-        vtpc_files = [input_path]
+        vtpc_files = [path]
         if not ids_name:
             raise click.UsageError(
                 "Argument '--ids_name' is required for single file conversion."
@@ -227,19 +239,17 @@ def convert_vtk_to_ggd(input_path, output_uri, ids_name, dd_version):
     click.echo(f"Converting {len(vtpc_files)} time steps for IDS '{ids_name}'...")
 
     vtk_objects = [load_vtpc(f) for f in vtpc_files]
-
     converter = VTK2GGDConverter(vtk_objects, ids_name, dd_version)
     ids = converter.convert()
 
-    with imas.DBEntry(output_uri, "x", dd_version=dd_version) as entry:
-        # TODO: is this exposed in IMAS-Python API or is there another way to set this?
+    with imas.DBEntry(uri, "x", dd_version=dd_version) as entry:
         if hasattr(ids.ids_properties, "version_put"):
             ids.ids_properties.version_put.access_layer = (
                 entry._dbe_impl.access_layer_version()
             )
         entry.put(ids)
 
-    click.echo(f"Successfully wrote {len(vtpc_files)} time steps to {output_uri}")
+    click.echo(f"Successfully wrote {len(vtpc_files)} time steps to {uri}")
 
 
 def is_lazy(all_times, lazy_flag, no_lazy_flag):
