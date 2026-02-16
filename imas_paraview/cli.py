@@ -5,6 +5,7 @@ from pathlib import Path
 
 import click
 import imas
+import imas.backends.imas_core.imas_interface
 from imas.backends.imas_core.imas_interface import ll_interface
 from rich import box, console, traceback
 from rich.table import Table
@@ -243,10 +244,14 @@ def convert_vtk_to_ggd(path, uri, ids_name, dd_version):
     ids = converter.convert()
 
     with imas.DBEntry(uri, "x", dd_version=dd_version) as entry:
+        # Set version_put properties (version_put was added in DD 3.22)
         if hasattr(ids.ids_properties, "version_put"):
             ids.ids_properties.version_put.access_layer = (
                 entry._dbe_impl.access_layer_version()
             )
+            version_put = ids.ids_properties.version_put
+            version_put.data_dictionary = dd_version
+            version_put.access_layer_language = f"IMAS-Python {imas.__version__}"
         entry.put(ids)
 
     click.echo(f"Successfully wrote {len(vtpc_files)} time steps to {uri}")
