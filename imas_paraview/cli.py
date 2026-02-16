@@ -250,7 +250,7 @@ def convert_vtk_to_ggd(path, uri, ids_name, dd_version):
                 entry._dbe_impl.access_layer_version()
             )
             version_put = ids.ids_properties.version_put
-            version_put.data_dictionary = dd_version
+            version_put.data_dictionary = entry.dd_version
             version_put.access_layer_language = f"IMAS-Python {imas.__version__}"
         entry.put(ids)
 
