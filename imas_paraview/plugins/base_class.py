@@ -33,7 +33,13 @@ from imas_paraview.util import get_grid_ggd
 
 logger = logging.getLogger("imas_paraview")
 
-if imas.backends.imas_core.imas_interface.has_imas:
+try:
+    has_imas = imas.backends.imas_core.imas_interface.has_imas
+except AttributeError:
+    # imas-python >= v2.2.0 always has IMAS-Core installed
+    has_imas = True
+
+if has_imas:
     BACKENDS = {
         "MDSplus": imas.ids_defs.MDSPLUS_BACKEND,
         "HDF5": imas.ids_defs.HDF5_BACKEND,

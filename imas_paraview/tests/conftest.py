@@ -65,7 +65,13 @@ def pytest_sessionstart(session):
     with imas.DBEntry("netcdf_testdb.nc", "w", dd_version=DD_VERSION) as dbentry:
         dbentry.put(ids)
 
-    if not imas.backends.imas_core.imas_interface.has_imas:
+    try:
+        has_imas = imas.backends.imas_core.imas_interface.has_imas
+    except AttributeError:
+        # imas-python >= v2.2.0 always has IMAS-Core installed
+        has_imas = True
+
+    if not has_imas:
         logger.warning(
             "IMAS-Core is not available, some integration tests are skipped."
         )
