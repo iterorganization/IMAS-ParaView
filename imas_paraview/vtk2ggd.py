@@ -119,12 +119,19 @@ class VTK2GGDConverter:
         # NOTE: We only support X,Y,Z coordinates
         space.coordinates_type.resize(3)
         coord = identifiers.coordinate_identifier
+
+        # GGD2VTK converts coordinates differently for wall than from other IDSs
+        if self.ids_name == "wall":
+            coord_identifiers = [coord.x, coord.z, coord.y]
+        else:
+            coord_identifiers = [coord.x, coord.y, coord.z]
+
         # coordinates_type changed from INT_1D to an AoS of identifiers in DD4.0.0
-        for i, c in enumerate([coord.x, coord.y, coord.z]):
+        for i, coord_identifier in enumerate(coord_identifiers):
             if isinstance(space.coordinates_type, IDSStructure):
-                space.coordinates_type[i] = c
+                space.coordinates_type[i] = coord_identifier
             else:
-                space.coordinates_type[i] = c.index
+                space.coordinates_type[i] = coord_identifier.index
         max_dim = self._get_max_dimension(vtk_pdsc)
         space.objects_per_dimension.resize(max_dim + 1)
         return space
@@ -151,14 +158,11 @@ class VTK2GGDConverter:
         # Fill nodes
         if points is not None:
             space.objects_per_dimension[0].object.resize(len(points))
-            for i, p in enumerate(points):
-                obj = space.objects_per_dimension[0].object[i]
-                obj.geometry.resize(3)
+            for point, obj in zip(points, space.objects_per_dimension[0].object):
                 # GGD2VTK converts coordinates differently for wall than from other IDSs
-                if self.ids_name == "wall":
-                    obj.geometry[:] = [p[0], p[1], p[2]]
-                else:
-                    obj.geometry[:] = [p[0], p[2], p[1]]
+                if self.ids_name != "wall":
+                    point = [point[0], point[2], point[1]]
+                obj.geometry = point
 
         # Fill cells
         for dim, cells in objects_per_dimension.items():
@@ -235,18 +239,17 @@ class VTK2GGDConverter:
             subset.dimension = cell_dim + 1
 
             identifier_name = name.lower().replace("-", "_").replace(" ", "_")
-            if identifier_name in [m.name for m in identifiers.ggd_subset_identifier]:
+            try:
                 subset.identifier = identifiers.ggd_subset_identifier[identifier_name]
-            else:
+            except KeyError:
                 subset.identifier.name = identifier_name
                 subset.identifier.index = 0
                 subset.identifier.description = "Unknown subset identifier"
 
             subset.element.resize(n_elem)
-            for i in range(n_elem):
-                el = subset.element[i]
-                el.object.resize(1)
-                obj = el.object[0]
+            for i, element in enumerate(subset.element):
+                element.object.resize(1)
+                obj = element.object[0]
                 obj.space = 1
                 obj.dimension = subset.dimension
                 if cell_dim == 0:

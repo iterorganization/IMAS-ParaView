@@ -152,7 +152,7 @@ The ``vtk2ggd`` converter has specific requirements for the VTK input files it c
     ``edge_profiles_1.vtpc``, etc.), one for each time step.
 
 * Each ``vtkPartitionedDataSet`` should contain **exactly one partition** containing a ``vtkUnstructuredGrid``, otherwise the 
-  partition is skipped. Each ``vtkUnstructuredGrid`` will be converted into a separate grid subset in the GGD
+  partition is skipped. Each ``vtkUnstructuredGrid`` will be converted into a separate grid subset in the GGD.
 
 Limitations of VTK grid conversion
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

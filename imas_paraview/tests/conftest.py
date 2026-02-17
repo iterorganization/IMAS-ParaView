@@ -8,7 +8,6 @@ import pytest
 
 from imas_paraview.plugins.vtkggdreader import SUPPORTED_IDS_NAMES
 from imas_paraview.tests.fill_ggd import fill_ids
-from imas_paraview.util import has_imas_core
 
 logger = logging.getLogger("imas_paraview")
 
@@ -65,12 +64,6 @@ def pytest_sessionstart(session):
     # Write test file as netCDF
     with imas.DBEntry("netcdf_testdb.nc", "w", dd_version=DD_VERSION) as dbentry:
         dbentry.put(ids)
-
-    if not has_imas_core():
-        logger.warning(
-            "IMAS-Core is not available, some integration tests are skipped."
-        )
-        return
 
     # Write integration test file as MDSPlus
     if not session.config.getoption("--skip-mdsplus"):

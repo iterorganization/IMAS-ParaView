@@ -215,27 +215,37 @@ def convert_vtk_to_ggd(path, uri, ids_name, dd_version):
     if path.is_dir():  # The input is a file series
         click.echo(f"Scanning directory {path} for VTK files...")
         # Find all .vtpc files and sort them by the trailing index (e.g., _0, _1)
+        string_match = f"{ids_name}_*.vtpc" if ids_name else "*.vtpc"
+
         vtpc_files = sorted(
-            path.glob("*.vtpc"),
+            path.glob(string_match),
             key=lambda x: int(x.stem.split("_")[-1]) if "_" in x.stem else 0,
         )
         if not vtpc_files:
             raise click.UsageError(f"No .vtpc files found in {path}")
 
-        # Infer ids_name from the first file (edge_profiles_0.vtpc -> edge_profiles)
+        # Infer ids_name from the file names (edge_profiles_0.vtpc -> edge_profiles)
         if not ids_name:
-            ids_name = vtpc_files[0].stem.rsplit("_", 1)[0]
-            if ids_name not in imas.IDSFactory().ids_names():
-                raise click.UsageError(
-                    f"Could not infer IDS name from file names: {ids_name} is not a "
-                    "valid IDS name. Use '--ids_name' to set the required IDS name"
-                )
+            ids_names = set()
+            for vtpc_file in vtpc_files:
+                ids_names.add(vtpc_file.stem.rsplit("_", 1)[0])
+                if len(ids_names) > 1:
+                    raise click.UsageError(
+                        "Could not infer IDS name from file names, because there are "
+                        "multiple IDS names in the directory. Use '--ids_name' to set "
+                        "the required IDS name"
+                    )
+
+            ids_name = next(iter(ids_names))
     else:
-        vtpc_files = [path]
         if not ids_name:
             raise click.UsageError(
                 "Argument '--ids_name' is required for single file conversion."
             )
+        vtpc_files = [path]
+
+    if ids_name not in imas.IDSFactory().ids_names():
+        raise click.UsageError(f"{ids_name} is not a valid IDS name")
 
     click.echo(f"Converting {len(vtpc_files)} time steps for IDS '{ids_name}'...")
 
@@ -244,14 +254,6 @@ def convert_vtk_to_ggd(path, uri, ids_name, dd_version):
     ids = converter.convert()
 
     with imas.DBEntry(uri, "x", dd_version=dd_version) as entry:
-        # Set version_put properties (version_put was added in DD 3.22)
-        if hasattr(ids.ids_properties, "version_put"):
-            ids.ids_properties.version_put.access_layer = (
-                entry._dbe_impl.access_layer_version()
-            )
-            version_put = ids.ids_properties.version_put
-            version_put.data_dictionary = entry.dd_version
-            version_put.access_layer_language = f"IMAS-Python {imas.__version__}"
         entry.put(ids)
 
     click.echo(f"Successfully wrote {len(vtpc_files)} time steps to {uri}")
