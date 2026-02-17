@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 
+import imas
 import numpy as np
 from vtk import vtkDataObject, vtkStreamingDemandDrivenPipeline
 from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy
@@ -269,6 +270,12 @@ def load_vtpc(file_path):
         if time_steps:
             # NOTE: IMAS-ParaView exports only a single time step per
             # vtkPartitionedDataSetCollection
+            if len(time_steps) > 1:
+                logger.warning(
+                    "The partitioned dataset collection at '%s' contains multiple time "
+                    "steps. Only the first time step will be converted!",
+                    file_path,
+                )
             time_value = time_steps[0]
 
     reader.Update()
@@ -288,3 +295,12 @@ def vtk_cells_to_nodes(cell_array):
     return [  # GGD uses 1-based indexing
         connectivity[offsets[i] : offsets[i + 1]] + 1 for i in range(len(offsets) - 1)
     ]
+
+
+def has_imas_core():
+    """Check whether imas-core is available."""
+    try:
+        return imas.backends.imas_core.imas_interface.has_imas
+    except AttributeError:
+        # imas-python >= v2.2.0 always has IMAS-Core installed
+        return True
