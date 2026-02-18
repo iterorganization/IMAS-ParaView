@@ -120,14 +120,8 @@ class VTK2GGDConverter:
         space.coordinates_type.resize(3)
         coord = identifiers.coordinate_identifier
 
-        # GGD2VTK converts coordinates differently for wall than from other IDSs
-        if self.ids_name == "wall":
-            coord_identifiers = [coord.x, coord.z, coord.y]
-        else:
-            coord_identifiers = [coord.x, coord.y, coord.z]
-
         # coordinates_type changed from INT_1D to an AoS of identifiers in DD4.0.0
-        for i, coord_identifier in enumerate(coord_identifiers):
+        for i, coord_identifier in enumerate([coord.x, coord.y, coord.z]):
             if isinstance(space.coordinates_type, IDSStructure):
                 space.coordinates_type[i] = coord_identifier
             else:
@@ -159,9 +153,6 @@ class VTK2GGDConverter:
         if points is not None:
             space.objects_per_dimension[0].object.resize(len(points))
             for point, obj in zip(points, space.objects_per_dimension[0].object):
-                # GGD2VTK converts coordinates differently for wall than from other IDSs
-                if self.ids_name != "wall":
-                    point = [point[0], point[2], point[1]]
                 obj.geometry = point
 
         # Fill cells
