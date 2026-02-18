@@ -236,7 +236,7 @@ def convert_vtk_to_ggd(path, uri, ids_name, dd_version):
                         "the required IDS name"
                     )
 
-            ids_name = next(iter(ids_names))
+            (ids_name,) = ids_names
     else:
         if not ids_name:
             raise click.UsageError(
