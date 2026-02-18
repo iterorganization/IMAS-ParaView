@@ -69,7 +69,7 @@ def get_ggd_path(ids_metadata) -> Optional[str]:
     return None
 
 
-def get_grid_ggd(ids, time=0, parent_idx=0):
+def get_grid_ggd(ids, time=0.0, parent_idx=0):
     """Finds and returns the grid_ggd within IDS at the time index ggd_idx. If the
     grid_ggd at ggd_idx time index does not exist, it tries to return the first
     grid_ggd. If this does not exist, it returns None.
@@ -103,6 +103,9 @@ def get_grid_ggd(ids, time=0, parent_idx=0):
             if 0 <= ggd_idx < len(node):
                 node = node[ggd_idx]
             else:
+                if len(node) == 0:
+                    return None
+
                 node = node[0]
                 logger.warning(
                     "The GGD grid was not found at time index %d, so first "
@@ -110,6 +113,8 @@ def get_grid_ggd(ids, time=0, parent_idx=0):
                     ggd_idx,
                 )
         else:
+            if len(node) == 0:
+                return None
             node = node[parent_idx]
 
     return node

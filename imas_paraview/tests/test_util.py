@@ -1,9 +1,10 @@
+import imas
 import numpy as np
 import pytest
 import vtk
 from vtk.util.numpy_support import vtk_to_numpy
 
-from imas_paraview.util import find_closest_indices, points_to_vtkpoly
+from imas_paraview.util import find_closest_indices, get_grid_ggd, points_to_vtkpoly
 
 
 @pytest.fixture
@@ -72,3 +73,35 @@ def test_points_to_vtkpoly_filled_polygon(points):
 def test_points_to_vtkpoly_filled_requires_closed(points):
     with pytest.raises(ValueError):
         points_to_vtkpoly(points, is_closed=False, is_filled=True)
+
+
+def test_get_grid_ggd():
+    dd_version = "4.0.0"
+    ids = imas.IDSFactory(version=dd_version).new("edge_profiles")
+    ids.time = [0.0, 1.1, 2.2]
+    ids.ids_properties.homogeneous_time = imas.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
+    assert get_grid_ggd(ids) is None
+    ids.grid_ggd.resize(3)
+    # Test with id() otherwise IDSStructure will compare contents of structure
+    assert id(get_grid_ggd(ids)) == id(ids.grid_ggd[0])
+    assert id(get_grid_ggd(ids, time=1.1)) == id(ids.grid_ggd[1])
+    assert id(get_grid_ggd(ids, time=2.2)) == id(ids.grid_ggd[2])
+
+    ids = imas.IDSFactory(version=dd_version).new("wall")
+    ids.time = [0.0]
+    ids.ids_properties.homogeneous_time = imas.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
+    assert get_grid_ggd(ids) is None
+    ids.description_ggd.resize(2)
+    ids.description_ggd[0].grid_ggd.resize(1)
+    ids.description_ggd[1].grid_ggd.resize(1)
+    assert id(get_grid_ggd(ids)) == id(ids.description_ggd[0].grid_ggd[0])
+    assert id(get_grid_ggd(ids, parent_idx=1)) == id(ids.description_ggd[1].grid_ggd[0])
+
+    ids = imas.IDSFactory(version=dd_version).new("equilibrium")
+    ids.time = [0.0]
+    ids.ids_properties.homogeneous_time = imas.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
+    assert get_grid_ggd(ids) is None
+    ids.grids_ggd.resize(1)
+    assert get_grid_ggd(ids) is None
+    ids.grids_ggd[0].grid.resize(1)
+    assert id(get_grid_ggd(ids)) == id(ids.grids_ggd[0].grid[0])

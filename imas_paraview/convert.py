@@ -113,7 +113,7 @@ class Converter:
         if time is None:
             time = self.ids.time[self.time_idx]
 
-        self.grid_ggd = get_grid_ggd(self.ids, time, parent_idx)
+        self.grid_ggd = get_grid_ggd(self.ids, time=time, parent_idx=parent_idx)
         if self.grid_ggd is None:
             logger.error("Could not load a valid GGD grid.")
             return None
