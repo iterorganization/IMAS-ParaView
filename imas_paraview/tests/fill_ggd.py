@@ -138,9 +138,9 @@ def set_vertices(N, space, create_3d_grid):
         for j in range(N):
             idx = i * N + j
             if create_3d_grid:
-                vertices[idx].geometry = [float(j), 0.0, float(i)]
+                vertices[idx].geometry = [0.5 * float(j), 0.0, float(i)]
             else:
-                vertices[idx].geometry = [float(j), float(i)]
+                vertices[idx].geometry = [0.5 * float(j), float(i)]
     return num_vertices
 
 
