@@ -81,6 +81,24 @@ def fill_vtk_points(
     X, Y, Z = coord_id.x.value, coord_id.y.value, coord_id.z.value
     R, PHI = coord_id.r.value, coord_id.phi.value
 
+    # Old version of GGD Fortran library (<=1.12.0) did not set coordinate identifiers
+    # correctly, setting the points in r,phi-coordinates instead of r,z. For this case
+    # we overwrite the coordinate identifiers.
+    # This issue has been fixed in the following commit:
+    # https://github.com/iterorganization/GGD/commit/23af2f113e550fa6e8d05c982ddae53bf29c1cf1 # noqa: E501
+    if grid_ggd.space[
+        space_idx
+    ].geometry_type.description == "Poloidal plane cross-section" and coord_indices == [
+        R,
+        PHI,
+    ]:
+        logger.warning(
+            "The geometry type description was set to 'Poloidal plane cross-section' "
+            "but the coordinate identifiers were set to (r, phi). They have been "
+            "interpreted as (r, z) instead."
+        )
+        coord_indices = [R, Z]
+
     supported = {X, Y, Z, R, PHI}
     unsupported = set(coord_indices) - supported
     if unsupported:
