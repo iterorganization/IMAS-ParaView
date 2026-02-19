@@ -26,6 +26,7 @@ Manual
 
    self
    installing
+   gallery
    
 .. toctree::
    :caption: How To Use
