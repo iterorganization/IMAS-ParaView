@@ -12,7 +12,7 @@ from rich.table import Table
 
 import imas_paraview
 from imas_paraview.convert import Converter
-from imas_paraview.util import find_closest_indices, load_vtpc
+from imas_paraview.util import find_closest_indices, load_vtpc, load_vtu
 from imas_paraview.vtk2ggd import VTK2GGDConverter
 
 logger = logging.getLogger(__name__)
@@ -203,58 +203,26 @@ def convert_ggd_to_vtk(
     help="Store GGD grid in cylindrical coordinates instead of cartesian.",
 )
 def convert_vtk_to_ggd(path, uri, ids_name, dd_version, cylindrical_coordinates):
-    """Convert a file series of .vtpc files, or a single .vtpc containing
-    unstructured grids to a GGD grid in an IDS.
+    """Convert a file series of .vtpc files, a single .vtpc, or a single .vtu file
+    containing unstructured grids to a GGD grid in an IDS.
 
     \b
     Arguments:
     \b
-    path            Path to a single .vtpc file, or to the directory containing a series
-                    of .vtpc files.
+    path            Path to a single .vtpc/.vtu file, or to the directory containing a
+                    file series of .vtpc files.
     uri             Output URI to store the IDS.
     """
     sys.excepthook = _excepthook
 
-    vtpc_files = []
-
-    if path.is_dir():  # The input is a file series
-        click.echo(f"Scanning directory {path} for VTK files...")
-        # Find all .vtpc files and sort them by the trailing index (e.g., _0, _1)
-        string_match = f"{ids_name}_*.vtpc" if ids_name else "*.vtpc"
-
-        vtpc_files = sorted(
-            path.glob(string_match),
-            key=lambda x: int(x.stem.split("_")[-1]) if "_" in x.stem else 0,
-        )
-        if not vtpc_files:
-            raise click.UsageError(f"No .vtpc files found in {path}")
-
-        # Infer ids_name from the file names (edge_profiles_0.vtpc -> edge_profiles)
-        if not ids_name:
-            ids_names = set()
-            for vtpc_file in vtpc_files:
-                ids_names.add(vtpc_file.stem.rsplit("_", 1)[0])
-                if len(ids_names) > 1:
-                    raise click.UsageError(
-                        "Could not infer IDS name from file names, because there are "
-                        "multiple IDS names in the directory. Use '--ids_name' to set "
-                        "the required IDS name"
-                    )
-
-            (ids_name,) = ids_names
+    if path.suffix == ".vtu":
+        vtk_objects = _load_vtu_file(path, ids_name)
     else:
-        if not ids_name:
-            raise click.UsageError(
-                "Argument '--ids_name' is required for single file conversion."
-            )
-        vtpc_files = [path]
+        vtk_objects, ids_name = _load_vtpc_files(path, ids_name)
 
     if ids_name not in imas.IDSFactory().ids_names():
         raise click.UsageError(f"{ids_name} is not a valid IDS name")
 
-    click.echo(f"Converting {len(vtpc_files)} time steps for IDS '{ids_name}'...")
-
-    vtk_objects = [load_vtpc(f) for f in vtpc_files]
     converter = VTK2GGDConverter(
         vtk_objects,
         ids_name,
@@ -266,7 +234,52 @@ def convert_vtk_to_ggd(path, uri, ids_name, dd_version, cylindrical_coordinates)
     with imas.DBEntry(uri, "x", dd_version=dd_version) as entry:
         entry.put(ids)
 
-    click.echo(f"Successfully wrote {len(vtpc_files)} time steps to {uri}")
+    click.echo(f"Successfully wrote {len(vtk_objects)} time steps to {uri}")
+
+
+def _load_vtu_file(path, ids_name):
+    if not ids_name:
+        raise click.UsageError(
+            "Argument '--ids_name' is required for single file conversion."
+        )
+
+    click.echo(f"Converting single .vtu file to IDS '{ids_name}'...")
+    return [load_vtu(path)]
+
+
+def _load_vtpc_files(path, ids_name):
+    vtpc_files = []
+
+    if path.is_dir():
+        click.echo(f"Scanning directory {path} for VTK files...")
+        string_match = f"{ids_name}_*.vtpc" if ids_name else "*.vtpc"
+        vtpc_files = sorted(
+            path.glob(string_match),
+            key=lambda x: int(x.stem.split("_")[-1]) if "_" in x.stem else 0,
+        )
+        if not vtpc_files:
+            raise click.UsageError(f"No .vtpc files found in {path}")
+
+        if not ids_name:
+            ids_names = set()
+            for vtpc_file in vtpc_files:
+                ids_names.add(vtpc_file.stem.rsplit("_", 1)[0])
+                if len(ids_names) > 1:
+                    raise click.UsageError(
+                        "Could not infer IDS name from file names, because there are "
+                        "multiple IDS names in the directory. Use '--ids_name' to set "
+                        "the required IDS name"
+                    )
+            (ids_name,) = ids_names
+    else:
+        if not ids_name:
+            raise click.UsageError(
+                "Argument '--ids_name' is required for single file conversion."
+            )
+        vtpc_files = [path]
+
+    click.echo(f"Converting {len(vtpc_files)} time steps for IDS '{ids_name}'...")
+    return [load_vtpc(f) for f in vtpc_files], ids_name
 
 
 def is_lazy(all_times, lazy_flag, no_lazy_flag):

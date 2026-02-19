@@ -6,8 +6,16 @@ import numpy as np
 from vtk import vtkDataObject, vtkStreamingDemandDrivenPipeline
 from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy
 from vtkmodules.vtkCommonCore import vtkPoints
-from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkPolyData
-from vtkmodules.vtkIOXML import vtkXMLPartitionedDataSetCollectionReader
+from vtkmodules.vtkCommonDataModel import (
+    vtkCellArray,
+    vtkPartitionedDataSet,
+    vtkPartitionedDataSetCollection,
+    vtkPolyData,
+)
+from vtkmodules.vtkIOXML import (
+    vtkXMLPartitionedDataSetCollectionReader,
+    vtkXMLUnstructuredGridReader,
+)
 
 logger = logging.getLogger("imas_paraview")
 
@@ -300,6 +308,33 @@ def load_vtpc(file_path):
     if time_value is not None:
         vtk_obj.GetInformation().Set(vtkDataObject.DATA_TIME_STEP(), time_value)
     return vtk_obj
+
+
+def load_vtu(file_path):
+    """Load a vtkUnstructuredGrid from a .vtu file and wrap it in a
+    vtkPartitionedDataSetCollection so it is compatible with VTK2GGDConverter.
+
+    Args:
+        file_path: The file path to the .vtu file.
+
+    Returns:
+        A vtkPartitionedDataSetCollection containing the unstructured grid.
+    """
+    reader = vtkXMLUnstructuredGridReader()
+    reader.SetFileName(str(file_path))
+    reader.Update()
+    ugrid = reader.GetOutput()
+
+    pds = vtkPartitionedDataSet()
+    pds.SetNumberOfPartitions(1)
+    pds.SetPartition(0, ugrid)
+
+    vtpc = vtkPartitionedDataSetCollection()
+    vtpc.SetNumberOfPartitionedDataSets(1)
+    vtpc.SetPartitionedDataSet(0, pds)
+
+    vtpc.GetMetaData(0).Set(vtpc.NAME(), file_path.stem)
+    return vtpc
 
 
 def vtk_cells_to_nodes(cell_array):

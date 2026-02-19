@@ -4,6 +4,9 @@ import pytest
 from click import UsageError
 from click.testing import CliRunner
 from conftest import DD_VERSION
+from vtkmodules.vtkCommonCore import vtkPoints
+from vtkmodules.vtkCommonDataModel import vtkQuad, vtkUnstructuredGrid
+from vtkmodules.vtkIOXML import vtkXMLUnstructuredGridWriter
 
 from imas_paraview.cli import (
     cli,
@@ -99,6 +102,55 @@ def test_vtk2ggd(tmp_path):
 
     # Check if the two IDSs are the same
     assert list(imas.util.idsdiffgen(ids, ids2)) == []
+
+
+def test_vtk2ggd_unstructured_grid(tmp_path):
+    # Build a simple square vtkUnstructuredGrid
+    points = vtkPoints()
+    points.InsertNextPoint(0.0, 0.0, 0.0)
+    points.InsertNextPoint(1.0, 0.0, 0.0)
+    points.InsertNextPoint(1.0, 1.0, 0.0)
+    points.InsertNextPoint(0.0, 1.0, 0.0)
+
+    quad = vtkQuad()
+    quad.GetPointIds().SetId(0, 0)
+    quad.GetPointIds().SetId(1, 1)
+    quad.GetPointIds().SetId(2, 2)
+    quad.GetPointIds().SetId(3, 3)
+
+    ugrid = vtkUnstructuredGrid()
+    ugrid.SetPoints(points)
+    ugrid.InsertNextCell(quad.GetCellType(), quad.GetPointIds())
+
+    # Write to .vtu file
+    vtu_path = tmp_path / "test_grid.vtu"
+    writer = vtkXMLUnstructuredGridWriter()
+    writer.SetFileName(str(vtu_path))
+    writer.SetInputData(ugrid)
+    writer.Write()
+
+    # Convert .vtu to IDS
+    ids_name = "edge_profiles"
+    uri_out = f"{tmp_path}/output.nc"
+    runner = CliRunner()
+    args = [str(vtu_path), uri_out, "--ids_name", ids_name, "--dd_version", DD_VERSION]
+    result = runner.invoke(convert_vtk_to_ggd, args)
+    assert result.exit_code == 0
+
+    with imas.DBEntry(uri_out, "r", dd_version=DD_VERSION) as dbentry:
+        ids2 = dbentry.get(ids_name)
+    assert len(ids2.time) == 1
+    space = ids2.grid_ggd[0].space[0]
+    assert len(space.objects_per_dimension[0].object) == 4
+    node_coords = [list(obj.geometry) for obj in space.objects_per_dimension[0].object]
+    assert node_coords == [
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [1.0, 1.0, 0.0],
+        [0.0, 1.0, 0.0],
+    ]
+    assert len(space.objects_per_dimension[2].object) == 1  # 1 quad cell
+    assert list(space.objects_per_dimension[2].object[0].nodes) == [1, 2, 3, 4]
 
 
 def test_parse_uri():
