@@ -204,6 +204,21 @@ def pol_to_cart(rho, phi):
     return (x, y)
 
 
+def cart_to_pol(x, y):
+    """Convert from cartesian to polar coordinates.
+
+    Args:
+        x: the distance in the x-direction
+        y: the distance in the y-direction
+
+    Returns:
+        Tuple containing the r and phi coordinates
+    """
+    r = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x)
+    return (r, phi)
+
+
 def points_to_vtkpoly(points, is_closed=False, is_filled=False):
     """Convert a list of 3D points to a vtkPoints and vtkCellArray, which are combined
     into a single VtkPolyData object. The expected format of the points is:

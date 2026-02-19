@@ -197,7 +197,12 @@ def convert_ggd_to_vtk(
     type=str,
     help="Specify the version of the Data Dictionary to export the IDS to.",
 )
-def convert_vtk_to_ggd(path, uri, ids_name, dd_version):
+@click.option(
+    "--cylindrical_coordinates",
+    is_flag=True,
+    help="Store GGD grid in cylindrical coordinates instead of cartesian.",
+)
+def convert_vtk_to_ggd(path, uri, ids_name, dd_version, cylindrical_coordinates):
     """Convert a file series of .vtpc files, or a single .vtpc containing
     unstructured grids to a GGD grid in an IDS.
 
@@ -250,7 +255,12 @@ def convert_vtk_to_ggd(path, uri, ids_name, dd_version):
     click.echo(f"Converting {len(vtpc_files)} time steps for IDS '{ids_name}'...")
 
     vtk_objects = [load_vtpc(f) for f in vtpc_files]
-    converter = VTK2GGDConverter(vtk_objects, ids_name, dd_version)
+    converter = VTK2GGDConverter(
+        vtk_objects,
+        ids_name,
+        dd_version=dd_version,
+        cylindrical_coordinates=cylindrical_coordinates,
+    )
     ids = converter.convert()
 
     with imas.DBEntry(uri, "x", dd_version=dd_version) as entry:

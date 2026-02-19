@@ -11,7 +11,12 @@ from vtkmodules.vtkCommonDataModel import (
     vtkUnstructuredGrid,
 )
 
-from imas_paraview.util import create_first_grid, int32array, vtk_cells_to_nodes
+from imas_paraview.util import (
+    cart_to_pol,
+    create_first_grid,
+    int32array,
+    vtk_cells_to_nodes,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,11 +31,13 @@ class VTK2GGDConverter:
         vtk_objects: list[vtkPartitionedDataSetCollection],
         ids_name,
         dd_version=None,
+        cylindrical_coordinates=False,
     ):
         self.ids_name = ids_name
         self.factory = imas.IDSFactory(version=dd_version)
         self.dd_version = self.factory.version
         self.vtk_objects = vtk_objects
+        self.cylindrical_coordinates = cylindrical_coordinates
 
     def convert(self):
         """Converts a list of vtkPartitionedDataSetCollections into a single IDS. Each
@@ -116,12 +123,16 @@ class VTK2GGDConverter:
         # NOTE: We only support non-fourier grids
         space.geometry_type.index = 0
 
-        # NOTE: We only support X,Y,Z coordinates
+        # NOTE: We only support cartesian or cylindrical coordinates
         space.coordinates_type.resize(3)
         coord = identifiers.coordinate_identifier
+        if self.cylindrical_coordinates:
+            coord_space = [coord.r, coord.phi, coord.z]
+        else:
+            coord_space = [coord.x, coord.y, coord.z]
 
         # coordinates_type changed from INT_1D to an AoS of identifiers in DD4.0.0
-        for i, coord_identifier in enumerate([coord.x, coord.y, coord.z]):
+        for i, coord_identifier in enumerate(coord_space):
             if isinstance(space.coordinates_type, IDSStructure):
                 space.coordinates_type[i] = coord_identifier
             else:
@@ -153,7 +164,11 @@ class VTK2GGDConverter:
         if points is not None:
             space.objects_per_dimension[0].object.resize(len(points))
             for point, obj in zip(points, space.objects_per_dimension[0].object):
-                obj.geometry = point
+                if self.cylindrical_coordinates:
+                    r, phi = cart_to_pol(point[0], point[1])
+                    obj.geometry = [r, phi, point[2]]
+                else:
+                    obj.geometry = point
 
         # Fill cells
         for dim, cells in objects_per_dimension.items():
