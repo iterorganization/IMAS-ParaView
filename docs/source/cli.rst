@@ -144,14 +144,14 @@ VTK File Format Requirements
 
 The ``vtk2ggd`` converter has specific requirements for the VTK input files it can process:
 
-* The converter expects VTK Partitioned Dataset Collection (``.vtpc``) files in XML format
-* The converter can handle either:
+* The converter can convert the following VTK files in the XML format:
   
-  - A single ``.vtpc`` file containing a single time step conversion
+  - A single ``.vtu`` file containing a vtkUnstructuredGrid.
+  - A single ``.vtpc`` file containing a vtkPartitionedDataSetCollection with a single time step
   - A directory containing a file series of ``.vtpc`` files (e.g., ``edge_profiles_0.vtpc``, 
     ``edge_profiles_1.vtpc``, etc.), one for each time step.
 
-* Each ``vtkPartitionedDataSet`` should contain **exactly one partition** containing a ``vtkUnstructuredGrid``, otherwise the 
+* When providing ``.vtpc`` files, each ``vtkPartitionedDataSet`` should contain **exactly one partition** containing a ``vtkUnstructuredGrid``, otherwise the 
   partition is skipped. Each ``vtkUnstructuredGrid`` will be converted into a separate grid subset in the GGD.
 
 Limitations of VTK grid conversion
@@ -162,6 +162,6 @@ The converter can only output IDSs with:
 * a `linear <https://imas-data-dictionary.readthedocs.io/en/latest/generated/identifier/ggd_identifier.html>`_ GGD grid.
 * a single `space of a GGD grid <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/edge_profiles.html#edge_profiles-grid_ggd-space>`_.
 * `standard space geometries <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/edge_profiles.html#edge_profiles-grid_ggd-space-geometry_type>`_, not Fourier spaces.
-* X, Y, Z coordinates (`coordinate_identifier.x/y/z <https://imas-data-dictionary.readthedocs.io/en/latest/generated/identifier/coordinate_identifier.html>`_).
+* X, Y, Z coordinates (`coordinate_identifier.x/y/z <https://imas-data-dictionary.readthedocs.io/en/latest/generated/identifier/coordinate_identifier.html>`_), or R, Phi, Z coordinates (when the ``--cylindrical_coordinates`` flag is enabled).
 * the GGD grid structure itself, not any physical quantities (temperature, density, etc.) defined on the grids in the `ggd <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/edge_profiles.html#edge_profiles-ggd>`_ AoS.
 * a homogeneous time mode.
