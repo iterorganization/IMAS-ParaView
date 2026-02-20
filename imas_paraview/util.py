@@ -13,6 +13,8 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPartitionedDataSetCollection,
     vtkPolyData,
 )
+from vtkmodules.vtkFiltersCore import vtkGlyph3D
+from vtkmodules.vtkFiltersSources import vtkArrowSource, vtkSphereSource
 from vtkmodules.vtkIOXML import (
     vtkXMLPartitionedDataSetCollectionReader,
     vtkXMLUnstructuredGridReader,
@@ -208,6 +210,14 @@ def find_closest_indices(values_to_extract, source_array):
     return list(indices[indices >= 0])
 
 
+def vel_pol_to_cart(
+    v_r: np.ndarray, v_phi: np.ndarray, v_z: np.ndarray, phi: np.ndarray
+) -> np.ndarray:
+    vel_x = v_r * np.cos(phi) - v_phi * np.sin(phi)
+    vel_y = v_r * np.sin(phi) + v_phi * np.cos(phi)
+    return np.stack([vel_x, vel_y, v_z], axis=1)
+
+
 def pol_to_cart(rho, phi):
     """Convert from polar (or cylindrical) coordinates to cartesian.
 
@@ -365,3 +375,81 @@ def has_imas_core():
     except AttributeError:
         # imas-python >= v2.2.0 always has IMAS-Core installed
         return True
+
+
+def create_vtk_spheres(positions, radii, scaling_factor=1.0):
+    """Create a vtkPolyData of glyph spheres scaled by fragment radius.
+
+    Args:
+        positions: Array with Cartesian positions.
+        radii: Array with sphere radii.
+        scaling_factor: Scaling factor of the spheres.
+
+    Returns:
+        vtkPolyData with all sphere glyphs appended.
+    """
+    pts = vtkPoints()
+    pts.SetData(numpy_to_vtk(positions))
+
+    src_poly = vtkPolyData()
+    src_poly.SetPoints(pts)
+
+    scale_array = numpy_to_vtk(radii)
+    scale_array.SetName("radius")
+    src_poly.GetPointData().SetScalars(scale_array)
+
+    sphere = vtkSphereSource()
+    sphere.SetRadius(1.0)
+    sphere.Update()
+
+    glyph = vtkGlyph3D()
+    # Apply sphere source to each point
+    glyph.SetInputData(src_poly)
+    glyph.SetSourceConnection(sphere.GetOutputPort())
+    glyph.SetScaleModeToScaleByScalar()
+    glyph.SetScaleFactor(scaling_factor)
+    glyph.Update()
+    return glyph.GetOutput()
+
+
+def create_vtk_arrows(positions, velocities, scaling_factor=1.0):
+    """Create a vtkPolyData of glyph arrows representing fragment velocities.
+
+    Args:
+        positions: Array with Cartesian positions.
+        velocities: Array with Cartesian velocities.
+        scaling_factor: Scaling factor of the arrows.
+
+    Returns:
+        vtkPolyData with all arrow glyphs appended.
+    """
+
+    pts = vtkPoints()
+    pts.SetData(numpy_to_vtk(positions, deep=True))
+
+    src_poly = vtkPolyData()
+    src_poly.SetPoints(pts)
+
+    norm_arr = numpy_to_vtk(velocities, deep=True)
+    norm_arr.SetName("velocity_direction")
+    src_poly.GetPointData().SetNormals(norm_arr)
+
+    # Scale arrow with speed
+    speeds = np.linalg.norm(velocities, axis=1)
+    speed_arr = numpy_to_vtk(speeds, deep=True)
+    speed_arr.SetName("speed [m/s]")
+    src_poly.GetPointData().SetScalars(speed_arr)
+
+    arrow = vtkArrowSource()
+    arrow.Update()
+
+    glyph = vtkGlyph3D()
+    glyph.SetInputData(src_poly)
+    glyph.SetSourceConnection(arrow.GetOutputPort())
+    glyph.SetVectorModeToUseNormal()
+    glyph.SetScaleModeToScaleByScalar()
+    glyph.SetScaleFactor(scaling_factor * 1e-3)
+    glyph.OrientOn()
+    glyph.Update()
+
+    return glyph.GetOutput()
