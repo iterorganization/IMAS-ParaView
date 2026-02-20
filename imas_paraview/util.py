@@ -1,10 +1,21 @@
 import logging
 from typing import Optional
 
+import imas
 import numpy as np
-from vtkmodules.util.numpy_support import numpy_to_vtk
+from vtk import vtkDataObject, vtkStreamingDemandDrivenPipeline
+from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy
 from vtkmodules.vtkCommonCore import vtkPoints
-from vtkmodules.vtkCommonDataModel import vtkCellArray, vtkPolyData
+from vtkmodules.vtkCommonDataModel import (
+    vtkCellArray,
+    vtkPartitionedDataSet,
+    vtkPartitionedDataSetCollection,
+    vtkPolyData,
+)
+from vtkmodules.vtkIOXML import (
+    vtkXMLPartitionedDataSetCollectionReader,
+    vtkXMLUnstructuredGridReader,
+)
 
 logger = logging.getLogger("imas_paraview")
 
@@ -201,6 +212,21 @@ def pol_to_cart(rho, phi):
     return (x, y)
 
 
+def cart_to_pol(x, y):
+    """Convert from cartesian to polar coordinates.
+
+    Args:
+        x: the distance in the x-direction
+        y: the distance in the y-direction
+
+    Returns:
+        Tuple containing the r and phi coordinates
+    """
+    r = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x)
+    return (r, phi)
+
+
 def points_to_vtkpoly(points, is_closed=False, is_filled=False):
     """Convert a list of 3D points to a vtkPoints and vtkCellArray, which are combined
     into a single VtkPolyData object. The expected format of the points is:
@@ -248,3 +274,83 @@ def points_to_vtkpoly(points, is_closed=False, is_filled=False):
         poly.SetLines(lines)
 
     return poly
+
+
+def load_vtpc(file_path):
+    """Load a vtkPartitionedDataSetCollection from disk.
+
+    Args:
+        file_path: The file path to the vtkPartitionedDataSetCollection.
+    """
+    reader = vtkXMLPartitionedDataSetCollectionReader()
+    reader.SetFileName(str(file_path))
+    reader.UpdateInformation()
+    out_info = reader.GetOutputInformation(0)
+
+    time_value = None
+    if out_info.Has(vtkStreamingDemandDrivenPipeline.TIME_STEPS()):
+        time_steps = out_info.Get(vtkStreamingDemandDrivenPipeline.TIME_STEPS())
+        if time_steps:
+            # NOTE: IMAS-ParaView exports only a single time step per
+            # vtkPartitionedDataSetCollection
+            if len(time_steps) > 1:
+                logger.warning(
+                    "The partitioned dataset collection at '%s' contains multiple time "
+                    "steps. Only the first time step will be converted!",
+                    file_path,
+                )
+            time_value = time_steps[0]
+
+    reader.Update()
+    vtk_obj = reader.GetOutput()
+
+    # Store time step as vtkDataObject
+    if time_value is not None:
+        vtk_obj.GetInformation().Set(vtkDataObject.DATA_TIME_STEP(), time_value)
+    return vtk_obj
+
+
+def load_vtu(file_path):
+    """Load a vtkUnstructuredGrid from a .vtu file and wrap it in a
+    vtkPartitionedDataSetCollection so it is compatible with VTK2GGDConverter.
+
+    Args:
+        file_path: The file path to the .vtu file.
+
+    Returns:
+        A vtkPartitionedDataSetCollection containing the unstructured grid.
+    """
+    reader = vtkXMLUnstructuredGridReader()
+    reader.SetFileName(str(file_path))
+    reader.Update()
+    ugrid = reader.GetOutput()
+
+    pds = vtkPartitionedDataSet()
+    pds.SetNumberOfPartitions(1)
+    pds.SetPartition(0, ugrid)
+
+    vtpc = vtkPartitionedDataSetCollection()
+    vtpc.SetNumberOfPartitionedDataSets(1)
+    vtpc.SetPartitionedDataSet(0, pds)
+
+    vtpc.GetMetaData(0).Set(vtpc.NAME(), file_path.stem)
+    return vtpc
+
+
+def vtk_cells_to_nodes(cell_array):
+    """Convert a VTK cell array into a list of node index (1-based) arrays."""
+    offsets = vtk_to_numpy(cell_array.GetOffsetsArray())
+    connectivity = vtk_to_numpy(cell_array.GetConnectivityArray())
+
+    return [  # GGD uses 1-based indexing
+        connectivity[offsets[i] : offsets[i + 1]] + 1 for i in range(len(offsets) - 1)
+    ]
+
+
+def has_imas_core():
+    """Check whether imas-core is available."""
+    try:
+        return imas.backends.imas_core.imas_interface.has_imas
+    except AttributeError:
+        # imas-python >= v2.2.0 always has IMAS-Core installed
+        return True

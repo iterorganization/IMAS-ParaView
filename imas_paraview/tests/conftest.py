@@ -65,12 +65,6 @@ def pytest_sessionstart(session):
     with imas.DBEntry("netcdf_testdb.nc", "w", dd_version=DD_VERSION) as dbentry:
         dbentry.put(ids)
 
-    if not imas.backends.imas_core.imas_interface.has_imas:
-        logger.warning(
-            "IMAS-Core is not available, some integration tests are skipped."
-        )
-        return
-
     # Write integration test file as MDSPlus
     if not session.config.getoption("--skip-mdsplus"):
         with imas.DBEntry(

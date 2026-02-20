@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-from vtk import vtkXMLPartitionedDataSetCollectionWriter
+from vtk import vtkDataObject, vtkXMLPartitionedDataSetCollectionWriter
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     vtkCompositeDataSet,
@@ -60,11 +60,16 @@ class Converter:
             raise RuntimeError("A provided index is out of bounds.")
 
         for index in index_list:
-            logger.info("Converting time step %f...", self.ids.time[index])
+            time = self.ids.time[index]
+            logger.info("Converting time step %f...", time)
             vtk_object = self.ggd_to_vtk(time_idx=index)
             if vtk_object is None:
                 logger.warning("Could not convert GGD at time index %d to VTK.", index)
                 continue
+
+            # Store the time value of this slice in the vtk object
+            vtk_object.GetInformation().Set(vtkDataObject.DATA_TIME_STEP(), time)
+
             self._write_vtk_to_xml(vtk_object, Path(f"{output_path}_{index}"))
 
     def ggd_to_vtk(

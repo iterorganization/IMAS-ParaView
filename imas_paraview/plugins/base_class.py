@@ -29,11 +29,11 @@ from imas_paraview.paraview_support.servermanager_tools import (
     stringlistdomain,
     stringvector,
 )
-from imas_paraview.util import get_grid_ggd
+from imas_paraview.util import get_grid_ggd, has_imas_core
 
 logger = logging.getLogger("imas_paraview")
 
-if imas.backends.imas_core.imas_interface.has_imas:
+if has_imas_core():
     BACKENDS = {
         "MDSplus": imas.ids_defs.MDSPLUS_BACKEND,
         "HDF5": imas.ids_defs.HDF5_BACKEND,
