@@ -86,16 +86,13 @@ def fill_vtk_points(
     # we overwrite the coordinate identifiers.
     # This issue has been fixed in the following commit:
     # https://github.com/iterorganization/GGD/commit/23af2f113e550fa6e8d05c982ddae53bf29c1cf1 # noqa: E501
-    if grid_ggd.space[
-        space_idx
-    ].geometry_type.description == "Poloidal plane cross-section" and coord_indices == [
+    if grid_ggd.space[space_idx].geometry_type.name == "Poloidal" and coord_indices == [
         R,
         PHI,
     ]:
         logger.warning(
-            "The geometry type description was set to 'Poloidal plane cross-section' "
-            "but the coordinate identifiers were set to (r, phi). They have been "
-            "interpreted as (r, z) instead."
+            "The geometry type was set to 'Poloidal' but the coordinate identifiers "
+            "were set to (r, phi). They have been interpreted as (r, z) instead."
         )
         coord_indices = [R, Z]
 
