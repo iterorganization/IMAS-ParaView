@@ -97,7 +97,6 @@ def get_grid_ggd(ids, time=0.0, parent_idx=0):
             continue
         elif isinstance(node, IDSStructArray):
             if len(node) == 0:
-                logger.error("'%s' array of structures is empty.")
                 return None
 
             # Time dependent array of structure
