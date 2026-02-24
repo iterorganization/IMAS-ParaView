@@ -84,8 +84,12 @@ def test_get_grid_ggd():
     ids.grid_ggd.resize(3)
     # Test with id() otherwise IDSStructure will compare contents of structure
     assert id(get_grid_ggd(ids)) == id(ids.grid_ggd[0])
+    assert id(get_grid_ggd(ids, time=0.5)) == id(ids.grid_ggd[0])
+    assert id(get_grid_ggd(ids, time=-0.5)) == id(ids.grid_ggd[0])
     assert id(get_grid_ggd(ids, time=1.1)) == id(ids.grid_ggd[1])
+    assert id(get_grid_ggd(ids, time=2.0)) == id(ids.grid_ggd[1])
     assert id(get_grid_ggd(ids, time=2.2)) == id(ids.grid_ggd[2])
+    assert id(get_grid_ggd(ids, time=3.3)) == id(ids.grid_ggd[2])
 
     ids = imas.IDSFactory(version=dd_version).new("wall")
     ids.time = [0.0]
@@ -96,6 +100,7 @@ def test_get_grid_ggd():
     ids.description_ggd[1].grid_ggd.resize(1)
     assert id(get_grid_ggd(ids)) == id(ids.description_ggd[0].grid_ggd[0])
     assert id(get_grid_ggd(ids, parent_idx=1)) == id(ids.description_ggd[1].grid_ggd[0])
+    assert get_grid_ggd(ids, parent_idx=2) is None
 
     ids = imas.IDSFactory(version=dd_version).new("equilibrium")
     ids.time = [0.0]
@@ -105,3 +110,8 @@ def test_get_grid_ggd():
     assert get_grid_ggd(ids) is None
     ids.grids_ggd[0].grid.resize(1)
     assert id(get_grid_ggd(ids)) == id(ids.grids_ggd[0].grid[0])
+
+    ids = imas.IDSFactory(version=dd_version).new("camera_ir")  # IDS without GGD grid
+    ids.time = [0.0]
+    ids.ids_properties.homogeneous_time = imas.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
+    assert get_grid_ggd(ids) is None
