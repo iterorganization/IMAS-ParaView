@@ -95,36 +95,34 @@ def get_grid_ggd(ids, time=0.0, parent_idx=0):
         node = node[path]
         if isinstance(node, IDSStructure):
             continue
-        elif isinstance(node, IDSStructArray):
-            if len(node) == 0:
-                return None
 
-            # Time dependent array of structure
-            if node.metadata.coordinate1.is_time_coordinate:
-                # Let IMAS-Python handle the time mode (homogeneous/heterogeneous):
-                time_array = node.coordinates[0]
-                # Load closest previous time index
-                ggd_idx = np.searchsorted(time_array, time, side="right") - 1
-
-                if ggd_idx < 0:
-                    ggd_idx = 0
-
-                try:
-                    node = node[ggd_idx]
-                except IndexError:
-                    node = node[0]
-                    logger.warning(
-                        "The GGD grid was not found at time index %d, so first "
-                        "grid was loaded instead.",
-                        ggd_idx,
-                    )
-            else:
-                try:
-                    node = node[parent_idx]
-                except IndexError:
-                    return None
-        else:
+        if len(node) == 0:
             return None
+
+        # Time dependent array of structure
+        if node.metadata.coordinate1.is_time_coordinate:
+            # Let IMAS-Python handle the time mode (homogeneous/heterogeneous):
+            time_array = node.coordinates[0]
+            # Load closest previous time index
+            ggd_idx = np.searchsorted(time_array, time, side="right") - 1
+
+            if ggd_idx < 0:
+                ggd_idx = 0
+
+            try:
+                node = node[ggd_idx]
+            except IndexError:
+                node = node[0]
+                logger.warning(
+                    "The GGD grid was not found at time index %d, so first "
+                    "grid was loaded instead.",
+                    ggd_idx,
+                )
+        else:
+            try:
+                node = node[parent_idx]
+            except IndexError:
+                return None
 
     return node
 
