@@ -3,7 +3,6 @@ from typing import Optional
 
 import imas
 import numpy as np
-from imas.ids_struct_array import IDSStructArray
 from imas.ids_structure import IDSStructure
 from vtk import vtkDataObject, vtkStreamingDemandDrivenPipeline
 from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy
