@@ -3,6 +3,7 @@ from typing import Optional
 
 import imas
 import numpy as np
+from imas.ids_structure import IDSStructure
 from vtk import vtkDataObject, vtkStreamingDemandDrivenPipeline
 from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy
 from vtkmodules.vtkCommonCore import vtkPoints
@@ -69,10 +70,9 @@ def get_ggd_path(ids_metadata) -> Optional[str]:
     return None
 
 
-def get_grid_ggd(ids, time=0, parent_idx=0):
-    """Finds and returns the grid_ggd within IDS at the time index ggd_idx. If the
-    grid_ggd at ggd_idx time index does not exist, it tries to return the first
-    grid_ggd. If this does not exist, it returns None.
+def get_grid_ggd(ids, time=0.0, parent_idx=0):
+    """Returns the GGD grid within IDS at a specific time. If the GGD grid does not
+    exist at the corresponding time index, it returns the first GGD grid instead.
 
     Args:
         ids: The IDS for which to return the grid_gdd.
@@ -86,23 +86,31 @@ def get_grid_ggd(ids, time=0, parent_idx=0):
     """
     grid_path = get_ggd_grid_path(ids.metadata)
     if grid_path is None:
+        logger.error("'%s' IDS does not contain a GGD grid.", ids.metadata.name)
         return None
 
     node = ids
     for path in grid_path.split("/"):
         node = node[path]
-        if node.metadata.ndim == 0:
-            pass  # Current node is a structure
-        elif node.metadata.coordinate1.is_time_coordinate:
-            # Time dependent array of structure
+        if isinstance(node, IDSStructure):
+            continue
+
+        if len(node) == 0:
+            return None
+
+        # Time dependent array of structure
+        if node.metadata.coordinate1.is_time_coordinate:
             # Let IMAS-Python handle the time mode (homogeneous/heterogeneous):
             time_array = node.coordinates[0]
             # Load closest previous time index
             ggd_idx = np.searchsorted(time_array, time, side="right") - 1
 
-            if 0 <= ggd_idx < len(node):
+            if ggd_idx < 0:
+                ggd_idx = 0
+
+            try:
                 node = node[ggd_idx]
-            else:
+            except IndexError:
                 node = node[0]
                 logger.warning(
                     "The GGD grid was not found at time index %d, so first "
@@ -110,7 +118,10 @@ def get_grid_ggd(ids, time=0, parent_idx=0):
                     ggd_idx,
                 )
         else:
-            node = node[parent_idx]
+            try:
+                node = node[parent_idx]
+            except IndexError:
+                return None
 
     return node
 
