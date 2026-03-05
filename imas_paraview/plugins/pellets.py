@@ -47,7 +47,6 @@ logger = logging.getLogger("imas_paraview")
 # - spi.injector(i1).pellet position/velocity over time
 # - injector(i1).injection_direction
 # - injector(i1).shatter_cone
-# - injector(i1)/pellet/core/species(i2).name
 
 SUPPORTED_IDS_NAMES = ["spi"]
 
@@ -93,7 +92,7 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
 
     @propertygroup(
         "Pellets Reader Settings",
-        ["frag_scaling_factor", "frag_vel_scaling_factor", ""],
+        ["frag_scaling_factor", "frag_vel_scaling_factor"],
     )
     def PG3_PelletReaderGroup(self):
         """Dummy function to define a PropertyGroup."""
@@ -130,12 +129,19 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
             if isinstance(selected, Fragments):
                 vtk_object = self._create_fragments_geom(selected, time_idx)
             else:  # selected is a VelocityMassCentre
-                vtk_object = self._build_vel_mass_centre_geom(selected)
+                vtk_object = self._create_vel_mass_centre_geom(selected)
 
             output.SetBlock(block_id, vtk_object)
         return 1
 
     def _populate_fragments(self, injector, injector_name):
+        """Populate the selectable_map with shattered pellet fragments of a shattered
+        pellet injector.
+
+        Args:
+            injector: IDSStructure of a shattered pellet injector.
+            injector_name: Name of the injector.
+        """
         if len(injector.fragment) > 0:
             injector_name = f"Shattered fragments ({injector_name})"
             self.selectable_map[injector_name] = Fragments(injector.fragment)
@@ -143,6 +149,13 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
             logger.warning("'%s' has no fragments, skipping.", injector_name)
 
     def _populate_vel_mass_centre(self, injector, injector_name):
+        """Populate the selectable_map with the velocity of the centre of mass of the
+        fragments at the shattering cone origin.
+
+        Args:
+            injector: IDSStructure of a shattered pellet injector.
+            injector_name: Name of the injector.
+        """
         vel_r = injector.velocity_mass_centre_fragments_r
 
         try:
@@ -172,25 +185,14 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
                 injector_name,
             )
 
-    def _build_vel_mass_centre_geom(self, vel_mass_centre: VelocityMassCentre):
-        vel_r = vel_mass_centre.vel_r
-        vel_phi = vel_mass_centre.vel_phi
-        vel_z = vel_mass_centre.vel_z
-        pos_r = vel_mass_centre.origin_r
-        pos_phi = vel_mass_centre.origin_phi
-        pos_z = vel_mass_centre.origin_z
-
-        pos_x, pos_y = pol_to_cart(pos_r, pos_phi)
-        position = np.array([[pos_x, pos_y, pos_z]])
-        velocity = vel_pol_to_cart(
-            np.array([vel_r]),
-            np.array([vel_phi]),
-            np.array([vel_z]),
-            np.array([pos_phi]),
-        )
-        return create_vtk_arrows(position, velocity)
-
     def _create_fragments_geom(self, frags: Fragments, time_idx):
+        """Create VTK geometry of the velocity of the centre of mass of the fragments
+        at the shattering cone origin.
+
+        Args:
+            vel_mass_centre: VelocityMassCentre dataclass
+            time_idx
+        """
         fragments = frags.fragment
         num_fragments = len(fragments)
 
@@ -234,3 +236,30 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
         vtk_fragments.AddInputData(arrows)
         vtk_fragments.Update()
         return vtk_fragments.GetOutput()
+
+    def _create_vel_mass_centre_geom(self, vel_mass_centre: VelocityMassCentre):
+        """Create VTK geometry of the velocity of the centre of mass of the fragments
+        at the shattering cone origin.
+
+        Args:
+            vel_mass_centre: VelocityMassCentre dataclass
+
+        Returns:
+            VTK arrows
+        """
+        vel_r = vel_mass_centre.vel_r
+        vel_phi = vel_mass_centre.vel_phi
+        vel_z = vel_mass_centre.vel_z
+        pos_r = vel_mass_centre.origin_r
+        pos_phi = vel_mass_centre.origin_phi
+        pos_z = vel_mass_centre.origin_z
+
+        pos_x, pos_y = pol_to_cart(pos_r, pos_phi)
+        position = np.array([[pos_x, pos_y, pos_z]])
+        velocity = vel_pol_to_cart(
+            np.array([vel_r]),
+            np.array([vel_phi]),
+            np.array([vel_z]),
+            np.array([pos_phi]),
+        )
+        return create_vtk_arrows(position, velocity)

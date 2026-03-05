@@ -213,6 +213,8 @@ def find_closest_indices(values_to_extract, source_array):
 def vel_pol_to_cart(
     v_r: np.ndarray, v_phi: np.ndarray, v_z: np.ndarray, phi: np.ndarray
 ) -> np.ndarray:
+    """Convert from polar (or cylindrical) coordinates to cartesian."""
+
     vel_x = v_r * np.cos(phi) - v_phi * np.sin(phi)
     vel_y = v_r * np.sin(phi) + v_phi * np.cos(phi)
     return np.stack([vel_x, vel_y, v_z], axis=1)
@@ -412,12 +414,12 @@ def create_vtk_spheres(positions, radii, scaling_factor=1.0):
     return glyph.GetOutput()
 
 
-def create_vtk_arrows(positions, velocities, scaling_factor=1.0):
-    """Create a vtkPolyData of glyph arrows representing fragment velocities.
+def create_vtk_arrows(positions, directions, scaling_factor=1.0):
+    """Create a vtkPolyData of glyph arrows.
 
     Args:
         positions: Array with Cartesian positions.
-        velocities: Array with Cartesian velocities.
+        directions: Array with Cartesian directions.
         scaling_factor: Scaling factor of the arrows.
 
     Returns:
@@ -430,15 +432,12 @@ def create_vtk_arrows(positions, velocities, scaling_factor=1.0):
     src_poly = vtkPolyData()
     src_poly.SetPoints(pts)
 
-    norm_arr = numpy_to_vtk(velocities, deep=True)
-    norm_arr.SetName("velocity_direction")
+    norm_arr = numpy_to_vtk(directions, deep=True)
     src_poly.GetPointData().SetNormals(norm_arr)
 
-    # Scale arrow with speed
-    speeds = np.linalg.norm(velocities, axis=1)
-    speed_arr = numpy_to_vtk(speeds, deep=True)
-    speed_arr.SetName("speed [m/s]")
-    src_poly.GetPointData().SetScalars(speed_arr)
+    # Scale arrow with velocity magnitude
+    magnitude = numpy_to_vtk(np.linalg.norm(directions, axis=1), deep=True)
+    src_poly.GetPointData().SetScalars(magnitude)
 
     arrow = vtkArrowSource()
     arrow.Update()
@@ -448,6 +447,7 @@ def create_vtk_arrows(positions, velocities, scaling_factor=1.0):
     glyph.SetSourceConnection(arrow.GetOutputPort())
     glyph.SetVectorModeToUseNormal()
     glyph.SetScaleModeToScaleByScalar()
+    glyph.SetColorModeToColorByScale()
     glyph.SetScaleFactor(scaling_factor * 1e-3)
     glyph.OrientOn()
     glyph.Update()
