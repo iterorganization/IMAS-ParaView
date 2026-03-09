@@ -36,11 +36,11 @@ def test_spi_fragments():
     reader._ids = ids
     reader.setup_ids()
 
-    fragments = reader._create_fragments_geom(
+    fragments = reader._create_fragments_pos_geom(
         reader.selectable_map["Shattered fragments (test_injector)"], 0
     )
     assert len(vtk_to_numpy(fragments.GetPoints().GetData())) > 0
-    fragments_com_vel = reader._create_vel_mass_centre_geom(
+    fragments_com_vel = reader._create_vel_centre_of_mass_geom(
         reader.selectable_map["Fragment centre of mass velocity (test_injector)"],
     )
     assert len(vtk_to_numpy(fragments_com_vel.GetPoints().GetData())) > 0

@@ -8,7 +8,6 @@ from imas.ids_primitive import IDSNumericArray
 from imas.ids_struct_array import IDSStructArray
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
-from vtkmodules.vtkFiltersCore import vtkAppendPolyData
 
 from imas_paraview.paraview_support.servermanager_tools import (
     doublevector,
@@ -25,7 +24,12 @@ from imas_paraview.util import (
 
 
 @dataclass
-class Fragments:
+class FragmentsPosition:
+    fragment: IDSStructArray  # spi.injector.fragment
+
+
+@dataclass
+class FragmentsVelocity:
     fragment: IDSStructArray  # spi.injector.fragment
 
 
@@ -57,21 +61,22 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", SUPPORTED_IDS_NAMES)
         self.selectable_map = {}
+        self.frag_scaling_factor = 1.0
+        """Scaling factor for the size of spheres of shattered pellet fragments"""
         self.frag_vel_scaling_factor = 1.0
         """Scaling factor for the size of the velocity arrows of shattered pellet 
         fragments"""
-        self.frag_scaling_factor = 1.0
-        """Scaling factor for the size of spheres of shattered pellet fragments"""
         self.com_vel_scaling_factor = 1.0
         """Scaling factor for the size of the velocity arrows of the centre of mass of
         the fragments"""
 
     @doublevector(
-        label="Fragment Sphere Scaling Factor",
+        label="Fragment Scaling Factor",
         name="frag_scaling_factor",
         default_values=1.0,
     )
     def P97_SetFragmentScalingFactor(self, val):
+        """Scaling factor for the size of spheres of shattered pellet fragments"""
         self._update_property("frag_scaling_factor", val)
 
     @doublevector(
@@ -80,19 +85,23 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
         default_values=1.0,
     )
     def P98_SetFragmentVelocityScalingFactor(self, val):
+        """Scaling factor for the size of the velocity arrows of shattered pellet
+        fragments"""
         self._update_property("frag_vel_scaling_factor", val)
 
     @doublevector(
         label="Velocity Centre of Mass Scaling Factor",
-        name="frag_vel_scaling_factor",
+        name="com_vel_scaling_factor",
         default_values=1.0,
     )
     def P99_SetCoMVelocityScalingFactor(self, val):
         self._update_property("com_vel_scaling_factor", val)
+        """Scaling factor for the size of the velocity arrows of the centre of mass of
+        the fragments"""
 
     @propertygroup(
         "Pellets Reader Settings",
-        ["frag_scaling_factor", "frag_vel_scaling_factor"],
+        ["frag_scaling_factor", "frag_vel_scaling_factor", "com_vel_scaling_factor"],
     )
     def PG3_PelletReaderGroup(self):
         """Dummy function to define a PropertyGroup."""
@@ -126,10 +135,12 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
 
         for block_id, selection_name in enumerate(self._selected):
             selected = self.selectable_map[selection_name]
-            if isinstance(selected, Fragments):
-                vtk_object = self._create_fragments_geom(selected, time_idx)
+            if isinstance(selected, FragmentsPosition):
+                vtk_object = self._create_fragments_pos_geom(selected, time_idx)
+            elif isinstance(selected, FragmentsVelocity):
+                vtk_object = self._create_fragments_vel_geom(selected, time_idx)
             else:  # selected is a VelocityMassCentre
-                vtk_object = self._create_vel_mass_centre_geom(selected)
+                vtk_object = self._create_vel_centre_of_mass_geom(selected)
 
             output.SetBlock(block_id, vtk_object)
         return 1
@@ -141,10 +152,25 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
         Args:
             injector: IDSStructure of a shattered pellet injector.
             injector_name: Name of the injector.
+        if frag.velocity_r
         """
         if len(injector.fragment) > 0:
-            injector_name = f"Shattered fragments ({injector_name})"
-            self.selectable_map[injector_name] = Fragments(injector.fragment)
+            frag = injector.fragment[0]
+            pos = frag.position
+            if pos.r and pos.phi and pos.z:
+                self.selectable_map[
+                    f"Shattered Fragment Positions ({injector_name})"
+                ] = FragmentsPosition(injector.fragment)
+
+            try:
+                velocity_phi = frag.velocity_phi[0]
+            except AttributeError:
+                velocity_phi = frag.velocity_tor[0]
+
+            if frag.velocity_r and velocity_phi and frag.velocity_z:
+                self.selectable_map[
+                    f"Shattered Fragment Velocities ({injector_name})"
+                ] = FragmentsVelocity(injector.fragment)
         else:
             logger.warning("'%s' has no fragments, skipping.", injector_name)
 
@@ -185,14 +211,9 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
                 injector_name,
             )
 
-    def _create_fragments_geom(self, frags: Fragments, time_idx):
-        """Create VTK geometry of the velocity of the centre of mass of the fragments
-        at the shattering cone origin.
+    def _create_fragments_pos_geom(self, frags, time_idx):
+        """Create VTK spheres for fragment positions only."""
 
-        Args:
-            vel_mass_centre: VelocityMassCentre dataclass
-            time_idx
-        """
         fragments = frags.fragment
         num_fragments = len(fragments)
 
@@ -200,44 +221,59 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
         phi = np.empty(num_fragments)
         z = np.empty(num_fragments)
         volumes = np.empty(num_fragments)
-        vel_r = np.empty(num_fragments)
-        vel_phi = np.empty(num_fragments)
-        vel_z = np.empty(num_fragments)
 
-        for i, f in enumerate(fragments):
-            position = f.position
-            r[i] = position.r[time_idx]
-            phi[i] = position.phi[time_idx]
-            z[i] = position.z[time_idx]
-            volumes[i] = f.volume[time_idx]
-            vel_r[i] = f.velocity_r[time_idx]
-            try:
-                vel_phi[i] = f.velocity_phi[time_idx]
-            except AttributeError:
-                vel_phi[i] = f.velocity_tor[time_idx]
-            vel_z[i] = f.velocity_z[time_idx]
+        for i, fragment in enumerate(fragments):
+            pos = fragment.position
+            r[i] = pos.r[time_idx]
+            phi[i] = pos.phi[time_idx]
+            z[i] = pos.z[time_idx]
+            volumes[i] = fragment.volume[time_idx]
 
         pos_x, pos_y = pol_to_cart(r, phi)
         positions = np.stack([pos_x, pos_y, z], axis=1)
 
-        # Volume to radius conversion of spheres
+        # Volume to radius conversion for spherr
         radii = (3.0 * volumes / (4.0 * np.pi)) ** (1.0 / 3.0)
-        velocities = vel_pol_to_cart(vel_r, vel_phi, vel_z, phi)
 
-        spheres = create_vtk_spheres(
+        return create_vtk_spheres(
             positions, radii, scaling_factor=self.frag_scaling_factor
         )
-        arrows = create_vtk_arrows(
+
+    def _create_fragments_vel_geom(self, frags, time_idx):
+        """Create VTK arrows for fragment velocities."""
+
+        fragments = frags.fragment
+        num_fragments = len(fragments)
+
+        r = np.empty(num_fragments)
+        phi = np.empty(num_fragments)
+        z = np.empty(num_fragments)
+        vel_r = np.empty(num_fragments)
+        vel_phi = np.empty(num_fragments)
+        vel_z = np.empty(num_fragments)
+
+        for i, fragment in enumerate(fragments):
+            pos = fragment.position
+            r[i] = pos.r[time_idx]
+            phi[i] = pos.phi[time_idx]
+            z[i] = pos.z[time_idx]
+
+            vel_r[i] = fragment.velocity_r[time_idx]
+            try:
+                vel_phi[i] = fragment.velocity_phi[time_idx]
+            except AttributeError:
+                vel_phi[i] = fragment.velocity_tor[time_idx]
+            vel_z[i] = fragment.velocity_z[time_idx]
+
+        pos_x, pos_y = pol_to_cart(r, phi)
+        positions = np.stack([pos_x, pos_y, z], axis=1)
+        velocities = vel_pol_to_cart(vel_r, vel_phi, vel_z, phi)
+
+        return create_vtk_arrows(
             positions, velocities, scaling_factor=self.frag_vel_scaling_factor
         )
 
-        vtk_fragments = vtkAppendPolyData()
-        vtk_fragments.AddInputData(spheres)
-        vtk_fragments.AddInputData(arrows)
-        vtk_fragments.Update()
-        return vtk_fragments.GetOutput()
-
-    def _create_vel_mass_centre_geom(self, vel_mass_centre: VelocityMassCentre):
+    def _create_vel_centre_of_mass_geom(self, vel_mass_centre: VelocityMassCentre):
         """Create VTK geometry of the velocity of the centre of mass of the fragments
         at the shattering cone origin.
 
@@ -262,4 +298,6 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
             np.array([vel_z]),
             np.array([pos_phi]),
         )
-        return create_vtk_arrows(position, velocity)
+        return create_vtk_arrows(
+            position, velocity, scaling_factor=self.com_vel_scaling_factor
+        )

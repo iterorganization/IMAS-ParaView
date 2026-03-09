@@ -397,7 +397,7 @@ def create_vtk_spheres(positions, radii, scaling_factor=1.0):
     src_poly.SetPoints(pts)
 
     scale_array = numpy_to_vtk(radii)
-    scale_array.SetName("radius")
+    scale_array.SetName("Radius [m]")
     src_poly.GetPointData().SetScalars(scale_array)
 
     sphere = vtkSphereSource()
@@ -429,25 +429,26 @@ def create_vtk_arrows(positions, directions, scaling_factor=1.0):
     pts = vtkPoints()
     pts.SetData(numpy_to_vtk(positions, deep=True))
 
-    src_poly = vtkPolyData()
-    src_poly.SetPoints(pts)
+    poly = vtkPolyData()
+    poly.SetPoints(pts)
 
     norm_arr = numpy_to_vtk(directions, deep=True)
-    src_poly.GetPointData().SetNormals(norm_arr)
+    poly.GetPointData().SetNormals(norm_arr)
 
     # Scale arrow with velocity magnitude
     magnitude = numpy_to_vtk(np.linalg.norm(directions, axis=1), deep=True)
-    src_poly.GetPointData().SetScalars(magnitude)
+    magnitude.SetName("Velocity Magnitude [m/s]")
+    poly.GetPointData().SetScalars(magnitude)
 
     arrow = vtkArrowSource()
     arrow.Update()
 
     glyph = vtkGlyph3D()
-    glyph.SetInputData(src_poly)
+    glyph.SetInputData(poly)
     glyph.SetSourceConnection(arrow.GetOutputPort())
     glyph.SetVectorModeToUseNormal()
     glyph.SetScaleModeToScaleByScalar()
-    glyph.SetColorModeToColorByScale()
+    glyph.SetColorModeToColorByScalar()
     glyph.SetScaleFactor(scaling_factor * 1e-3)
     glyph.OrientOn()
     glyph.Update()
