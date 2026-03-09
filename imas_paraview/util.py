@@ -213,7 +213,17 @@ def find_closest_indices(values_to_extract, source_array):
 def vel_pol_to_cart(
     v_r: np.ndarray, v_phi: np.ndarray, v_z: np.ndarray, phi: np.ndarray
 ) -> np.ndarray:
-    """Convert from polar (or cylindrical) coordinates to cartesian."""
+    """Convert from polar (or cylindrical) velocity coordinates to cartesian.
+
+    Args:
+        v_r: The radial velocity component.
+        v_phi: The azimuthal velocity component.
+        v_z: The vertical velocity component.
+        phi: Azimuthal angle in radians.
+
+    Returns:
+        ND-Array containing Cartesian velocities.
+    """
 
     vel_x = v_r * np.cos(phi) - v_phi * np.sin(phi)
     vel_y = v_r * np.sin(phi) + v_phi * np.cos(phi)
@@ -388,7 +398,7 @@ def create_vtk_spheres(positions, radii, scaling_factor=1.0):
         scaling_factor: Scaling factor of the spheres.
 
     Returns:
-        vtkPolyData with all sphere glyphs appended.
+        vtkGlyph3D containing all vtkSpheres.
     """
     pts = vtkPoints()
     pts.SetData(numpy_to_vtk(positions))
@@ -423,7 +433,7 @@ def create_vtk_arrows(positions, directions, scaling_factor=1.0):
         scaling_factor: Scaling factor of the arrows.
 
     Returns:
-        vtkPolyData with all arrow glyphs appended.
+        vtkGlyph3D containing all vtkArrows.
     """
 
     pts = vtkPoints()

@@ -27,6 +27,7 @@ non-GGD Readers
    axisymmetric_geometry_reader
    los_reader
    coils_non_axi_reader
+   pellets
    position_reader
    scalar_time_trace
    wall_limiter_reader
