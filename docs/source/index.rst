@@ -26,6 +26,11 @@ Manual
 
    self
    installing
+
+.. toctree::
+   :caption: Gallery
+   :maxdepth: 2
+
    gallery
    
 .. toctree::
