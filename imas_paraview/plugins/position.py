@@ -13,7 +13,12 @@ from imas_paraview.util import pol_to_cart
 
 logger = logging.getLogger("imas_paraview")
 
-SUPPORTED_IDS_NAMES = ["barometry", "langmuir_probes", "magnetics"]
+SUPPORTED_IDS_NAMES = [
+    "barometry",
+    "langmuir_probes",
+    "magnetics",
+    "thomson_scattering",
+]
 
 
 @smproxy.source(label="Position Reader")
@@ -61,7 +66,8 @@ class PositionReader(GGDVTKPluginBase):
             for attr in attributes:
                 if hasattr(self._ids, attr):
                     aos_list.append(getattr(self._ids, attr))
-
+        elif self._ids.metadata.name == "thomson_scattering":
+            aos_list = [self._ids.channel]
         else:
             raise NotImplementedError(
                 f"Unable to find load position for {self._ids.metadata.name}."
