@@ -27,7 +27,7 @@ Currently, the following IDS and structures are supported in the 1D Profiles Rea
        `Poloidal field probes <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/magnetics.html#magnetics-b_field_pol_probe-position>`__,
        `Toroidal field probes <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/magnetics.html#magnetics-b_field_phi_probe-position>`__
    * - ``thomson_scattering``
-     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/langmuir_probes.html#langmuir_probes-embedded-position>`__
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/thomson_scattering.html#thomson_scattering-channel-position>`__
 
 Using the Position Reader
 -------------------------
