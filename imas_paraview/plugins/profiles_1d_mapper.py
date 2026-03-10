@@ -59,7 +59,7 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
         psi = input0.PointData["Psi [Wb]"]
 
         if isinstance(psi, dsa.VTKNoneArray):
-            logger.warning(
+            logger.error(
                 "The GGD Reader should output a poloidal flux GGD. Please select 'Psi' "
                 "in the attribute selector window."
             )
@@ -68,7 +68,7 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
         psi_profiles = input1.RowData["Grid Psi"]
 
         if isinstance(psi_profiles, dsa.VTKNoneArray) and self._selected:
-            logger.warning(
+            logger.error(
                 "The 1DProfilesReader should output a poloidal flux grid. Please"
                 " select 'Grid Psi' in the attribute selector window of the "
                 "1DProfilesReader."

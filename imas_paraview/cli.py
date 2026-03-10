@@ -12,7 +12,8 @@ from rich.table import Table
 
 import imas_paraview
 from imas_paraview.convert import Converter
-from imas_paraview.util import find_closest_indices
+from imas_paraview.util import find_closest_indices, load_vtpc, load_vtu
+from imas_paraview.vtk2ggd import VTK2GGDConverter
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +182,104 @@ def convert_ggd_to_vtk(
 
         elif format == "vtkhdf":
             raise NotImplementedError("vtkhdf format is not yet implemented.")
+
+
+@cli.command("vtk2ggd")
+@click.argument("path", type=Path)
+@click.argument("uri", type=str)
+@click.option(
+    "--ids_name",
+    type=str,
+    help="Name of the IDS, if not provided, it will be inferred from filenames.",
+)
+@click.option(
+    "--dd_version",
+    type=str,
+    help="Specify the version of the Data Dictionary to export the IDS to.",
+)
+@click.option(
+    "--cylindrical_coordinates",
+    is_flag=True,
+    help="Store GGD grid in cylindrical coordinates instead of cartesian.",
+)
+def convert_vtk_to_ggd(path, uri, ids_name, dd_version, cylindrical_coordinates):
+    """Convert a file series of .vtpc files, a single .vtpc, or a single .vtu file
+    containing unstructured grids to a GGD grid in an IDS.
+
+    \b
+    Arguments:
+    \b
+    path            Path to a single .vtpc/.vtu file, or to the directory containing a
+                    file series of .vtpc files.
+    uri             Output URI to store the IDS.
+    """
+    sys.excepthook = _excepthook
+
+    if path.suffix == ".vtu":
+        vtk_objects = _load_vtu_file(path, ids_name)
+    else:
+        vtk_objects, ids_name = _load_vtpc_files(path, ids_name)
+
+    if ids_name not in imas.IDSFactory().ids_names():
+        raise click.UsageError(f"{ids_name} is not a valid IDS name")
+
+    converter = VTK2GGDConverter(
+        vtk_objects,
+        ids_name,
+        dd_version=dd_version,
+        cylindrical_coordinates=cylindrical_coordinates,
+    )
+    ids = converter.convert()
+
+    with imas.DBEntry(uri, "x", dd_version=dd_version) as entry:
+        entry.put(ids)
+
+    click.echo(f"Successfully wrote {len(vtk_objects)} time steps to {uri}")
+
+
+def _load_vtu_file(path, ids_name):
+    if not ids_name:
+        raise click.UsageError(
+            "Argument '--ids_name' is required for single file conversion."
+        )
+
+    click.echo(f"Converting single .vtu file to IDS '{ids_name}'...")
+    return [load_vtu(path)]
+
+
+def _load_vtpc_files(path, ids_name):
+    vtpc_files = []
+
+    if path.is_dir():
+        click.echo(f"Scanning directory {path} for VTK files...")
+        string_match = f"{ids_name}_*.vtpc" if ids_name else "*.vtpc"
+        vtpc_files = sorted(
+            path.glob(string_match),
+            key=lambda x: int(x.stem.split("_")[-1]) if "_" in x.stem else 0,
+        )
+        if not vtpc_files:
+            raise click.UsageError(f"No .vtpc files found in {path}")
+
+        if not ids_name:
+            ids_names = set()
+            for vtpc_file in vtpc_files:
+                ids_names.add(vtpc_file.stem.rsplit("_", 1)[0])
+                if len(ids_names) > 1:
+                    raise click.UsageError(
+                        "Could not infer IDS name from file names, because there are "
+                        "multiple IDS names in the directory. Use '--ids_name' to set "
+                        "the required IDS name"
+                    )
+            (ids_name,) = ids_names
+    else:
+        if not ids_name:
+            raise click.UsageError(
+                "Argument '--ids_name' is required for single file conversion."
+            )
+        vtpc_files = [path]
+
+    click.echo(f"Converting {len(vtpc_files)} time steps for IDS '{ids_name}'...")
+    return [load_vtpc(f) for f in vtpc_files], ids_name
 
 
 def is_lazy(all_times, lazy_flag, no_lazy_flag):
@@ -380,10 +479,10 @@ def parse_time(ids_times, time):
         for input_time in time.split(","):
             try:
                 float(input_time)
-            except ValueError:
+            except ValueError as err:
                 raise click.UsageError(
                     "All time steps in given list must be valid floats."
-                )
+                ) from err
         time_list = [float(x.strip()) for x in time.split(",")]
         index_list = find_closest_indices(time_list, ids_times)
         indices_dict = OrderedDict.fromkeys(index_list)
@@ -405,10 +504,10 @@ def parse_time(ids_times, time):
         try:
             start = float(start_str)
             end = float(end_str)
-        except ValueError:
+        except ValueError as err:
             raise click.UsageError(
                 "The minimum and maximum range values must be valid floats."
-            )
+            ) from err
         if end < start:
             raise click.UsageError(
                 "The final time index in range must be greater than the first."
@@ -421,13 +520,13 @@ def parse_time(ids_times, time):
         try:
             time_list = [float(time)]
             index_list = find_closest_indices(time_list, ids_times)
-        except ValueError:
+        except ValueError as err:
             raise click.UsageError(
                 "Could not determine which time steps should be converted.\n"
                 "Provide either a single float ('-t 5.0'), "
                 "a list of floats ('-t 2.1,3.5,4') or "
                 "a range of floats ('-t 2.2:4.4')"
-            )
+            ) from err
     click.echo(f"Converting the following time steps: {ids_times[index_list]}")
     return index_list
 

@@ -51,7 +51,8 @@ class WallLimiterReader(GGDVTKPluginBase):
                 description_name = f"description {i}"
                 logger.warning(
                     "Found a limiter without a description name, "
-                    f"it will be loaded as {description_name}"
+                    "it will be loaded as %s",
+                    description_name,
                 )
 
             limiter = description.limiter
@@ -59,8 +60,8 @@ class WallLimiterReader(GGDVTKPluginBase):
             if type_name == "":
                 type_name = f"type {i}"
                 logger.warning(
-                    "Found a limiter without a type name, "
-                    f"it will be loaded as {type_name}"
+                    "Found a limiter without a type name, it will be loaded as %s",
+                    type_name,
                 )
 
             for j, unit in enumerate(limiter.unit):
@@ -68,8 +69,8 @@ class WallLimiterReader(GGDVTKPluginBase):
                 if unit_name == "":
                     unit_name = f"unit {j}"
                     logger.warning(
-                        "Found a limiter unit without a name, "
-                        f"it will be loaded as {unit_name}"
+                        "Found a limiter unit without a name, it will be loaded as %s",
+                        unit_name,
                     )
                 name = " / ".join(
                     [str(description_name), str(type_name), str(unit_name)]
@@ -86,7 +87,7 @@ class WallLimiterReader(GGDVTKPluginBase):
         """
         for i, limiter_name in enumerate(self._selected):
             limiter = self.selectable_map[limiter_name]
-            logger.info(f"Selected {limiter.name}")
+            logger.info("Selected %s", limiter.name)
             vtk_poly = self._create_contour(limiter)
             output.SetBlock(i, vtk_poly)
 
@@ -104,10 +105,7 @@ class WallLimiterReader(GGDVTKPluginBase):
         """
         # closed was removed in DD4 - data providers need to repeat the first point
         # for closed outlines, which Just Works with our is_closed=False logic
-        if getattr(unit, "closed", 0) == 0:
-            is_closed = False
-        else:
-            is_closed = True
+        is_closed = getattr(unit, "closed", 0) != 0
 
         r = unit.outline.r
         z = unit.outline.z

@@ -3,14 +3,20 @@ import numpy as np
 import pytest
 from click import UsageError
 from click.testing import CliRunner
+from conftest import DD_VERSION
+from vtkmodules.vtkCommonCore import vtkPoints
+from vtkmodules.vtkCommonDataModel import vtkQuad, vtkUnstructuredGrid
+from vtkmodules.vtkIOXML import vtkXMLUnstructuredGridWriter
 
 from imas_paraview.cli import (
     cli,
     convert_ggd_to_vtk,
+    convert_vtk_to_ggd,
     parse_index,
     parse_time,
     parse_uri,
 )
+from imas_paraview.tests.fill_ggd import fill_ids
 
 
 @pytest.mark.skip(reason="no IMAS-Core available")
@@ -28,7 +34,7 @@ def test_version():
 
 def test_ggd2vtk(tmp_path, dummy_ids):
     uri = f"{tmp_path}/testdb.nc"
-    with imas.DBEntry(uri, "w") as dbentry:
+    with imas.DBEntry(uri, "w", dd_version=DD_VERSION) as dbentry:
         dbentry.put(dummy_ids)
 
     runner = CliRunner()
@@ -45,10 +51,10 @@ def test_ggd2vtk(tmp_path, dummy_ids):
     # The vtkXMLPartitionedDataSetCollectionWriter will output the following:
     # .
     # ├── test
-    # │   ├── test_0_0.vtu
-    # │   ├── test_1_0.vtu
-    # │   ├── test_2_0.vtu
-    # |   ├── ...
+    # │   ├── test_0_0.vtu
+    # │   ├── test_1_0.vtu
+    # │   ├── test_2_0.vtu
+    # │   ├── ...
     # └── test.vtpc
 
     # Check if vtpc file and the directory containing vtu files exists
@@ -63,6 +69,88 @@ def test_ggd2vtk(tmp_path, dummy_ids):
         for i in range(3):
             vtu_file = output_dir / f"{ids_name}_0_{i}_0.vtu"
             assert vtu_file.exists()
+
+
+def test_vtk2ggd(tmp_path):
+    # Create original IDS
+    ids_name = "edge_profiles"
+    uri = f"{tmp_path}/testdb.nc"
+    ids = imas.IDSFactory(version=DD_VERSION).new(ids_name)
+    fill_ids(
+        ids, time_steps=5, fill_ggd=False, create_3d_grid=True, dynamic_grid_size=True
+    )
+    with imas.DBEntry(uri, "w", dd_version=DD_VERSION) as dbentry:
+        dbentry.put(ids)
+
+    # Convert IDS to VTK
+    runner = CliRunner()
+    file_name = "vtk_data"
+    output_path = tmp_path / file_name
+    uri_in = f"{uri}#{ids_name}"
+    args = [uri_in, str(output_path), "--all-times"]
+    result = runner.invoke(convert_ggd_to_vtk, args)
+    assert result.exit_code == 0
+
+    # Convert VTK back to IDS
+    uri_out = f"{tmp_path}/back_converted.nc"
+    args = [str(output_path), uri_out, "--dd_version", DD_VERSION]
+    result = runner.invoke(convert_vtk_to_ggd, args)
+    assert result.exit_code == 0
+
+    with imas.DBEntry(uri_out, "r", dd_version=DD_VERSION) as dbentry:
+        ids2 = dbentry.get(ids_name)
+
+    # Check if the two IDSs are the same
+    assert list(imas.util.idsdiffgen(ids, ids2)) == []
+
+
+def test_vtk2ggd_unstructured_grid(tmp_path):
+    # Build a simple square vtkUnstructuredGrid
+    points = vtkPoints()
+    points.InsertNextPoint(0.0, 0.0, 0.0)
+    points.InsertNextPoint(1.0, 0.0, 0.0)
+    points.InsertNextPoint(1.0, 1.0, 0.0)
+    points.InsertNextPoint(0.0, 1.0, 0.0)
+
+    quad = vtkQuad()
+    quad.GetPointIds().SetId(0, 0)
+    quad.GetPointIds().SetId(1, 1)
+    quad.GetPointIds().SetId(2, 2)
+    quad.GetPointIds().SetId(3, 3)
+
+    ugrid = vtkUnstructuredGrid()
+    ugrid.SetPoints(points)
+    ugrid.InsertNextCell(quad.GetCellType(), quad.GetPointIds())
+
+    # Write to .vtu file
+    vtu_path = tmp_path / "test_grid.vtu"
+    writer = vtkXMLUnstructuredGridWriter()
+    writer.SetFileName(str(vtu_path))
+    writer.SetInputData(ugrid)
+    writer.Write()
+
+    # Convert .vtu to IDS
+    ids_name = "edge_profiles"
+    uri_out = f"{tmp_path}/output.nc"
+    runner = CliRunner()
+    args = [str(vtu_path), uri_out, "--ids_name", ids_name, "--dd_version", DD_VERSION]
+    result = runner.invoke(convert_vtk_to_ggd, args)
+    assert result.exit_code == 0
+
+    with imas.DBEntry(uri_out, "r", dd_version=DD_VERSION) as dbentry:
+        ids2 = dbentry.get(ids_name)
+    assert len(ids2.time) == 1
+    space = ids2.grid_ggd[0].space[0]
+    assert len(space.objects_per_dimension[0].object) == 4
+    node_coords = [list(obj.geometry) for obj in space.objects_per_dimension[0].object]
+    assert node_coords == [
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [1.0, 1.0, 0.0],
+        [0.0, 1.0, 0.0],
+    ]
+    assert len(space.objects_per_dimension[2].object) == 1  # 1 quad cell
+    assert list(space.objects_per_dimension[2].object[0].nodes) == [1, 2, 3, 4]
 
 
 def test_parse_uri():

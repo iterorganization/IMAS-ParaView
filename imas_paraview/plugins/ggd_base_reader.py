@@ -37,7 +37,6 @@ class GGDBaseReader(GGDVTKPluginBase):
         selected_scalar_paths, selected_vector_paths = self._get_selected_ggd_paths()
         time = self._get_selected_time_step(outInfo)
         if time is None:
-            logger.warning("Selected invalid time step")
             return 1
 
         # Create progress object to advance Paraview progress bar
@@ -62,7 +61,7 @@ class GGDBaseReader(GGDVTKPluginBase):
         )
 
         if output is None:
-            logger.warning("Could not convert GGD to VTK.")
+            logger.error("Could not convert GGD to VTK.")
         return 1
 
     def request_information(self):

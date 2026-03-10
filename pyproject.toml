@@ -47,6 +47,7 @@ benchmark=[
 [project.scripts]
 imas-paraview = "imas_paraview.cli:cli"
 ggd2vtk = "imas_paraview.cli:convert_ggd_to_vtk"
+vtk2ggd = "imas_paraview.cli:convert_vtk_to_ggd"
 
 [project.urls]
 homepage = "https://github.com/iterorganization/IMAS-ParaView"
@@ -66,3 +67,34 @@ local_scheme = "no-local-version"
 
 [tool.ruff]
 exclude = ["imas_paraview/_version.py"]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # flake8-comprehensions
+    "C4",
+    # flake8-logging
+    "LOG",
+    # flake8-logging-format
+    "G",
+    # flake8-tidy-imports
+    "TID",
+    # flake8-use-pathlib
+    "PTH",
+    # Refurb
+    "FURB",
+    # Ruff specific rules
+    "RUF",
+]
+

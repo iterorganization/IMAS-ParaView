@@ -5,8 +5,10 @@ children into distinct vtkUnstructuredGrid objects.
 """
 
 import logging
-from typing import Any, Callable
 
+import numpy as np
+from imas import identifiers
+from imas.ids_structure import IDSStructure
 from vtkmodules.vtkCommonCore import vtkIdList, vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     VTK_EMPTY_CELL,
@@ -63,39 +65,77 @@ def fill_vtk_points(
         progress: Progress indicator for Paraview.
     """
     num_objects0d = len(grid_ggd.space[space_idx].objects_per_dimension[0].object)
-    logger.info(f"Reading {num_objects0d} points from grid_ggd/space[{space_idx}]")
+    logger.info("Reading %d points from grid_ggd/space[%d]", num_objects0d, space_idx)
 
-    s = 1  # scale objects from mm to m
     if len(grid_ggd.space[space_idx].objects_per_dimension[0].object[0].geometry) == 0:
         raise RuntimeError("Geometry of object is empty.")
-    if grid_ggd.space[space_idx].objects_per_dimension[0].object[0].geometry[0] > 100:
-        s = 0.001
 
-    points.Allocate(num_objects0d, 0)
-    coordinate_type = grid_ggd.space[space_idx].coordinates_type
-
-    # When length of coordinate type is greater than 2, the third coordinate is in
-    # geometry[2], else it is 0.
-    if len(coordinate_type) > 2:
-        third_dim: Callable[[Any], int] = lambda e: getattr(e, "geometry")[2]  # noqa
+    coordinates_type = grid_ggd.space[space_idx].coordinates_type
+    # coordinates_type changed from INT_1D to an AoS of identifiers in DD4.0.0
+    if isinstance(coordinates_type[0], IDSStructure):
+        coord_indices = [int(ct.index) for ct in coordinates_type]
     else:
-        third_dim: Callable[[Any], int] = lambda e: 0  # noqa
+        coord_indices = [int(ct) for ct in coordinates_type]
+
+    coord_id = identifiers.coordinate_identifier
+    X, Y, Z = coord_id.x.value, coord_id.y.value, coord_id.z.value
+    R, PHI = coord_id.r.value, coord_id.phi.value
+
+    # Old version of GGD Fortran library (<=1.12.0) did not set coordinate identifiers
+    # correctly, setting the points in r,phi-coordinates instead of r,z. For this case
+    # we overwrite the coordinate identifiers.
+    # This issue has been fixed in the following commit:
+    # https://github.com/iterorganization/GGD/commit/23af2f113e550fa6e8d05c982ddae53bf29c1cf1 # noqa: E501
+    if grid_ggd.space[space_idx].geometry_type.name == "Poloidal" and coord_indices == [
+        R,
+        PHI,
+    ]:
+        logger.warning(
+            "The geometry type was set to 'Poloidal' but the coordinate identifiers "
+            "were set to (r, phi). They have been interpreted as (r, z) instead."
+        )
+        coord_indices = [R, Z]
+
+    supported = {X, Y, Z, R, PHI}
+    unsupported = set(coord_indices) - supported
+    if unsupported:
+        logger.error(
+            "Unsupported coordinate types in '%s', space[%d]: %s. They will be ignored",
+            ids_name,
+            space_idx,
+            unsupported,
+        )
+
+    # Map coordinate identifier to position in geometry array
+    coord_pos = {coord_index: idx for idx, coord_index in enumerate(coord_indices)}
 
     objects = grid_ggd.space[space_idx].objects_per_dimension[0].object
+    points.Allocate(num_objects0d, 0)
     for obj in objects:
+        geom = obj.geometry
+
+        x = 0.0
+        y = 0.0
+        z = 0.0
+
+        if X in coord_pos:
+            x = geom[coord_pos[X]]
+        if Y in coord_pos:
+            y = geom[coord_pos[Y]]
+        if Z in coord_pos:
+            z = geom[coord_pos[Z]]
+
+        # Handle cylindrical coordinates
+        if R in coord_pos:
+            r = geom[coord_pos[R]]
+            phi = geom[coord_pos[PHI]] if PHI in coord_pos else 0.0
+            x = r * np.cos(phi)
+            y = r * np.sin(phi)
+
+        points.InsertNextPoint(x, y, z)
+
         if progress:
-            progress.increment(0.5 / len(objects))
-        if ids_name == "wall":
-            points.InsertNextPoint(
-                (obj.geometry[0] * s, obj.geometry[1] * s, third_dim(obj) * s)
-            )
-        else:
-            if len(obj.geometry) < 2:
-                raise RuntimeError("Geometry of object is smaller than 2.")
-            points.InsertNextPoint(
-                (obj.geometry[0] * s, third_dim(obj) * s, obj.geometry[1] * s)
-            )
-            # Use for changing orientation in paraview.
+            progress.increment(0.5 / num_objects0d)
 
 
 def _fill_vtk_cell_array_from_gs2(
@@ -120,12 +160,8 @@ def _fill_vtk_cell_array_from_gs2(
         obj = grid[2].object[j]
         obj_nodes = obj.nodes
         obj_dimension = 2
-        # try:
-        #     obj_boundary = obj.boundary
-        # except:
-        #     obj_boundary = []
 
-        pt_ids = list(map(lambda val: val - 1, obj_nodes))
+        pt_ids = [val - 1 for val in obj_nodes]
         npts = len(pt_ids)
         cell_type = _get_vtk_cell_type(obj_dimension, npts)
         ugrid.InsertNextCell(cell_type, npts, pt_ids)
@@ -147,10 +183,12 @@ def _fill_vtk_cell_array_from_gs(
     num_gs_el = len(grid_subset.element)
 
     if hasattr(grid_subset, "identifier"):
-        logger.info(f"Reading {num_gs_el} elements from {grid_subset.identifier.name}")
+        logger.info(
+            "Reading %d elements from %s", num_gs_el, grid_subset.identifier.name
+        )
     else:
         logger.info(
-            f"Reading {num_gs_el} elements from grid_ggd/grid_subset[{subset_idx}]"
+            "Reading %d elements from grid_ggd/grid_subset[%d]", num_gs_el, subset_idx
         )
 
     ugrid.AllocateEstimate(num_gs_el, 10)
@@ -176,9 +214,8 @@ def _fill_vtk_cell_array_from_gs(
                 .boundary
             )
 
-            pt_ids = list(
-                map(lambda val: val - 1, obj_nodes)
-            )  # offset by -1 as fortran indexing used in IMAS( 1,...n)
+            # offset by -1 as fortran indexing used in IMAS( 1,...n)
+            pt_ids = [val - 1 for val in obj_nodes]
             npts = len(pt_ids)
             cell_type = _get_vtk_cell_type(obj_dimension, npts)
 
@@ -197,9 +234,8 @@ def _fill_vtk_cell_array_from_gs(
                         .objects_per_dimension[2]
                         .object[object_2d_idx]
                     )
-                    object_2d_pt_ids = list(
-                        map(lambda val: val - 1, object_2d.nodes)
-                    )  # offset by -1
+                    # offset by -1
+                    object_2d_pt_ids = [val - 1 for val in object_2d.nodes]
                     num_face_pts = len(object_2d_pt_ids)
 
                     # the format for 3d cell point ids is

@@ -13,7 +13,12 @@ from imas_paraview.util import pol_to_cart
 
 logger = logging.getLogger("imas_paraview")
 
-SUPPORTED_IDS_NAMES = ["barometry", "langmuir_probes", "magnetics"]
+SUPPORTED_IDS_NAMES = [
+    "barometry",
+    "langmuir_probes",
+    "magnetics",
+    "thomson_scattering",
+]
 
 
 @smproxy.source(label="Position Reader")
@@ -61,7 +66,8 @@ class PositionReader(GGDVTKPluginBase):
             for attr in attributes:
                 if hasattr(self._ids, attr):
                     aos_list.append(getattr(self._ids, attr))
-
+        elif self._ids.metadata.name == "thomson_scattering":
+            aos_list = [self._ids.channel]
         else:
             raise NotImplementedError(
                 f"Unable to find load position for {self._ids.metadata.name}."
@@ -72,12 +78,12 @@ class PositionReader(GGDVTKPluginBase):
                 if name == "":
                     name = f"device {i}"
                     logger.warning(
-                        f"Found a device without a name, it will be loaded as {name}."
+                        "Found a device without a name, it will be loaded as %s.", name
                     )
 
                 if hasattr(structure, "identifier"):
                     identifier = structure.identifier
-                    if not identifier == "":
+                    if identifier != "":
                         name = f"{name} / {identifier}"
 
                 self.selectable_map[str(name)] = structure
@@ -94,7 +100,7 @@ class PositionReader(GGDVTKPluginBase):
         for name in self._selected:
             pos_struct = self.selectable_map[name]
             pos = pos_struct.position
-            logger.info(f"Selected {name}")
+            logger.info("Selected %s", name)
 
             if isinstance(pos, IDSStructArray):
                 for pos_struct in pos:
