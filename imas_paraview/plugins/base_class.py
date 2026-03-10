@@ -29,11 +29,11 @@ from imas_paraview.paraview_support.servermanager_tools import (
     stringlistdomain,
     stringvector,
 )
-from imas_paraview.util import get_grid_ggd
+from imas_paraview.util import get_grid_ggd, has_imas_core
 
 logger = logging.getLogger("imas_paraview")
 
-if imas.backends.imas_core.imas_interface.has_imas:
+if has_imas_core():
     BACKENDS = {
         "MDSplus": imas.ids_defs.MDSPLUS_BACKEND,
         "HDF5": imas.ids_defs.HDF5_BACKEND,
@@ -506,7 +506,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
         # Load IDS and available time steps
         idsname, _, _ = self._ids_and_occurrence.partition("/")
         if idsname not in self._ids_list:
-            logger.warning("Could not find the selected IDS.")
+            logger.error("Could not find the selected IDS.")
             self._selectable = []
             return 1
 
@@ -624,7 +624,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             logger.debug("Selected time step in Paraview: %f", time_step)
             return time_step
         elif self._time_steps:
-            logger.info(
+            logger.warning(
                 "Selected time step %f was not found in the IDS. "
                 "The first time step (%f) is loaded instead.",
                 time_step,
@@ -632,4 +632,5 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             )
             return self._time_steps[0]
         else:
+            logger.error("Selected time step is invalid.")
             return None

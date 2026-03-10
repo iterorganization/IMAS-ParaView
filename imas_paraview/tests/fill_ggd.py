@@ -2,6 +2,8 @@ import logging
 
 import imas
 import numpy as np
+from imas import identifiers
+from imas.ids_structure import IDSStructure
 
 from imas_paraview.ids_util import get_arrays_from_ids
 from imas_paraview.util import create_first_ggd, create_first_grid, int32array
@@ -9,7 +11,7 @@ from imas_paraview.util import create_first_ggd, create_first_grid, int32array
 logger = logging.getLogger("imas_paraview")
 
 
-def fill_NxN_grid(grid_ggd, N):
+def fill_NxN_grid(grid_ggd, N, create_3d_grid=False):
     """Fills the grid_ggd of an IDS with a uniform rectangular grid of size N x N,
     containing vertices, edges and faces.
 
@@ -18,6 +20,8 @@ def fill_NxN_grid(grid_ggd, N):
     Args:
         grid_ggd: The GGD grid that will be filled with the N x N grid.
         N: The size of the N x N grid
+        create_3d_grid: If True, create a 2D grid in 3D space (in the X-Z plane at
+            Y = 0). If False, create a 2D grid in the X-Y plane.
 
     Returns:
         num_vertices: The number of vertices in the generated grid_ggd
@@ -26,43 +30,47 @@ def fill_NxN_grid(grid_ggd, N):
     """
 
     # Set grid
-    grid_ggd.identifier.name = "linear"
-    grid_ggd.identifier.index = 1
-    grid_ggd.identifier.description = f"A simple {N} x {N} rectangular grid"
+    grid_ggd.identifier = identifiers.ggd_identifier.linear
 
     # Set space
     grid_ggd.space.resize(1)
     space = grid_ggd.space[0]
-    space.identifier.name = "primary_standard"
-    space.identifier.index = 1
-    space.identifier.description = "Primary space defining the standard grid"
-    space.geometry_type.index = 0
-    space.coordinates_type.resize(2)
-    space.coordinates_type[0] = 1
-    space.coordinates_type[1] = 2
+    space.identifier = identifiers.ggd_space_identifier.primary_standard
+    space.geometry_type.index = 0  # standard, non-Fourier geometry
+
+    num_dimension = 3 if create_3d_grid else 2
+    space.coordinates_type.resize(num_dimension)
+    coordinate_identifier = identifiers.coordinate_identifier
+
+    # coordinates_type changed from INT_1D to AoS of identifiers in DD4.0.0
+    if isinstance(space.coordinates_type, IDSStructure):
+        space.coordinates_type[0] = coordinate_identifier.x
+        space.coordinates_type[1] = coordinate_identifier.y
+        if create_3d_grid:
+            space.coordinates_type[2] = coordinate_identifier.z
+    else:
+        space.coordinates_type[0] = coordinate_identifier.x.index
+        space.coordinates_type[1] = coordinate_identifier.y.index
+        if create_3d_grid:
+            space.coordinates_type[2] = coordinate_identifier.z.index
 
     space.objects_per_dimension.resize(3)
-    num_vertices, num_edges, num_faces = build_grid(N, space)
+    num_vertices, num_edges, num_faces = build_grid(N, space, create_3d_grid)
 
     # Create subset
     grid_ggd.grid_subset.resize(3)
+    ggd_subset_identifier = identifiers.ggd_subset_identifier
     grid_subsets = grid_ggd.grid_subset
     grid_subsets[0].dimension = 1
-    grid_subsets[0].identifier.name = "vertices"
-    grid_subsets[0].identifier.index = 1
-    grid_subsets[0].identifier.description = "All vertices in the domain"
+    grid_subsets[0].identifier = ggd_subset_identifier.nodes
 
     grid_subsets[1].dimension = 2
-    grid_subsets[1].identifier.name = "edges"
-    grid_subsets[1].identifier.index = 2
-    grid_subsets[1].identifier.description = "All edges in the domain"
+    grid_subsets[1].identifier = ggd_subset_identifier.edges
 
     grid_subsets[2].dimension = 3
-    grid_subsets[2].identifier.name = "faces"
-    grid_subsets[2].identifier.index = 5
-    grid_subsets[2].identifier.description = "All faces in the domain"
+    grid_subsets[2].identifier = ggd_subset_identifier.cells
 
-    # Create elements for vertices
+    # Create elements for nodes
     grid_subsets[0].element.resize(num_vertices)
     for i, element in enumerate(grid_subsets[0].element):
         element.object.resize(1)
@@ -78,7 +86,7 @@ def fill_NxN_grid(grid_ggd, N):
         element.object[0].dimension = 2
         element.object[0].index = i + 1
 
-    # Create elements for faces
+    # Create elements for cells
     grid_subsets[2].element.resize(num_faces)
     for i, element in enumerate(grid_subsets[2].element):
         element.object.resize(1)
@@ -89,30 +97,34 @@ def fill_NxN_grid(grid_ggd, N):
     return num_vertices, num_edges, num_faces
 
 
-def build_grid(N, space):
+def build_grid(N, space, create_3d_grid):
     """Builds the vertices, edges and faces for an N x N grid.
 
     Args:
         N: Size of the grid
         space: Space AoS of the GGD grid
+        create_3d_grid: If True, create a 2D grid in 3D space (in the X-Z plane at
+            Y = 0). If False, create a 2D grid in the X-Y plane.
 
     Returns:
         num_vertices: The total number of vertices
         num_edges: The total number of edges
         num_faces: The total number of faces
     """
-    num_vertices = set_vertices(N, space)
+    num_vertices = set_vertices(N, space, create_3d_grid)
     num_edges = set_edges(N, space)
     num_faces = set_faces(N, space)
     return num_vertices, num_edges, num_faces
 
 
-def set_vertices(N, space):
+def set_vertices(N, space, create_3d_grid):
     """Sets the vertices for an N x N grid.
 
     Args:
         N: Size of the grid
         space: Space AoS of the GGD grid
+        create_3d_grid: If True, create a 2D grid in 3D space (in the X-Z plane at
+            Y = 0). If False, create a 2D grid in the X-Y plane.
 
     Returns:
         num_vertices: The total number of vertices
@@ -125,7 +137,10 @@ def set_vertices(N, space):
     for i in range(N):
         for j in range(N):
             idx = i * N + j
-            vertices[idx].geometry = [float(j), float(i)]
+            if create_3d_grid:
+                vertices[idx].geometry = [0.5 * float(j), 0.0, float(i)]
+            else:
+                vertices[idx].geometry = [0.5 * float(j), float(i)]
     return num_vertices
 
 
@@ -365,14 +380,28 @@ def fill_ggd_data(ids, num_vertices, num_edges, num_faces):
             fill_vector_rzphi_quantity(vector_array, num_vertices, num_edges, num_faces)
 
 
-def fill_ids(ids, time_steps=1, grid_size=2):
-    """Fills the IDS with an N x N uniform GGD grid and fills all GGD arrays on this
-    grid with random values.
+def fill_ids(
+    ids,
+    time_steps=1,
+    grid_size=2,
+    fill_ggd=True,
+    create_3d_grid=False,
+    dynamic_grid_size=False,
+):
+    """Fills the IDS with an N x N uniform GGD grid and optionally fills all GGD arrays
+    on this grid with random values.
 
     Args:
         ids: IDS to be filled.
         time_steps: Number of time steps to create in the IDS.
         grid_size: Size of the N x N grid. Defaults to 2, meaning a 2 x 2 grid.
+        fill_ggd: Whether to fill the GGD arrays on the grid. If set to False, only
+            the grid itself will be created.
+        create_3d_grid: If True, create a 2D grid in 3D space (in the X-Z plane at
+            Y = 0). If False, create a 2D grid in the X-Y plane.
+        dynamic_grid_size: If True, increase the grid size from `grid_size` by 1 for
+            each subsequent time step. E.g. if `grid_size = 2` and `time_step=3`, then
+            grids of sizes 2, 3 x 3, and 4 x 4 will be created.
     """
 
     # Create an empty grid_ggd
@@ -381,25 +410,30 @@ def fill_ids(ids, time_steps=1, grid_size=2):
     # Skip filling grid_ggd if it does not exist
     if grid_ggd is None:
         logger.warning("%s has no grid_ggd", ids.metadata.name)
-    else:
-        # Create time steps
-        ids.time = [float(t) for t in range(time_steps)]
-        ids.ids_properties.homogeneous_time = imas.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
+        return
 
-        # Create grid and GGD AoS
-        grid_ggd_aos = imas.util.get_parent(grid_ggd)
+    # Create time steps
+    ids.time = [float(t) for t in range(time_steps)]
+    ids.ids_properties.homogeneous_time = imas.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
 
-        grid_ggd_aos.resize(time_steps)
+    # Create grid and GGD AoS
+    grid_ggd_aos = imas.util.get_parent(grid_ggd)
+
+    grid_ggd_aos.resize(time_steps)
+
+    # Create uniform grids for each time step
+    for i in range(time_steps):
+        num_vertices, num_edges, num_faces = fill_NxN_grid(
+            grid_ggd_aos[i], grid_size, create_3d_grid=create_3d_grid
+        )
+        if dynamic_grid_size:
+            grid_size += 1
+        logger.debug("filled grid_ggd at index %d.", i)
+
+    if fill_ggd:
         ggd = create_first_ggd(ids)
         ggd_aos = imas.util.get_parent(ggd)
         ggd_aos.resize(time_steps)
-
-        # Create uniform grids and fill them with random GGD data
-        for i in range(time_steps):
-            num_vertices, num_edges, num_faces = fill_NxN_grid(
-                grid_ggd_aos[i], grid_size
-            )
-            logger.debug("filled grid_ggd at index %d.", i)
         fill_ggd_data(ids, num_vertices, num_edges, num_faces)
 
     fill_ids_specific(ids)
