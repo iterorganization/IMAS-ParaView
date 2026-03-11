@@ -127,25 +127,27 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
             injector: IDSStructure of a shattered pellet injector.
             injector_name: Name of the injector.
         """
-        if len(injector.fragment) > 0:
-            fragment = injector.fragment[0]
-            position = fragment.position
-            if position.r and position.phi and position.z:
-                self.selectable_map[
-                    f"Shattered Fragment Positions ({injector_name})"
-                ] = Fragments(injector.fragment, "position")
-
-            try:
-                velocity_phi = fragment.velocity_phi[0]
-            except AttributeError:
-                velocity_phi = fragment.velocity_tor[0]
-
-            if fragment.velocity_r and velocity_phi and fragment.velocity_z:
-                self.selectable_map[
-                    f"Shattered Fragment Velocities ({injector_name})"
-                ] = Fragments(injector.fragment, "velocity")
-        else:
+        if len(injector.fragment) == 0:
             logger.warning("'%s' has no fragments, skipping.", injector_name)
+            return
+
+        # Assuming all fragments contain the same quantities, so only looking at first
+        fragment = injector.fragment[0]
+        position = fragment.position
+        if position.r and position.phi and position.z:
+            self.selectable_map[f"Shattered Fragment Positions ({injector_name})"] = (
+                Fragments(injector.fragment, "position")
+            )
+
+        try:
+            velocity_phi = fragment.velocity_phi[0]
+        except AttributeError:
+            velocity_phi = fragment.velocity_tor[0]
+
+        if fragment.velocity_r and velocity_phi and fragment.velocity_z:
+            self.selectable_map[f"Shattered Fragment Velocities ({injector_name})"] = (
+                Fragments(injector.fragment, "velocity")
+            )
 
     def _populate_vel_mass_centre(self, injector, injector_name):
         """Populate the selectable_map with the velocity of the centre of mass of the
