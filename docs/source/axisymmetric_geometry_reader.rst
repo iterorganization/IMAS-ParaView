@@ -50,3 +50,19 @@ controls how many points are used to render the ``arcs_of_circle`` and ``annulus
 .. figure:: images/annulus_resolution.png
 
    ``annulus`` geometry element with a resolution of 5 (left) and a resolution of 50 (right)
+
+Example Case
+------------
+
+The following figure uses the Geometry Reader (Axisymmetric) to visualize the 
+geometries of the ``pf_active`` and ``pf_passive`` IDSs of the following machine description URIs:
+
+- ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/111001/204``
+- ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/115004/6``
+- ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/116001/3``
+- ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/124001/3``
+
+.. figure:: images/axisymmetric.png
+   :width: 80%
+   :align: center
+

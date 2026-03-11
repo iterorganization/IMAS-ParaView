@@ -55,3 +55,17 @@ Defines the number of interpolation points used to approximate the conductor cro
 circular cross-sectional geometry is present. Increasing this value produces a smoother, 
 more circular cross-section.
 
+Example Case
+------------
+
+The following figure uses the Non-Axisymmetric Coils Reader to visualize the 
+geometries of the ``coils_non_axisymmetric`` IDSs of the following machine description URIs:
+
+- ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/111003/2``
+- ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/115001/2``
+- ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/115002/2``
+- ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/115003/2``
+
+.. figure:: images/non_axisymmetric.png
+   :align: center
+
