@@ -107,3 +107,61 @@ To convert all time steps that fall between 2.2s and 6.6s:
 .. note:: If the specified time step is not found in the IDS, the time step before the
    specified time step will be used instead.
 
+
+Convert VTK to GGD grids using the CLI
+--------------------------------------
+
+IMAS-ParaView supports converting VTK files to GGD grids in an IDS using the ``vtk2ggd`` command-line tool.
+
+.. tip:: Detailed usage of the CLI tool can be found by running ``vtk2ggd --help``
+
+Usage
+^^^^^
+
+The ``vtk2ggd`` command requires two arguments: the path to VTK files and the output URI where the IDS will be stored.
+
+**Single file conversion:**
+
+.. code-block:: bash
+
+    vtk2ggd example.vtpc imas:hdf5?path=output_db --ids_name edge_profiles
+
+This converts a single ``.vtpc`` file to an IDS, at the given URI.
+
+**File series conversion:**
+
+.. code-block:: bash
+
+    vtk2ggd output_dir/ imas:hdf5?path=output_db
+
+This converts all ``.vtpc`` files in the specified directory to a single IDS with multiple time steps. The files
+should be named following the pattern ``{ids_name}_0.vtpc``, ``{ids_name}_1.vtpc``, etc. The IDS name will be 
+automatically inferred from the file names.
+
+
+VTK File Format Requirements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``vtk2ggd`` converter has specific requirements for the VTK input files it can process:
+
+* The converter can convert the following VTK files in the XML format:
+  
+  - A single ``.vtu`` file containing a vtkUnstructuredGrid.
+  - A single ``.vtpc`` file containing a vtkPartitionedDataSetCollection with a single time step
+  - A directory containing a file series of ``.vtpc`` files (e.g., ``edge_profiles_0.vtpc``, 
+    ``edge_profiles_1.vtpc``, etc.), one for each time step.
+
+* When providing ``.vtpc`` files, each ``vtkPartitionedDataSet`` should contain **exactly one partition** containing a ``vtkUnstructuredGrid``, otherwise the 
+  partition is skipped. Each ``vtkUnstructuredGrid`` will be converted into a separate grid subset in the GGD.
+
+Limitations of VTK grid conversion
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The converter can only output IDSs with:
+
+* a `linear <https://imas-data-dictionary.readthedocs.io/en/latest/generated/identifier/ggd_identifier.html>`_ GGD grid.
+* a single `space of a GGD grid <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/edge_profiles.html#edge_profiles-grid_ggd-space>`_.
+* `standard space geometries <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/edge_profiles.html#edge_profiles-grid_ggd-space-geometry_type>`_, not Fourier spaces.
+* X, Y, Z coordinates (`coordinate_identifier.x/y/z <https://imas-data-dictionary.readthedocs.io/en/latest/generated/identifier/coordinate_identifier.html>`_), or R, Phi, Z coordinates (when the ``--cylindrical_coordinates`` flag is enabled).
+* the GGD grid structure itself, not any physical quantities (temperature, density, etc.) defined on the grids in the `ggd <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/edge_profiles.html#edge_profiles-ggd>`_ AoS.
+* a homogeneous time mode.

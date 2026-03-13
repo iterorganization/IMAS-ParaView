@@ -87,12 +87,12 @@ def test_xvfb_fail():
 @pytest.mark.parametrize(
     "test_script", [pytest.param(script, id=script.name) for script in TEST_SCRIPTS]
 )
-def test_integration_scripts(test_script):
+def test_integration_scripts(test_script, request):
     """Parameterized test function for running integration tests."""
-    if "hdf5" in str(test_script) and not Path("hdf5_testdb").exists():
-        pytest.skip("HDF5 testdb does not exist")
-    if "mdsplus" in str(test_script) and not Path("mdsplus_testdb").exists():
-        pytest.skip("MDSplus testdb does not exist")
+    if "hdf5" in str(test_script) and request.config.getoption("--skip-hdf5"):
+        pytest.skip("Skipping HDF5 integration tests")
+    if "mdsplus" in str(test_script) and request.config.getoption("--skip-mdsplus"):
+        pytest.skip("Skipping MDSplus integration tests")
     if "profiles_1d_mapper" in str(test_script):
         pytest.skip("Requires ITER data, not available on GH Actions")
     test_passed = run_test(test_script)

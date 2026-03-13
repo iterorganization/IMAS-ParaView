@@ -40,6 +40,8 @@ Currently, the following IDS and structures are supported in the Line of Sight R
      - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/spectrometer_uv.html#spectrometer_uv-channel-line_of_sight>`__
    * - ``spectrometer_visible``
      - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/spectrometer_visible.html#spectrometer_visible-channel-line_of_sight>`__
+   * - ``thomson_scattering``
+     - `Channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/thomson_scattering.html#thomson_scattering-channel>`__
 
 Using the Line of Sight Reader
 ------------------------------

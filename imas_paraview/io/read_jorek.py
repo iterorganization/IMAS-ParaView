@@ -32,7 +32,7 @@ def read_plasma_state(grid_ggd, ps_reader, plane_config, ugrid):
 
     phi = [plane_config.phi_start, plane_config.phi_end]
     val_tor1 = np.array([])
-    nam = list()
+    nam = []
 
     N_vertex = len(grid_ggd.space[0].objects_per_dimension[0].object)
     array_list = ps_reader.scalar_array_list + ps_reader.vector_array_list
@@ -45,7 +45,9 @@ def read_plasma_state(grid_ggd, ps_reader, plane_config, ugrid):
         elif hasattr(attribute_array[0], "phi_coefficients"):
             scalar_data = attribute_array[0].phi_coefficients
         else:
-            logger.warning(f"Could not load the coefficients for {name}, it is ignored")
+            logger.warning(
+                "Could not load the coefficients for %s, it is ignored", name
+            )
             continue
         nam.append(name)
         if np.size(val_tor1) == 0:
@@ -162,7 +164,7 @@ def convert_grid_subset_to_unstructured_grid(
     else:
         alpha = (phi[1] - phi[0]) / (n_plane - 1)
         w = np.cos(np.deg2rad(alpha))
-        w1 = np.ones((np.shape(xyz)[0]))
+        w1 = np.ones(np.shape(xyz)[0])
         ien = None
         # Connectivity list of one bezier cell:
         index = np.array(
@@ -346,8 +348,8 @@ def interp_scalars(values, vertex, size, n_sub):
     returns:
         values: interpolated values, values[var, harmonic, element, is, it]
     """
-    # Multiply values[var,order,harm,vertex,element] with
-    # size[order, vertex, element] and bf[order, vertex, s, t]
+    # Multiply values[var,order,harm,vertex,element] with size[order, vertex, element]
+    # and bf[order, vertex, s, t]
     return np.einsum(
         "lihjk,ijk,ijmn->lhkmn", values[:, :, :, vertex - 1], size, bf(n_sub)
     )

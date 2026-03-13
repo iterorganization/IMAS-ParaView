@@ -84,7 +84,7 @@ def test_load_los_ece(test_data_dir):
         reader._selected = [str(channel.name) for channel in ids.channel]
         reader._load_los(output)
         assert output.GetNumberOfBlocks() == len(ids.channel)
-        for i, channel in enumerate(ids.channel):
+        for i in range(len(ids.channel)):
             assert_values_match(los, output.GetBlock(i))
 
 

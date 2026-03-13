@@ -35,6 +35,21 @@ def set_environment():
     print(f"PYTHONPATH={os.environ['PYTHONPATH']}")
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--skip-hdf5",
+        action="store_true",
+        default=False,
+        help="Skip integration tests for HDF5 datasets",
+    )
+    parser.addoption(
+        "--skip-mdsplus",
+        action="store_true",
+        default=False,
+        help="Skip integration tests for MDSplus datasets",
+    )
+
+
 def pytest_sessionstart(session):
     """Set up the environment variables and generate test data to
     perform the integration tests on."""
@@ -50,23 +65,19 @@ def pytest_sessionstart(session):
     with imas.DBEntry("netcdf_testdb.nc", "w", dd_version=DD_VERSION) as dbentry:
         dbentry.put(ids)
 
-    if not imas.backends.imas_core.imas_interface.has_imas:
-        logger.warning(
-            "IMAS-Core is not available, some integration tests are skipped."
-        )
-        return
+    # Write integration test file as MDSPlus
+    if not session.config.getoption("--skip-mdsplus"):
+        with imas.DBEntry(
+            "imas:mdsplus?path=mdsplus_testdb", "w", dd_version=DD_VERSION
+        ) as dbentry:
+            dbentry.put(ids)
 
-    # Write test file as MDSPlus
-    with imas.DBEntry(
-        "imas:mdsplus?path=mdsplus_testdb", "w", dd_version=DD_VERSION
-    ) as dbentry:
-        dbentry.put(ids)
-
-    # Write test file as HDF5
-    with imas.DBEntry(
-        "imas:hdf5?path=hdf5_testdb", "w", dd_version=DD_VERSION
-    ) as dbentry:
-        dbentry.put(ids)
+    # Write integration test file as HDF5
+    if not session.config.getoption("--skip-hdf5"):
+        with imas.DBEntry(
+            "imas:hdf5?path=hdf5_testdb", "w", dd_version=DD_VERSION
+        ) as dbentry:
+            dbentry.put(ids)
 
     print("Test environment setup complete.")
 

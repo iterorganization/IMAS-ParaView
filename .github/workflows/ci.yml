@@ -119,7 +119,7 @@ jobs:
     - name: Run tests
       run: |
         export PATH="$PWD/paraview/bin:$PATH"
-        pvpython --venv venv -m pytest --cov=imas_paraview --cov-report=term-missing --cov-report=html
+        pvpython --venv venv -m pytest --skip-mdsplus --skip-hdf5 --cov=imas_paraview --cov-report=term-missing --cov-report=html
 
     - name: Upload coverage report
       uses: actions/upload-artifact@v4

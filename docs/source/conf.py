@@ -83,6 +83,8 @@ extensions = [
     "sphinx.ext.extlinks",  # For shortening internal links
     "sphinx.ext.mathjax",  # Render math as images
     "sphinx_immaterial",  # Sphinx immaterial theme
+    "sphinx_design",  # For rendering grids
+    "sphinxcontrib.images",  # For rendering images with lightbox
 ]
 
 todo_include_todos = True
@@ -316,3 +318,4 @@ def escape_underscores(string):
 def setup(app):
     DEFAULT_FILTERS["escape_underscores"] = escape_underscores
     app.add_css_file("imas_paraview.css")
+    app.add_css_file("gallery.css")
