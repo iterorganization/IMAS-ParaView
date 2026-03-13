@@ -179,8 +179,9 @@ def _fill_vtk_cell_array_from_gs2(
             continue
 
         logger.info(
-            f"Reading {len(objects)} elements from "
-            f"space[0]/objects_per_dimension[{obj_dimension}]"
+            "Reading %d elements from space[0]/objects_per_dimension[%d]",
+            len(objects),
+            obj_dimension,
         )
 
         for obj in objects:
@@ -307,16 +308,13 @@ def _get_vtk_cell_type(dimension: int, npts: int) -> int:
             return VTK_POLYGON
 
     elif dimension == 3:
-        if npts == 4:
-            return VTK_TETRA
-        elif npts == 5:
-            return VTK_PYRAMID
-        elif npts == 6:
-            return VTK_WEDGE
-        elif npts == 8:
-            return VTK_HEXAHEDRON
-        else:
-            return VTK_POLYHEDRON
+        vtk_map = {
+            4: VTK_TETRA,
+            5: VTK_PYRAMID,
+            6: VTK_WEDGE,
+            8: VTK_HEXAHEDRON,
+        }
+        return vtk_map.get(npts, VTK_POLYHEDRON)
 
     else:
         return VTK_EMPTY_CELL
