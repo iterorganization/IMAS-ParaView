@@ -92,9 +92,9 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
         default_values=1.0,
     )
     def P99_SetCoMVelocityScalingFactor(self, val):
-        self._update_property("com_vel_scaling_factor", val)
         """Scaling factor for the size of the velocity arrows of the centre of mass of
         the fragments"""
+        self._update_property("com_vel_scaling_factor", val)
 
     @propertygroup(
         "Pellets Reader Settings",
@@ -134,7 +134,7 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
         # Assuming all fragments contain the same quantities, so only looking at first
         fragment = injector.fragment[0]
         position = fragment.position
-        if position.r and position.phi and position.z:
+        if position.r.has_value and position.phi.has_value and position.z.has_value:
             self.selectable_map[f"Shattered Fragment Positions ({injector_name})"] = (
                 Fragments(injector.fragment, "position")
             )

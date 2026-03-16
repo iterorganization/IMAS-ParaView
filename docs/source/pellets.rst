@@ -46,4 +46,4 @@ visual size of the rendered geometry.
 - ``Fragment Velocity Scaling Factor`` - Controls the length of the arrows used to represent 
   individual fragment velocities.
 - ``Velocity Centre of Mass Scaling Factor`` -  Controls the length of the arrow that 
-  represents the velocity of the centre of mass of all fragments at the shattering origin. 
+  represents the velocity of the centre of mass of all fragments at the shattering origin.
