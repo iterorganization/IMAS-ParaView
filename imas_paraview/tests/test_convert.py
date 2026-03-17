@@ -96,10 +96,10 @@ def test_ggd_to_vtk_heterogeneous():
     ids.grid_ggd[0].time = 0
     ids.grid_ggd[1].time = 0.2
 
-    num_vertices, num_edges, num_faces = fill_NxN_grid(ids.grid_ggd[0], 2)
+    num_vertices, num_edges, num_faces, _ = fill_NxN_grid(ids.grid_ggd[0], 2)
     for i in range(2):
         fill_scalar_quantity(ids.ggd[i].zeff, num_vertices, num_edges, num_faces)
-    num_vertices, num_edges, num_faces = fill_NxN_grid(ids.grid_ggd[1], 3)
+    num_vertices, num_edges, num_faces, _ = fill_NxN_grid(ids.grid_ggd[1], 3)
     for i in range(2, 5):
         fill_scalar_quantity(ids.ggd[i].zeff, num_vertices, num_edges, num_faces)
 
@@ -110,6 +110,26 @@ def test_ggd_to_vtk_heterogeneous():
 
         num_faces = vtk_object.GetPartition(2, 0).GetNumberOfCells()
         assert num_faces == (1 if i < 2 else 4)
+
+
+def test_ggd_to_vtk_volumes():
+    ids = imas.IDSFactory(version="4.0.0").new("edge_profiles")
+    ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
+    ids.time = [0.0]
+    ids.grid_ggd.resize(1)
+    _, _, _, num_volumes = fill_NxN_grid(
+        ids.grid_ggd[0], 5, create_3d_grid=True, create_volumes=True
+    )
+    converter = Converter(ids)
+    vtk_object = converter.ggd_to_vtk()
+    assert vtk_object is not None
+
+    volumes_pds = vtk_object.GetPartitionedDataSet(3)  # volumes partition
+    ugrid = volumes_pds.GetPartition(0)
+    num_cells = ugrid.GetNumberOfCells()
+    assert num_cells == num_volumes
+    cell_types = {ugrid.GetCellType(i) for i in range(num_cells)}
+    assert cell_types == {vtk.VTK_HEXAHEDRON}
 
 
 def test_ggd_to_vtk_subset():
