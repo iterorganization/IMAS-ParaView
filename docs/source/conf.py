@@ -9,14 +9,13 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 import datetime
 import sys
 import types
+from importlib.metadata import version as get_version
 from urllib.parse import urljoin
 
 # Sphinx extention to format xarray/pandas summaries
 import sphinx_autosummary_accessors
 from jinja2.defaults import DEFAULT_FILTERS
 from packaging.version import Version
-
-import imas_paraview
 
 print("python exec:", sys.executable)
 print("sys.path:", sys.path)
@@ -58,7 +57,7 @@ extlinks = {
     "pypa": ("https://packaging.python.org/%s", None),
 }
 
-full_version = Version(imas_paraview.__version__)
+full_version = Version(get_version("imas-paraview"))
 
 # version: The major project version, used as the replacement for |version|.
 #   For example, for the Python documentation, this may be something like 2.6.
