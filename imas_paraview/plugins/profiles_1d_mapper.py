@@ -59,7 +59,7 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
 
         # Auto-detect the Psi array
         psi_array_name = None
-        for name in input0.PointData.keys():
+        for name in input0.PointData.ArrayNames:
             if "Psi" in name:
                 psi_array_name = name
                 break
