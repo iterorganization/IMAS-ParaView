@@ -22,7 +22,7 @@ In this subsection, we will load the SOLPS GGD grid and visualize the electron p
 
    .. code-block:: bash
 
-      imas:hdf5?path=/work/imas/shared/imasdb/ITER_SCENARIOS/3/123364/1
+      imas:hdf5?path=/work/imas/shared/imasdb/ITER_SCENARIOS/4/123364/1
 
 #. Select the ``edge_profiles`` IDS in the IDS/Occurrence dropdown menu.
 #. Select ``Apply`` to load the edge profiles GGD grid.
