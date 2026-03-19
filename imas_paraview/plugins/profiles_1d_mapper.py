@@ -62,6 +62,7 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
         for name in input0.PointData.ArrayNames:
             if "Psi" in name:
                 psi_array_name = name
+                logger.info("Mapping the following Psi array: '%s'", psi_array_name)
                 break
 
         if psi_array_name is None:
