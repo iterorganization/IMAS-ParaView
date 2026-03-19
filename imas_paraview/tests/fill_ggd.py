@@ -128,6 +128,8 @@ def build_grid(N, space, create_3d_grid, create_volumes):
         num_edges: The total number of edges
         num_faces: The total number of faces
     """
+    if create_volumes and not create_3d_grid:
+        raise RuntimeError("Cannot create volumes if grid is not 3D")
     num_vertices = set_vertices(N, space, create_3d_grid, create_volumes)
     num_edges = set_edges(N, space)
     num_faces = set_faces(N, space)
@@ -152,6 +154,8 @@ def set_vertices(N, space, create_3d_grid, create_volumes):
     Returns:
         num_vertices: The total number of vertices
     """
+    if create_volumes and not create_3d_grid:
+        raise RuntimeError("Cannot create volumes if grid is not 3D")
     vertices = space.objects_per_dimension[0].object
     base_count = N * N
     total_vertices = base_count * 2 if create_volumes else base_count
