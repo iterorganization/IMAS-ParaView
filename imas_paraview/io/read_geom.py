@@ -12,13 +12,17 @@ from imas.ids_structure import IDSStructure
 from vtkmodules.vtkCommonCore import vtkIdList, vtkPoints
 from vtkmodules.vtkCommonDataModel import (
     VTK_EMPTY_CELL,
+    VTK_HEXAHEDRON,
     VTK_LINE,
     VTK_POLY_LINE,
     VTK_POLYGON,
     VTK_POLYHEDRON,
+    VTK_PYRAMID,
     VTK_QUAD,
+    VTK_TETRA,
     VTK_TRIANGLE,
     VTK_VERTEX,
+    VTK_WEDGE,
     vtkUnstructuredGrid,
 )
 
@@ -47,7 +51,7 @@ def convert_grid_subset_geometry_to_unstructured_grid(
     if subset_idx >= 0:
         _fill_vtk_cell_array_from_gs(grid_ggd, subset_idx, grid, progress)
     else:
-        _fill_vtk_cell_array_from_gs2(grid_ggd, subset_idx, grid, progress)
+        _fill_vtk_cell_array_from_gs2(grid_ggd, grid, progress)
     return grid
 
 
@@ -65,7 +69,11 @@ def fill_vtk_points(
         progress: Progress indicator for Paraview.
     """
     num_objects0d = len(grid_ggd.space[space_idx].objects_per_dimension[0].object)
-    logger.info("Reading %d points from grid_ggd/space[%d]", num_objects0d, space_idx)
+    logger.info(
+        "Reading %d points from grid_ggd/space[%d]/objects_per_dimension[0]",
+        num_objects0d,
+        space_idx,
+    )
 
     if len(grid_ggd.space[space_idx].objects_per_dimension[0].object[0].geometry) == 0:
         raise RuntimeError("Geometry of object is empty.")
@@ -139,32 +147,53 @@ def fill_vtk_points(
 
 
 def _fill_vtk_cell_array_from_gs2(
-    grid_ggd, subset_idx: int, ugrid: vtkUnstructuredGrid, progress=None
+    grid_ggd, ugrid: vtkUnstructuredGrid, progress=None
 ) -> None:
     """_fill_vtk_cell_array_from_gs() for wall IDS.
 
     Args:
         grid_ggd: a grid_ggd ids node.
-        subset_idx: -1
         ugrid: the vtk unstructured grid instance.
         progress: Progress indicator for Paraview.
     """
     grid = grid_ggd.space[0].objects_per_dimension
-    num_cell = len(grid[2].object)  # 4- 0D, 1D, 2D, 3D objects
-    ugrid.AllocateEstimate(num_cell, 10)
+    target_indices = [2, 3]
 
-    # Uses only 2d cells.
-    for j in range(len(grid[2].object)):
-        if progress:
-            progress.increment(0.5 / num_cell)
-        obj = grid[2].object[j]
-        obj_nodes = obj.nodes
-        obj_dimension = 2
+    total_cells = 0
+    for i in target_indices:
+        if i < len(grid):
+            total_cells += len(grid[i].object)
+    if total_cells == 0:
+        logger.info("No 2D or 3D objects found in grid_ggd/space[0].")
+        return
 
-        pt_ids = [val - 1 for val in obj_nodes]
-        npts = len(pt_ids)
-        cell_type = _get_vtk_cell_type(obj_dimension, npts)
-        ugrid.InsertNextCell(cell_type, npts, pt_ids)
+    ugrid.AllocateEstimate(total_cells, 10)
+
+    for obj_dimension in target_indices:
+        if obj_dimension >= len(grid):
+            continue
+
+        objects = grid[obj_dimension].object
+
+        if len(objects) == 0:
+            continue
+
+        logger.info(
+            "Reading %d elements from space[0]/objects_per_dimension[%d]",
+            len(objects),
+            obj_dimension,
+        )
+
+        for obj in objects:
+            if progress:
+                progress.increment(0.5 / total_cells)
+
+            obj_nodes = obj.nodes
+
+            pt_ids = [val - 1 for val in obj_nodes]
+            npts = len(pt_ids)
+            cell_type = _get_vtk_cell_type(obj_dimension, npts)
+            ugrid.InsertNextCell(cell_type, npts, pt_ids)
 
 
 def _fill_vtk_cell_array_from_gs(
@@ -279,7 +308,13 @@ def _get_vtk_cell_type(dimension: int, npts: int) -> int:
             return VTK_POLYGON
 
     elif dimension == 3:
-        return VTK_POLYHEDRON
+        vtk_map = {
+            4: VTK_TETRA,
+            5: VTK_PYRAMID,
+            6: VTK_WEDGE,
+            8: VTK_HEXAHEDRON,
+        }
+        return vtk_map.get(npts, VTK_POLYHEDRON)
 
     else:
         return VTK_EMPTY_CELL

@@ -11,9 +11,9 @@ from imas_paraview.util import create_first_ggd, create_first_grid, int32array
 logger = logging.getLogger("imas_paraview")
 
 
-def fill_NxN_grid(grid_ggd, N, create_3d_grid=False):
+def fill_NxN_grid(grid_ggd, N, create_3d_grid=False, create_volumes=False):
     """Fills the grid_ggd of an IDS with a uniform rectangular grid of size N x N,
-    containing vertices, edges and faces.
+    containing vertices, edges and faces, and optionally volumes.
 
     Adapted from https://imas-data-dictionary.readthedocs.io/en/latest/ggd_guide/examples.html
 
@@ -22,12 +22,17 @@ def fill_NxN_grid(grid_ggd, N, create_3d_grid=False):
         N: The size of the N x N grid
         create_3d_grid: If True, create a 2D grid in 3D space (in the X-Z plane at
             Y = 0). If False, create a 2D grid in the X-Y plane.
+        create_volumes: If True, extrude the 2D grid by in the Z direction to
+            create a layer of cube volume cells. Requires create_3d_grid=True.
 
     Returns:
         num_vertices: The number of vertices in the generated grid_ggd
         num_edges: The number of edges in the generated grid_ggd
         num_faces: The number of faces in the generated grid_ggd
+        num_volumes: The number of volume cells, or 0 if create_volumes is False
     """
+    if create_volumes and not create_3d_grid:
+        raise RuntimeError("Cannot create volumes if grid is not 3D")
 
     # Set grid
     grid_ggd.identifier = identifiers.ggd_identifier.linear
@@ -54,19 +59,19 @@ def fill_NxN_grid(grid_ggd, N, create_3d_grid=False):
         if create_3d_grid:
             space.coordinates_type[2] = coordinate_identifier.z.index
 
-    space.objects_per_dimension.resize(3)
-    num_vertices, num_edges, num_faces = build_grid(N, space, create_3d_grid)
+    space.objects_per_dimension.resize(4 if create_volumes else 3)
+    num_vertices, num_edges, num_faces, num_volumes = build_grid(
+        N, space, create_3d_grid, create_volumes
+    )
 
-    # Create subset
-    grid_ggd.grid_subset.resize(3)
+    # Create subsets
+    grid_ggd.grid_subset.resize(4 if create_volumes else 3)
     ggd_subset_identifier = identifiers.ggd_subset_identifier
     grid_subsets = grid_ggd.grid_subset
     grid_subsets[0].dimension = 1
     grid_subsets[0].identifier = ggd_subset_identifier.nodes
-
     grid_subsets[1].dimension = 2
     grid_subsets[1].identifier = ggd_subset_identifier.edges
-
     grid_subsets[2].dimension = 3
     grid_subsets[2].identifier = ggd_subset_identifier.cells
 
@@ -86,7 +91,7 @@ def fill_NxN_grid(grid_ggd, N, create_3d_grid=False):
         element.object[0].dimension = 2
         element.object[0].index = i + 1
 
-    # Create elements for cells
+    # Create elements for faces
     grid_subsets[2].element.resize(num_faces)
     for i, element in enumerate(grid_subsets[2].element):
         element.object.resize(1)
@@ -94,10 +99,20 @@ def fill_NxN_grid(grid_ggd, N, create_3d_grid=False):
         element.object[0].dimension = 3
         element.object[0].index = i + 1
 
-    return num_vertices, num_edges, num_faces
+    if create_volumes:
+        grid_subsets[3].dimension = 4
+        grid_subsets[3].identifier = ggd_subset_identifier.volumes
+        grid_subsets[3].element.resize(num_volumes)
+        for i, element in enumerate(grid_subsets[3].element):
+            element.object.resize(1)
+            element.object[0].space = 1
+            element.object[0].dimension = 4
+            element.object[0].index = i + 1
+
+    return num_vertices, num_edges, num_faces, num_volumes
 
 
-def build_grid(N, space, create_3d_grid):
+def build_grid(N, space, create_3d_grid, create_volumes):
     """Builds the vertices, edges and faces for an N x N grid.
 
     Args:
@@ -105,19 +120,28 @@ def build_grid(N, space, create_3d_grid):
         space: Space AoS of the GGD grid
         create_3d_grid: If True, create a 2D grid in 3D space (in the X-Z plane at
             Y = 0). If False, create a 2D grid in the X-Y plane.
+        create_volumes: If True, extrude the 2D grid by in the Z direction to
+            create a layer of cube volume cells. Requires create_3d_grid=True.
 
     Returns:
         num_vertices: The total number of vertices
         num_edges: The total number of edges
         num_faces: The total number of faces
     """
-    num_vertices = set_vertices(N, space, create_3d_grid)
+    if create_volumes and not create_3d_grid:
+        raise RuntimeError("Cannot create volumes if grid is not 3D")
+    num_vertices = set_vertices(N, space, create_3d_grid, create_volumes)
     num_edges = set_edges(N, space)
     num_faces = set_faces(N, space)
-    return num_vertices, num_edges, num_faces
+
+    num_volumes = 0
+    if create_volumes:
+        num_volumes = set_volumes(N, space)
+
+    return num_vertices, num_edges, num_faces, num_volumes
 
 
-def set_vertices(N, space, create_3d_grid):
+def set_vertices(N, space, create_3d_grid, create_volumes):
     """Sets the vertices for an N x N grid.
 
     Args:
@@ -125,23 +149,29 @@ def set_vertices(N, space, create_3d_grid):
         space: Space AoS of the GGD grid
         create_3d_grid: If True, create a 2D grid in 3D space (in the X-Z plane at
             Y = 0). If False, create a 2D grid in the X-Y plane.
+        create_volumes: If True, extrude the 2D grid by in the Z direction.
 
     Returns:
         num_vertices: The total number of vertices
     """
+    if create_volumes and not create_3d_grid:
+        raise RuntimeError("Cannot create volumes if grid is not 3D")
     vertices = space.objects_per_dimension[0].object
+    base_count = N * N
+    total_vertices = base_count * 2 if create_volumes else base_count
+    vertices.resize(total_vertices)
 
-    num_vertices = N * N
-    vertices.resize(num_vertices)
-
-    for i in range(N):
-        for j in range(N):
-            idx = i * N + j
-            if create_3d_grid:
-                vertices[idx].geometry = [0.5 * float(j), 0.0, float(i)]
-            else:
-                vertices[idx].geometry = [0.5 * float(j), float(i)]
-    return num_vertices
+    for layer in range(2 if create_volumes else 1):
+        z_val = float(layer)
+        for i in range(N):
+            for j in range(N):
+                idx = (layer * base_count) + (i * N + j)
+                if create_3d_grid:
+                    # Using X-Y plane for the base, Z for extrusion
+                    vertices[idx].geometry = [0.5 * float(j), float(i), z_val]
+                else:
+                    vertices[idx].geometry = [0.5 * float(j), float(i)]
+    return total_vertices
 
 
 def set_edges(N, space):
@@ -204,6 +234,43 @@ def set_faces(N, space):
             )
             face_idx += 1
     return num_faces
+
+
+def set_volumes(N, space):
+    """Sets the volumes faces for an N x N x 1 grid.
+
+    Args:
+        N: Size of the grid
+        space: Space AoS of the GGD grid
+
+    Returns:
+        num_volumes: The total number of faces
+    """
+    volumes = space.objects_per_dimension[3].object
+    num_volumes = (N - 1) * (N - 1)
+    volumes.resize(num_volumes)
+
+    base_offset = N * N
+    vol_idx = 0
+    for i in range(N - 1):
+        for j in range(N - 1):
+            # Bottom layer
+            b_tl = i * N + j + 1
+            b_tr = b_tl + 1
+            b_bl = b_tl + N
+            b_br = b_bl + 1
+
+            # Top layer
+            t_tl = b_tl + base_offset
+            t_tr = b_tr + base_offset
+            t_bl = b_bl + base_offset
+            t_br = b_br + base_offset
+
+            volumes[vol_idx].nodes = int32array(
+                [b_tl, b_tr, b_br, b_bl, t_tl, t_tr, t_br, t_bl]
+            )
+            vol_idx += 1
+    return num_volumes
 
 
 def fill_vector_quantity(vector_quantity, num_vertices, num_edges, num_faces):
@@ -423,8 +490,11 @@ def fill_ids(
 
     # Create uniform grids for each time step
     for i in range(time_steps):
-        num_vertices, num_edges, num_faces = fill_NxN_grid(
-            grid_ggd_aos[i], grid_size, create_3d_grid=create_3d_grid
+        num_vertices, num_edges, num_faces, _ = fill_NxN_grid(
+            grid_ggd_aos[i],
+            grid_size,
+            create_3d_grid=create_3d_grid,
+            create_volumes=False,
         )
         if dynamic_grid_size:
             grid_size += 1
