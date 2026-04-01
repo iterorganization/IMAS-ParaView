@@ -24,7 +24,7 @@ from imas_paraview.paraview_support.servermanager_tools import (
     stringvector,
 )
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
-from imas_paraview.util import pol_to_cart
+from imas_paraview.util import ensure_unique_name, pol_to_cart
 
 logger = logging.getLogger("imas_paraview")
 
@@ -59,10 +59,10 @@ class CameraReader(GGDVTKPluginBase):
         """Return the list of loaded cameras for the snap dropdown."""
         from vtkmodules.vtkCommonCore import vtkStringArray
 
-        arr = vtkStringArray()
+        array = vtkStringArray()
         for name in self.selectable_map:
-            arr.InsertNextValue(name)
-        return arr
+            array.InsertNextValue(name)
+        return array
 
     @stringvector(name="SnapCameraName", label="Select Camera")
     @stringlistdomain("SnapCameraList", name="snap_camera_list")
@@ -82,7 +82,7 @@ class CameraReader(GGDVTKPluginBase):
         default_values=1.0,
     )
     def P99_SetFrustumLength(self, val):
-        """Distance from the origin to the base of the frustum, in meters."""
+        """Sets the distance from the camera's origin to the base of the frustum."""
         self._update_property("frustum_length", val)
 
     @propertygroup("Camera Reader Settings", ["frustum_length"])
@@ -96,14 +96,9 @@ class CameraReader(GGDVTKPluginBase):
     def setup_ids(self):
         """Populate the selectable list with one entry per camera/channel."""
         assert self._ids is not None, "IDS cannot be empty during setup."
-
-        ids_name = self._ids.metadata.name
-        if ids_name not in SUPPORTED_IDS_NAMES:
-            raise NotImplementedError(f"{ids_name} is not supported")
-
         self.selectable_map = {}
 
-        if ids_name == "camera_ir":
+        if self._ids.metadata.name == "camera_ir":
             self._setup_camera_ir()
         else:  # camera_visible
             self._setup_camera_visible()
@@ -111,6 +106,7 @@ class CameraReader(GGDVTKPluginBase):
         self._selectable = list(self.selectable_map.keys())
 
     def _setup_camera_ir(self):
+        # NOTE: This requires DD version >= 4.1.0
         for ch_idx, channel in enumerate(self._ids.channel):
             channel_name = str(channel.name) or f"channel {ch_idx}"
 
@@ -135,17 +131,22 @@ class CameraReader(GGDVTKPluginBase):
                     ),
                 )
 
-                entry_name = self._unique_name(f"{channel_name} / {camera_name}")
-                self.selectable_map[entry_name] = geom
+                camera_name = ensure_unique_name(
+                    f"{channel_name} / {camera_name}", list(self.selectable_map.keys())
+                )
+                self.selectable_map[camera_name] = geom
 
     def _setup_camera_visible(self):
         for ch_idx, channel in enumerate(self._ids.channel):
             channel_name = str(channel.name) or f"channel {ch_idx}"
-            geom = self._extract_camera_visible_geometry(channel)
-            if geom is None:
+            geometry = self._extract_camera_visible_geometry(channel)
+            if geometry is None:
                 continue
 
-            self.selectable_map[self._unique_name(channel_name)] = geom
+            camera_name = ensure_unique_name(
+                str(channel_name), list(self.selectable_map.keys())
+            )
+            self.selectable_map[camera_name] = geometry
 
     def _extract_camera_visible_geometry(self, channel) -> CameraGeometry | None:
         if len(channel.aperture) == 0:
@@ -177,15 +178,6 @@ class CameraReader(GGDVTKPluginBase):
             vfov=beta[1] - beta[0],
             target=None,
         )
-
-    def _unique_name(self, name):
-        # TODO: move to general util function?
-        if name not in self.selectable_map:
-            return name
-        counter = 1
-        while f"{name} #{counter}" in self.selectable_map:
-            counter += 1
-        return f"{name} #{counter}"
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
