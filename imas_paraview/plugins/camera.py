@@ -261,14 +261,20 @@ class CameraReader(GGDVTKPluginBase):
             else geometry.origin + geometry.forward
         )
 
-        # NOTE: It would be nice to also change the aspect ratio and resolution of the
-        # RenderView to match the camera. Setting RenderView's ViewSize doesn't work,
-        # it just stretches the resolution to fit into viewport, distorting the UI.
-
         vtk_cam = view.GetActiveCamera()
         vtk_cam.SetPosition(*geometry.origin)
         vtk_cam.SetFocalPoint(*target)
         vtk_cam.SetViewUp(*geometry.up)
-        vtk_cam.SetViewAngle(np.degrees(geometry.vfov))
+
+        # Ensure full camera view fits within the RenderView
+        view_width, view_height = view.ViewSize
+        viewport_aspect = view_width / view_height
+        camera_aspect = np.tan(geometry.hfov / 2.0) / np.tan(geometry.vfov / 2.0)
+        if viewport_aspect < camera_aspect:
+            vfov_to_set = 2.0 * np.arctan(np.tan(geometry.hfov / 2.0) / viewport_aspect)
+        else:
+            vfov_to_set = geometry.vfov
+        vtk_cam.SetViewAngle(np.degrees(vfov_to_set))
+
         view.StillRender()
         logger.info("Snapped camera to '%s'", self._snap_camera_name)
