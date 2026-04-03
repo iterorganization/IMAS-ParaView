@@ -24,6 +24,7 @@ non-GGD Readers
    1d_profiles_reader
    profiles_2d_reader
    beam_reader
+   camera_reader
    axisymmetric_geometry_reader
    los_reader
    coils_non_axi_reader

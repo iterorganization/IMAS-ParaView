@@ -264,7 +264,12 @@ class CameraReader(GGDVTKPluginBase):
         vtk_cam = view.GetActiveCamera()
         vtk_cam.SetPosition(*geometry.origin)
         vtk_cam.SetFocalPoint(*target)
-        vtk_cam.SetViewUp(*geometry.up)
+
+        # Ensure camera is oriented upright
+        if geometry.up[2] < 0:
+            vtk_cam.SetViewUp(*(-geometry.up))
+        else:
+            vtk_cam.SetViewUp(*geometry.up)
 
         # Ensure full camera view fits within the RenderView
         view_width, view_height = view.ViewSize
