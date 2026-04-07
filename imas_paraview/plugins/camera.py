@@ -2,9 +2,6 @@ import logging
 from dataclasses import dataclass
 
 import numpy as np
-from paraview.simple import (
-    GetActiveView,
-)
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.util.numpy_support import numpy_to_vtk, numpy_to_vtkIdTypeArray
 from vtkmodules.vtkCommonCore import vtkPoints
@@ -264,6 +261,9 @@ class CameraReader(GGDVTKPluginBase):
         Args:
             geometry: The CameraGeometry to snap to.
         """
+
+        from paraview.simple import GetActiveView
+
         view = GetActiveView()
         if view.GetXMLName() != "RenderView":
             logger.error(
