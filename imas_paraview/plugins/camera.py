@@ -38,7 +38,7 @@ class CameraGeometry:
     up: np.ndarray
     hfov: float
     vfov: float
-    target: np.ndarray | None
+    target: np.ndarray
 
 
 @smproxy.source(label="Camera Reader")
@@ -98,13 +98,14 @@ class CameraReader(GGDVTKPluginBase):
         self.selectable_map = {}
 
         if self._ids.metadata.name == "camera_ir":
-            self._setup_camera_ir()
+            self._extract_camera_ir()
         else:  # camera_visible
-            self._setup_camera_visible()
+            self._extract_camera_visible()
 
         self._selectable = list(self.selectable_map.keys())
 
-    def _setup_camera_ir(self):
+    def _extract_camera_ir(self):
+        """Extract camera geometries from camera_ir IDS."""
         # NOTE: This requires DD version >= 4.1.0
         for ch_idx, channel in enumerate(self._ids.channel):
             channel_name = str(channel.name) or f"channel {ch_idx}"
@@ -130,12 +131,13 @@ class CameraReader(GGDVTKPluginBase):
                     ),
                 )
 
-                camera_name = ensure_unique_name(
+                geom_name = ensure_unique_name(
                     f"{channel_name} / {camera_name}", list(self.selectable_map.keys())
                 )
-                self.selectable_map[camera_name] = geometry
+                self.selectable_map[geom_name] = geometry
 
-    def _setup_camera_visible(self):
+    def _extract_camera_visible(self):
+        """Extract camera geometries from camera_visible IDS."""
         for channel in self._ids.channel:
             name = ensure_unique_name(
                 str(channel.name), list(self.selectable_map.keys())
@@ -144,36 +146,30 @@ class CameraReader(GGDVTKPluginBase):
                 logger.warning("'%s' has no aperture defined, skipping.", name)
                 continue
 
-            aperture = channel.aperture[0]
-            centre = aperture.centre
+            ap = channel.aperture[0]
+            centre = ap.centre
 
             x, y = pol_to_cart(centre.r, centre.phi)
 
             alpha = channel.viewing_angle_alpha_bounds
             beta = channel.viewing_angle_beta_bounds
 
-            geometry = CameraGeometry(
-                origin=np.array([x, y, centre.z]),
-                forward=np.array(
-                    [
-                        aperture.x3_unit_vector.x,
-                        aperture.x3_unit_vector.y,
-                        aperture.x3_unit_vector.z,
-                    ]
-                ),
-                up=np.array(
-                    [
-                        aperture.x2_unit_vector.x,
-                        aperture.x2_unit_vector.y,
-                        aperture.x2_unit_vector.z,
-                    ]
-                ),
-                hfov=alpha[1] - alpha[0],
-                vfov=beta[1] - beta[0],
-                target=None,
+            origin = np.array([x, y, centre.z])
+            forward = np.array(
+                [ap.x3_unit_vector.x, ap.x3_unit_vector.y, ap.x3_unit_vector.z]
+            )
+            up = np.array(
+                [ap.x2_unit_vector.x, ap.x2_unit_vector.y, ap.x2_unit_vector.z]
             )
 
-            self.selectable_map[name] = geometry
+            self.selectable_map[name] = CameraGeometry(
+                origin=origin,
+                forward=forward,
+                up=up,
+                hfov=alpha[1] - alpha[0],
+                vfov=beta[1] - beta[0],
+                target=origin + forward,
+            )
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
@@ -192,20 +188,34 @@ class CameraReader(GGDVTKPluginBase):
         return 1
 
     def _convert_to_vtk(self, output: vtkMultiBlockDataSet):
+        """Convert selected cameras into a vtkPolyData object and store it in a block of
+        a vtkMultiBlockDataSet.
+
+        Args:
+            output: The vtkMultiBlockDataSet to store the camera into.
+        """
         for block_id, name in enumerate(self._selected):
             geometry = self.selectable_map[name]
-            vtk_geom = self._build_frustum_polydata(geometry)
+            vtk_geom = self._build_camera_polydata(geometry)
             if vtk_geom is not None:
                 output.SetBlock(block_id, vtk_geom)
                 meta = output.GetMetaData(block_id)
                 meta.Set(vtkCompositeDataSet.NAME(), name)
                 logger.info("Loaded frustum for '%s'.", name)
 
-    def _build_frustum_polydata(self, geometry: CameraGeometry):
+    def _build_camera_polydata(self, geometry: CameraGeometry):
+        """Convert a CameraGeometry into a vtkPolyData object.
+
+        Args:
+            geometry: CameraGeometry dataclass of the selected camera.
+
+        Returns:
+            vtkPolyData of the view pyramid.
+        """
         forward = geometry.forward / np.linalg.norm(geometry.forward)
 
-        up_raw = geometry.up / np.linalg.norm(geometry.up)
-        up_ortho = up_raw - np.dot(up_raw, forward) * forward
+        up = geometry.up / np.linalg.norm(geometry.up)
+        up_ortho = up - np.dot(up, forward) * forward
         up_ortho /= np.linalg.norm(up_ortho)
 
         right = np.cross(forward, up_ortho)
@@ -221,10 +231,10 @@ class CameraReader(GGDVTKPluginBase):
         c2 = base_center + half_h * right + half_v * up_ortho
         c3 = base_center - half_h * right + half_v * up_ortho
 
-        pts_np = np.array([geometry.origin, c0, c1, c2, c3], dtype=np.float64)
+        points = np.array([geometry.origin, c0, c1, c2, c3])
 
         vtk_pts = vtkPoints()
-        vtk_pts.SetData(numpy_to_vtk(pts_np))
+        vtk_pts.SetData(numpy_to_vtk(points))
 
         edges = [
             [2, 0, 1],  # origin to c0
@@ -247,23 +257,24 @@ class CameraReader(GGDVTKPluginBase):
         return polydata
 
     def _snap_view_to_geometry(self, geometry: CameraGeometry):
+        """Snap the currently active RenderView to the selected camera, setting
+        ParaView's camera to match with the selected camera's position, focal point,
+        and field of view.
+
+        Args:
+            geometry: The CameraGeometry to snap to.
+        """
         view = GetActiveView()
         if view.GetXMLName() != "RenderView":
             logger.error(
-                "Cannot snap in current active viewport. Please select a RenderView as"
-                "your active view."
+                "Cannot snap camera in the currently active viewport. Please select a "
+                "RenderView as your active view."
             )
             return
 
-        target = (
-            geometry.target
-            if geometry.target is not None
-            else geometry.origin + geometry.forward
-        )
-
         vtk_cam = view.GetActiveCamera()
         vtk_cam.SetPosition(*geometry.origin)
-        vtk_cam.SetFocalPoint(*target)
+        vtk_cam.SetFocalPoint(*geometry.target)
 
         # Ensure camera is oriented upright
         if geometry.up[2] < 0:
