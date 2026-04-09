@@ -53,9 +53,9 @@ The profiles that should be plotted can now be selected.
    :widths: 50 50
    :header-rows: 0
 
-   * - .. figure:: images/profiles_plot_options.png
+   * - .. figure:: ../images/profiles_plot_options.png
 
          ``rho_tor_norm`` is chosen for the X-axis and the ``Ion Density`` is chosen as array to plot
-     - .. figure:: images/profiles_plot.png
+     - .. figure:: ../images/profiles_plot.png
 
          The plotted ``Ion Density`` as a function of ``rho_tor_norm``

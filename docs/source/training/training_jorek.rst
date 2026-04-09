@@ -10,7 +10,7 @@ Loading the Electron Temperature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In this subsection, we load the JOREK grid and visualize the electron temperature on this grid.
 
-.. |ico1| image:: images/rotate_axis.png
+.. |ico1| image:: ../images/rotate_axis.png
 
 #. The JOREK grid uses a combined finite-element and Fourier-series discretization. Bicubic finite elements describe fields in the poloidal plane, while a Fourier series handles variation in the toroidal direction. The standard GGD reader cannot process this grid structure, therefore, the JOREK reader was made available to load JOREK datasets. To load it, navigate to *Sources > IMAS Tools* and select the JOREK Reader.
 #. Instead of loading the data set by entering the URI, we will now manually input the required fields. To do so, select the ``Enter pulse, run, ..`` option in the Data entry URI dropdown. Fill in the following fields, and then press ``Apply`` to load the URI:
@@ -39,7 +39,7 @@ In this subsection, we load the JOREK grid and visualize the electron temperatur
 #. Enable log scale coloring by selecting ``Edit`` under the *Coloring* section. In the *Color Map Editor* on the right, enable ``Use Log Scale When Mapping Data To Colors``.
 #. Set the ``N plane`` to 3 and the ``Phi range`` from 0 to 180 degrees in the Bezier interpolation settings.
 
-.. figure:: images/training/jorek_electron_temp.png
+.. figure:: ../images/training/jorek_electron_temp.png
 
    JOREK GGD showing the electron temperature. Data provided by J. Artola.
 
@@ -48,7 +48,7 @@ Loading the Wall Current
 In this subsection, we load the wall currents in the inner vacuum vessel using the GGD Reader and apply a clip mask.
 
 
-.. |ico2| image:: images/clip.png
+.. |ico2| image:: ../images/clip.png
 
 #. Navigate to *Sources > IMAS Tools* and select the GGD Reader.
 #. We will now load the same data entry as in the previous subsection, but we will enter it using the URI string option. To do so, enter the following URI in the ``Enter URI`` field of the GGD reader plugin, and press ``Apply``:
@@ -66,7 +66,7 @@ In this subsection, we load the wall currents in the inner vacuum vessel using t
 #. Set the normal vector to ``0, -1, 0`` and select ``Apply`` to apply the filter.
 #. To distinguish between the wall currents and the electron temperature grid, change the wall current color map. Edit the color map, select ``Select a color map from default presets``, and choose a different color map.
 
-.. figure:: images/training/jorek_wall_currents.png
+.. figure:: ../images/training/jorek_wall_currents.png
 
    JOREK GGD showing the electron temperature surrounded by total current in the inner vacuum vessel (``t=0.309984``). Data provided by J. Artola.
 
@@ -86,6 +86,6 @@ In this subsection, we create an animation of the loaded electron temperature an
 
 The resulting animation is shown below:
 
-.. figure:: images/training/jorek.gif
+.. figure:: ../images/training/jorek.gif
 
    Animation of the electron temperature and wall currents. Data provided by J. Artola.

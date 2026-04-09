@@ -31,7 +31,7 @@ Tuning the Bézier parameters
 The JOREK Reader plugin has additional options to tune the Bézier interpolation. 
 These options can be found on the bottom of the plugin window.
 
-.. figure:: images/bezier_options.png
+.. figure:: ../images/bezier_options.png
 
    Tunable Bézier interpolation settings.
 
@@ -43,6 +43,6 @@ The following parameters can be tuned:
 For example, setting the Phi range from 0 to 270 degrees, and setting the number of 
 toroidal planes to 20.
 
-.. figure:: images/jorek_bezier_example.png
+.. figure:: ../images/jorek_bezier_example.png
 
    JOREK grid with phi in the range [0,270] and 20 toroidal planes.

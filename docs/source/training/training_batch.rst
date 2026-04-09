@@ -55,9 +55,9 @@ Running the Batch Script
       :widths: 33 33 34
       :header-rows: 0
 
-      * - .. figure:: images/training/solps_batch1.png
-        - .. figure:: images/training/solps_batch2.png
-        - .. figure:: images/training/solps_batch3.png
+      * - .. figure:: ../images/training/solps_batch1.png
+        - .. figure:: ../images/training/solps_batch2.png
+        - .. figure:: ../images/training/solps_batch3.png
       * - SOLPS example case for pulse 123362.
         - SOLPS example case for pulse 123363.
         - SOLPS example case for pulse 123364.

@@ -47,7 +47,7 @@ The Geometry Reader (Axisymmetric) allows you to change the resolution parameter
 controls how many points are used to render the ``arcs_of_circle`` and ``annulus`` geometries.
 
 
-.. figure:: images/annulus_resolution.png
+.. figure:: ../images/annulus_resolution.png
 
    ``annulus`` geometry element with a resolution of 5 (left) and a resolution of 50 (right)
 
@@ -62,7 +62,7 @@ geometries of the ``pf_active`` and ``pf_passive`` IDSs of the following machine
 - ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/116001/3``
 - ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/124001/3``
 
-.. figure:: images/axisymmetric.png
+.. figure:: ../images/axisymmetric.png
    :width: 80%
    :align: center
 

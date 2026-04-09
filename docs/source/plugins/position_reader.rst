@@ -48,6 +48,6 @@ To visualize the selected positions, under ``Representation`` select ``Point Gau
 The ``Gaussian Radius`` can be changed to a suitable size such that the points are 
 clearly visible.
 
-.. figure:: images/magnetics_positions.png
+.. figure:: ../images/magnetics_positions.png
 
    Positions of sensors in a magnetics IDS.

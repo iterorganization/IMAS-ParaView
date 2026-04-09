@@ -39,7 +39,7 @@ Manual
 
    usage
    cli
-   training
+   training/training
 
 .. toctree::
    :caption: API docs
