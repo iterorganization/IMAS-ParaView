@@ -8,5 +8,5 @@ description: |
 
   For a step-by-step tutorial on how to recreate this animation, see the 
   :ref:`training <training_jorek>`.
-data_uri: "imas:hdf5?user=public;pulse=112111;run=2;database=ITER_DISRUPTIONS;version=4"
+uri: "imas:hdf5?user=public;pulse=112111;run=2;database=ITER_DISRUPTIONS;version=4"
 imas_paraview_version: "2.3.0"

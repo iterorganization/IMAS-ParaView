@@ -323,15 +323,16 @@ def escape_underscores(string):
     return string.replace("_", r"\_")
 
 
-def generate_gallery():
-
+def _get_gallery_entries():
+    """Generator to extract common logic for reading gallery directories."""
     gallery_dir = Path(__file__).parent / "gallery" / "examples"
-    entries = []
+
+    if not gallery_dir.exists():
+        return
 
     for entry_dir in sorted(gallery_dir.iterdir()):
-        if not entry_dir.is_dir() or entry_dir.name.startswith("_"):
-            continue
-        if entry_dir.name.startswith("."):
+        # Check if valid directory
+        if not entry_dir.is_dir() or entry_dir.name.startswith(("_", ".")):
             continue
 
         desc_file = entry_dir / "description.yaml"
@@ -354,29 +355,50 @@ def generate_gallery():
             continue
 
         anchor = entry_dir.name.replace("_", "-").lower()
+        yield entry_dir, desc, image_path, anchor
+
+
+def generate_gallery():
+    entries = []
+
+    for entry_dir, desc, image_path, anchor in _get_gallery_entries():
         title = desc["title"]
         author = desc.get("author", "")
         description = desc["description"]
-        data_uri = desc.get("data_uri", "")
+
+        # Support both a single string or a list of URIs
+        uris = desc.get("uri", [])
+        if isinstance(uris, str):
+            uris = [uris]
 
         entry_id = f".. _`{anchor}`:\n\n"
         entry_title = f"{title}\n{'=' * len(title)}\n\n"
         entry_image = f".. figure:: /gallery/examples/{entry_dir.name}/{image_path.name}\n   :alt: {title}\n   :align: center\n\n"
         entry_author = f"**Author:** {author}\n\n" if author else ""
         entry_desc = f"{description.strip()}\n\n"
-        entry_uri = (
-            f"**Data URI:**\n\n.. code-block:: text\n\n   {data_uri}\n\n"
-            if data_uri
+
+        if uris:
+            # Join list elements with a newline and 3 spaces to align in the block
+            uri_lines = "\n   ".join(uris)
+            entry_uri = f"**Data URI:**\n\n.. code-block:: text\n\n   {uri_lines}\n\n"
+        else:
+            entry_uri = ""
+
+        imas_paraview_version = desc.get("imas_paraview_version", "")
+        entry_version = (
+            f"**IMAS-ParaView version:** ``{imas_paraview_version}``\n\n"
+            if imas_paraview_version
             else ""
         )
 
-        links = []
-        entry_links = "\n".join(links) + "\n" if links else ""
+        state_file = next(
+            (f for f in entry_dir.iterdir() if f.suffix.lower() == ".pvsm"),
+            None,
+        )
 
-        state_file = entry_dir / "state.pvsm"
         entry_download = (
-            f":download:`Download ParaView State File <examples/{entry_dir.name}/state.pvsm>`\n\n"
-            if state_file.exists()
+            f":download:`Download ParaView State File <examples/{entry_dir.name}/{state_file.name}>`\n\n"
+            if state_file
             else "\n"
         )
 
@@ -387,7 +409,7 @@ def generate_gallery():
             + entry_author
             + entry_desc
             + entry_uri
-            + entry_links
+            + entry_version
             + entry_download
         )
 
@@ -395,37 +417,9 @@ def generate_gallery():
 
 
 def generate_gallery_grid():
-
-    gallery_dir = Path(__file__).parent / "gallery" / "examples"
     entries = []
 
-    for entry_dir in sorted(gallery_dir.iterdir()):
-        if not entry_dir.is_dir() or entry_dir.name.startswith("_"):
-            continue
-        if entry_dir.name.startswith("."):
-            continue
-
-        desc_file = entry_dir / "description.yaml"
-        if not desc_file.exists():
-            continue
-
-        with open(desc_file) as f:
-            desc = yaml.safe_load(f)
-
-        image_path = next(
-            (
-                img_file
-                for img_file in entry_dir.iterdir()
-                if img_file.suffix.lower() in {".gif", ".png", ".jpg", ".jpeg"}
-            ),
-            None,
-        )
-
-        if not image_path:
-            continue
-
-        anchor = entry_dir.name.replace("_", "-").lower()
-
+    for entry_dir, desc, image_path, anchor in _get_gallery_entries():
         entries.append(
             f"""   .. grid-item-card::
       :img-top: /gallery/examples/{entry_dir.name}/{image_path.name}
@@ -433,14 +427,14 @@ def generate_gallery_grid():
       :link-type: ref
 
       {desc["title"]}
-
 """
         )
 
-    return """.. grid:: 1 2 3 3
+    grid_header = """.. grid:: 1 2 3 3
    :gutter: 2
 
-""" + "\n\n".join(entries)
+"""
+    return grid_header + "\n".join(entries)
 
 
 def setup(app):
