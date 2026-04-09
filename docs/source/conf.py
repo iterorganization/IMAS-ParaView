@@ -324,20 +324,15 @@ def escape_underscores(string):
 
 
 def _get_gallery_entries():
-    """Generator to extract common logic for reading gallery directories."""
+    """Generator for reading gallery directories."""
     gallery_dir = Path(__file__).parent / "gallery" / "examples"
 
-    if not gallery_dir.exists():
-        return
-
     for entry_dir in sorted(gallery_dir.iterdir()):
-        # Check if valid directory
-        if not entry_dir.is_dir() or entry_dir.name.startswith(("_", ".")):
-            continue
-
         desc_file = entry_dir / "description.yaml"
         if not desc_file.exists():
-            continue
+            raise RuntimeError(
+                "Example in %s does not have a 'description.yaml'", entry_dir
+            )
 
         with open(desc_file) as f:
             desc = yaml.safe_load(f)
@@ -352,33 +347,32 @@ def _get_gallery_entries():
         )
 
         if not image_path:
-            continue
+            raise RuntimeError("Example in %s does not have an image", entry_dir)
 
-        anchor = entry_dir.name.replace("_", "-").lower()
-        yield entry_dir, desc, image_path, anchor
+        name = entry_dir.name.replace("_", "-").lower()
+        yield entry_dir, desc, image_path, name
 
 
 def generate_gallery():
     entries = []
 
-    for entry_dir, desc, image_path, anchor in _get_gallery_entries():
+    for entry_dir, desc, image_path, name in _get_gallery_entries():
         title = desc["title"]
         author = desc.get("author", "")
         description = desc["description"]
 
-        # Support both a single string or a list of URIs
+        # Either a single URI or a list of URIs
         uris = desc.get("uri", [])
         if isinstance(uris, str):
             uris = [uris]
 
-        entry_id = f".. _`{anchor}`:\n\n"
+        entry_id = f".. _`{name}`:\n\n"
         entry_title = f"{title}\n{'=' * len(title)}\n\n"
         entry_image = f".. figure:: /gallery/examples/{entry_dir.name}/{image_path.name}\n   :alt: {title}\n   :align: center\n\n"
         entry_author = f"**Author:** {author}\n\n" if author else ""
         entry_desc = f"{description.strip()}\n\n"
 
         if uris:
-            # Join list elements with a newline and 3 spaces to align in the block
             uri_lines = "\n   ".join(uris)
             entry_uri = f"**Data URI:**\n\n.. code-block:: text\n\n   {uri_lines}\n\n"
         else:

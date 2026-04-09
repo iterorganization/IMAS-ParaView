@@ -1,4 +1,3 @@
-/* Make gallery grid-item-cards fully clickable */
 .sd-card[data-href] {
   cursor: pointer;
   transition: box-shadow 0.2s ease;
