@@ -1,0 +1,17 @@
+/* Make gallery grid-item-cards fully clickable */
+.sd-card[data-href] {
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+}
+
+.sd-card[data-href]:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sd-card[data-href] .sd-card-img-top {
+  pointer-events: none;
+}
+
+.sd-card[data-href] .sd-card-body {
+  pointer-events: none;
+}

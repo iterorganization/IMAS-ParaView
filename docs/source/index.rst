@@ -31,7 +31,7 @@ Manual
    :caption: Gallery
    :maxdepth: 2
 
-   gallery
+   gallery/gallery
    
 .. toctree::
    :caption: How To Use

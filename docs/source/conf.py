@@ -7,13 +7,16 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
 import datetime
+import os
 import sys
 import types
 from importlib.metadata import version as get_version
+from pathlib import Path
 from urllib.parse import urljoin
 
 # Sphinx extention to format xarray/pandas summaries
 import sphinx_autosummary_accessors
+import yaml
 from jinja2.defaults import DEFAULT_FILTERS
 from packaging.version import Version
 
@@ -104,7 +107,13 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "gallery/_entries.rst",
+    "gallery/_grid.rst",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -314,7 +323,138 @@ def escape_underscores(string):
     return string.replace("_", r"\_")
 
 
+def generate_gallery():
+
+    gallery_dir = Path(__file__).parent / "gallery" / "examples"
+    entries = []
+
+    for entry_dir in sorted(gallery_dir.iterdir()):
+        if not entry_dir.is_dir() or entry_dir.name.startswith("_"):
+            continue
+        if entry_dir.name.startswith("."):
+            continue
+
+        desc_file = entry_dir / "description.yaml"
+        if not desc_file.exists():
+            continue
+
+        with open(desc_file) as f:
+            desc = yaml.safe_load(f)
+
+        image_path = next(
+            (
+                img_file
+                for img_file in entry_dir.iterdir()
+                if img_file.suffix.lower() in {".gif", ".png", ".jpg", ".jpeg"}
+            ),
+            None,
+        )
+
+        if not image_path:
+            continue
+
+        anchor = entry_dir.name.replace("_", "-").lower()
+        title = desc["title"]
+        author = desc.get("author", "")
+        description = desc["description"]
+        data_uri = desc.get("data_uri", "")
+
+        entry_id = f".. _`{anchor}`:\n\n"
+        entry_title = f"{title}\n{'=' * len(title)}\n\n"
+        entry_image = f".. figure:: /gallery/examples/{entry_dir.name}/{image_path.name}\n   :alt: {title}\n   :align: center\n\n"
+        entry_author = f"**Author:** {author}\n\n" if author else ""
+        entry_desc = f"{description.strip()}\n\n"
+        entry_uri = (
+            f"**Data URI:**\n\n.. code-block:: text\n\n   {data_uri}\n\n"
+            if data_uri
+            else ""
+        )
+
+        links = []
+        entry_links = "\n".join(links) + "\n" if links else ""
+
+        state_file = entry_dir / "state.pvsm"
+        entry_download = (
+            f":download:`Download ParaView State File <examples/{entry_dir.name}/state.pvsm>`\n\n"
+            if state_file.exists()
+            else "\n"
+        )
+
+        entries.append(
+            entry_id
+            + entry_title
+            + entry_image
+            + entry_author
+            + entry_desc
+            + entry_uri
+            + entry_links
+            + entry_download
+        )
+
+    return "\n----\n\n".join(entries)
+
+
+def generate_gallery_grid():
+
+    gallery_dir = Path(__file__).parent / "gallery" / "examples"
+    entries = []
+
+    for entry_dir in sorted(gallery_dir.iterdir()):
+        if not entry_dir.is_dir() or entry_dir.name.startswith("_"):
+            continue
+        if entry_dir.name.startswith("."):
+            continue
+
+        desc_file = entry_dir / "description.yaml"
+        if not desc_file.exists():
+            continue
+
+        with open(desc_file) as f:
+            desc = yaml.safe_load(f)
+
+        image_path = next(
+            (
+                img_file
+                for img_file in entry_dir.iterdir()
+                if img_file.suffix.lower() in {".gif", ".png", ".jpg", ".jpeg"}
+            ),
+            None,
+        )
+
+        if not image_path:
+            continue
+
+        anchor = entry_dir.name.replace("_", "-").lower()
+
+        entries.append(
+            f"""   .. grid-item-card::
+      :img-top: /gallery/examples/{entry_dir.name}/{image_path.name}
+      :link: {anchor}
+      :link-type: ref
+
+      {desc["title"]}
+
+"""
+        )
+
+    return """.. grid:: 1 2 3 3
+   :gutter: 2
+
+""" + "\n\n".join(entries)
+
+
 def setup(app):
+
     DEFAULT_FILTERS["escape_underscores"] = escape_underscores
     app.add_css_file("imas_paraview.css")
-    app.add_css_file("gallery.css")
+
+    gallery_dir = Path(__file__).parent
+    os.makedirs(gallery_dir / "gallery", exist_ok=True)
+
+    gallery_rst = gallery_dir / "gallery" / "_entries.rst"
+    with open(gallery_rst, "w") as f:
+        f.write(generate_gallery())
+
+    gallery_grid_rst = gallery_dir / "gallery" / "_grid.rst"
+    with open(gallery_grid_rst, "w") as f:
+        f.write(generate_gallery_grid())

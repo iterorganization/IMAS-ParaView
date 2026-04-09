@@ -26,6 +26,7 @@ clean: Makefile
 	@echo Running '$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)'
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 	rm -rf $(GENERATEDDIR)
+	rm -f $(SOURCEDIR)/gallery/_entries.rst $(SOURCEDIR)/gallery/_grid.rst
 
 # Sphinx will run this automatically
 autogen: Makefile
