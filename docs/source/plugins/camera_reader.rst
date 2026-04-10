@@ -77,11 +77,11 @@ example:
   imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/3/150701/1002
 
 
-.. figure:: images/camera_reader.png
+.. figure:: ../images/camera_reader.png
 
   Wireframe of the camera view, along with the first wall and divertor structures
   visualized using the Wall Limiter Reader in white and rainbow colors, respectively.
 
-.. figure:: images/camera_reader_snap.png
+.. figure:: ../images/camera_reader_snap.png
 
    ParaView's RenderView when snapping to the camera above.
