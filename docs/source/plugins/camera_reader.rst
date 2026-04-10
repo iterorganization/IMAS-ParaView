@@ -51,12 +51,13 @@ To snap the view:
 1. Load and apply the Camera Reader with at least one camera selected.
 2. In the **Snap View to Camera** section of the Properties panel, choose the desired
    camera from the **Select Camera** drop-down menu.
-3. Press the **Snap View to Camera** button.
+3. Select **Apply** to confirm the selection.
+4. Press the **Snap View to Camera** button.
 
 The ParaView camera will immediately move to the position and orientation of the
 selected IDS camera.
 
-.. warning::
+.. note::
 
   The Camera Reader cannot change the active RenderView’s aspect ratio and will use 
   either the horizontal or vertical field of view, based on the current viewport size. 

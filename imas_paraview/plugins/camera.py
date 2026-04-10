@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.util.numpy_support import numpy_to_vtk, numpy_to_vtkIdTypeArray
-from vtkmodules.vtkCommonCore import vtkPoints
+from vtkmodules.vtkCommonCore import vtkPoints, vtkStringArray
 from vtkmodules.vtkCommonDataModel import (
     vtkCellArray,
     vtkCompositeDataSet,
@@ -46,14 +46,12 @@ class CameraReader(GGDVTKPluginBase):
         self.frustum_length = 1.0
         self.selectable_map: dict[str, CameraGeometry] = {}
         self._snap_camera_name = ""
-        self._snap_requested = False
 
     @stringvector(
         name="SnapCameraList", information_only=1, si_class="vtkSIDataArrayProperty"
     )
     def P96_GetSnapCameraList(self):
         """Return the list of loaded cameras for the snap dropdown."""
-        from vtkmodules.vtkCommonCore import vtkStringArray
 
         array = vtkStringArray()
         for name in self.selectable_map:
@@ -69,8 +67,15 @@ class CameraReader(GGDVTKPluginBase):
     @command_button_property("SnapToCamera", "Snap View to Camera", "P98_SnapToCamera")
     def P98_SnapToCamera(self):
         """Snap the ParaView camera to the selected camera."""
-        self._snap_requested = True
-        self.Modified()
+        if (
+            not self._snap_camera_name
+            or self._snap_camera_name not in self.selectable_map
+        ):
+            logger.error("No valid camera selected to snap to.")
+            return
+
+        geometry = self.selectable_map[self._snap_camera_name]
+        self._snap_view_to_geometry(geometry)
 
     @doublevector(
         label="Frustum Length (m)",
@@ -109,23 +114,28 @@ class CameraReader(GGDVTKPluginBase):
 
             for cam_idx, camera in enumerate(channel.camera):
                 camera_name = str(camera.name) or f"camera {cam_idx}"
+                origin = np.array(
+                    [camera.pinhole.x, camera.pinhole.y, camera.pinhole.z]
+                )
+                forward = np.array(
+                    [camera.direction.x, camera.direction.y, camera.direction.z]
+                )
+                up = np.array([camera.up.x, camera.up.y, camera.up.z])
+                target = np.array(
+                    [
+                        channel.target_surface_center.x,
+                        channel.target_surface_center.y,
+                        channel.target_surface_center.z,
+                    ]
+                )
+
                 geometry = CameraGeometry(
-                    origin=np.array(
-                        [camera.pinhole.x, camera.pinhole.y, camera.pinhole.z]
-                    ),
-                    forward=np.array(
-                        [camera.direction.x, camera.direction.y, camera.direction.z]
-                    ),
-                    up=np.array([camera.up.x, camera.up.y, camera.up.z]),
+                    origin=origin,
+                    forward=forward,
+                    up=up,
                     hfov=camera.field_of_view_horizontal,
                     vfov=camera.field_of_view_vertical,
-                    target=np.array(
-                        [
-                            channel.target_surface_center.x,
-                            channel.target_surface_center.y,
-                            channel.target_surface_center.z,
-                        ]
-                    ),
+                    target=target,
                 )
 
                 geom_name = ensure_unique_name(
@@ -175,12 +185,6 @@ class CameraReader(GGDVTKPluginBase):
         if self._selected:
             output = vtkMultiBlockDataSet.GetData(outInfo)
             self._convert_to_vtk(output)
-
-        if self._snap_requested:
-            self._snap_requested = False
-            logger.info("Snapping to camera '%s'", self._snap_camera_name)
-            geometry = self.selectable_map[self._snap_camera_name]
-            self._snap_view_to_geometry(geometry)
 
         return 1
 
@@ -244,7 +248,7 @@ class CameraReader(GGDVTKPluginBase):
             [2, 4, 1],  # c3  to c0
         ]
 
-        flat = np.array([v for edge in edges for v in edge], dtype=np.int64)
+        flat = np.array(edges, dtype=np.int64).flatten()
         lines = vtkCellArray()
         lines.SetCells(len(edges), numpy_to_vtkIdTypeArray(flat))
 
