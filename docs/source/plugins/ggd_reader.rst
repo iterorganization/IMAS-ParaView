@@ -50,13 +50,13 @@ The different input options are shown in the figure below:
    :widths: 33 33 33
    :header-rows: 0
 
-   * - .. figure:: images/input_uri.png
+   * - .. figure:: ../images/input_uri.png
 
          1\. String input.
-     - .. figure:: images/input_file.png
+     - .. figure:: ../images/input_file.png
 
          2\. File browser.
-     - .. figure:: images/input_legacy.png
+     - .. figure:: ../images/input_legacy.png
 
          3\. Manual input.
 
@@ -68,11 +68,11 @@ When the URI input is selected, and filled accordingly, you can press `Apply` to
 If the URI loads successfully, an IDS can be selected from the drop-down list. The reader automatically
 detects which IDSs are available for the given URI, and only shows applicable IDSs for this plugin.
 
-.. figure:: images/ids_dropdown.png
+.. figure:: ../images/ids_dropdown.png
 
    The drop-down list to select an IDS.
 
-.. |ico1| image:: images/rotate_axis.png
+.. |ico1| image:: ../images/rotate_axis.png
 
 When the desired IDS is selected, click on `Apply` to load it. After the IDS is loaded, 
 the grid should appear in the viewport. If the grid does not show up, it is
@@ -81,11 +81,11 @@ with the data. For example, to align the viewpoint in the positive Y direction, 
 
 You should now be able to see the mesh of the GGD.
 
-.. figure:: images/mesh.png
+.. figure:: ../images/mesh.png
 
    The mesh of the GGD.
 
-.. |ico2| image:: images/filter_icon.png
+.. |ico2| image:: ../images/filter_icon.png
 
 .. _selecting-ggd-arrays:
 
@@ -98,7 +98,7 @@ can be filtered using the |ico2|-icon in the top right of the selection window.
 When the attributes are selected, click on `Apply` to load the selected attributes from the backend.
 The selected quantities can now be visualized using Paraview's selection drop-down menu.
 
-.. figure:: images/electron_pressure.png
+.. figure:: ../images/electron_pressure.png
 
    Visualize the `Electron Pressure` of the GGD.
 
@@ -120,7 +120,7 @@ One of these IDSs is the ``wall`` IDS, where the GGD grids are defined inside th
 ``description_ggd`` array. You can use this dropdown to select which array element
 should be visualized:
 
-.. figure:: images/sub_index.png
+.. figure:: ../images/sub_index.png
 
    Choose between visualizing the grid from ``description_ggd[0]`` or
    ``description_ggd[1]``. The meaning of the different indices is dependent on the data

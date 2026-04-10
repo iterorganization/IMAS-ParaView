@@ -47,6 +47,6 @@ Alternatively, if these coordinates are empty, it will try to load the radial an
 
 The VTK plugin will output a ``vtkMultiBlockDataSet`` where each block contains a single profile stored as a ``vtkUnstructuredGrid``. The following image shows a 2D profile from an equilibrium IDS.
 
-.. figure:: images/profiles_2d.png
+.. figure:: ../images/profiles_2d.png
 
    Contour plot of a 2D profile of poloidal magnetic flux, with the divertor and first wall as reference.

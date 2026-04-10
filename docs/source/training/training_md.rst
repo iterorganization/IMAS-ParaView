@@ -12,7 +12,7 @@ Loading the Wall data
 In this subsection, we will visualize the divertor and first wall structures, and create a rotational extrusion to rotate them around the central axis.
 
 
-.. |ico1| image:: images/rotate_axis.png
+.. |ico1| image:: ../images/rotate_axis.png
 
 #. Navigate to *Sources > IMAS Tools* and select the Wall Limiter Reader.
 #. Enter the following URI in the ``Enter URI`` field of the Wall Limiter reader plugin:
@@ -30,7 +30,7 @@ In this subsection, we will visualize the divertor and first wall structures, an
 #. Now rename the annotations for the 0 and 1 blocks to ``Divertor`` and ``First Wall``, respectively.
 #. Lastly, set the opacity to 0.5, so we can view the inside of the wall.
  
-.. figure:: images/training/md_wall_limiter.png
+.. figure:: ../images/training/md_wall_limiter.png
 
    The first wall and divertor structures extruded around the center axis. Data provided by X. Bonnin.
 
@@ -46,7 +46,7 @@ Loading the EC launcher beams
 #. Since this URI only contains a single supported IDS for this reader, the ec_launchers IDS, it is automatically selected for you. You should see the EC launcher beam names appear in the attribute array selection, select them all, and press ``Apply``.
 #. Change the color of the beams to a color of choosing, by pressing ``Edit`` under the coloring options. Here we use cyan.
 
-.. figure:: images/training/md_beams.png
+.. figure:: ../images/training/md_beams.png
 
    The EC launcher beams are added in cyan. Data provided by M. Schneider.
    
@@ -62,7 +62,7 @@ Loading the Interferometer lines of sight
 #. Since this URI only contains a single supported IDS for this reader, the interferometer IDS, it is automatically selected for you. You should see the interferometer names appear in the attribute array selection, select them both, and press ``Apply``.
 #. Change the color of the lines of sight to a color of choosing, by pressing ``Edit`` under the coloring options. Here we use yellow.
 
-.. figure:: images/training/md_los.png
+.. figure:: ../images/training/md_los.png
 
    The interferometer lines of sight are added in yellow. Data provided by A. Medvedeva.
 
@@ -79,7 +79,7 @@ Loading the Magnetics Coil Positions
 #. To visualize the positions, select the ``Point Gaussian`` representation under the Display properties section, and increase the Gaussian Radius to 0.05.
 #. Change the color of the coil positions to a color of choosing, by pressing ``Edit`` under the coloring options. Here we use green.
 
-.. figure:: images/training/md_position.png
+.. figure:: ../images/training/md_position.png
 
    The magnetic coil positions are added in green. Data provided by M. Hosokawa.
 
@@ -95,6 +95,6 @@ Create an Animation with Orbiting Camera
 
 The resulting animation is shown below:
 
-.. figure:: images/training/machine_description.gif
+.. figure:: ../images/training/machine_description.gif
 
    Animation of the multiple different types of ITER machine description data. Data provided by J. Artola.
