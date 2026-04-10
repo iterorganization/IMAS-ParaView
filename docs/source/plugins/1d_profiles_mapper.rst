@@ -20,13 +20,13 @@ Example Usage
 
 1. Load a GGD or 2D Profile that contains a poloidal flux (Psi) grid. Ensure that the Psi is selected in the attribute window. In the example figure below, a 2D profile from equilibrium is used.
 
-.. figure:: images/psi.png
+.. figure:: ../images/psi.png
 
    A 2D profile from an equilibrium IDS with the Psi grid selected. 
 
 2. Load a profile using the `1DProfilesReader`, and ensure you select the ``Grid Psi`` attribute. You may also select any of the 1d profiles that you would like to map. These profiles will be taken as input for the the 1D Profiles Mapper filter.
 
-.. figure:: images/profiles_psi.png
+.. figure:: ../images/profiles_psi.png
 
    A ``core profiles`` IDS loaded with the 1D Profiles Reader. Here, the ``Grid Psi`` and Electron Temperature profile are selected.
 
@@ -37,7 +37,7 @@ Example Usage
 7. The filter will now show the 1D Profiles that you enabled in step 2 in the array selection window of the 1DProfilesReader. Select which 1D profiles you want to map onto the 2D grid. And finally press `Apply`.
 8. You can now select the resampled profile in the coloring section.
 
-.. figure:: images/profiles1d_map.png
+.. figure:: ../images/profiles1d_map.png
 
    The Electron Temperature 1D profile mapped onto the 2D poloidal flux grid from an MHD IDS. Here, the NaN values are colored in translucent black.
 
@@ -46,6 +46,6 @@ Example Usage
    1D profiles are typically only valid within the core plasma, so care should be taken when interpreting
    data outside of the LCFS. This effect is clearly demonstrated in the figure below.
 
-.. figure:: images/2d_profile_mapped.png
+.. figure:: ../images/2d_profile_mapped.png
 
    The total parallel current density 1D profile mapped onto the 2D Psi profile of an equilibrium IDS.

@@ -12,8 +12,8 @@ GGD Readers
 .. toctree::
    :maxdepth: 2
 
-   ggd_reader
-   jorek_reader
+   plugins/ggd_reader
+   plugins/jorek_reader
 
 non-GGD Readers
 ---------------
@@ -21,17 +21,17 @@ non-GGD Readers
 .. toctree::
    :maxdepth: 1
 
-   1d_profiles_reader
-   profiles_2d_reader
-   beam_reader
-   camera_reader
-   axisymmetric_geometry_reader
-   los_reader
-   coils_non_axi_reader
-   pellets
-   position_reader
-   scalar_time_trace
-   wall_limiter_reader
+   plugins/1d_profiles_reader
+   plugins/profiles_2d_reader
+   plugins/beam_reader
+   plugins/camera_reader
+   plugins/axisymmetric_geometry_reader
+   plugins/los_reader
+   plugins/coils_non_axi_reader
+   plugins/pellets
+   plugins/position_reader
+   plugins/scalar_time_trace
+   plugins/wall_limiter_reader
 
 Filters
 -------
@@ -39,4 +39,4 @@ Filters
 .. toctree::
    :maxdepth: 2
 
-   1d_profiles_mapper
+   plugins/1d_profiles_mapper

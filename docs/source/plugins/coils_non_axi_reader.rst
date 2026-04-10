@@ -44,7 +44,7 @@ Defines the number of interpolation points used to represent curved conductor el
 Increasing this value produces smoother coil elements at the cost of higher geometric complexity.
 
 
-.. figure:: images/coils_non_axi_res.png
+.. figure:: ../images/coils_non_axi_res.png
 
    Arc of circle element (top) and a full circle element (bottom) with a resolution of 5 (left) and 50 (right)
 
@@ -66,6 +66,6 @@ geometries of the ``coils_non_axisymmetric`` IDSs of the following machine descr
 - ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/115002/2``
 - ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/115003/2``
 
-.. figure:: images/non_axisymmetric.png
+.. figure:: ../images/non_axisymmetric.png
    :align: center
 

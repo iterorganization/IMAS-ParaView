@@ -39,6 +39,6 @@ Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 
 The following image shows the limiter structures of a description 2D structure of a wall IDS.
 
-.. figure:: images/wall_limiter.png
+.. figure:: ../images/wall_limiter.png
 
    The first wall and divertor of a wall IDS.

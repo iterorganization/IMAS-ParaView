@@ -46,9 +46,9 @@ distance from the launching point of the beam, in the beam direction.
    :widths: 50 50
    :header-rows: 0
 
-   * - .. figure:: images/beam_2m.png
+   * - .. figure:: ../images/beam_2m.png
 
          beam structures in ec_launchers with ``Beam Distance`` set to 2 meters.
-     - .. figure:: images/beam_10m.png
+     - .. figure:: ../images/beam_10m.png
 
          beam structures in ec_launchers with ``Beam Distance`` set to 10 meters.

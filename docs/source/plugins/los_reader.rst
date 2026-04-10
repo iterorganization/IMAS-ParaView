@@ -68,9 +68,9 @@ which will invert the direction of the line-of-sight.
    :widths: 50 49
    :header-rows: 0
 
-   * - .. figure:: images/los_1.png
+   * - .. figure:: ../images/los_1.png
          :alt: Line of Sight at Scaling Factor 1
-     - .. figure:: images/los_1_5.png
+     - .. figure:: ../images/los_1_5.png
          :alt: Line of Sight at Scaling Factor 1.5
    * - Line of sights of vacuum vessel cameras in bolometer IDS, with ``Scaling Factor`` at 1 (default).
      - Line of sights of vacuum vessel cameras in bolometer IDS, with ``Scaling Factor`` at 1.5.
