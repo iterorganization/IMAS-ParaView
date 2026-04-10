@@ -106,6 +106,13 @@ class CameraReader(GGDVTKPluginBase):
 
         self._selectable = list(self.selectable_map.keys())
 
+    def _cart_vector_has_value(self, vec):
+        """Helper to check if a lazy-loaded cartesian IMAS vector quantity has data."""
+        try:
+            return vec.x.has_value and vec.y.has_value and vec.z.has_value
+        except AttributeError:
+            return False
+
     def _extract_camera_ir(self):
         """Extract camera geometries from camera_ir IDS."""
         # NOTE: This requires DD version >= 4.1.0
@@ -114,6 +121,22 @@ class CameraReader(GGDVTKPluginBase):
 
             for cam_idx, camera in enumerate(channel.camera):
                 camera_name = str(camera.name) or f"camera {cam_idx}"
+                geom_name = ensure_unique_name(
+                    f"{channel_name} / {camera_name}", list(self.selectable_map.keys())
+                )
+                if not (
+                    self._cart_vector_has_value(camera.pinhole)
+                    and self._cart_vector_has_value(camera.direction)
+                    and self._cart_vector_has_value(camera.up)
+                    and self._cart_vector_has_value(channel.target_surface_center)
+                    and camera.field_of_view_horizontal.has_value
+                    and camera.field_of_view_vertical.has_value
+                ):
+                    logger.warning(
+                        "'%s' is missing required geometry data. Skipping.", geom_name
+                    )
+                    continue
+
                 origin = np.array(
                     [camera.pinhole.x, camera.pinhole.y, camera.pinhole.z]
                 )
@@ -138,9 +161,6 @@ class CameraReader(GGDVTKPluginBase):
                     target=target,
                 )
 
-                geom_name = ensure_unique_name(
-                    f"{channel_name} / {camera_name}", list(self.selectable_map.keys())
-                )
                 self.selectable_map[geom_name] = geometry
 
     def _extract_camera_visible(self):
@@ -155,11 +175,24 @@ class CameraReader(GGDVTKPluginBase):
 
             ap = channel.aperture[0]
             centre = ap.centre
-
-            x, y = pol_to_cart(centre.r, centre.phi)
-
             alpha = channel.viewing_angle_alpha_bounds
             beta = channel.viewing_angle_beta_bounds
+
+            if not (
+                centre.r.has_value
+                and centre.phi.has_value
+                and centre.z.has_value
+                and self._cart_vector_has_value(ap.x3_unit_vector)
+                and self._cart_vector_has_value(ap.x2_unit_vector)
+                and alpha.has_value
+                and beta.has_value
+            ):
+                logger.warning(
+                    "'%s' is missing required geometry data. Skipping.", name
+                )
+                continue
+
+            x, y = pol_to_cart(centre.r, centre.phi)
 
             origin = np.array([x, y, centre.z])
             forward = np.array(
@@ -269,6 +302,12 @@ class CameraReader(GGDVTKPluginBase):
         from paraview.simple import GetActiveView
 
         view = GetActiveView()
+        if view is None:
+            logger.error(
+                "Cannot find your active view. Snapping the camera view is only "
+                "available when running ParaView in standalone mode."
+            )
+            return
         if view.GetXMLName() != "RenderView":
             logger.error(
                 "Cannot snap camera in the currently active viewport. Please select a "

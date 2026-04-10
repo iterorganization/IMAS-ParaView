@@ -40,11 +40,15 @@ Refer to the :ref:`using the GGD Reader` for detailed instructions on:
   to visualize.
 
 Snapping the View to a Camera
-------------------------------
+-----------------------------
 
 The **Snap View to Camera** widget lets you align the active ParaView RenderView with
 any loaded camera so that the viewport matches the camera's optical position and
 field of view.
+
+.. note::
+  The camera snapping feature only works when running ParaView in standalone mode. 
+  It is not available if you are running in client–server mode.
 
 To snap the view:
 
@@ -63,6 +67,7 @@ selected IDS camera.
   either the horizontal or vertical field of view, based on the current viewport size. 
   The remaining axis will not match and must be adjusted manually to align with the 
   camera’s view, the camera view can be used as a guide for this.
+
 
 
 Example Case
