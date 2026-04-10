@@ -324,61 +324,58 @@ def escape_underscores(string):
 
 
 def _get_gallery_entries():
-    """Generator for reading gallery directories."""
+    """Generator for reading gallery example directories."""
     gallery_dir = Path(__file__).parent / "gallery" / "examples"
 
-    for entry_dir in sorted(gallery_dir.iterdir()):
-        desc_file = entry_dir / "description.yaml"
-        if not desc_file.exists():
+    for example_dir in gallery_dir.iterdir():
+        description_path = example_dir / "description.yaml"
+        if not description_path.exists():
             raise RuntimeError(
-                "Example in %s does not have a 'description.yaml'", entry_dir
+                "Example in %s does not have a 'description.yaml'", example_dir
             )
-
-        with open(desc_file) as f:
-            desc = yaml.safe_load(f)
-
         image_path = next(
             (
                 img_file
-                for img_file in entry_dir.iterdir()
+                for img_file in example_dir.iterdir()
                 if img_file.suffix.lower() in {".gif", ".png", ".jpg", ".jpeg"}
             ),
             None,
         )
-
         if not image_path:
-            raise RuntimeError("Example in %s does not have an image", entry_dir)
+            raise RuntimeError("Example in %s does not have an image", example_dir)
 
-        name = entry_dir.name.replace("_", "-").lower()
-        yield entry_dir, desc, image_path, name
+        with open(description_path) as f:
+            description = yaml.safe_load(f)
+
+        name = example_dir.name.replace("_", "-").lower()
+        yield example_dir, description, image_path, name
 
 
 def generate_gallery():
+    """Generate a overview for each gallery example including an image, information from
+    the description.yaml and optionally a downloadable ParaView state file."""
     entries = []
 
-    for entry_dir, desc, image_path, name in _get_gallery_entries():
+    for example_dir, desc, image_path, name in _get_gallery_entries():
         title = desc["title"]
-        author = desc.get("author", "")
+        author = desc["author"]
         description = desc["description"]
+        uris = desc["uri"]
+        imas_paraview_version = desc.get("imas_paraview_version", "")
 
         # Either a single URI or a list of URIs
-        uris = desc.get("uri", [])
         if isinstance(uris, str):
             uris = [uris]
 
         entry_id = f".. _`{name}`:\n\n"
         entry_title = f"{title}\n{'=' * len(title)}\n\n"
-        entry_image = f".. figure:: /gallery/examples/{entry_dir.name}/{image_path.name}\n   :alt: {title}\n   :align: center\n\n"
+        entry_image = f".. figure:: /gallery/examples/{example_dir.name}/{image_path.name}\n   :alt: {title}\n   :align: center\n\n"
         entry_author = f"**Author:** {author}\n\n" if author else ""
         entry_desc = f"{description.strip()}\n\n"
 
-        if uris:
-            uri_lines = "\n   ".join(uris)
-            entry_uri = f"**Data URI:**\n\n.. code-block:: text\n\n   {uri_lines}\n\n"
-        else:
-            entry_uri = ""
+        uri_lines = "\n   ".join(uris)
+        entry_uri = f"**Data URI:**\n\n.. code-block:: text\n\n   {uri_lines}\n\n"
 
-        imas_paraview_version = desc.get("imas_paraview_version", "")
         entry_version = (
             f"**IMAS-ParaView version:** ``{imas_paraview_version}``\n\n"
             if imas_paraview_version
@@ -386,12 +383,12 @@ def generate_gallery():
         )
 
         state_file = next(
-            (f for f in entry_dir.iterdir() if f.suffix.lower() == ".pvsm"),
+            (f for f in example_dir.iterdir() if f.suffix.lower() == ".pvsm"),
             None,
         )
 
         entry_download = (
-            f":download:`Download ParaView State File <examples/{entry_dir.name}/{state_file.name}>`\n\n"
+            f":download:`Download ParaView State File <examples/{example_dir.name}/{state_file.name}>`\n\n"
             if state_file
             else "\n"
         )
@@ -411,12 +408,14 @@ def generate_gallery():
 
 
 def generate_gallery_grid():
+    """Generate a clickable grid of the available examples, including a thumbnail
+    of the image and a title."""
     entries = []
 
-    for entry_dir, desc, image_path, anchor in _get_gallery_entries():
+    for example_dir, desc, image_path, anchor in _get_gallery_entries():
         entries.append(
             f"""   .. grid-item-card::
-      :img-top: /gallery/examples/{entry_dir.name}/{image_path.name}
+      :img-top: /gallery/examples/{example_dir.name}/{image_path.name}
       :link: {anchor}
       :link-type: ref
 
@@ -431,18 +430,21 @@ def generate_gallery_grid():
     return grid_header + "\n".join(entries)
 
 
+def create_gallery():
+    """Generate the gallery rst pages based on the available examples"""
+    gallery_dir = Path(__file__).parent / "gallery"
+    gallery_rst = gallery_dir / "_entries.rst"
+    gallery_grid_rst = gallery_dir / "_grid.rst"
+
+    with open(gallery_rst, "w") as f:
+        f.write(generate_gallery())
+    with open(gallery_grid_rst, "w") as f:
+        f.write(generate_gallery_grid())
+
+
 def setup(app):
 
     DEFAULT_FILTERS["escape_underscores"] = escape_underscores
     app.add_css_file("imas_paraview.css")
 
-    gallery_dir = Path(__file__).parent
-    os.makedirs(gallery_dir / "gallery", exist_ok=True)
-
-    gallery_rst = gallery_dir / "gallery" / "_entries.rst"
-    with open(gallery_rst, "w") as f:
-        f.write(generate_gallery())
-
-    gallery_grid_rst = gallery_dir / "gallery" / "_grid.rst"
-    with open(gallery_grid_rst, "w") as f:
-        f.write(generate_gallery_grid())
+    create_gallery()
