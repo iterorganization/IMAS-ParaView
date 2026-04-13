@@ -116,7 +116,7 @@ class CameraReader(GGDVTKPluginBase):
 
     def _extract_camera_ir(self):
         """Extract camera geometries from camera_ir IDS."""
-        imas_version = self._ids.ids_properties.version_put.data_dictionary
+        imas_version = str(self._ids.ids_properties.version_put.data_dictionary)
         if imas_version and Version(imas_version) < Version("4.1.0"):
             logger.error(
                 "The DD version of the IDS ('%s') is too old, it should be at "
