@@ -9,6 +9,13 @@ These steps assume that you have IMAS-ParaView up and running, for details on th
 
 At the start of each section, a ParaView ``.pvsm`` state file is also provided for your convenience. This can be loaded into ParaView and will automatically load the entire example setup for you. However, if it is your first time going through the examples, it is recommended to follow the step-by-step walkthrough manually, to become familiar with the workflow of IMAS-ParaView.
 
+.. note::
+   The ParaView state files have been tested with IMAS-ParaView version ``2.4.0``, 
+   but may not work for different versions. If you get any errors when loading the state file, 
+   it is recommended to revert your IMAS-ParaView version to ``2.4.0``. Please also 
+   `report an issue <https://github.com/iterorganization/IMAS-ParaView/issues>`_ so the
+   state files can be updated.
+
 .. toctree::
    :maxdepth: 2
 
