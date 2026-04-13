@@ -8,8 +8,13 @@ This section presents a step-by-step walkthrough of the examples from the IMAS-P
 These steps assume that you have IMAS-ParaView up and running, for details on this, see :ref:`installing`. Furthermore, it is assumed that you have access to SDCC, as the data used for the examples is loaded from SDCC. It is advised to have some experience with IMAS-ParaView before starting this, so consider having a look at the instructions for :ref:`usage`. It is recommended to stick to the order as presented here, as the later training sections introduce more advanced concepts.
 
 At the start of each section, a ParaView ``.pvsm`` state file is also provided for your convenience. This can be loaded into ParaView and will automatically load the entire example setup for you. However, if it is your first time going through the examples, it is recommended to follow the step-by-step walkthrough manually, to become familiar with the workflow of IMAS-ParaView.
-Note, these ParaView state files work with IMAS-ParaView version ``2.4.0``, but may not work for newer versions due to incompatibilities.
-If you see any errors when loading the state file, it is recommended to revert your IMAS-ParaView version to ``2.4.0``.
+
+.. note::
+   The ParaView state files have been tested with IMAS-ParaView version ``2.4.0``, 
+   but may not work for newer versions. If you get any errors when loading the state file, 
+   it is recommended to revert your IMAS-ParaView version to ``2.4.0``. Please also 
+   `report an issue <https://github.com/iterorganization/IMAS-ParaView/issues>`_ so the
+   state files can be updated.
 
 .. toctree::
    :maxdepth: 2
