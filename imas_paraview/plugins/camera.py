@@ -5,7 +5,7 @@ import numpy as np
 from packaging.version import Version
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.util.numpy_support import numpy_to_vtk, numpy_to_vtkIdTypeArray
-from vtkmodules.vtkCommonCore import vtkPoints, vtkStringArray
+from vtkmodules.vtkCommonCore import vtkIntArray, vtkPoints, vtkStringArray
 from vtkmodules.vtkCommonDataModel import (
     vtkCellArray,
     vtkCompositeDataSet,
@@ -64,6 +64,7 @@ class CameraReader(GGDVTKPluginBase):
     def P97_SetSnapCameraName(self, value):
         """Select which loaded camera to snap the ParaView view to."""
         self._snap_camera_name = str(value).strip()
+        self.Modified()
 
     @command_button_property("SnapToCamera", "Snap View to Camera", "P98_SnapToCamera")
     def P98_SnapToCamera(self):
@@ -239,18 +240,21 @@ class CameraReader(GGDVTKPluginBase):
         """
         for block_id, name in enumerate(self._selected):
             geometry = self.selectable_map[name]
-            vtk_geom = self._build_camera_polydata(geometry)
+            is_highlighted = name == self._snap_camera_name
+            vtk_geom = self._build_camera_polydata(geometry, is_highlighted)
             if vtk_geom is not None:
                 output.SetBlock(block_id, vtk_geom)
                 meta = output.GetMetaData(block_id)
                 meta.Set(vtkCompositeDataSet.NAME(), name)
                 logger.info("Loaded frustum for '%s'.", name)
 
-    def _build_camera_polydata(self, geometry: CameraGeometry):
+    def _build_camera_polydata(self, geometry: CameraGeometry, is_highlighted):
         """Convert a CameraGeometry into a vtkPolyData object.
 
         Args:
             geometry: CameraGeometry dataclass of the selected camera.
+            is_highlighted: Flag to highlight currently selected camera in the snap
+                view dropdown menu.
 
         Returns:
             vtkPolyData of the view pyramid.
@@ -297,6 +301,16 @@ class CameraReader(GGDVTKPluginBase):
         polydata = vtkPolyData()
         polydata.SetPoints(vtk_pts)
         polydata.SetLines(lines)
+
+        # Mark currently highlighted camera
+        active_array = vtkIntArray()
+        active_array.SetNumberOfComponents(1)
+        active_array.SetName("ActiveCamera")
+        val = 1 if is_highlighted else 0
+        for _ in range(len(edges)):
+            active_array.InsertNextValue(val)
+        polydata.GetCellData().SetScalars(active_array)
+
         return polydata
 
     def _snap_view_to_geometry(self, geometry: CameraGeometry):
