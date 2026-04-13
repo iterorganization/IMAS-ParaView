@@ -64,6 +64,7 @@ class CameraReader(GGDVTKPluginBase):
     def P97_SetSnapCameraName(self, value):
         """Select which loaded camera to snap the ParaView view to."""
         self._snap_camera_name = str(value).strip()
+        # Ensure the currently highlighted camera gets updated
         self.Modified()
 
     @command_button_property("SnapToCamera", "Snap View to Camera", "P98_SnapToCamera")
