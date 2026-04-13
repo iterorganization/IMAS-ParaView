@@ -37,7 +37,7 @@ def test_camera_visible():
     assert len(reader.selectable_map) > 0
 
     geometry = reader.selectable_map[name]
-    vtk_obj = reader._build_camera_polydata(geometry, True)
+    vtk_obj = reader._build_camera_polydata(geometry)
 
     pts = vtk_to_numpy(vtk_obj.GetPoints().GetData())
     assert len(pts) > 0
@@ -80,7 +80,7 @@ def test_camera_ir():
     assert len(reader.selectable_map) > 0
 
     geometry = reader.selectable_map["test_channel / test_camera"]
-    vtk_obj = reader._build_camera_polydata(geometry, True)
+    vtk_obj = reader._build_camera_polydata(geometry)
 
     pts = vtk_to_numpy(vtk_obj.GetPoints().GetData())
     assert len(pts) > 0
