@@ -11,7 +11,7 @@ At the start of each section, a ParaView ``.pvsm`` state file is also provided f
 
 .. note::
    The ParaView state files have been tested with IMAS-ParaView version ``2.4.0``, 
-   but may not work for newer versions. If you get any errors when loading the state file, 
+   but may not work for different versions. If you get any errors when loading the state file, 
    it is recommended to revert your IMAS-ParaView version to ``2.4.0``. Please also 
    `report an issue <https://github.com/iterorganization/IMAS-ParaView/issues>`_ so the
    state files can be updated.
