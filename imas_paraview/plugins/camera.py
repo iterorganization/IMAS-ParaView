@@ -13,6 +13,7 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPolyData,
 )
 
+from imas_paraview.ids_util import cart_vector_has_value
 from imas_paraview.paraview_support.servermanager_tools import (
     command_button_property,
     doublevector,
@@ -107,13 +108,6 @@ class CameraReader(GGDVTKPluginBase):
 
         self._selectable = list(self.selectable_map.keys())
 
-    def _cart_vector_has_value(self, vec):
-        """Helper to check if a lazy-loaded cartesian IMAS vector quantity has data."""
-        try:
-            return vec.x.has_value and vec.y.has_value and vec.z.has_value
-        except AttributeError:
-            return False
-
     def _extract_camera_ir(self):
         """Extract camera geometries from camera_ir IDS."""
         imas_version = str(self._ids.ids_properties.version_put.data_dictionary)
@@ -134,10 +128,10 @@ class CameraReader(GGDVTKPluginBase):
                     f"{channel_name} / {camera_name}", list(self.selectable_map.keys())
                 )
                 if not (
-                    self._cart_vector_has_value(camera.pinhole)
-                    and self._cart_vector_has_value(camera.direction)
-                    and self._cart_vector_has_value(camera.up)
-                    and self._cart_vector_has_value(channel.target_surface_center)
+                    cart_vector_has_value(camera.pinhole)
+                    and cart_vector_has_value(camera.direction)
+                    and cart_vector_has_value(camera.up)
+                    and cart_vector_has_value(channel.target_surface_center)
                     and camera.field_of_view_horizontal.has_value
                     and camera.field_of_view_vertical.has_value
                 ):
@@ -191,8 +185,8 @@ class CameraReader(GGDVTKPluginBase):
                 centre.r.has_value
                 and centre.phi.has_value
                 and centre.z.has_value
-                and self._cart_vector_has_value(ap.x3_unit_vector)
-                and self._cart_vector_has_value(ap.x2_unit_vector)
+                and cart_vector_has_value(ap.x3_unit_vector)
+                and cart_vector_has_value(ap.x2_unit_vector)
                 and alpha.has_value
                 and beta.has_value
             ):

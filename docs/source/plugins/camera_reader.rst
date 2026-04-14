@@ -21,7 +21,7 @@ Currently, the following IDS and structures are supported in the Camera Reader:
    * - IDS
      - Structure
    * - ``camera_ir``
-     - `Camera channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/camera_ir.html#camera_ir-channel>`__ ``(DD version >=4.1.0)``
+     - `Camera channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/camera_ir.html#camera_ir-channel>`__ (available in Data Dictionary ``4.1.0`` and later)
    * - ``camera_visible``
      - `Camera channels <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/camera_visible.html#camera_visible-channel>`__
 
