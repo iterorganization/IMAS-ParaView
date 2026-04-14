@@ -3,6 +3,8 @@
 Line of Sight Reader
 ====================
 
+.. versionchanged:: 2.3.0
+
 This page explains how to use the Line of Sight Reader to visualize Line of sight IDS data structures.
 
 

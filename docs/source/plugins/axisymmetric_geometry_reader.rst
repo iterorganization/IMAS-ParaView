@@ -3,6 +3,8 @@
 Geometry Reader (Axisymmetric)
 ==============================
 
+.. versionadded:: 2.3.0
+
 This page explains how to use the Geometry Reader (Axisymmetric) to visualize the axisymmetric active poloidal 
 field coils, as well as axisymmetric passive conductor structures.
 
