@@ -31,7 +31,7 @@ docs = [
     "sphinx-design",
     "sphinxcontrib-images",
     "sphinx-jinja",
-    "pyyaml>=6.0"
+    "pyyaml>=6.0",
 ]
 linting = [
     "ruff",

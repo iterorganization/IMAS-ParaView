@@ -80,7 +80,7 @@ Examples
    {% endfor %}
 
    {% if entry.version %}
-   **IMAS-ParaView version:** ``{{ entry.version }}``
+   **IMAS-ParaView version:** `{{ entry.version }} <https://github.com/iterorganization/IMAS-ParaView/releases/tag/{{ entry.version }}>`_
    {% endif %}
 
    {% if entry.state_file_name %}
