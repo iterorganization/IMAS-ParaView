@@ -318,6 +318,7 @@ def escape_underscores(string):
 
 
 def get_gallery_data():
+    """Load gallery example entries for Jinja rendering."""
     gallery_dir = Path(__file__).parent / "gallery" / "examples"
     entries = []
 
