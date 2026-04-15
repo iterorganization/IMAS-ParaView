@@ -127,6 +127,19 @@ def checkbox(**kwargs):
     return decorator
 
 
+def command_button_property(name: str, label: str, command: str):
+    """Convenience decorator for creating a command button property."""
+    xml = f"""
+    <Property name="{name}"
+              label="{label}"
+              command="{command}"
+              panel_widget="command_button"
+              panel_visibility="default">
+    </Property>
+    """
+    return smproperty.xml(xml)
+
+
 def add_docstring(func):
     """Convenience decorator to add a Documentation XML node filled with the docstring
     of the property.

@@ -464,3 +464,16 @@ def create_vtk_arrows(positions, directions, scaling_factor=1.0):
     glyph.Update()
 
     return glyph.GetOutput()
+
+
+def ensure_unique_name(name, existing_names):
+    """Return a name unique in `existing_names`, appending `#<counter>` if necessary."""
+
+    if name not in existing_names:
+        return name
+    counter = 1
+    unique_name = f"{name} #{counter}"
+    while unique_name in existing_names:
+        counter += 1
+        unique_name = f"{name} #{counter}"
+    return unique_name
