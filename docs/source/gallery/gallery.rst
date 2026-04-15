@@ -65,9 +65,7 @@ Examples
       :alt: {{ entry.title }}
       :align: center
 
-   {% if entry.author %}
    **Author:** {{ entry.author }}
-   {% endif %}
 
    {{ entry.description }}
 
