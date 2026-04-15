@@ -367,6 +367,8 @@ def get_gallery_data():
             }
         )
 
+    # Sort examples alphabetically
+    entries.sort(key=lambda e: e["title"].lower())
     return entries
 
 
