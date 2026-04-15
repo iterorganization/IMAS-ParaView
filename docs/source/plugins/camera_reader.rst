@@ -3,6 +3,8 @@
 Camera Reader
 =============
 
+.. versionadded:: 2.4.0
+
 This page explains how to use the Camera Reader to visualize camera optical geometries
 different IDSs containing camera data.
 
