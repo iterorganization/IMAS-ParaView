@@ -15,7 +15,7 @@ from vtkmodules.vtkCommonDataModel import (
 from imas_paraview.ids_util import create_name_recursive
 from imas_paraview.paraview_support.servermanager_tools import intvector, propertygroup
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
-from imas_paraview.util import points_to_vtkpoly
+from imas_paraview.util import ensure_unique_name, points_to_vtkpoly
 
 logger = logging.getLogger("imas_paraview")
 
@@ -91,15 +91,9 @@ class AxisymmetricGeometryReader(GGDVTKPluginBase):
         quantity_name = create_name_recursive(geometry)
         original_name = str(quantity_name)
 
-        # Add suffix if given name is not unique
-        if original_name in self.selectable_map:
-            counter = 1
-            while f"{original_name} #{counter}" in self.selectable_map:
-                counter += 1
-            quantity_name = f"{original_name} #{counter}"
-        else:
-            quantity_name = original_name
-
+        quantity_name = ensure_unique_name(
+            original_name, list(self.selectable_map.keys())
+        )
         self.selectable_map[str(quantity_name)] = geometry
 
     def _convert_to_vtk(self, output: vtkMultiBlockDataSet):

@@ -24,6 +24,7 @@ non-GGD Readers
    plugins/1d_profiles_reader
    plugins/profiles_2d_reader
    plugins/beam_reader
+   plugins/camera_reader
    plugins/axisymmetric_geometry_reader
    plugins/los_reader
    plugins/coils_non_axi_reader

@@ -6,6 +6,7 @@ from vtk.util.numpy_support import vtk_to_numpy
 
 from imas_paraview.util import (
     create_vtk_spheres,
+    ensure_unique_name,
     find_closest_indices,
     get_grid_ggd,
     points_to_vtkpoly,
@@ -150,3 +151,10 @@ def test_get_grid_ggd():
     ids.time = [0.0]
     ids.ids_properties.homogeneous_time = imas.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
     assert get_grid_ggd(ids) is None
+
+
+def test_ensure_unique_name():
+    existing = ["coil1", "coil1 #1", "coil2", "coil3"]
+    assert ensure_unique_name("coil4", existing) == "coil4"
+    assert ensure_unique_name("coil2", existing) == "coil2 #1"
+    assert ensure_unique_name("coil1", existing) == "coil1 #2"
