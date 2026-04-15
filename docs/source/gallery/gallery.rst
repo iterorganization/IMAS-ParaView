@@ -7,10 +7,19 @@ Gallery
 The gallery showcases the capabilities of what you can do with the IMAS-ParaView plugins.
 You can click on the images to enlarge them and to display their descriptions.
 
-.. This is dynamically generated in conf.py based on the available examples
-.. include:: _grid.rst 
+.. jinja:: gallery_ctx
 
-.. _`gallery_examples`:
+   .. grid:: 1 2 3 3
+      :gutter: 2
+
+   {% for entry in entries %}
+      .. grid-item-card::
+         :img-top: /gallery/examples/{{ entry.dir_name }}/{{ entry.image_name }}
+         :link: {{ entry.name }}
+         :link-type: ref
+
+         {{ entry.title }}
+   {% endfor %}
 
 Contributing to the Gallery
 ---------------------------
@@ -44,5 +53,38 @@ Example ``description.yaml``:
 Examples
 --------
 
-.. This is dynamically generated in conf.py based on the available examples
-.. include:: _entries.rst
+.. jinja:: gallery_ctx
+
+   {% for entry in entries %}
+   .. _{{ entry.name }}:
+
+   {{ entry.title }}
+   {{ '=' * entry.title|length }}
+
+   .. figure:: /gallery/examples/{{ entry.dir_name }}/{{ entry.image_name }}
+      :alt: {{ entry.title }}
+      :align: center
+
+   {% if entry.author %}
+   **Author:** {{ entry.author }}
+   {% endif %}
+
+   {{ entry.description }}
+
+   **Data URI:**
+
+   .. code-block:: text
+
+   {% for uri in entry.uris %}
+      {{ uri }}
+   {% endfor %}
+
+   {% if entry.version %}
+   **IMAS-ParaView version:** ``{{ entry.version }}``
+   {% endif %}
+
+   {% if entry.state_file_name %}
+   :download:`Download ParaView State File <examples/{{ entry.dir_name }}/{{ entry.state_file_name }}>`
+   {% endif %}
+
+   {% endfor %}

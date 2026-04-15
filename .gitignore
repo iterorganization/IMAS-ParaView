@@ -74,7 +74,3 @@ cython_debug/
 netcdf_testdb.nc
 hdf5_testdb/*
 mdsplus_testdb/*
-
-# Build artifacts
-docs/source/gallery/_entries.rst
-docs/source/gallery/_grid.rst

@@ -7,7 +7,6 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
 import datetime
-import os
 import sys
 import types
 from importlib.metadata import version as get_version
@@ -87,6 +86,7 @@ extensions = [
     "sphinx_immaterial",  # Sphinx immaterial theme
     "sphinx_design",  # For rendering grids
     "sphinxcontrib.images",  # For rendering images with lightbox
+    "sphinx_jinja",  # For generating gallery entries
 ]
 
 todo_include_todos = True
@@ -107,13 +107,7 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = [
-    "_build",
-    "Thumbs.db",
-    ".DS_Store",
-    "gallery/_entries.rst",
-    "gallery/_grid.rst",
-]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -323,128 +317,66 @@ def escape_underscores(string):
     return string.replace("_", r"\_")
 
 
-def _get_gallery_entries():
-    """Generator for reading gallery example directories."""
+def get_gallery_data():
     gallery_dir = Path(__file__).parent / "gallery" / "examples"
+    entries = []
 
     for example_dir in gallery_dir.iterdir():
+        if not example_dir.is_dir():
+            continue
+
         description_path = example_dir / "description.yaml"
         if not description_path.exists():
-            raise RuntimeError(
-                "Example in %s does not have a 'description.yaml'", example_dir
-            )
+            raise RuntimeError(f"Example in {example_dir} missing 'description.yaml'")
+
         image_path = next(
             (
-                img_file
-                for img_file in example_dir.iterdir()
-                if img_file.suffix.lower() in {".gif", ".png", ".jpg", ".jpeg"}
+                img
+                for img in example_dir.iterdir()
+                if img.suffix.lower() in {".gif", ".png", ".jpg", ".jpeg"}
             ),
             None,
         )
         if not image_path:
-            raise RuntimeError("Example in %s does not have an image", example_dir)
+            raise RuntimeError(f"Example in {example_dir} does not have an image")
+
+        state_file = next(
+            (f for f in example_dir.iterdir() if f.suffix.lower() == ".pvsm"), None
+        )
 
         with open(description_path) as f:
-            description = yaml.safe_load(f)
-
-        name = example_dir.name.replace("_", "-").lower()
-        yield example_dir, description, image_path, name
-
-
-def generate_gallery():
-    """Generate a overview for each gallery example including an image, information from
-    the description.yaml and optionally a downloadable ParaView state file."""
-    entries = []
-
-    for example_dir, desc, image_path, name in _get_gallery_entries():
-        title = desc["title"]
-        author = desc["author"]
-        description = desc["description"]
-        uris = desc["uri"]
-        imas_paraview_version = desc.get("imas_paraview_version", "")
+            desc = yaml.safe_load(f)
 
         # Either a single URI or a list of URIs
+        uris = desc.get("uri", [])
         if isinstance(uris, str):
             uris = [uris]
 
-        entry_id = f".. _`{name}`:\n\n"
-        entry_title = f"{title}\n{'=' * len(title)}\n\n"
-        entry_image = f".. figure:: /gallery/examples/{example_dir.name}/{image_path.name}\n   :alt: {title}\n   :align: center\n\n"
-        entry_author = f"**Author:** {author}\n\n" if author else ""
-        entry_desc = f"{description.strip()}\n\n"
-
-        uri_lines = "\n   ".join(uris)
-        entry_uri = f"**Data URI:**\n\n.. code-block:: text\n\n   {uri_lines}\n\n"
-
-        entry_version = (
-            f"**IMAS-ParaView version:** ``{imas_paraview_version}``\n\n"
-            if imas_paraview_version
-            else ""
-        )
-
-        state_file = next(
-            (f for f in example_dir.iterdir() if f.suffix.lower() == ".pvsm"),
-            None,
-        )
-
-        entry_download = (
-            f":download:`Download ParaView State File <examples/{example_dir.name}/{state_file.name}>`\n\n"
-            if state_file
-            else "\n"
-        )
-
         entries.append(
-            entry_id
-            + entry_title
-            + entry_image
-            + entry_author
-            + entry_desc
-            + entry_uri
-            + entry_version
-            + entry_download
+            {
+                "name": example_dir.name.replace("_", "-").lower(),
+                "dir_name": example_dir.name,
+                "title": desc.get("title", ""),
+                "author": desc.get("author", ""),
+                "description": desc.get("description", ""),
+                "uris": uris,
+                "version": desc.get("imas_paraview_version", ""),
+                "image_name": image_path.name,
+                "state_file_name": state_file.name if state_file else None,
+            }
         )
 
-    return "\n----\n\n".join(entries)
+    return entries
 
 
-def generate_gallery_grid():
-    """Generate a clickable grid of the available examples, including a thumbnail
-    of the image and a title."""
-    entries = []
-
-    for example_dir, desc, image_path, anchor in _get_gallery_entries():
-        entries.append(
-            f"""   .. grid-item-card::
-      :img-top: /gallery/examples/{example_dir.name}/{image_path.name}
-      :link: {anchor}
-      :link-type: ref
-
-      {desc["title"]}
-"""
-        )
-
-    grid_header = """.. grid:: 1 2 3 3
-   :gutter: 2
-
-"""
-    return grid_header + "\n".join(entries)
-
-
-def create_gallery():
-    """Generate the gallery rst pages based on the available examples"""
-    gallery_dir = Path(__file__).parent / "gallery"
-    gallery_rst = gallery_dir / "_entries.rst"
-    gallery_grid_rst = gallery_dir / "_grid.rst"
-
-    with open(gallery_rst, "w") as f:
-        f.write(generate_gallery())
-    with open(gallery_grid_rst, "w") as f:
-        f.write(generate_gallery_grid())
+jinja_contexts = {
+    "gallery_ctx": {
+        "entries": get_gallery_data(),
+    }
+}
 
 
 def setup(app):
 
     DEFAULT_FILTERS["escape_underscores"] = escape_underscores
     app.add_css_file("imas_paraview.css")
-
-    create_gallery()
