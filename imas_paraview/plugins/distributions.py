@@ -130,7 +130,8 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
 
             self.selectable_map[dist_name] = dist
 
-            # Collect coordinate names from the first time slice
+            # Collect coordinate names from the first time slice, this assumes the
+            # marker coordinates stay the same over time
             markers_slice = dist.markers[0]
             for coord in markers_slice.coordinate_identifier:
                 name = str(coord.name)
@@ -201,8 +202,7 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
         return 1
 
     def _load_markers(self, output, time_idx):
-        """
-        Load selected marker datasets into the vtkMultiBlockDataSet.
+        """Load selected distributions into the vtkMultiBlockDataSet.
 
         Args:
             output: The vtkMultiBlockDataSet to populate.
@@ -218,9 +218,13 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
             output.GetMetaData(block_id).Set(vtkMultiBlockDataSet.NAME(), dist_name)
 
     def _create_vtk_markers(self, markers):
-        """
-        Convert IMAS marker coordinates and phase-space attributes to vtkPolyData,
-        mapping user-selected coordinates to the X, Y, Z axes.
+        """Convert marker positions to vtkPolyData.
+
+        Args:
+            markers: The markers structure to convert to vtk.
+
+        Returns:
+            vtkPolyData containing marker data
         """
         column_map = {
             str(coord.name): i for i, coord in enumerate(markers.coordinate_identifier)
@@ -264,6 +268,17 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
         return poly
 
     def _resolve_axis(self, axis_name, markers, column_map):
+        """Resolve a coordinate axis for marker positions.
+
+        Args:
+            axis_name: Name of the axis to resolve.
+            markers: The markers structure.
+            column_map: Dictionary mapping the coordinate name to column index in
+                markers.positions structure.
+
+        Returns:
+            nd-array containing the marker.positions coordinate.
+        """
         num_pts = markers.positions.shape[0]
         if axis_name == self._NONE_LABEL:
             return np.zeros(num_pts)
