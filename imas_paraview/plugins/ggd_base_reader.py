@@ -2,6 +2,7 @@ import logging
 
 from vtkmodules.vtkCommonDataModel import vtkDataObject, vtkPartitionedDataSetCollection
 
+from imas_paraview._devtools import profile
 from imas_paraview.convert import InterpSettings
 from imas_paraview.io import read_ps
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
@@ -29,6 +30,7 @@ class GGDBaseReader(GGDVTKPluginBase):
         )
         return 1
 
+    @profile("RequestData_GGD.stats")
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
             return 1

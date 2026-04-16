@@ -121,22 +121,27 @@ def fill_vtk_points(
     points.Allocate(num_objects0d, 0)
     for obj in objects:
         geom = obj.geometry
+        geom_len = len(geom)
 
         x = 0.0
         y = 0.0
         z = 0.0
 
-        if X in coord_pos:
+        if X in coord_pos and coord_pos[X] < geom_len:
             x = geom[coord_pos[X]]
-        if Y in coord_pos:
+        if Y in coord_pos and coord_pos[Y] < geom_len:
             y = geom[coord_pos[Y]]
-        if Z in coord_pos:
+        if Z in coord_pos and coord_pos[Z] < geom_len:
             z = geom[coord_pos[Z]]
 
         # Handle cylindrical coordinates
-        if R in coord_pos:
+        if R in coord_pos and coord_pos[R] < geom_len:
             r = geom[coord_pos[R]]
-            phi = geom[coord_pos[PHI]] if PHI in coord_pos else 0.0
+            phi = (
+                geom[coord_pos[PHI]]
+                if PHI in coord_pos and coord_pos[PHI] < geom_len
+                else 0.0
+            )
             x = r * np.cos(phi)
             y = r * np.sin(phi)
 
