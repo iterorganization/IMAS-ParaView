@@ -26,6 +26,7 @@ non-GGD Readers
    plugins/beam_reader
    plugins/camera_reader
    plugins/axisymmetric_geometry_reader
+   plugins/distributions_reader
    plugins/los_reader
    plugins/coils_non_axi_reader
    plugins/pellets
