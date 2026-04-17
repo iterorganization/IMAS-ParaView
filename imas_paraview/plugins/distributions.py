@@ -232,14 +232,13 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
 
         num_pts = markers.positions.shape[0]
 
-        xyz = np.column_stack(
-            [
-                self._resolve_axis(self._x_axis, markers, column_map) * self._x_scale,
-                self._resolve_axis(self._y_axis, markers, column_map) * self._y_scale,
-                self._resolve_axis(self._z_axis, markers, column_map) * self._z_scale,
-            ]
-        )
+        raw_x = self._resolve_axis(self._x_axis, markers, column_map)
+        raw_y = self._resolve_axis(self._y_axis, markers, column_map)
+        raw_z = self._resolve_axis(self._z_axis, markers, column_map)
 
+        xyz = np.column_stack(
+            [raw_x * self._x_scale, raw_y * self._y_scale, raw_z * self._z_scale]
+        )
         vtk_pts = vtkPoints()
         vtk_pts.SetData(numpy_to_vtk(xyz, deep=True))
 
@@ -255,17 +254,30 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
 
         point_data = poly.GetPointData()
 
-        weights_array = numpy_to_vtk(markers.weights, deep=True)
-        weights_array.SetName("weights")
-        point_data.AddArray(weights_array)
+        self._add_vtk_array("weights", markers.weights, point_data)
         point_data.SetActiveScalars("weights")
 
         for name, idx in column_map.items():
-            arr = numpy_to_vtk(markers.positions[:, idx], deep=True)
-            arr.SetName(name)
-            point_data.AddArray(arr)
+            self._add_vtk_array(name, markers.positions[:, idx], point_data)
+        if "x" not in column_map and "r" in column_map and "phi" in column_map:
+            self._add_vtk_array("x", raw_x, point_data)
+        if "y" not in column_map and "r" in column_map and "phi" in column_map:
+            self._add_vtk_array("y", raw_y, point_data)
 
         return poly
+
+    def _add_vtk_array(self, name, array, point_data):
+        """Helper method to convert a numpy array to a VTK array and append it to point
+        data
+
+        Args:
+            name: Name of the array
+            array: 1D nd-array numpy array containing the data values.
+            point_data: The VTK point data object to attach the array to.
+        """
+        arr = numpy_to_vtk(array, deep=True)
+        arr.SetName(name)
+        point_data.AddArray(arr)
 
     def _resolve_axis(self, axis_name, markers, column_map):
         """Resolve a coordinate axis for marker positions.
