@@ -143,6 +143,9 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
         self._y_axis = "y" if "y" in coord_names_seen else self._NONE_LABEL
         self._z_axis = "z" if "z" in coord_names_seen else self._NONE_LABEL
 
+        # Ensure axis coordinate dropdown menu is updated when loading a new IDS
+        self.Modified()
+
     def _create_dist_name(self, dist):
         """Generate a name based on the species of the distribution.
 
