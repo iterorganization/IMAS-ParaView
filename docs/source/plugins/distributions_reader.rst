@@ -3,6 +3,8 @@
 Distributions Markers Reader
 =============================
 
+.. versionadded:: 2.4.0
+
 This page explains how to use the Distributions Markers Reader. This reader can 
 visualize the set of time-dependent markers (test particles) of a distributions IDS.
 
