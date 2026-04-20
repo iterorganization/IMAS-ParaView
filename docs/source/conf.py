@@ -344,30 +344,31 @@ def get_gallery_data():
         if not description_path.exists():
             raise RuntimeError(f"Example in {example_dir} missing 'description.yaml'")
 
-        with open(description_path) as f:
-            desc = yaml.safe_load(f)
-        title = desc.get("title")
-        author = desc.get("author")
-        description = desc.get("description")
-        if not title:
-            raise RuntimeError(f"Example in {example_dir} missing valid 'title'")
-        if not author:
-            raise RuntimeError(f"Example in {example_dir} missing valid 'author'")
-        if not description:
-            raise RuntimeError(f"Example in {example_dir} missing valid 'description'")
+        try:
+            with open(description_path) as f:
+                desc = yaml.safe_load(f)
+            title = desc["title"]
+            author = desc["author"]
+            description = desc["description"]
 
-        # Either a single URI or a list of URIs
-        uris = desc.get("uri", [])
-        if isinstance(uris, str):
-            uris = [uris]
+            # Either a single URI or a list of URIs
+            uris = desc.get("uri", [])
+            if isinstance(uris, str):
+                uris = [uris]
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to parse description.yaml in {example_dir}. Please see the "
+                "the 'Contributing to the Gallery' section on the Gallery page for an "
+                "example on how to construct the YAML file."
+            ) from e
 
         entries.append(
             {
                 "name": example_dir.name.replace("_", "-").lower(),
                 "dir_name": example_dir.name,
-                "title": title,
-                "author": author,
-                "description": description,
+                "title": str(title),
+                "author": str(author),
+                "description": str(description),
                 "uris": uris,
                 "version": desc.get("imas_paraview_version", ""),
                 "image_name": image_path.name,
