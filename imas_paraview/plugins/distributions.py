@@ -46,7 +46,7 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
     @stringvector(
         name="AxisCoordList", information_only=1, si_class="vtkSIDataArrayProperty"
     )
-    def P15_GetAxisCoordList(self):
+    def P93_GetAxisCoordList(self):
         """Return the list of available coordinates for axis dropdowns."""
         arr = vtkStringArray()
         for name in self._available_coords:
@@ -55,7 +55,7 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
 
     @stringvector(name="XAxis", label="X-Axis", default_values="x")
     @stringlistdomain("AxisCoordList", name="x_axis_list")
-    def P16_SetXAxis(self, coord_name):
+    def P94_SetXAxis(self, coord_name):
         """Select which coordinate to map to the X axis."""
         if self._x_axis != coord_name:
             self._x_axis = coord_name
@@ -63,7 +63,7 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
 
     @stringvector(name="YAxis", label="Y-Axis", default_values="y")
     @stringlistdomain("AxisCoordList", name="y_axis_list")
-    def P17_SetYAxis(self, coord_name):
+    def P95_SetYAxis(self, coord_name):
         """Select which coordinate to map to the Y axis."""
         if self._y_axis != coord_name:
             self._y_axis = coord_name
@@ -71,41 +71,33 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
 
     @stringvector(name="ZAxis", label="Z-Axis", default_values="z")
     @stringlistdomain("AxisCoordList", name="z_axis_list")
-    def P18_SetZAxis(self, coord_name):
+    def P96_SetZAxis(self, coord_name):
         """Select which coordinate to map to the Z axis."""
         if self._z_axis != coord_name:
             self._z_axis = coord_name
             self.Modified()
 
     @doublevector(name="XScale", label="Scale X-axis", default_values="1.0")
-    def P19_SetXScale(self, value):
+    def P97_SetXScale(self, value):
         if getattr(self, "_x_scale", 1.0) != value:
             self._x_scale = value
             self.Modified()
 
     @doublevector(name="YScale", label="Scale Y-axis", default_values="1.0")
-    def P20_SetYScale(self, value):
+    def P98_SetYScale(self, value):
         if getattr(self, "_y_scale", 1.0) != value:
             self._y_scale = value
             self.Modified()
 
     @doublevector(name="ZScale", label="Scale Z-axis", default_values="1.0")
-    def P21_SetZScale(self, value):
+    def P99_SetZScale(self, value):
         if getattr(self, "_z_scale", 1.0) != value:
             self._z_scale = value
             self.Modified()
 
     @propertygroup(
         "Axis Coordinate Mapping",
-        [
-            "AxisCoordList",
-            "XAxis",
-            "YAxis",
-            "ZAxis",
-            "XScale",
-            "YScale",
-            "ZScale",
-        ],
+        ["AxisCoordList", "XAxis", "YAxis", "ZAxis", "XScale", "YScale", "ZScale"],
     )
     def PG3_AxisGroup(self):
         """Dummy function to define a PropertyGroup."""
@@ -156,6 +148,9 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
 
         Args:
             dist: distribution IDSStructure
+
+        Returns:
+            name of the distribution
         """
         species = dist.species
         type_index = species.type.index
@@ -164,6 +159,9 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
         dist_name = ""
         if dist.species.type.name:
             dist_name = dist.species.type.name
+
+        if not dist_name:
+            return ""
 
         if type_index in [ref_id.ion.index, ref_id.ion_state.index]:
             ion_name = species.ion.name
@@ -308,3 +306,10 @@ class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
                 return x_calc
             elif axis_name == "y":
                 return y_calc
+
+        logger.error(
+            "Axis '%s' not found in distribution coordinates %s. ",
+            axis_name,
+            list(column_map.keys()),
+        )
+        return np.zeros(num_pts)

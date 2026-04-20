@@ -40,13 +40,18 @@ Plugin Settings
 ---------------
 
 The Distributions Markers Reader allows you to load the coordinates available the in 
-distribution, marked by the `coordinate_identifiers <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/distribution_sources.html#distribution_sources-source-markers-coordinate_identifier>`_. 
+distribution, marked by the `coordinate_identifiers <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/distributions.html#distributions-distribution-markers>`_. 
 
 By default, the reader will try to use ``x``, ``y``, and ``z`` coordinates in Paraview, 
 if they are available in the distribution's coordinate identifiers. It is also possible 
-to map a different coordinate onto the ParaView X, Y, Z-axes using the 
-dropdown menus under the **Axis Coordinate Mapping** settings. You can also apply a scaling
-factor to each axis.
+to map other coordinates in the distribution onto the ParaView axes using the 
+dropdown menus under the **Axis Coordinate Mapping** settings. Optionally, a scaling 
+factor can be applied for each axis.
+
+.. note:: 
+
+   This reader assumes that the coordinate_identifiers of a distribution stays the same
+   over time.
 
 Examples
 ^^^^^^^^
