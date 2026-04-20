@@ -30,6 +30,8 @@ docs = [
     "recommonmark>=0.6",
     "sphinx-design",
     "sphinxcontrib-images",
+    "sphinx-jinja",
+    "pyyaml>=6.0",
 ]
 linting = [
     "ruff",
