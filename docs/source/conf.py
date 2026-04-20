@@ -388,6 +388,24 @@ jinja_contexts = {
 }
 
 
+def generate_gallery_rst_files(app):
+    """Render gallery_example.rst template for each gallery example and write it to
+    example directory."""
+    from jinja2 import Environment, FileSystemLoader
+
+    templates_dir = Path(__file__).parent / "_templates"
+    gallery_dir = Path(__file__).parent / "gallery" / "examples"
+
+    env = Environment(loader=FileSystemLoader(str(templates_dir)))
+    template = env.get_template("gallery-example.rst")
+
+    for entry in get_gallery_data():
+        output_path = gallery_dir / entry["dir_name"] / "index.rst"
+        rendered = template.render(entry=entry)
+        output_path.write_text(rendered, encoding="utf-8")
+
+
 def setup(app):
     DEFAULT_FILTERS["escape_underscores"] = escape_underscores
     app.add_css_file("imas_paraview.css")
+    app.connect("builder-inited", generate_gallery_rst_files)
