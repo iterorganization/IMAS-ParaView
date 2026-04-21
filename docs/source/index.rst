@@ -4,10 +4,15 @@
 IMAS-ParaView Manual
 ====================
 
-IMAS-ParaView is a comprehensive tool for visualizing and analyzing plasma physics
-simulation data within ParaView. It provides a collection of ParaView plugins that
-can load and visualize both GGD (Generalized Grid Description) and non-GGD IDS data.
+**IMAS-ParaView** is a comprehensive tool for visualizing
+`IMAS <https://imas-data-dictionary.readthedocs.io/en/latest/>`_ data within `ParaView <https://www.paraview.org/>`_. 
+It provides a collection of ParaView plugins that can visualize different kinds of
+IMAS data, ranging from multi-dimensional 
+`GGD (Generalized Grid Description) <https://imas-data-dictionary.readthedocs.io/en/latest/ggd_guide/doc.html>`_ 
+meshes to non-GGD structures like machine descriptions and diagnostic geometries.
 
+Get Started
+===========
 
 .. grid:: 1 2 3 3
    :gutter: 3
@@ -25,7 +30,7 @@ can load and visualize both GGD (Generalized Grid Description) and non-GGD IDS d
            <strong>Installation</strong>
          </div>
 
-      Get started by installing IMAS-ParaView on your system.
+      Get started by installing **IMAS-ParaView**.
 
    .. grid-item-card::
       :link: usage
@@ -38,7 +43,7 @@ can load and visualize both GGD (Generalized Grid Description) and non-GGD IDS d
            <strong>Plugins</strong>
          </div>
 
-      Learn how to use the ParaView plugins
+      Learn which **ParaView plugins** are available and how to use them.
 
    .. grid-item-card::
       :link: training
@@ -51,7 +56,7 @@ can load and visualize both GGD (Generalized Grid Description) and non-GGD IDS d
            <strong>Training</strong>
          </div>
 
-      Step-by-step tutorials on how to use IMAS-ParaView.
+      Step-by-step tutorials on how to use **IMAS-ParaView**.
 
 Gallery
 =======
@@ -60,30 +65,65 @@ Explore what others have created with IMAS-ParaView.
 
 .. jinja:: gallery_ctx
 
-   .. grid:: 1 2 3 3
-      :gutter: 2
+   .. div::
+      :name: all-gallery-source
+      :style: display:none
 
-   {% for entry in entries[:3] %}
-      .. grid-item-card::
-         :img-top: /gallery/examples/{{ entry.dir_name }}/{{ entry.image_name }}
-         :link: {{ entry.name }}
-         :link-type: ref
+      .. grid:: 1 2 3 3
+         :gutter: 2
 
-         {{ entry.title }}
-   {% endfor %}
+      {% for entry in entries %}
+         .. grid-item-card::
+            :img-top: /gallery/examples/{{ entry.dir_name }}/{{ entry.image_name }}
+            :link: {{ entry.name }}
+            :link-type: ref
 
-:ref:`See all gallery examples <gallery>`
+            {{ entry.title }}
+      {% endfor %}
+
+.. button-ref:: gallery
+   :color: primary
+   :outline:
+
+   See all gallery examples →
 
 .. toctree::
+   :caption: Getting Started
    :maxdepth: 2
    :hidden:
 
+   self
    installing
+
+.. toctree::
+   :caption: Gallery
+   :maxdepth: 2
+   :hidden:
+
+   gallery/gallery
+   
+.. toctree::
+   :caption: How To Use
+   :maxdepth: 2
+   :hidden:
+
    usage
    cli
    training/training
-   gallery/gallery
+
+.. toctree::
+   :caption: API docs
+   :maxdepth: 1
+   :hidden:
+
    api
+
+.. toctree::
+   :caption: Development
+   :maxdepth: 1
+   :hidden:
+
    code_style
    ci_config
    dev_guide
+   license
