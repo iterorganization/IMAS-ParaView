@@ -27,7 +27,7 @@ Get Started
       Get started by installing **IMAS-ParaView**.
 
    .. grid-item-card::
-      :link: usage
+      :link: plugins
       :link-type: ref
 
       :si-icon:`material/puzzle` **Plugins**
@@ -91,7 +91,7 @@ Explore what others have created with IMAS-ParaView.
    :maxdepth: 2
    :hidden:
 
-   usage
+   plugins
    cli
    training/training
 
