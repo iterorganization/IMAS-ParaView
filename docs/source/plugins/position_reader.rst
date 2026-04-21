@@ -3,6 +3,8 @@
 Position Reader
 ===============
 
+.. versionchanged:: 2.3.0 Added support for ``thomson_scattering`` IDS.
+
 This page explains how to use the Position Reader to visualize position IDS data structures.
 
 

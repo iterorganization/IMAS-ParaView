@@ -3,6 +3,8 @@
 (Shattered) Pellets Reader
 ===========================
 
+.. versionadded:: 2.4.0
+
 This page explains how to use the (Shattered) Pellets Reader to visualize shattered
 pellet injection (SPI) data.
 

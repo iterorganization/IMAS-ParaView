@@ -3,6 +3,8 @@
 Non-Axisymmetric Coils Reader
 =============================
 
+.. versionadded:: 2.3.0
+
 This page explains how to use the Non-Axisymmetric Coils Reader to visualize the 
 Non-axisymmetric active coil systems.
 

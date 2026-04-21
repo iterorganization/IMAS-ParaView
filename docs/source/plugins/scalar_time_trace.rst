@@ -3,6 +3,8 @@
 Scalar Time Trace Reader
 ========================
 
+.. versionadded:: 2.3.0
+
 This page explains how to use the Scalar Time Trace Reader to visualize time-dependent scalar 
 data in IDSs.
 
