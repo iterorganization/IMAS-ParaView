@@ -3,7 +3,7 @@
 Line of Sight Reader
 ====================
 
-.. versionchanged:: 2.3.0
+.. versionchanged:: 2.3.0 Added support for ``thomson_scattering`` IDS.
 
 This page explains how to use the Line of Sight Reader to visualize Line of sight IDS data structures.
 

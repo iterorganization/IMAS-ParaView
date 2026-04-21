@@ -3,7 +3,8 @@
 1D Profiles Mapper
 ==================
 
-.. versionchanged:: 2.4.0
+.. versionadded:: 2.0.0
+.. versionchanged:: 2.4.0 Name of psi array is now auto-detected.
 
 The **1D Profiles Mapper** is a ParaView filter designed to map 1D profiles onto a 2D flux grid. 
 It is designed to work in conjunction with 1D profiles exported by the :ref:`using the 1d Profiles Reader`. These profiles can be interpolated on a 2D Psi grid which can be provided either in the form of a GGD, by using one of either the :ref:`using the GGD Reader` or the :ref:`using the JOREK Reader`, or by means of a 2D profile from the :ref:`using the 2d Profiles Reader`.
