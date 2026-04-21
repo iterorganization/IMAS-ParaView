@@ -408,4 +408,5 @@ def generate_gallery_rst_files(app):
 def setup(app):
     DEFAULT_FILTERS["escape_underscores"] = escape_underscores
     app.add_css_file("imas_paraview.css")
+    app.add_js_file("gallery-shuffle.js")
     app.connect("builder-inited", generate_gallery_rst_files)
