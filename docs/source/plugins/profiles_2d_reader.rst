@@ -4,7 +4,7 @@
 ==================
 
 .. versionadded:: 2.0.0
-.. versionchanged:: 2.2.0 Improve visualization of 2D grid.
+.. versionchanged:: 2.2.0 Improved visualization of 2D grid.
 
 This page explains how to use the 2D Profiles Reader to visualize 2D profile data.
 
