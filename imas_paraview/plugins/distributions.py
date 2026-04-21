@@ -27,9 +27,9 @@ logger = logging.getLogger("imas_paraview")
 SUPPORTED_IDS_NAMES = ["distributions"]
 
 
-@smproxy.source(label="Distributions Markers Reader")
+@smproxy.source(label="Distributions Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
-class DistributionsMarkersReader(GGDVTKPluginBase, is_time_dependent=True):
+class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
     _NONE_LABEL = "(none)"
 
     def __init__(self):

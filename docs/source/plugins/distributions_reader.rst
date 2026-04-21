@@ -1,11 +1,11 @@
-.. _`using the Distributions Markers Reader`:
+.. _`using the Distributions Reader`:
 
-Distributions Markers Reader
-=============================
+Distributions Reader
+====================
 
 .. versionadded:: 2.4.0
 
-This page explains how to use the Distributions Markers Reader. This reader can 
+This page explains how to use the Distributions Reader. This reader can 
 visualize the set of time-dependent markers (test particles) of a distributions IDS.
 
 Supported IDSs
@@ -23,10 +23,10 @@ Markers Reader:
    * - ``distributions``
      - `Markers <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/distributions.html#distributions-distribution-marker>`__
 
-Using the Distributions Markers Reader
---------------------------------------
+Using the Distributions Reader
+------------------------------
 
-The Distributions Markers Reader functions similarly to the GGD Reader, with the
+The Distributions Reader functions similarly to the GGD Reader, with the
 same interface and data loading workflow.
 This means that the steps for loading an URI, an IDS, and selecting attributes are
 identical.
@@ -39,7 +39,7 @@ Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 Plugin Settings
 ---------------
 
-The Distributions Markers Reader allows you to load the coordinates available the in 
+The Distributions Reader allows you to load the coordinates available the in 
 distribution, marked by the `coordinate_identifiers <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/distributions.html#distributions-distribution-markers>`_. 
 
 By default, the reader will try to use ``x``, ``y``, and ``z`` coordinates in Paraview, 

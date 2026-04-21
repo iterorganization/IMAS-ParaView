@@ -4,12 +4,12 @@ from imas import identifiers
 from imas.ids_defs import IDS_TIME_MODE_HOMOGENEOUS
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
-from imas_paraview.plugins.distributions import DistributionsMarkersReader
+from imas_paraview.plugins.distributions import DistributionsReader
 
 
 def test_distribution_name():
     ids = imas.IDSFactory(version="4.1.0").new("distributions")
-    reader = DistributionsMarkersReader()
+    reader = DistributionsReader()
     ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
     ids.distribution.resize(5)
 
@@ -72,7 +72,7 @@ def test_load_markers():
     )
     dist.markers[0].weights = np.random.rand(num_markers)
 
-    reader = DistributionsMarkersReader()
+    reader = DistributionsReader()
     reader._ids = ids
     reader.setup_ids()
 
