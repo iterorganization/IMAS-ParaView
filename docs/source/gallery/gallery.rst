@@ -15,6 +15,7 @@ You can click on the images to enlarge them and to display their descriptions.
    {% for entry in entries %}
       .. grid-item-card::
          :img-top: /gallery/examples/{{ entry.dir_name }}/{{ entry.image_name }}
+         :class-img-top: fixed-150height
          :link: {{ entry.name }}
          :link-type: ref
 

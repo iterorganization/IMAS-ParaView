@@ -59,6 +59,7 @@ Explore what others have created with IMAS-ParaView.
       {% for entry in entries %}
          .. grid-item-card::
             :img-top: /gallery/examples/{{ entry.dir_name }}/{{ entry.image_name }}
+            :class-img-top: fixed-150height
             :link: {{ entry.name }}
             :link-type: ref
 
