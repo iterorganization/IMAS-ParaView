@@ -22,6 +22,7 @@ At the start of each section, a ParaView ``.pvsm`` state file is also provided f
 
    .. grid-item-card::
       :img-top: /images/training/solps_electron_pressure.png
+      :class-img-top: fixed-150height
       :link: training_solps
       :link-type: doc
 
@@ -29,6 +30,7 @@ At the start of each section, a ParaView ``.pvsm`` state file is also provided f
 
    .. grid-item-card::
       :img-top: /images/training/jorek.gif
+      :class-img-top: fixed-150height
       :link: training_jorek
       :link-type: doc
 
@@ -36,6 +38,7 @@ At the start of each section, a ParaView ``.pvsm`` state file is also provided f
 
    .. grid-item-card::
       :img-top: /images/training/machine_description.gif
+      :class-img-top: fixed-150height
       :link: training_md
       :link-type: doc
 
@@ -43,6 +46,7 @@ At the start of each section, a ParaView ``.pvsm`` state file is also provided f
 
    .. grid-item-card::
       :img-top: /images/training/jintrac_mapper.png
+      :class-img-top: fixed-150height
       :link: training_jintrac
       :link-type: doc
 
@@ -50,6 +54,7 @@ At the start of each section, a ParaView ``.pvsm`` state file is also provided f
 
    .. grid-item-card::
       :img-top: /images/training/solps_batch1.png
+      :class-img-top: fixed-150height
       :link: training_batch
       :link-type: doc
 
