@@ -12,8 +12,8 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPartitionedDataSetCollection,
 )
 
-from imas_paraview.io import read_geom, read_jorek, read_ps
-from imas_paraview.util import find_closest_indices, get_grid_ggd
+from imas_paraview.io import read_geom, read_geom_structured, read_jorek, read_ps
+from imas_paraview.util import find_closest_indices, get_grid_ggd, is_structured_grid
 
 logger = logging.getLogger("imas_paraview")
 
@@ -233,13 +233,13 @@ class Converter:
         else:
             grid_key = id(self.grid_ggd)
 
-        ugrids = self.get_grids(grid_key, self.plane_config)
+        grids = self.get_grids(grid_key, self.plane_config)
         if self.is_jorek:
-            self._fill_jorek(ugrids)
+            self._fill_jorek(grids)
         else:
-            self._fill_ggd(ugrids)
+            self._fill_ggd(grids)
 
-    def _fill_jorek(self, ugrids):
+    def _fill_jorek(self, grids):
         """Fill the GGD arrays for JOREK grid.
 
         Args:
@@ -248,13 +248,13 @@ class Converter:
         n_period = self.grid_ggd.space[1].geometry_type.index
         if n_period > 0:
             read_jorek.read_plasma_state(
-                self.grid_ggd, self.ps_reader, self.plane_config, ugrids[-1]
+                self.grid_ggd, self.ps_reader, self.plane_config, grids[-1]
             )
-            self._set_partition(0, ugrids[-1], -1)
+            self._set_partition(0, grids[-1], -1)
         else:
             logger.error("Invalid plane configuration for the given IDS type.")
 
-    def _fill_ggd(self, ugrids):
+    def _fill_ggd(self, grids):
         """Fill the GGD arrays for each grid subset.
 
         Args:
@@ -264,28 +264,28 @@ class Converter:
         if num_subsets <= 1:
             logger.info("No subsets to read from grid_ggd")
             self.output.SetNumberOfPartitionedDataSets(1)
-            self._set_partition(0, ugrids[-1], -1)
-            self.ps_reader.read_plasma_state(-1, ugrids[-1])
+            self._set_partition(0, grids[-1], -1)
+            self.ps_reader.read_plasma_state(-1, grids[-1])
         elif self.ids.metadata.name == "wall":
             self.output.SetNumberOfPartitionedDataSets(num_subsets + 1)
-            self._set_partition(0, ugrids[-1], -1)
-            self.ps_reader.read_plasma_state(-1, ugrids[-1])
+            self._set_partition(0, grids[-1], -1)
+            self.ps_reader.read_plasma_state(-1, grids[-1])
 
             for subset_idx in range(num_subsets):
-                self._set_partition(subset_idx + 1, ugrids[subset_idx], subset_idx)
-                self.ps_reader.read_plasma_state(subset_idx, ugrids[subset_idx])
+                self._set_partition(subset_idx + 1, grids[subset_idx], subset_idx)
+                self.ps_reader.read_plasma_state(subset_idx, grids[subset_idx])
                 if self.progress:
                     self.progress.increment(0.5 / num_subsets)
         else:
             self.output.SetNumberOfPartitionedDataSets(num_subsets)
             for subset_idx in range(num_subsets):
-                self._set_partition(subset_idx, ugrids[subset_idx], subset_idx)
-                self.ps_reader.read_plasma_state(subset_idx, ugrids[subset_idx])
+                self._set_partition(subset_idx, grids[subset_idx], subset_idx)
+                self.ps_reader.read_plasma_state(subset_idx, grids[subset_idx])
                 if self.progress:
                     self.progress.increment(0.5 / num_subsets)
 
     def get_grids(self, grid_id, plane_config):
-        """Fetches the unstructured grids at a certain time index. Note that this
+        """Fetches the grids at a certain time index. Note that this
         function is cached using lru_cache based on `time_idx`.
 
         Args:
@@ -296,49 +296,58 @@ class Converter:
                 and changing them should trigger the grid to be reloaded.
 
         Returns:
-            Dictionary containing the ugrid of each subset, with the subset index as
+            Dictionary containing the grid of each subset, with the subset index as
             keys.
         """
         logger.info("No cache found, loading the grid from the IDS.")
         num_subsets = len(self.grid_ggd.grid_subset)
-        read_geom.fill_vtk_points(
-            self.grid_ggd, 0, self.points, self.ids.metadata.name, self.progress
-        )
-        ugrids = {}
+
+        is_structured = is_structured_grid(self.grid_ggd)
+
+        if not is_structured:
+            read_geom.fill_vtk_points(
+                self.grid_ggd, 0, self.points, self.ids.metadata.name, self.progress
+            )
+
+        grids = {}
         for subset_idx in range(-1, num_subsets):
             if subset_idx == 0 and self.progress:
                 self.progress.set(0)
             progress = self.progress if subset_idx == -1 else None
 
             if self.is_jorek:
-                ugrids[subset_idx] = (
-                    read_jorek.convert_grid_subset_to_unstructured_grid(
-                        self.grid_ggd, self.plane_config
+                grids[subset_idx] = read_jorek.convert_grid_subset_to_unstructured_grid(
+                    self.grid_ggd, self.plane_config
+                )
+            elif is_structured:
+                grids[subset_idx] = (
+                    read_geom_structured.convert_structured_grid_subset_to_vtk(
+                        self.grid_ggd, subset_idx
                     )
                 )
             else:
-                ugrids[subset_idx] = (
+                grids[subset_idx] = (
                     read_geom.convert_grid_subset_geometry_to_unstructured_grid(
                         self.grid_ggd, subset_idx, self.points, progress
                     )
                 )
             if self.progress and num_subsets != 0:
                 self.progress.increment(0.5 / num_subsets)
-        return ugrids
+        return grids
 
-    def _set_partition(self, partition, ugrid, subset_idx):
+    def _set_partition(self, partition, grid, subset_idx):
         """Sets a partition in the output dataset and updates the assembly structure.
 
         Args:
             partition: Partition index in the output dataset.
-            ugrid: Unstructured grid data.
+            grid: grid data.
             subset_idx: Index of the subset in `self.grid_ggd.grid_subset`, if negative
                 the metadata name is used.
         """
         subset = None if subset_idx < 0 else self.grid_ggd.grid_subset[subset_idx]
         label = str(subset.identifier.name) if subset else self.ids.metadata.name
 
-        self.output.SetPartition(partition, 0, ugrid)
+        self.output.SetPartition(partition, 0, grid)
         child = self.assembly.AddNode(label.replace(" ", "_"), 0)
         self.assembly.AddDataSetIndex(child, partition)
 

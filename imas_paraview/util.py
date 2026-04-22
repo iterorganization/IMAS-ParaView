@@ -477,3 +477,30 @@ def ensure_unique_name(name, existing_names):
         counter += 1
         unique_name = f"{name} #{counter}"
     return unique_name
+
+
+def is_structured_grid(grid_ggd):
+    """Return True if grid_ggd is a structured grid.
+
+    A grid is considered structured when:
+      - It has two spaces.
+      - Every space has exactly one objects_per_dimension entry.
+      - The geometry node only contains a single value.
+
+    Args:
+        grid_ggd: A grid_ggd IDS node.
+
+    Returns:
+        True if the grid is structured, False otherwise.
+    """
+    if len(grid_ggd.space) != 2:
+        return False
+
+    for space in grid_ggd.space:
+        objects = space.objects_per_dimension
+        if len(objects) != 1:
+            return False
+        if len(objects[0].object[0].geometry) != 1:
+            return False
+
+    return True

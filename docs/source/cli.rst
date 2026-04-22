@@ -154,6 +154,9 @@ The ``vtk2ggd`` converter has specific requirements for the VTK input files it c
 * When providing ``.vtpc`` files, each ``vtkPartitionedDataSet`` should contain **exactly one partition** containing a ``vtkUnstructuredGrid``, otherwise the 
   partition is skipped. Each ``vtkUnstructuredGrid`` will be converted into a separate grid subset in the GGD.
 
+.. note::
+   It is currently not possible to convert ``vtkStructuredGrid`` s to GGD grids.
+
 Limitations of VTK grid conversion
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
