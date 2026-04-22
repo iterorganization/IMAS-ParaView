@@ -113,9 +113,8 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         coord_names_seen = {self._NONE_LABEL}
 
         for i, dist in enumerate(self._ids.distribution):
-            dist_name = self._create_dist_name(dist)
-            if not dist_name:
-                dist_name = f"distribution {i}"
+            dist_name = self._create_dist_name(dist) or f"distribution {i}"
+
             if len(dist.markers) == 0:
                 logger.warning("'%s' does not contain any markers, skipping", dist_name)
                 continue
@@ -127,14 +126,13 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
             markers_slice = dist.markers[0]
             for coord in markers_slice.coordinate_identifier:
                 name = str(coord.name)
-                if name not in coord_names_seen:
-                    coord_names_seen.add(name)
+                coord_names_seen.add(name)
 
-            # If r and phi exist, make sure x and y are available coordinates, they
-            # will be calculated upon loading
-            if "r" in coord_names_seen and "phi" in coord_names_seen:
-                coord_names_seen.add("x")
-                coord_names_seen.add("y")
+        # If r and phi exist, make sure x and y are available coordinates, they
+        # will be calculated upon loading
+        if "r" in coord_names_seen and "phi" in coord_names_seen:
+            coord_names_seen.add("x")
+            coord_names_seen.add("y")
 
         self._selectable = list(self.selectable_map.keys())
         self._available_coords = coord_names_seen
@@ -161,7 +159,7 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
 
         dist_name = ""
         if dist.species.type.name:
-            dist_name = dist.species.type.name
+            dist_name = str(dist.species.type.name)
 
         if not dist_name:
             return ""
@@ -177,7 +175,7 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
                 neutral_name = f"{neutral_name} ({species.neutral.state.name})"
             dist_name = f"{dist_name} ({neutral_name})"
 
-        return str(dist_name)
+        return dist_name
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
