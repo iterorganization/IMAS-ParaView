@@ -1,0 +1,10 @@
+title: JOREK Electron Temperature and Wall Currents
+author: S. Blokhuizen
+description: |
+  Animation of the electron temperature and wall currents in a JOREK simulation.
+  A step-by-step tutorial on how to re-create this animation using the IMAS-ParaView
+  tools has been provided in the :ref:`JOREK tutorial <training_jorek>`. The
+  data was provided by J. Artola.
+
+uri: imas:hdf5?user=public;pulse=112111;run=2;database=ITER_DISRUPTIONS;version=4
+imas_paraview_version: 2.4.0

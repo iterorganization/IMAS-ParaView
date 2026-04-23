@@ -1,0 +1,10 @@
+title: Plot over line in core and edge plasma
+author: S. Korving
+description: |
+  This example shows how to apply the `Plot Over Line` filter to visualize the
+  electron temperature in the edge and core plasma from a JINTRAC simulation. 
+  In the edge, the electron temperature is loaded from an ``edge_profiles`` GGD grid. 
+  In the core, the 1D profile from ``core_profiles`` is mapped onto a 2D grid, 
+  using the :ref:`2D Profiles Reader <using the 2d Profiles Reader>`.
+uri: imas:hdf5?path=/work/imas/shared/TEST/simulations/test/8743dad6d7f211ef8fd59440c9e7706c/imasdb/iter/3/53298/2
+imas_paraview_version: 2.4.0

@@ -3,6 +3,8 @@
 JOREK Reader
 ============
 
+.. versionchanged:: 2.2.0 Added support for heterogeneous time mode.
+
 This page explains how to use the JOREK GGD reader to visualize JOREK simulation data in Paraview.
 
 Supported IDSs

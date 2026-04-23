@@ -1,0 +1,7 @@
+title: Plotting over magnetic field lines
+author: S. Korving
+description: |
+  This example shows how to plot the values of a GGD quantity (here electron density) 
+  along a magnetic field line from a 2D psi profile of an equilibrium IDS.
+uri: imas:hdf5?path=/work/imas/shared/TEST/simulations/test/8743dad6d7f211ef8fd59440c9e7706c/imasdb/iter/3/53298/2
+imas_paraview_version: 2.4.0

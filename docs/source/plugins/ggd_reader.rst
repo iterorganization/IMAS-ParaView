@@ -2,6 +2,9 @@
 
 GGD Reader
 ==========
+
+.. versionchanged:: 2.2.0 Added support for heterogeneous time mode.
+
 This page will go over how to use the GGD Paraview plugin.
 
 .. tip:: More information about the usage of specific plugin UI elements can be obtained by hovering

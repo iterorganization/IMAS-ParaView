@@ -3,6 +3,8 @@
 (Shattered) Pellets Reader
 ===========================
 
+.. versionadded:: 2.4.0
+
 This page explains how to use the (Shattered) Pellets Reader to visualize shattered
 pellet injection (SPI) data.
 
@@ -47,3 +49,13 @@ visual size of the rendered geometry.
   individual fragment velocities.
 - ``Velocity Centre of Mass Scaling Factor`` -  Controls the length of the arrow that 
   represents the velocity of the centre of mass of all fragments at the shattering origin.
+
+Example Case
+------------
+
+The following example shows the velocity vectors of a group of shattered pellet 
+fragments originating from two different injectors.
+
+.. figure:: ../images/pellets.png
+   :align: center
+

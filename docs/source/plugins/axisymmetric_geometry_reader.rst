@@ -3,6 +3,8 @@
 Geometry Reader (Axisymmetric)
 ==============================
 
+.. versionadded:: 2.3.0
+
 This page explains how to use the Geometry Reader (Axisymmetric) to visualize the axisymmetric active poloidal 
 field coils, as well as axisymmetric passive conductor structures.
 
@@ -63,6 +65,14 @@ geometries of the ``pf_active`` and ``pf_passive`` IDSs of the following machine
 - ``imas:hdf5?path=/work/imas/shared/imasdb/ITER_MD/3/124001/3``
 
 .. figure:: ../images/axisymmetric.png
-   :width: 80%
+   :width: 50%
    :align: center
+
+.. tip:: 
+
+   You can use the Rotational Extrusion filter in ParaView to visualize a rough 
+   3D view of the axisymmetric geometry:
+
+   .. figure:: ../images/axisymmetric_rotate.png
+      :align: center
 
