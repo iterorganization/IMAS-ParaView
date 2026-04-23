@@ -14,35 +14,30 @@ def test_distribution_name():
     ids.distribution.resize(5)
 
     d = ids.distribution[0]
-    d.species.type.name = "electron"
-    d.species.type.index = 1
-    assert reader._create_dist_name(d) == "electron"
+    d.species.type = identifiers.species_reference_identifier.electron
+    assert reader._create_dist_name(d) == "Electron"
 
     d = ids.distribution[1]
-    d.species.type.name = "ion"
-    d.species.type.index = 2
+    d.species.type = identifiers.species_reference_identifier.ion
     d.species.ion.name = "D+"
-    assert reader._create_dist_name(d) == "ion (D+)"
+    assert reader._create_dist_name(d) == "Ion (D+)"
 
     d = ids.distribution[2]
-    d.species.type.name = "ion"
-    d.species.type.index = 3
+    d.species.type = identifiers.species_reference_identifier.ion_state
     d.species.ion.name = "C+"
     d.species.ion.state.name = "C+2"
-    assert reader._create_dist_name(d) == "ion (C+ (C+2))"
+    assert reader._create_dist_name(d) == "Ion (C+) State (C+2)"
 
     d = ids.distribution[3]
-    d.species.type.name = "neutral"
-    d.species.type.index = 4
+    d.species.type = identifiers.species_reference_identifier.neutral
     d.species.neutral.name = "D"
-    assert reader._create_dist_name(d) == "neutral (D)"
+    assert reader._create_dist_name(d) == "Neutral (D)"
 
     d = ids.distribution[4]
-    d.species.type.name = "neutral"
-    d.species.type.index = 5
+    d.species.type = identifiers.species_reference_identifier.neutral_state
     d.species.neutral.name = "H"
     d.species.neutral.state.name = "excited"
-    assert reader._create_dist_name(d) == "neutral (H (excited))"
+    assert reader._create_dist_name(d) == "Neutral (H) State (excited)"
 
 
 def test_load_markers():
@@ -52,7 +47,7 @@ def test_load_markers():
 
     ids.distribution.resize(1)
     dist = ids.distribution[0]
-    dist.species.type.name = "electron"
+    dist.species.type = identifiers.species_reference_identifier.electron
     dist.species.type.index = 1
 
     num_markers = 100
@@ -77,7 +72,7 @@ def test_load_markers():
     reader.setup_ids()
 
     output = vtkMultiBlockDataSet()
-    reader._selected = ["electron"]
+    reader._selected = ["Electron"]
     reader._load_markers(output, time_idx=0)
 
     assert output.GetNumberOfBlocks() == 1

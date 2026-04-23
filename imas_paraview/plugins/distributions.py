@@ -157,25 +157,26 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         type_index = species.type.index
         ref_id = identifiers.species_reference_identifier
 
-        dist_name = ""
-        if dist.species.type.name:
-            dist_name = str(dist.species.type.name)
-
-        if not dist_name:
-            return ""
+        base_name = species.type.name.capitalize()
 
         if type_index in [ref_id.ion.index, ref_id.ion_state.index]:
             ion_name = species.ion.name
+            result = f"Ion ({ion_name})"
+
             if type_index == ref_id.ion_state.index:
-                ion_name = f"{ion_name} ({species.ion.state.name})"
-            dist_name = f"{dist_name} ({ion_name})"
+                state_name = species.ion.state.name
+                result += f" State ({state_name})"
+            return result
         elif type_index in [ref_id.neutral.index, ref_id.neutral_state.index]:
             neutral_name = species.neutral.name
-            if type_index == ref_id.neutral_state.index:
-                neutral_name = f"{neutral_name} ({species.neutral.state.name})"
-            dist_name = f"{dist_name} ({neutral_name})"
+            result = f"Neutral ({neutral_name})"
 
-        return dist_name
+            if type_index == ref_id.neutral_state.index:
+                state_name = species.neutral.state.name
+                result += f" State ({state_name})"
+            return result
+
+        return base_name
 
     def RequestData(self, request, inInfo, outInfo):
         if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
