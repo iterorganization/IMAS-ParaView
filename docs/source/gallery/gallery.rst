@@ -34,7 +34,7 @@ Please follow the steps below to contribute:
 #. Create a `fork <https://github.com/iterorganization/IMAS-ParaView/fork>`_ of the IMAS-ParaView repository.
 #. Create a new directory in ``docs/source/gallery/examples``.
 #. Create a ``description.yaml`` file in that directory (see template below).
-#. Add an image showcasing the visualisation to the same directory (only ``.png``, ``.jpeg``, ``.jpg``, or ``.gif`` file formats are supported)
+#. Add an image showcasing the visualisation to the same directory (only ``.png``, ``.jpeg``, ``.jpg``, ``.gif``, or ``.webp`` file formats are supported)
 #. Optionally add a ParaView state file (``.pvsm``) to the same directory, so other users can easily load your example.
 #. Open a pull request from your fork back to the main repository on the ``develop`` branch.
    A maintainer will review and merge it.

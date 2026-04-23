@@ -330,7 +330,7 @@ def get_gallery_data():
             (
                 img
                 for img in example_dir.iterdir()
-                if img.suffix.lower() in {".gif", ".png", ".jpg", ".jpeg"}
+                if img.suffix.lower() in {".gif", ".png", ".jpg", ".jpeg", ".webp"}
             ),
             None,
         )

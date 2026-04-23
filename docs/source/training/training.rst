@@ -29,7 +29,7 @@ At the start of each section, a ParaView ``.pvsm`` state file is also provided f
       **1. SOLPS-ITER Case**
 
    .. grid-item-card::
-      :img-top: /images/training/jorek.gif
+      :img-top: /images/training/jorek.webp
       :class-img-top: fixed-150height
       :link: training_jorek
       :link-type: doc
@@ -37,7 +37,7 @@ At the start of each section, a ParaView ``.pvsm`` state file is also provided f
       **2. JOREK Case**
 
    .. grid-item-card::
-      :img-top: /images/training/machine_description.gif
+      :img-top: /images/training/machine_description.webp
       :class-img-top: fixed-150height
       :link: training_md
       :link-type: doc
