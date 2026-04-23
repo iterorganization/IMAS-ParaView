@@ -67,6 +67,13 @@ Non-GGD Readers
       **Camera Reader**
 
    .. grid-item-card::
+      :img-top: /images/plugin_thumbnails/distributions_reader.png
+      :link: plugins/distributions_reader
+      :link-type: doc
+
+      **Distributions Reader**
+
+   .. grid-item-card::
       :img-top: /images/plugin_thumbnails/axisymmetric_geometry_reader.png
       :link: plugins/axisymmetric_geometry_reader
       :link-type: doc
@@ -123,6 +130,7 @@ Non-GGD Readers
    plugins/profiles_2d_reader
    plugins/beam_reader
    plugins/camera_reader
+   plugins/distributions_reader
    plugins/axisymmetric_geometry_reader
    plugins/los_reader
    plugins/coils_non_axi_reader
