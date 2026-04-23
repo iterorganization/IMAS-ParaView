@@ -22,6 +22,13 @@ You can click on the images to enlarge them and to display their descriptions.
          {{ entry.title }}
    {% endfor %}
 
+.. toctree::
+   :maxdepth: 1
+   :glob:
+   :hidden:
+
+   examples/*/index
+
 Contributing to the Gallery
 ---------------------------
 
@@ -51,9 +58,3 @@ Example ``description.yaml``:
    uri: imas:hdf5?path=/path/on/sdcc # May also be a list of URIs
    imas_paraview_version: 2.3.0
 
-.. toctree::
-   :maxdepth: 1
-   :glob:
-   :hidden:
-
-   examples/*/index
