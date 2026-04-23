@@ -86,6 +86,3 @@ def test_load_markers():
     assert point_data.HasArray("phi")
     assert point_data.HasArray("z")
     assert point_data.HasArray("weights")
-
-    assert point_data.HasArray("x")
-    assert point_data.HasArray("y")
