@@ -39,7 +39,7 @@ Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 Plugin Settings
 ---------------
 
-The Distributions Reader allows you to load the coordinates available the in 
+The Distributions Reader allows you to load the coordinates available in the
 distribution, marked by the `coordinate_identifiers <https://imas-data-dictionary.readthedocs.io/en/latest/generated/ids/distributions.html#distributions-distribution-markers>`_. 
 
 By default, the reader will try to use ``x``, ``y``, and ``z`` coordinates in Paraview, 

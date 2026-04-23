@@ -232,12 +232,12 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
 
         num_pts = markers.positions.shape[0]
 
-        raw_x = self._resolve_axis(self._x_axis, markers, column_map)
-        raw_y = self._resolve_axis(self._y_axis, markers, column_map)
-        raw_z = self._resolve_axis(self._z_axis, markers, column_map)
-
         xyz = np.column_stack(
-            [raw_x * self._x_scale, raw_y * self._y_scale, raw_z * self._z_scale]
+            [
+                self._resolve_axis(self._x_axis, markers, column_map) * self._x_scale,
+                self._resolve_axis(self._y_axis, markers, column_map) * self._y_scale,
+                self._resolve_axis(self._z_axis, markers, column_map) * self._z_scale,
+            ]
         )
         vtk_pts = vtkPoints()
         vtk_pts.SetData(numpy_to_vtk(xyz, deep=True))
@@ -259,10 +259,6 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
 
         for name, idx in column_map.items():
             self._add_vtk_array(name, markers.positions[:, idx], point_data)
-        if "x" not in column_map and "r" in column_map and "phi" in column_map:
-            self._add_vtk_array("x", raw_x, point_data)
-        if "y" not in column_map and "r" in column_map and "phi" in column_map:
-            self._add_vtk_array("y", raw_y, point_data)
 
         return poly
 
