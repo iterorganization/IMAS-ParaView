@@ -72,8 +72,18 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
             return 1
         psi = input0.PointData[psi_array_name]
         psi_grid = psi.GetArrays()[0]
-        psi_profiles = input1.RowData["Grid Psi"]
 
+        # Auto-detect the Psi profiles array in the 1D profiles table. We look for any array that ends with "Grid Psi" to be flexible with naming conventions.
+        psi_key = next(
+            (k for k in input1.RowData.keys() if k.endswith("Grid Psi")),
+            None
+        )
+        # Extra check to to ensure the array has been detected.
+        if psi_key is None:
+            raise KeyError("Could not find a 'Grid Psi' field in RowData")
+
+        psi_profiles = input1.RowData[psi_key]
+        
         if isinstance(psi_profiles, dsa.VTKNoneArray) and self._selected:
             logger.error(
                 "The 1DProfilesReader should output a poloidal flux grid. Please"
