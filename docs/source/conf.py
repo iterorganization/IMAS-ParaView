@@ -350,6 +350,7 @@ def get_gallery_data():
             title = desc["title"]
             author = desc["author"]
             description = desc["description"]
+            link = desc.get("link", "")
 
             # Either a single URI or a list of URIs
             uris = desc.get("uri", [])
@@ -370,6 +371,7 @@ def get_gallery_data():
                 "author": str(author),
                 "description": str(description),
                 "uris": uris,
+                "link": link,
                 "version": desc.get("imas_paraview_version", ""),
                 "image_name": image_path.name,
                 "state_file_name": state_file.name if state_file else None,
