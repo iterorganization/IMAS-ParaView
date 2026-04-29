@@ -56,5 +56,6 @@ Example ``description.yaml``:
      A description of what the visualization shows.
      Can be multiple lines.
    uri: imas:hdf5?path=/path/on/sdcc # May also be a list of URIs
+   link: www.example.com # Optional link (e.g. to dataset on Zenodo)
    imas_paraview_version: 2.3.0
 

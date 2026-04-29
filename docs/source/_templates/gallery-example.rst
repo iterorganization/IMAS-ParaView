@@ -19,6 +19,11 @@
    {{ uri }}
 {% endfor %}
 
+
+{% if entry.link %}
+**Link:** `View resource <{{ entry.link }}>`_
+{% endif %}
+
 {% if entry.version %}
 **IMAS-ParaView version:** `{{ entry.version }} <https://github.com/iterorganization/IMAS-ParaView/releases/tag/{{ entry.version }}>`_
 {% endif %}
