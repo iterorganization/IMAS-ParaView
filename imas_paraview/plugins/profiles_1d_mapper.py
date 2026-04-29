@@ -73,7 +73,8 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
         psi = input0.PointData[psi_array_name]
         psi_grid = psi.GetArrays()[0]
 
-        # Auto-detect the Psi grid
+        # Auto-detect the Psi grid. For example, in the core_sources IDS this appears as
+        # 'Sources (<type>) Grid Psi'
         psi_grid_name = None
         row_data_names = input1.RowData.keys()
         for name in row_data_names:
