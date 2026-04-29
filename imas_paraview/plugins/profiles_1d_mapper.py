@@ -72,7 +72,22 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
             return 1
         psi = input0.PointData[psi_array_name]
         psi_grid = psi.GetArrays()[0]
-        psi_profiles = input1.RowData["Grid Psi"]
+
+        # Auto-detect the Psi grid. For example, in the core_sources IDS this appears as
+        # 'Sources (<type>) Grid Psi'
+        psi_grid_name = None
+        row_data_names = input1.RowData.keys()
+        for name in row_data_names:
+            if "Grid Psi" in name:
+                psi_grid_name = name
+                logger.info("Mapping the following Psi grid array: '%s'", psi_grid_name)
+                break
+
+        if psi_grid_name is None:
+            logger.error("Could not find a 'Grid Psi' field in the input row data.")
+            return 1
+
+        psi_profiles = input1.RowData[psi_grid_name]
 
         if isinstance(psi_profiles, dsa.VTKNoneArray) and self._selected:
             logger.error(
