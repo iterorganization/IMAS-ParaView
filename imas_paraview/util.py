@@ -459,7 +459,7 @@ def create_vtk_arrows(positions, directions, scaling_factor=1.0):
     glyph.SetVectorModeToUseNormal()
     glyph.SetScaleModeToScaleByScalar()
     glyph.SetColorModeToColorByScalar()
-    glyph.SetScaleFactor(scaling_factor * 1e-3)
+    glyph.SetScaleFactor(scaling_factor)
     glyph.OrientOn()
     glyph.Update()
 
@@ -477,3 +477,28 @@ def ensure_unique_name(name, existing_names):
         counter += 1
         unique_name = f"{name} #{counter}"
     return unique_name
+
+
+def angles_to_vectors(r, phi, z, poloidal_angle, toroidal_angle):
+
+    e_r = np.array([np.cos(phi), np.sin(phi), 0.0])
+    e_z = np.array([0.0, 0.0, 1.0])
+    e_phi = np.array([-np.sin(phi), np.cos(phi), 0.0])
+
+    n = (
+        np.cos(poloidal_angle) * np.cos(toroidal_angle) * e_r
+        - np.sin(poloidal_angle) * e_z
+        + np.cos(poloidal_angle) * np.sin(toroidal_angle) * e_phi
+    )
+
+    norm = np.linalg.norm(n)
+    if norm < 1e-12:
+        return None
+
+    n /= norm
+
+    x, y = pol_to_cart(r, phi)
+    position = np.array([[x, y, z]])
+    direction = n[np.newaxis, :]
+
+    return position, direction

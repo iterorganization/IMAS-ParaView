@@ -284,7 +284,7 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
         velocities = vel_pol_to_cart(vel_r, vel_phi, vel_z, phi)
 
         return create_vtk_arrows(
-            positions, velocities, scaling_factor=self.frag_vel_scaling_factor
+            positions, velocities, scaling_factor=self.frag_vel_scaling_factor * 1e-3
         )
 
     def _create_centre_mass_velocity(self, vel_mass_centre: VelocityMassCentre):

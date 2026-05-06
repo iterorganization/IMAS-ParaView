@@ -115,12 +115,19 @@ Non-GGD Readers
 
       **Scalar Time Trace Reader**
 
-   .. grid-item-card::
-      :img-top: /images/plugin_thumbnails/wall_limiter_reader.png
-      :link: plugins/wall_limiter_reader
-      :link-type: doc
+    .. grid-item-card::
+       :img-top: /images/plugin_thumbnails/wall_limiter_reader.png
+       :link: plugins/wall_limiter_reader
+       :link-type: doc
 
-      **Wall Limiter Reader**
+       **Wall Limiter Reader**
+
+    .. grid-item-card::
+       :img-top: /images/plugin_thumbnails/magnetics_reader.png
+       :link: plugins/magnetics_reader
+       :link-type: doc
+
+       **Magnetics Reader**
 
 .. toctree::
    :hidden:
@@ -138,6 +145,7 @@ Non-GGD Readers
    plugins/position_reader
    plugins/scalar_time_trace
    plugins/wall_limiter_reader
+   plugins/magnetics_reader
 
 Filters
 -------
