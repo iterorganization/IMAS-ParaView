@@ -480,6 +480,19 @@ def ensure_unique_name(name, existing_names):
 
 
 def angles_to_vectors(r, phi, z, poloidal_angle, toroidal_angle):
+    """Convert cylindrical position (r, phi, z) and toroidal/poloidal angles into a
+    3D Cartesian position and a corresponding unit direction vector.
+
+    Args:
+        r: Radial coordinate.
+        phi: Azimuthal angle in radians.
+        z: Vertical coordinate.
+        poloidal_angle: Poloidal angle in radians.
+        toroidal_angle: Toroidal angle in radians.
+
+    Returns:
+        Position and direction vectors
+    """
 
     e_r = np.array([np.cos(phi), np.sin(phi), 0.0])
     e_z = np.array([0.0, 0.0, 1.0])
@@ -491,14 +504,10 @@ def angles_to_vectors(r, phi, z, poloidal_angle, toroidal_angle):
         + np.cos(poloidal_angle) * np.sin(toroidal_angle) * e_phi
     )
 
-    norm = np.linalg.norm(n)
-    if norm < 1e-12:
-        return None
-
-    n /= norm
+    n /= np.linalg.norm(n)
 
     x, y = pol_to_cart(r, phi)
     position = np.array([[x, y, z]])
-    direction = n[np.newaxis, :]
+    direction = n[None, :]
 
     return position, direction

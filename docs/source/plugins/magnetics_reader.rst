@@ -60,7 +60,7 @@ Example Case
 
 The following figure uses the Magnetics Reader to visualize the geometries of the 
 flux loops, rogowski coils, and B-field probes of ``magnetics`` from the following 
-machine description NetCDF file: `iter_md_magnetics_150100_5.nc <https://zenodo.org/records/15525525>`_.
+machine description NetCDF file: `iter_md_magnetics_150100_5.nc <https://zenodo.org/records/17113713>`_.
 
 .. figure:: ../images/magnetics_reader.png
 
