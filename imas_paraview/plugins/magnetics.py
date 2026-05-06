@@ -110,6 +110,7 @@ class MagneticsReader(GGDVTKPluginBase):
             self.selectable_map[name] = RogowskiCoil(coil.position)
 
     def _populate_b_field_probes(self):
+        """Populate selectable_map with poloidal and toroidal B-field probes."""
         for i, probe in enumerate(self._ids.b_field_pol_probe):
             name = self._create_name("Poloidal field probe", probe, i)
             self._add_b_field_probe(name, probe, "pol")
@@ -123,16 +124,14 @@ class MagneticsReader(GGDVTKPluginBase):
             name = self._create_name("Toroidal field probe", probe, i)
             self._add_b_field_probe(name, probe, "phi")
 
-    def RequestData(self, request, inInfo, outInfo):
-        if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
-            return 1
-
-        if self._selected:
-            output = vtkMultiBlockDataSet.GetData(outInfo)
-            self._convert_to_vtk(output)
-        return 1
-
     def _add_b_field_probe(self, name, probe, kind):
+        """Add a B-field probe to the selectable map if it has valid position data.
+
+        Args:
+            name: Name of the probe.
+            probe: B-field probe IDS node.
+            kind: Either "pol" or "phi" for poloidal or toroidal probe.
+        """
         if not (
             probe.position.r.has_value
             and probe.position.phi.has_value
@@ -156,8 +155,21 @@ class MagneticsReader(GGDVTKPluginBase):
             kind=kind,
         )
 
+    def RequestData(self, request, inInfo, outInfo):
+        if self._dbentry is None or not self._ids_and_occurrence or self._ids is None:
+            return 1
+
+        if self._selected:
+            output = vtkMultiBlockDataSet.GetData(outInfo)
+            self._convert_to_vtk(output)
+        return 1
+
     def _convert_to_vtk(self, output: vtkMultiBlockDataSet):
-        """Convert each selected diagnostic to a VTK geometry block."""
+        """Convert each selected device to VTK geometry.
+
+        Args:
+            output: vtkMultiBlockDataSet containing separate block for each device.
+        """
         for block_id, name in enumerate(self._selected):
             selected = self.selectable_map[name]
 
@@ -173,6 +185,14 @@ class MagneticsReader(GGDVTKPluginBase):
             output.SetBlock(block_id, vtk_geom)
 
     def _create_b_field_probe_arrow(self, data):
+        """Create a VTK arrow representation of a B-field probe.
+
+        Args:
+            data: BFieldProbe dataclass containing position and angle information.
+
+        Returns:
+            VTK polydata representing the B-field probe as an arrow.
+        """
         position, direction = angles_to_vectors(
             data.r, data.phi, data.z, data.poloidal_angle, data.toroidal_angle
         )
@@ -181,6 +201,14 @@ class MagneticsReader(GGDVTKPluginBase):
         )
 
     def _create_loop(self, data):
+        """Create a closed VTK polyline from loop positions.
+
+        Args:
+            data: FluxLoop or RogowskiCoil dataclass containing positions.
+
+        Returns:
+            VTK polydata representing the closed loop.
+        """
         positions = data.positions
         points = []
         for pos in positions:
@@ -190,6 +218,16 @@ class MagneticsReader(GGDVTKPluginBase):
         return points_to_vtkpoly(points, is_closed=True, is_filled=False)
 
     def _create_name(self, device_type, device, index):
+        """Create a unique name for a diagnostic device.
+
+        Args:
+            device_type: Type of device.
+            device: Device IDS node.
+            index: Index of the device.
+
+        Returns:
+            A unique name string for the device.
+        """
         name = (
             ensure_unique_name(
                 f"{device_type} ({device.name})", list(self.selectable_map.keys())
