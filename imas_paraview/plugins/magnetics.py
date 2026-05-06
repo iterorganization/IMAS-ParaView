@@ -22,6 +22,7 @@ from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import (
     angles_to_vectors,
     create_vtk_arrows,
+    ensure_unique_name,
     points_to_vtkpoly,
     pol_to_cart,
 )
@@ -190,7 +191,9 @@ class MagneticsReader(GGDVTKPluginBase):
 
     def _create_name(self, device_type, device, index):
         name = (
-            f"{device_type} ({device.name})"
+            ensure_unique_name(
+                f"{device_type} ({device.name})", list(self.selectable_map.keys())
+            )
             if device.name
             else f"{device_type} #{index}"
         )
