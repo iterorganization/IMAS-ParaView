@@ -196,4 +196,4 @@ def test_angles_to_vectors():
     pol, tor = np.pi / 4, np.pi / 4
     position, direction = angles_to_vectors(r, phi, z, pol, tor)
     assert np.allclose(position, np.array([[-2 * np.sqrt(2), 2 * np.sqrt(2), 5.0]]))
-    assert np.allclose(direction, np.array([[-np.sqrt(2) / 2, 0.0, -np.sqrt(2) / 2]])
+    assert np.allclose(direction, np.array([[-np.sqrt(2) / 2, 0.0, -np.sqrt(2) / 2]]))
