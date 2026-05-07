@@ -39,21 +39,11 @@ Refer to the :ref:`using the GGD Reader` for detailed instructions on:
 Visualized Elements
 -------------------
 
-Flux Loops and Rogowski Coils
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 Flux loops and Rogowski coils are visualized as closed polylines representing the wire geometry.
-Each element is displayed using the position coordinates defined in the IDS.
 
-B-Field Probes
-^^^^^^^^^^^^^^
-
-Poloidal and toroidal B-field probes are visualized as arrows indicating the sensor orientation.
-The arrow direction is determined by the poloidal and toroidal angles defined for each probe.
-
-The Probe Arrow Length parameter controls the length of the arrows drawn for each B-field probe
-(in meters). The arrow tip is placed at the specified distance from the probe center along the
-sensor normal axis.
+Poloidal and toroidal B-field probes are visualized as arrows indicating the sensor 
+position and orientation. The length of the arrow can be controlled using the 
+``Probe Arrow Length`` parameter in the plugin settings.
 
 Example Case
 ------------
