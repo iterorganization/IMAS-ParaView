@@ -2,7 +2,7 @@ import logging
 
 from paraview.util.vtkAlgorithm import smhint, smproxy
 
-from imas_paraview.paraview_support.servermanager_tools import checkbox
+from imas_paraview.paraview_support.servermanager_tools import checkbox, propertygroup
 from imas_paraview.plugins.ggd_base_reader import GGDBaseReader
 
 logger = logging.getLogger("imas_paraview")
@@ -53,6 +53,10 @@ class GGDReader(GGDBaseReader, is_time_dependent=True):
         supported_ids = EXPERIMENTAL_IDS_NAMES + SUPPORTED_IDS_NAMES
         super().__init__(supported_ids)
         self._MIN_N_PLANE = self._n_plane = 0
+
+    @propertygroup("Coordinate Transformation", ["ConvertCylToCart"])
+    def PG4_CoordinateTransformation(self):
+        """Dummy function to define a PropertyGroup."""
 
     @checkbox(
         name="ConvertCylToCart",

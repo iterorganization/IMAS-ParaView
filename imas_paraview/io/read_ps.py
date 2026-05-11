@@ -329,18 +329,18 @@ class PlasmaStateReader:
                 components[metadata.name] = component.value
 
         # Replace cylindrical by cartesian direction vector components
-        if self.convert_cyl_to_cart:
-            if "x" not in components and "y" not in components:
-                r = components.get("r")
+        if self.convert_cyl_to_cart and "x" not in components and "y" not in components:
+            r = components.get("r")
 
-                angle_key = "phi" if "phi" in components else "toroidal"
-                angle = components.get(angle_key)  # DD <4.0.0
+            # 'toroidal' was renamed to 'phi' in DD v3.42.0
+            angle_key = "phi" if "phi" in components else "toroidal"
+            angle = components.get(angle_key)
 
-                if r is not None and angle is not None:
-                    components["x"], components["y"] = pol_to_cart(r, angle)
-                    # remove polar components after conversion
-                    components.pop("r")
-                    components.pop(angle_key)
+            if r is not None and angle is not None:
+                components["x"], components["y"] = pol_to_cart(r, angle)
+                # Remove polar components after conversion so magnitude stays useful
+                components.pop("r")
+                components.pop(angle_key)
 
         vtk_arr = vtkDoubleArray()
         vtk_arr.SetName(name)

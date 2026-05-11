@@ -111,21 +111,6 @@ The selected quantities can now be visualized using Paraview's selection drop-do
    may be beneficial to load all data up front. This can be done by enabling the `Preload Data`
    checkbox in the plugin settings.
 
-Converting Vector Components
-----------------------------
-By default, the plugin loads vector arrays with their native components. 
-If the GGD data contains ``r``, ``phi``, and ``z`` coordinates, you can enable the 
-**Convert cylindrical to Cartesian components** checkbox in the plugin settings.
-
-When this option is enabled and you click `Apply`, the plugin will automatically detect 
-cylindrical vector arrays and transform their components into Cartesian ``x``, ``y``, and ``z`` directions.
-
-.. warning::
-   If you toggle this checkbox and the Coloring dropdown still shows the old component 
-   names, this is due to a known ParaView bug. You can force a UI refresh by temporarily 
-   changing the Coloring dropdown to **Solid Color** and then switching back to your 
-   selected vector array.
-
 Sub index
 ---------
 
@@ -142,3 +127,18 @@ should be visualized:
    Choose between visualizing the grid from ``description_ggd[0]`` or
    ``description_ggd[1]``. The meaning of the different indices is dependent on the data
    provider.
+
+Converting Vector Components
+----------------------------
+By default, the plugin loads vector arrays with their native components. 
+If the GGD data contains ``r``, ``phi``, and ``z`` coordinates, you can enable the 
+**Convert cylindrical to Cartesian components** checkbox in the plugin settings.
+
+When this option is enabled and you click `Apply`, the plugin will automatically detect 
+cylindrical vector arrays and transform their components into Cartesian ``x``, ``y``, and ``z`` directions.
+
+.. warning::
+   If you toggle this checkbox and the Coloring dropdown still shows the old component 
+   names, this is due to a known ParaView bug. You can force a UI refresh by temporarily 
+   changing the Coloring dropdown to **Solid Color** and then switching back to your 
+   selected vector array.
