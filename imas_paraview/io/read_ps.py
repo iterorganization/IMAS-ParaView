@@ -338,7 +338,7 @@ class PlasmaStateReader:
 
             if r is not None and angle is not None:
                 components["x"], components["y"] = pol_to_cart(r, angle)
-                # Remove polar components after conversion so magnitude stays useful
+                # Remove r and phi components after conversion so magnitude stays useful
                 components.pop("r")
                 components.pop(angle_key)
 
