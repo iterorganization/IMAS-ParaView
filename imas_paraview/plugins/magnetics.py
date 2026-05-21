@@ -14,6 +14,7 @@ from typing import Literal
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
+from imas_paraview.ids_util import cyl_vector_has_value
 from imas_paraview.paraview_support.servermanager_tools import (
     doublevector,
     propertygroup,
@@ -132,11 +133,7 @@ class MagneticsReader(GGDVTKPluginBase):
             probe: B-field probe IDS node.
             kind: Either "pol" or "phi" for poloidal or toroidal probe.
         """
-        if not (
-            probe.position.r.has_value
-            and probe.position.phi.has_value
-            and probe.position.z.has_value
-        ):
+        if not cyl_vector_has_value(probe.position):
             logger.warning(
                 "'%s' does not have position coordinates filled, skipping.", name
             )
@@ -177,10 +174,6 @@ class MagneticsReader(GGDVTKPluginBase):
                 vtk_geom = self._create_loop(selected)
             else:  # Bfield probe
                 vtk_geom = self._create_b_field_probe_arrow(selected)
-
-            if vtk_geom is None:
-                logger.warning("No geometry produced for '%s', skipping.", name)
-                continue
 
             output.SetBlock(block_id, vtk_geom)
 
