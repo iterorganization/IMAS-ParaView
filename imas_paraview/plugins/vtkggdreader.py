@@ -67,5 +67,5 @@ class GGDReader(GGDBaseReader, is_time_dependent=True):
         """When enabled, cylindrical vector components (r, phi, z) are
         automatically converted to Cartesian (x, y, z) components. Disable to
         keep the original cylindrical components."""
-        self.convert_cyl_to_cart = bool(val)
+        self.cyl_vector_to_cartesian = bool(val)
         self.Modified()
