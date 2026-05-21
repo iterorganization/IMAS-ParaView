@@ -45,6 +45,13 @@ Poloidal and toroidal B-field probes are visualized as arrows indicating the sen
 position and orientation. The length of the arrow can be controlled using the 
 ``Probe Arrow Length`` parameter in the plugin settings.
 
+.. note::
+
+  The flux loop geometry is obtained through linear interpolation between the points 
+  stored in the IDS. As a result, the rendered loop may appear to intersect the plasma 
+  volume, whereas the physical loop in the machine would typically follow the vessel wall 
+  contour between those points.
+
 Example Case
 ------------
 
