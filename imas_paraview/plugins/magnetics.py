@@ -93,11 +93,8 @@ class MagneticsReader(GGDVTKPluginBase):
         """Populate selectable_map with flux loops."""
         for i, loop in enumerate(self._ids.flux_loop):
             name = self._create_name("Flux loop", loop, i)
-            if len(loop.position) < 2:
-                logger.warning(
-                    "'%s' has fewer than 2 points, skipping.",
-                    name,
-                )
+            if len(loop.position) == 0:
+                logger.warning("'%s' has no position points, skipping.", name)
                 continue
             self.selectable_map[name] = FluxLoop(loop.position)
 
