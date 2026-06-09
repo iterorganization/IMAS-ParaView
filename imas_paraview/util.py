@@ -483,9 +483,10 @@ def is_structured_grid(grid_ggd):
     """Return True if grid_ggd is a structured grid.
 
     A grid is considered structured when:
-      - It has two spaces.
-      - Every space has exactly one objects_per_dimension entry.
-      - The geometry node only contains a single value.
+      - It has exactly two spaces.
+      - Every space has at least one objects_per_dimension entry.
+      - The first objects_per_dimension (0-D nodes) has objects with a
+        single scalar geometry value (i.e. a 1-D axis).
 
     Args:
         grid_ggd: A grid_ggd IDS node.
@@ -498,7 +499,9 @@ def is_structured_grid(grid_ggd):
 
     for space in grid_ggd.space:
         objects = space.objects_per_dimension
-        if len(objects) != 1:
+        if len(objects) < 1:
+            return False
+        if len(objects[0].object) == 0:
             return False
         if len(objects[0].object[0].geometry) != 1:
             return False
