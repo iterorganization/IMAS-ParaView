@@ -95,6 +95,6 @@ Create an Animation with Orbiting Camera
 
 The resulting animation is shown below:
 
-.. figure:: ../images/training/machine_description.gif
+.. figure:: ../images/training/machine_description.webp
 
    Animation of the multiple different types of ITER machine description data. Data provided by J. Artola.

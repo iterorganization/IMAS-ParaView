@@ -86,6 +86,6 @@ In this subsection, we create an animation of the loaded electron temperature an
 
 The resulting animation is shown below:
 
-.. figure:: ../images/training/jorek.gif
+.. figure:: ../images/training/jorek.webp
 
    Animation of the electron temperature and wall currents. Data provided by J. Artola.

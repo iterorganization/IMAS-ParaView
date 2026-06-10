@@ -27,7 +27,7 @@ Get Started
       Get started by installing **IMAS-ParaView**.
 
    .. grid-item-card::
-      :link: usage
+      :link: plugins
       :link-type: ref
 
       :si-icon:`material/puzzle` **Plugins**
@@ -59,6 +59,7 @@ Explore what others have created with IMAS-ParaView.
       {% for entry in entries %}
          .. grid-item-card::
             :img-top: /gallery/examples/{{ entry.dir_name }}/{{ entry.image_name }}
+            :class-img-top: fixed-150height
             :link: {{ entry.name }}
             :link-type: ref
 
@@ -91,7 +92,7 @@ Explore what others have created with IMAS-ParaView.
    :maxdepth: 2
    :hidden:
 
-   usage
+   plugins
    cli
    training/training
 
