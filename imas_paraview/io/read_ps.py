@@ -14,7 +14,7 @@ from imas_paraview.ids_util import (
 )
 
 # We'll need these below when we create some units manually:
-from imas_paraview.util import format_units
+from imas_paraview.util import format_units, pol_to_cart
 
 logger = logging.getLogger("imas_paraview")
 u_pre = "["
@@ -22,12 +22,14 @@ u_post = "]"
 
 
 class PlasmaStateReader:
-    def __init__(self, ids):
+    def __init__(self, ids, cyl_vector_to_cartesian=False):
         """Initializes plasma state reader and retrieves all filled GGD scalar and
         vector arrays from the IDS.
 
         Args:
             ids: The IDS to load GGD arrays from
+            cyl_vector_to_cartesian: Whether to convert cylindrical vector components
+                to cartesian
         """
 
         # _cache stores names for each node to avoid recomputing them. It checks if
@@ -37,6 +39,7 @@ class PlasmaStateReader:
         self._ids = ids
         self.scalar_array_list = []
         self.vector_array_list = []
+        self.cyl_vector_to_cartesian = cyl_vector_to_cartesian
 
     def load_paths_from_ids(self, ggd_idx=0, return_empty=False):
         """Retrieves scalar and vector array paths from the IDS metadata by performing a
@@ -325,6 +328,24 @@ class PlasmaStateReader:
                 and len(component)
             ):
                 components[metadata.name] = component.value
+
+        # Replace cylindrical by cartesian direction vector components
+        if (
+            self.cyl_vector_to_cartesian
+            and "x" not in components
+            and "y" not in components
+        ):
+            r = components.get("r")
+
+            # 'toroidal' was renamed to 'phi' in DD v3.42.0
+            angle_key = "phi" if "phi" in components else "toroidal"
+            angle = components.get(angle_key)
+
+            if r is not None and angle is not None:
+                components["x"], components["y"] = pol_to_cart(r, angle)
+                # Remove r and phi components after conversion so magnitude stays useful
+                components.pop("r")
+                components.pop(angle_key)
 
         vtk_arr = vtkDoubleArray()
         vtk_arr.SetName(name)

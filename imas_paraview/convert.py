@@ -82,6 +82,7 @@ class Converter:
         outInfo=None,
         progress=None,
         parent_idx=0,
+        cyl_vector_to_cartesian=False,
     ):
         """Converts the GGD of an IDS to VTK format.
 
@@ -95,6 +96,9 @@ class Converter:
             plane_config: Data class containing the interpolation settings.
             outInfo: Paraview's Source outInfo information object.
             progress: Progress indicator for Paraview.
+            parent_idx: Index of the parent AoS node.
+            cyl_vector_to_cartesian: Whether to convert cylindrical vector components
+                to cartesian
 
         Returns:
             vtkPartitionedDataSetCollection containing the converted GGD data.
@@ -133,7 +137,9 @@ class Converter:
             self.output = vtkPartitionedDataSetCollection.GetData(outInfo)
         self.output.SetDataAssembly(self.assembly)
 
-        self.ps_reader = read_ps.PlasmaStateReader(self.ids)
+        self.ps_reader = read_ps.PlasmaStateReader(
+            self.ids, cyl_vector_to_cartesian=cyl_vector_to_cartesian
+        )
         self.ps_reader.load_arrays_from_path(self.time_idx, scalar_paths, vector_paths)
 
         self.is_jorek = plane_config.n_plane != 0
