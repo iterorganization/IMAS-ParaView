@@ -133,9 +133,12 @@ Converting Vector Components
 ----------------------------
 
 By default, the plugin will load all the GGD vector components stored in the loaded data,
-which may contain cylindrical components. It is possible to convert the cylindrical vector 
-components to Cartesian coordinates, by enabling the **Convert cylindrical to Cartesian components** 
-option in the plugin settings and clicking `Apply`. When enabled, the plugin will convert 
+which may contain cylindrical components. Converting these to Cartesian coordinates can be 
+useful for visualizations that rely on correct real-space directions, such as coloring 
+the mesh by a vector component or rendering the vector components in an arrow plot using the
+`Glyph Filter <https://docs.paraview.org/en/latest/UsersGuide/filteringData.html#glyph>`_.
+To enable the conversion, check the **Convert cylindrical to Cartesian components** option 
+in the plugin settings and click `Apply`. When enabled, the plugin will convert 
 the ``r``, ``phi``, and ``z`` components into ``x``, ``y``, and ``z`` components.
 
 .. warning::
