@@ -34,6 +34,11 @@ The vtpc file contains a vtkPartitionedCollection, which can directly be loaded 
 for visualization. The vtu files contain a vtkUnstructuredGrid, and can also be loaded into
 Paraview directly.
 
+.. note::
+   Both unstructured and structured GGD grids are supported for conversion to VTK.
+   Unstructured grids are converted to ``vtkUnstructuredGrid``, while structured grids
+   are converted to ``vtkStructuredGrid``.
+
 Converting specific time steps
 ------------------------------
 
