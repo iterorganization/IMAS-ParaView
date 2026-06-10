@@ -87,6 +87,7 @@ def _build_subset(subset, coords0, coords1):
         coords1: The full 1D coordinate array for the second space.
 
     Returns:
+        Tuple containing the subset coordinate arrays for both spaces.
     """
 
     idx0, idx1 = set(), set()
@@ -112,6 +113,13 @@ def _get_coord_type(space) -> int:
 
 
 def _extract_1d_coords(space) -> np.ndarray:
-    """Extract the coordinate geometry values from a 1D space."""
+    """Extract the coordinate geometry values from a 1D space.
+
+    Args:
+        space: The space node containing objects_per_dimension.
+
+    Returns:
+        NumPy array containing the coordinate geometry values.
+    """
     objects = space.objects_per_dimension[0].object
     return np.array([obj.geometry[0] for obj in objects])
