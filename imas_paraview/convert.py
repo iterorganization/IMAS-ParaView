@@ -243,7 +243,7 @@ class Converter:
         """Fill the GGD arrays for JOREK grid.
 
         Args:
-            ugrids: Dictionary containing the ugrid of each subset.
+            grids: Dictionary containing the grid of each subset.
         """
         n_period = self.grid_ggd.space[1].geometry_type.index
         if n_period > 0:
@@ -258,7 +258,7 @@ class Converter:
         """Fill the GGD arrays for each grid subset.
 
         Args:
-            ugrids: Dictionary containing the ugrid of each subset.
+            grids: Dictionary containing the grid of each subset.
         """
         num_subsets = len(self.grid_ggd.grid_subset)
         if num_subsets <= 1:
