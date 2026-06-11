@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from paraview.util.vtkAlgorithm import smhint, smproxy
-from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
+from vtkmodules.vtkCommonDataModel import vtkCompositeDataSet, vtkMultiBlockDataSet
 
 from imas_paraview.ids_util import cyl_vector_has_value
 from imas_paraview.paraview_support.servermanager_tools import (
@@ -173,6 +173,8 @@ class MagneticsReader(GGDVTKPluginBase):
                 vtk_geom = self._create_b_field_probe_arrow(selected)
 
             output.SetBlock(block_id, vtk_geom)
+            meta = output.GetMetaData(block_id)
+            meta.Set(vtkCompositeDataSet.NAME(), name)
 
     def _create_b_field_probe_arrow(self, data):
         """Create a VTK arrow representation of a B-field probe.
