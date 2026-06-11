@@ -52,6 +52,17 @@ position and orientation. The length of the arrow can be controlled using the
   volume, whereas the physical loop in the machine would typically follow the vessel wall 
   contour between those points.
 
+Plugin Settings
+---------------
+
+The Magnetics Reader exposes the following settings under the Magnetics Reader Settings group:
+
+- ``Probe Arrow Length (m)`` - Controls the total length of the arrow used to visualize
+  each B-field probe. 
+- ``Extrude Full Flux Loops`` - When enabled, flux loops that contain only a single
+  position point are extruded into a full toroidal circle at their (R, Z) 
+  position. When disabled, they are displayed as a single point.
+
 Example Case
 ------------
 
