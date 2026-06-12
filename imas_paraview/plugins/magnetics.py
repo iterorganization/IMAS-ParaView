@@ -19,6 +19,7 @@ from imas_paraview.ids_util import cyl_vector_has_value
 from imas_paraview.paraview_support.servermanager_tools import (
     checkbox,
     doublevector,
+    intvector,
     propertygroup,
 )
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
@@ -58,16 +59,15 @@ class BFieldProbe:
 @smproxy.source(label="Magnetics Reader")
 @smhint.xml("""<ShowInMenu category="IMAS Tools" />""")
 class MagneticsReader(GGDVTKPluginBase):
-    _FULL_LOOP_N_POINTS = 100
-    """Number of points used to discretize a full toroidal flux loop circle."""
-
     def __init__(self):
         super().__init__("vtkMultiBlockDataSet", SUPPORTED_IDS_NAMES)
         self.selectable_map = {}
         self.b_probe_length = 1.0
         """Length of the arrow drawn for each B-field probe."""
         self.extrude_full_loops = False
-        """When True, single-point flux loops are extruded to a full toroidal circle."""
+        """Whether to rotationally extrude flux loops consisting of a single-point."""
+        self.full_loop_n_points = 100
+        """Number of points used to discretize single-point flux loops."""
 
     @doublevector(
         label="Probe Arrow Length (m)",
@@ -85,13 +85,26 @@ class MagneticsReader(GGDVTKPluginBase):
         label="Extrude Full Flux Loops",
         default_values="0",
     )
-    def P99_SetExtrudeFullLoops(self, val):
+    def P98_SetExtrudeFullLoops(self, val):
         """When enabled, flux loops that contain only a single position point are
         extruded into a full toroidal circle. When disabled, they are displayed as a
         single point."""
         self._update_property("extrude_full_loops", bool(val))
 
-    @propertygroup("Magnetics Reader Settings", ["b_probe_length", "ExtrudeFullLoops"])
+    @intvector(
+        label="Full Flux Loop Resolution",
+        name="full_loop_n_points",
+        default_values=100,
+    )
+    def P99_SetFullLoopNPoints(self, val):
+        """Number of points used to discretize a single-point flux loop into a full
+        toroidal circle when 'Extrude Full Flux Loops' is enabled."""
+        self._update_property("full_loop_n_points", val)
+
+    @propertygroup(
+        "Magnetics Reader Settings",
+        ["b_probe_length", "ExtrudeFullLoops", "full_loop_n_points"],
+    )
     def PG3_MagneticsReaderGroup(self):
         """Dummy function to define a PropertyGroup."""
 
@@ -246,7 +259,7 @@ class MagneticsReader(GGDVTKPluginBase):
         """
         r = position.r
         z = position.z
-        phi_values = np.linspace(0, 2 * np.pi, self._FULL_LOOP_N_POINTS, endpoint=False)
+        phi_values = np.linspace(0, 2 * np.pi, self.full_loop_n_points, endpoint=False)
         points = [(r * np.cos(phi), r * np.sin(phi), z) for phi in phi_values]
         return points_to_vtkpoly(points, is_closed=True)
 

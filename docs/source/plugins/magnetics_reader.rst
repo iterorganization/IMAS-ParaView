@@ -62,6 +62,8 @@ The Magnetics Reader exposes the following settings under the Magnetics Reader S
 - ``Extrude Full Flux Loops`` - When enabled, flux loops that contain only a single
   position point are extruded into a full toroidal circle at their (R, Z) 
   position. When disabled, they are displayed as a single point.
+- ``Full Flux Loop Resolution`` - Controls the number of points used to discretize 
+  single-point flux loops, when the ``Extrude Full Flux Loops`` option is enabled.
 
 Example Case
 ------------
