@@ -504,8 +504,7 @@ class GGDVTKPluginBase(VTKPythonAlgorithmBase, ABC):
             return 1
 
         # Load IDS and available time steps
-        idsname, _, _ = self._ids_and_occurrence.partition("/")
-        if idsname not in self._ids_list:
+        if self._ids_and_occurrence not in self._ids_list:
             logger.error("Could not find the selected IDS.")
             self._selectable = []
             return 1
