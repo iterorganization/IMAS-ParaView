@@ -35,8 +35,8 @@ for visualization. The vtu files contain a vtkUnstructuredGrid, and can also be 
 Paraview directly.
 
 .. note::
-   Both unstructured and structured GGD grids are supported for conversion to VTK.
-   Unstructured grids are converted to ``vtkUnstructuredGrid``, while structured grids
+   Both unstructured and 2D structured GGD grids are supported for conversion to VTK.
+   Unstructured grids are converted to ``vtkUnstructuredGrid``, while 2D structured grids
    are converted to ``vtkStructuredGrid``.
 
 Converting specific time steps
@@ -160,7 +160,7 @@ The ``vtk2ggd`` converter has specific requirements for the VTK input files it c
   partition is skipped. Each ``vtkUnstructuredGrid`` will be converted into a separate grid subset in the GGD.
 
 .. note::
-   It is currently not possible to convert ``vtkStructuredGrid`` s to GGD grids.
+   It is currently not possible to convert ``vtkStructuredGrid``\ s to GGD grids.
 
 Limitations of VTK grid conversion
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
