@@ -88,6 +88,13 @@ Non-GGD Readers
       **Line of Sight Reader**
 
    .. grid-item-card::
+      :img-top: /images/plugin_thumbnails/magnetics_reader.png
+      :link: plugins/magnetics_reader
+      :link-type: doc
+
+      **Magnetics Reader**
+
+   .. grid-item-card::
       :img-top: /images/plugin_thumbnails/coils_non_axi_reader.png
       :link: plugins/coils_non_axi_reader
       :link-type: doc
@@ -122,6 +129,7 @@ Non-GGD Readers
 
       **Wall Limiter Reader**
 
+
 .. toctree::
    :hidden:
    :maxdepth: 1
@@ -133,6 +141,7 @@ Non-GGD Readers
    plugins/distributions_reader
    plugins/axisymmetric_geometry_reader
    plugins/los_reader
+   plugins/magnetics_reader
    plugins/coils_non_axi_reader
    plugins/pellets
    plugins/position_reader

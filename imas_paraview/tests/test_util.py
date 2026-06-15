@@ -5,6 +5,7 @@ import vtk
 from vtk.util.numpy_support import vtk_to_numpy
 
 from imas_paraview.util import (
+    angles_to_vectors,
     create_vtk_spheres,
     ensure_unique_name,
     find_closest_indices,
@@ -158,3 +159,41 @@ def test_ensure_unique_name():
     assert ensure_unique_name("coil4", existing) == "coil4"
     assert ensure_unique_name("coil2", existing) == "coil2 #1"
     assert ensure_unique_name("coil1", existing) == "coil1 #2"
+
+
+def test_angles_to_vectors():
+    r, phi, z = 1.0, 0.0, 0.0
+    pol, tor = 0.0, 0.0
+    position, direction = angles_to_vectors(r, phi, z, pol, tor)
+    assert np.allclose(position, np.array([[1.0, 0.0, 0.0]]))
+    assert np.allclose(direction, np.array([[1.0, 0.0, 0.0]]))
+
+    r, phi, z = 2.0, np.pi / 2, 1.0
+    pol, tor = 0.0, 0.0
+    position, direction = angles_to_vectors(r, phi, z, pol, tor)
+    assert np.allclose(position, np.array([[0.0, 2.0, 1.0]]))
+    assert np.allclose(direction, np.array([[0.0, 1.0, 0.0]]))
+
+    r, phi, z = 1.0, 0.0, 0.0
+    pol, tor = np.pi / 2, 0.0
+    position, direction = angles_to_vectors(r, phi, z, pol, tor)
+    assert np.allclose(position, np.array([[1.0, 0.0, 0.0]]))
+    assert np.allclose(direction, np.array([[0.0, 0.0, -1.0]]))
+
+    r, phi, z = 5.0, np.pi, -1.0
+    pol, tor = np.pi / 2, 0.0
+    position, direction = angles_to_vectors(r, phi, z, pol, tor)
+    assert np.allclose(position, np.array([[-5.0, 0.0, -1.0]]))
+    assert np.allclose(direction, np.array([[0.0, 0.0, -1.0]]))
+
+    r, phi, z = 3.0, np.pi / 2, 1.5
+    pol, tor = 0.0, np.pi / 2
+    position, direction = angles_to_vectors(r, phi, z, pol, tor)
+    assert np.allclose(position, np.array([[0.0, 3.0, 1.5]]))
+    assert np.allclose(direction, np.array([[-1.0, 0.0, 0.0]]))
+
+    r, phi, z = 4.0, 3 * np.pi / 4, 5.0
+    pol, tor = np.pi / 4, np.pi / 4
+    position, direction = angles_to_vectors(r, phi, z, pol, tor)
+    assert np.allclose(position, np.array([[-2 * np.sqrt(2), 2 * np.sqrt(2), 5.0]]))
+    assert np.allclose(direction, np.array([[-np.sqrt(2) / 2, 0.0, -np.sqrt(2) / 2]]))

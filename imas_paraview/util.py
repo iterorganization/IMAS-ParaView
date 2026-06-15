@@ -459,7 +459,7 @@ def create_vtk_arrows(positions, directions, scaling_factor=1.0):
     glyph.SetVectorModeToUseNormal()
     glyph.SetScaleModeToScaleByScalar()
     glyph.SetColorModeToColorByScalar()
-    glyph.SetScaleFactor(scaling_factor * 1e-3)
+    glyph.SetScaleFactor(scaling_factor)
     glyph.OrientOn()
     glyph.Update()
 
@@ -507,3 +507,37 @@ def is_structured_grid(grid_ggd):
             return False
 
     return True
+
+
+def angles_to_vectors(r, phi, z, poloidal_angle, toroidal_angle):
+    """Convert cylindrical position (r, phi, z) and toroidal/poloidal angles into a
+    3D Cartesian position and a corresponding unit direction vector.
+
+    Args:
+        r: Radial coordinate.
+        phi: Azimuthal angle in radians.
+        z: Vertical coordinate.
+        poloidal_angle: Poloidal angle in radians.
+        toroidal_angle: Toroidal angle in radians.
+
+    Returns:
+        Position and direction vectors
+    """
+
+    e_r = np.array([np.cos(phi), np.sin(phi), 0.0])
+    e_z = np.array([0.0, 0.0, 1.0])
+    e_phi = np.array([-np.sin(phi), np.cos(phi), 0.0])
+
+    n = (
+        np.cos(poloidal_angle) * np.cos(toroidal_angle) * e_r
+        - np.sin(poloidal_angle) * e_z
+        + np.cos(poloidal_angle) * np.sin(toroidal_angle) * e_phi
+    )
+
+    n /= np.linalg.norm(n)
+
+    x, y = pol_to_cart(r, phi)
+    position = np.array([[x, y, z]])
+    direction = n[None, :]
+
+    return position, direction

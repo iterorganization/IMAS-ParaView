@@ -175,3 +175,11 @@ def cart_vector_has_value(vec):
         return vec.x.has_value and vec.y.has_value and vec.z.has_value
     except AttributeError:
         return False
+
+
+def cyl_vector_has_value(vec):
+    """Check if a lazy-loaded cylindrical IMAS vector quantity has data."""
+    try:
+        return vec.r.has_value and vec.phi.has_value and vec.z.has_value
+    except AttributeError:
+        return False

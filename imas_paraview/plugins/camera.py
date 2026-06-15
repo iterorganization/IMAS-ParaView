@@ -13,7 +13,7 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPolyData,
 )
 
-from imas_paraview.ids_util import cart_vector_has_value
+from imas_paraview.ids_util import cart_vector_has_value, cyl_vector_has_value
 from imas_paraview.paraview_support.servermanager_tools import (
     command_button_property,
     doublevector,
@@ -182,9 +182,7 @@ class CameraReader(GGDVTKPluginBase):
             beta = channel.viewing_angle_beta_bounds
 
             if not (
-                centre.r.has_value
-                and centre.phi.has_value
-                and centre.z.has_value
+                cyl_vector_has_value(centre)
                 and cart_vector_has_value(ap.x3_unit_vector)
                 and cart_vector_has_value(ap.x2_unit_vector)
                 and alpha.has_value

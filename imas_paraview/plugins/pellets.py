@@ -10,6 +10,7 @@ from imas.ids_struct_array import IDSStructArray
 from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonDataModel import vtkMultiBlockDataSet
 
+from imas_paraview.ids_util import cyl_vector_has_value
 from imas_paraview.paraview_support.servermanager_tools import (
     doublevector,
     propertygroup,
@@ -134,7 +135,7 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
         # Assuming all fragments contain the same quantities, so only looking at first
         fragment = injector.fragment[0]
         position = fragment.position
-        if position.r.has_value and position.phi.has_value and position.z.has_value:
+        if cyl_vector_has_value(position):
             self.selectable_map[f"Shattered Fragment Positions ({injector_name})"] = (
                 Fragments(injector.fragment, "position")
             )
@@ -169,9 +170,7 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
             vel_r.has_value
             and vel_phi.has_value
             and vel_z.has_value
-            and origin.r.has_value
-            and origin.phi.has_value
-            and origin.z.has_value
+            and cyl_vector_has_value(origin)
         ):
             injector_name = f"Fragment centre of mass velocity ({injector_name})"
             self.selectable_map[injector_name] = VelocityMassCentre(
@@ -284,7 +283,7 @@ class PelletReader(GGDVTKPluginBase, is_time_dependent=True):
         velocities = vel_pol_to_cart(vel_r, vel_phi, vel_z, phi)
 
         return create_vtk_arrows(
-            positions, velocities, scaling_factor=self.frag_vel_scaling_factor
+            positions, velocities, scaling_factor=self.frag_vel_scaling_factor * 1e-3
         )
 
     def _create_centre_mass_velocity(self, vel_mass_centre: VelocityMassCentre):
