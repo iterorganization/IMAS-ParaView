@@ -121,5 +121,13 @@ def _extract_1d_coords(space) -> np.ndarray:
     Returns:
         NumPy array containing the coordinate geometry values.
     """
+    if len(space.objects_per_dimension) > 1:
+        logger.warning(
+            "Space %d in structured GGD grid has %d objects_per_dimension entries. "
+            "Only the first (0D nodes) will be used, as this reader only supports "
+            "2D structured grids.",
+            space.identifier.index,
+            len(space.objects_per_dimension),
+        )
     objects = space.objects_per_dimension[0].object
     return np.array([obj.geometry[0] for obj in objects])
