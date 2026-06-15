@@ -6,10 +6,16 @@ from imas import DBEntry
 from imas.ids_defs import IDS_TIME_MODE_HETEROGENEOUS, IDS_TIME_MODE_HOMOGENEOUS
 from imas.ids_path import IDSPath
 from vtk.util.numpy_support import vtk_to_numpy
+from vtkmodules.vtkCommonDataModel import vtkStructuredGrid
 
 from imas_paraview.convert import Converter, InterpSettings
 from imas_paraview.io.read_ps import PlasmaStateReader
-from imas_paraview.tests.fill_ggd import fill_ids, fill_NxN_grid, fill_scalar_quantity
+from imas_paraview.tests.fill_ggd import (
+    fill_ids,
+    fill_NxN_grid,
+    fill_scalar_quantity,
+    fill_structured_grid,
+)
 from imas_paraview.util import get_grid_ggd
 
 
@@ -328,3 +334,81 @@ def names_from_vtk(vtk_object):
                 array_name = cell_data.GetArrayName(k)
                 array_names.add(array_name)
     return array_names
+
+
+def test_ggd_to_vtk_structured_grid():
+    ids = imas.IDSFactory().new("edge_profiles")
+    ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
+    ids.time = [100.0]
+    ids.grid_ggd.resize(1)
+    ids.grid_ggd[0].time = 100.0
+    num_r = 10
+    num_z = 6
+    r_min = 4.0
+    r_max = 7.0
+    z_min = -5.0
+    z_max = 6.0
+    fill_structured_grid(ids.grid_ggd[0], num_r, num_z, r_min, r_max, z_min, z_max)
+
+    converter = Converter(ids)
+    output = converter.ggd_to_vtk()
+    grid_ggd = get_grid_ggd(ids)
+    assert output.GetNumberOfPartitionedDataSets() == len(grid_ggd.grid_subset)
+    for i in range(output.GetNumberOfPartitionedDataSets()):
+        grid = output.GetPartitionedDataSet(i).GetPartition(0)
+        assert isinstance(grid, vtkStructuredGrid)
+        assert grid.GetNumberOfPoints() == num_r * num_z
+        assert grid.GetNumberOfCells() == (num_r - 1) * (num_z - 1)
+    grid = output.GetPartitionedDataSet(0).GetPartition(0)
+    points = vtk_to_numpy(grid.GetPoints().GetData())
+    x_coords = points[:, 0]
+    z_coords = points[:, 2]
+    assert x_coords.min() == pytest.approx(r_min)
+    assert x_coords.max() == pytest.approx(r_max)
+    assert z_coords.min() == pytest.approx(z_min)
+    assert z_coords.max() == pytest.approx(z_max)
+
+
+def test_ggd_to_vtk_structured_grid_multiple_subsets():
+    ids = imas.IDSFactory().new("edge_profiles")
+    ids.ids_properties.homogeneous_time = IDS_TIME_MODE_HOMOGENEOUS
+    ids.time = [100.0]
+    ids.grid_ggd.resize(1)
+    ids.grid_ggd[0].time = 100.0
+
+    num_r = 8
+    num_z = 5
+    r_min = 3.0
+    r_max = 11.0
+    z_min = -3.0
+    z_max = 3.0
+    fill_structured_grid(
+        ids.grid_ggd[0],
+        num_r,
+        num_z,
+        r_min,
+        r_max,
+        z_min,
+        z_max,
+        extra_subsets=True,
+    )
+
+    converter = Converter(ids)
+    output = converter.ggd_to_vtk()
+
+    grid_ggd = get_grid_ggd(ids)
+    assert output.GetNumberOfPartitionedDataSets() == len(grid_ggd.grid_subset)
+
+    # Assert extra subset contains rightmost column
+    extra_subset = output.GetPartitionedDataSet(3).GetPartition(0)
+    assert isinstance(extra_subset, vtkStructuredGrid)
+    assert extra_subset.GetNumberOfPoints() == 2 * num_z
+    assert extra_subset.GetNumberOfCells() == num_z - 1
+    extra_subset_points = vtk_to_numpy(extra_subset.GetPoints().GetData())
+    extra_subset_x = extra_subset_points[:, 0]
+    extra_subset_z = extra_subset_points[:, 2]
+    r_step = (r_max - r_min) / (num_r - 1)
+    assert extra_subset_x.min() == pytest.approx(r_max - r_step)
+    assert extra_subset_x.max() == pytest.approx(r_max)
+    assert extra_subset_z.min() == pytest.approx(z_min)
+    assert extra_subset_z.max() == pytest.approx(z_max)

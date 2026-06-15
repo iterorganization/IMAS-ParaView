@@ -479,6 +479,36 @@ def ensure_unique_name(name, existing_names):
     return unique_name
 
 
+def is_structured_grid(grid_ggd):
+    """Return True if grid_ggd is a 2D structured grid.
+
+    A grid is considered a supported 2D structured grid when:
+      - It has exactly two spaces.
+      - Every space has at least one objects_per_dimension entry.
+      - The first objects_per_dimension (0-D nodes) has objects with a
+        single scalar geometry value (i.e. a 1-D axis).
+
+    Args:
+        grid_ggd: A grid_ggd IDS node.
+
+    Returns:
+        True if the grid is a 2D structured grid, False otherwise.
+    """
+    if len(grid_ggd.space) != 2:
+        return False
+
+    for space in grid_ggd.space:
+        objects = space.objects_per_dimension
+        if len(objects) == 0:
+            return False
+        if len(objects[0].object) == 0:
+            return False
+        if len(objects[0].object[0].geometry) != 1:
+            return False
+
+    return True
+
+
 def angles_to_vectors(r, phi, z, poloidal_angle, toroidal_angle):
     """Convert cylindrical position (r, phi, z) and toroidal/poloidal angles into a
     3D Cartesian position and a corresponding unit direction vector.

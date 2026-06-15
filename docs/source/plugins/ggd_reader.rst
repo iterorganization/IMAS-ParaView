@@ -3,6 +3,7 @@
 GGD Reader
 ==========
 
+.. versionchanged:: 2.4.0 Added cylindrical to Cartesian coordinate conversion
 .. versionchanged:: 2.2.0 Added support for heterogeneous time mode.
 
 This page will go over how to use the GGD Paraview plugin.
@@ -111,7 +112,6 @@ The selected quantities can now be visualized using Paraview's selection drop-do
    may be beneficial to load all data up front. This can be done by enabling the `Preload Data`
    checkbox in the plugin settings.
 
-
 Sub index
 ---------
 
@@ -128,3 +128,23 @@ should be visualized:
    Choose between visualizing the grid from ``description_ggd[0]`` or
    ``description_ggd[1]``. The meaning of the different indices is dependent on the data
    provider.
+
+Converting Vector Components
+----------------------------
+
+By default, the plugin will load all the GGD vector components stored in the loaded data,
+which may contain cylindrical components. Converting these to Cartesian coordinates can be 
+useful for visualizations that rely on correct real-space directions, such as coloring 
+the mesh by a vector component or rendering the vector components in an arrow plot using the
+`Glyph Filter <https://docs.paraview.org/en/latest/UsersGuide/filteringData.html#glyph>`_.
+To enable the conversion, check the **Convert cylindrical to Cartesian components** option 
+in the plugin settings and click `Apply`. When enabled, the plugin will convert 
+the ``r``, ``phi``, and ``z`` components into ``x``, ``y``, and ``z`` components.
+
+.. warning::
+   If you enable this checkbox and the vector components dropdown still shows cylindrical components,
+   this is due to a `known ParaView bug <https://gitlab.kitware.com/paraview/paraview/-/work_items/23279>`_.
+   You can force a UI refresh by temporarily changing the Coloring dropdown to 
+   **Solid Color** and then switching back to your selected vector array.
+
+   ..  image:: ../images/ggd_reader_vector_issue.png

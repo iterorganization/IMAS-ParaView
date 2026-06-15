@@ -20,6 +20,7 @@ class GGDBaseReader(GGDVTKPluginBase):
         self._all_scalar_paths = []
         self.all_paths = []
         self.filled_paths = []
+        self.cyl_vector_to_cartesian = False
 
     def RequestDataObject(self, request, inInfo, outInfo):
         output = vtkPartitionedDataSetCollection()
@@ -58,6 +59,7 @@ class GGDBaseReader(GGDVTKPluginBase):
             outInfo=outInfo,
             progress=progress,
             parent_idx=self._selected_parent_index,
+            cyl_vector_to_cartesian=self.cyl_vector_to_cartesian,
         )
 
         if output is None:

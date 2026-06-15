@@ -520,3 +520,86 @@ def fill_ids_specific(ids):
         ids.description_ggd[0].thickness.resize(len(ids.time))
     elif ids_name == "runaway_electrons":
         ids.ggd_fluid.resize(len(ids.time))
+
+
+def fill_structured_grid(
+    grid_ggd, num_r, num_z, r_min, r_max, z_min, z_max, extra_subsets=False
+):
+    """Fill the GGD grid with a regularly spaced structured grid in the r,z plane.
+
+    Args:
+        grid_ggd: GGD grid to fill.
+        num_r: Number of points in the radial direction.
+        num_z: Number of points in the height direction.
+        r_min: Minimum radial value.
+        r_max: Maximal radial value.
+        z_min: Minimum height value.
+        z_max: Maximum height value.
+        extra_subsets: Whether to create a separate grid subset for the rightmost
+            column of points
+    """
+    grid_ggd.identifier = identifiers.ggd_identifier.structured_spaces.index
+
+    # Separate spaces for R and Z dimension
+    grid_ggd.space.resize(2)
+
+    space_r = grid_ggd.space[0]
+    space_r.identifier = identifiers.ggd_space_identifier.primary_standard
+    space_r.geometry_type.name = "standard"
+    space_r.geometry_type.index = 0
+    space_r.coordinates_type.resize(1)
+    space_r.coordinates_type[0] = identifiers.coordinate_identifier.r
+
+    space_r.objects_per_dimension.resize(1)
+    r_objects = space_r.objects_per_dimension[0].object
+    r_values = [r_min + i * ((r_max - r_min) / (num_r - 1)) for i in range(num_r)]
+    r_objects.resize(num_r)
+    for i, r_val in enumerate(r_values):
+        r_objects[i].geometry = [r_val]
+
+    space_z = grid_ggd.space[1]
+    space_z.identifier = identifiers.ggd_space_identifier.primary_standard
+    space_z.geometry_type.name = "standard"
+    space_z.geometry_type.index = 0
+    space_z.coordinates_type.resize(1)
+    space_z.coordinates_type[0] = identifiers.coordinate_identifier.z
+
+    space_z.objects_per_dimension.resize(1)
+    z_objects = space_z.objects_per_dimension[0].object
+    z_values = [z_min + i * ((z_max - z_min) / (num_z - 1)) for i in range(num_z)]
+    z_objects.resize(num_z)
+    for i, z_val in enumerate(z_values):
+        z_objects[i].geometry = [z_val]
+
+    if extra_subsets:
+        grid_ggd.grid_subset.resize(4)
+    else:
+        grid_ggd.grid_subset.resize(3)
+    grid_ggd.grid_subset[0].identifier = identifiers.ggd_subset_identifier.nodes
+    grid_ggd.grid_subset[0].dimension = 1
+    grid_ggd.grid_subset[1].identifier = identifiers.ggd_subset_identifier.edges
+    grid_ggd.grid_subset[1].dimension = 1
+    grid_ggd.grid_subset[2].identifier = identifiers.ggd_subset_identifier.cells
+    grid_ggd.grid_subset[2].dimension = 1
+
+    if extra_subsets:
+        outer_div = grid_ggd.grid_subset[3]
+        outer_div.identifier = identifiers.ggd_subset_identifier.outer_divertor
+        outer_div.dimension = 3
+        outer_div.element.resize(num_z - 1)
+        for j in range(num_z - 1):
+            element = outer_div.element[j]
+            corners = [
+                (num_r - 1, j + 1),
+                (num_r, j + 1),
+                (num_r, j + 2),
+                (num_r - 1, j + 2),
+            ]
+            element.object.resize(len(corners) * 2)
+            for k, (r_idx, z_idx) in enumerate(corners):
+                element.object[k * 2].space = 1
+                element.object[k * 2].dimension = 1
+                element.object[k * 2].index = r_idx
+                element.object[k * 2 + 1].space = 2
+                element.object[k * 2 + 1].dimension = 1
+                element.object[k * 2 + 1].index = z_idx
