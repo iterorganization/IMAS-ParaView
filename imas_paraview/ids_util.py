@@ -177,9 +177,15 @@ def cart_vector_has_value(vec):
         return False
 
 
-def cyl_vector_has_value(vec):
-    """Check if a lazy-loaded cylindrical IMAS vector quantity has data."""
+def cyl_vector_has_value(vec, check_phi=True):
+    """Check if a lazy-loaded cylindrical IMAS vector quantity has data.
+
+    Args:
+        vec: IMAS structure with r, phi, z fields.
+        check_phi: Whether to require phi to be set.
+    """
     try:
-        return vec.r.has_value and vec.phi.has_value and vec.z.has_value
+        has_rz = vec.r.has_value and vec.z.has_value
+        return has_rz and (vec.phi.has_value if check_phi else True)
     except AttributeError:
         return False
