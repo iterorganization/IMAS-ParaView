@@ -64,7 +64,7 @@ class MagneticsReader(GGDVTKPluginBase):
         self.selectable_map = {}
         self.b_probe_length = 1.0
         """Length of the arrow drawn for each B-field probe."""
-        self.extrude_full_loops = False
+        self.extrude_full_loops = True
         """Whether to rotationally extrude flux loops consisting of a single-point."""
         self.full_loop_n_points = 100
         """Number of points used to discretize single-point flux loops."""
@@ -83,7 +83,7 @@ class MagneticsReader(GGDVTKPluginBase):
     @checkbox(
         name="ExtrudeFullLoops",
         label="Extrude Full Flux Loops",
-        default_values="0",
+        default_values="1",
     )
     def P98_SetExtrudeFullLoops(self, val):
         """When enabled, flux loops that contain only a single position point are
