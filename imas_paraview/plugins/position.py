@@ -8,7 +8,7 @@ from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import vtkPolyData
 
-from imas_paraview.ids_util import cyl_vector_has_value
+from imas_paraview.ids_util import rz_vector_has_value
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
 from imas_paraview.util import ensure_unique_name, pol_to_cart
 
@@ -91,11 +91,9 @@ class PositionReader(GGDVTKPluginBase):
                 if isinstance(pos, IDSStructArray):
                     # Allow phi to be absent from the position vector, e.g. in the case
                     # of 2D rotationally symmetric representations
-                    has_valid_position = any(
-                        cyl_vector_has_value(p, check_phi=False) for p in pos
-                    )
+                    has_valid_position = any(rz_vector_has_value(p) for p in pos)
                 else:
-                    has_valid_position = cyl_vector_has_value(pos, check_phi=False)
+                    has_valid_position = rz_vector_has_value(pos)
 
                 if not has_valid_position:
                     logger.warning("Skipping %s: no position set.", name)
