@@ -1,6 +1,12 @@
 # IMAS-ParaView
-IMAS-ParaView is a tool to convert GGD ([Generalized Grid Description](https://imas-data-dictionary.readthedocs.io/en/stable/ggd_guide/doc.html)) 
-structures to VTK formats, and back. This is complemented by a number of Paraview plugins that can visualise both GGD and non-GGD IDS data in Paraview. 
+
+IMAS-ParaView is a comprehensive tool for visualizing
+[IMAS](https://imas-data-dictionary.readthedocs.io/en/latest/)
+data within [ParaView](https://www.paraview.org/).
+It provides a collection of ParaView plugins for visualizing different types of
+IMAS data, ranging from multi-dimensional
+[GGD (Generalized Grid Description)](https://imas-data-dictionary.readthedocs.io/en/latest/ggd_guide/doc.html)
+meshes to non-GGD structures such as machine descriptions and diagnostic geometries.
 
 For an overview of the different types of IDS data that can be loaded, see the [documentation](https://imas-paraview.readthedocs.io/en/stable/). A gallery containing example images and animations that users have created with IMAS-ParaView is available [here](https://imas-paraview.readthedocs.io/en/stable/gallery/gallery.html).
 
