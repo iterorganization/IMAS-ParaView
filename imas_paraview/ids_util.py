@@ -183,3 +183,13 @@ def cyl_vector_has_value(vec):
         return vec.r.has_value and vec.phi.has_value and vec.z.has_value
     except AttributeError:
         return False
+
+
+def rz_vector_has_value(vec):
+    """
+    Check if a lazy-loaded cylindrical IMAS vector quantity has at least r and z set.
+    """
+    try:
+        return vec.r.has_value and vec.z.has_value
+    except AttributeError:
+        return False
