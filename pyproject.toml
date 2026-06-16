@@ -54,6 +54,7 @@ vtk2ggd = "imas_paraview.cli:convert_vtk_to_ggd"
 
 [project.urls]
 homepage = "https://github.com/iterorganization/IMAS-ParaView"
+documentation = "https://imas-paraview.readthedocs.io/en/stable/"
 
 [tool.setuptools.packages.find]
 where = ["."]
