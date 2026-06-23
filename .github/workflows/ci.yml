@@ -61,7 +61,7 @@ jobs:
 
     - name: Cache Zenodo datasets
       id: cache-datasets
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@v6
       with:
         path: data
         key: ${{ steps.datasets.outputs.key }}
@@ -78,14 +78,14 @@ jobs:
     - name: Always save Zenodo datasets (even if pytest would fail)
       id: cache-datasets-save
       if: always() && steps.cache-datasets.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v5
+      uses: actions/cache/save@v6
       with:
         key: ${{ steps.cache-datasets.outputs.cache-primary-key }}
         path: data
 
     - name: Cache paraview
       id: cache-paraview
-      uses: actions/cache/restore@v5
+      uses: actions/cache/restore@v6
       with:
         path: paraview/
         key: ${{ env.paraview-download-file }}
@@ -100,7 +100,7 @@ jobs:
     - name: Always save cache (even if pytest would fail)
       id: cache-paraview-save
       if: always() && steps.cache-paraview.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v5
+      uses: actions/cache/save@v6
       with:
         key: ${{ steps.cache-paraview.outputs.cache-primary-key }}
         path: paraview/
