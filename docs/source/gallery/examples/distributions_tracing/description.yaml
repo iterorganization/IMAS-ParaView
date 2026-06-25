@@ -6,5 +6,5 @@ description: |
 uri:
   - imas:hdf5?path=/home/ITER/blokhus/public/synthetic_distribution
   - imas:hdf5?path=/work/imas/shared/imasdb/ITER_MACHINE_DESCRIPTION/3/116000/5
-link: https://zenodo.org/records/19879666
+link: https://zenodo.org/records/20842895
 imas_paraview_version: 2.4.0
