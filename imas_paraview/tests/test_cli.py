@@ -19,7 +19,6 @@ from imas_paraview.cli import (
 from imas_paraview.tests.fill_ggd import fill_ids
 
 
-@pytest.mark.skip(reason="no IMAS-Core available")
 def test_version():
     runner = CliRunner()
 

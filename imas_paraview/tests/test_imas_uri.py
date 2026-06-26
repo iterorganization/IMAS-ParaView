@@ -19,7 +19,6 @@ def test_uri_from_path():
     assert uri_from_path("test/ids_001.tree") == "imas:mdsplus?path=test"
 
 
-@pytest.mark.skip(reason="no IMAS-Core available")
 def test_uri_from_pulse_run():
     # Missing values result in a None uri
     assert uri_from_pulse_run(-1, "a", 1, 2, "b", "c") is None
