@@ -45,7 +45,6 @@ class ConvertNetCDF:
         converter.ggd_to_vtk(time_idx=0)
 
 
-# TODO: HDF5 and MDSPlus benchmarks are skipped as IMAS-Core is not yet available
 class ConvertHDF5:
     def setup(self):
         es = imas.IDSFactory().edge_profiles()
@@ -54,14 +53,12 @@ class ConvertHDF5:
         with imas.DBEntry(self.uri, "w") as dbentry:
             dbentry.put(es)
 
-    @skip_benchmark
     def time_load_and_convert(self):
         entry = imas.DBEntry(self.uri, "r")
         ids = entry.get("edge_profiles", lazy=False, autoconvert=False)
         converter = Converter(ids)
         converter.ggd_to_vtk(time_idx=0)
 
-    @skip_benchmark
     def time_load_and_convert_lazy(self):
         entry = imas.DBEntry(self.uri, "r")
         ids = entry.get("edge_profiles", lazy=True, autoconvert=False)
