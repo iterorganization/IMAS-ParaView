@@ -6,11 +6,11 @@ installed Python packages (``PYTHONPATH``) and to load data through the imas_cor
 HDF5 backend (``LD_PRELOAD``), so users do not have to set them up by hand.
 """
 
+import ctypes
+import ctypes.util
 import logging
 import os
-import re
 import shutil
-import subprocess
 import sys
 import sysconfig
 from collections import namedtuple
@@ -61,64 +61,72 @@ def plugin_path():
 HDF5Version = namedtuple("HDF5Version", ("path", "version"))
 
 
+class Dl_info(ctypes.Structure):
+    _fields_ = [
+        ("dli_fname", ctypes.c_char_p),
+        ("dli_fbase", ctypes.c_void_p),
+        ("dli_sname", ctypes.c_char_p),
+        ("dli_saddr", ctypes.c_void_p),
+    ]
+
+
+def get_function_origin(func):
+    lib_path = ctypes.util.find_library("dl") or ctypes.util.find_library("c")
+    if not lib_path:
+        raise OSError("Could not find the system library containing dladdr.")
+
+    sys_lib = ctypes.CDLL(lib_path)
+
+    sys_lib.dladdr.argtypes = [ctypes.c_void_p, ctypes.POINTER(Dl_info)]
+    sys_lib.dladdr.restype = ctypes.c_int
+
+    func_ptr = ctypes.cast(func, ctypes.c_void_p)
+
+    info = Dl_info()
+    result = sys_lib.dladdr(func_ptr, ctypes.byref(info))
+
+    if result != 0 and info.dli_fname:
+        return info.dli_fname.decode("utf-8")
+    else:
+        return None
+
+
 def get_hdf5_versions_for_elf(elf_path):
-    result = subprocess.run(
-        ["ldd", str(elf_path)], capture_output=True, text=True, check=True
+    hdf5_lib = ctypes.CDLL(elf_path)
+    majnum = ctypes.c_uint()
+    minnum = ctypes.c_uint()
+    relnum = ctypes.c_uint()
+
+    status = hdf5_lib.H5get_libversion(
+        ctypes.byref(majnum), ctypes.byref(minnum), ctypes.byref(relnum)
     )
+    if status < 0:
+        raise RuntimeError("Failed to find HDF5 Version")
 
-    match = re.search(r"=> (.*libhdf5.*\.so\.([\d\.]+)) ", result.stdout)
-
-    hdf5_version = "0.0.0"
-    hdf5_path = Path()
-    if match:
-        hdf5_path = Path(match.group(1))
-        hdf5_version = match.group(2)
-
-    return HDF5Version(hdf5_path, Version(hdf5_version))
+    return HDF5Version(
+        Path(get_function_origin(hdf5_lib.H5get_libversion)),
+        Version(f"{majnum.value}.{minnum.value}.{relnum.value}"),
+    )
 
 
 def imas_hdf5_version():
-    imas_module_dir = Path(imas_core.__file__).parent
-    al_core_objects = list(imas_module_dir.glob("_al*.so"))
-    assert len(al_core_objects) == 1
-    al_core_so = al_core_objects[0]
+    al_core_so = imas_core._al_lowlevel.__file__
 
     return get_hdf5_versions_for_elf(al_core_so)
 
 
-def paraview_hdf5_version():
-    path = find_paraview_binary()
-    if path.with_name("paraview_real").exists():
-        return get_hdf5_versions_for_elf(path.with_name("paraview_real"))
-    else:
-        return get_hdf5_versions_for_elf(path)
-
-
 def hdf5_preload(site_packages):
-    """Return the imas_core bundled HDF5 library to ``LD_PRELOAD``, or ``None``.
-
-    The bundled library's filename contains a build-specific hash, so it is
-    resolved with a glob rather than hardcoded.
-    """
+    """Return the imas_core bundled HDF5 library to ``LD_PRELOAD``, or ``None``."""
 
     imas_version = imas_hdf5_version()
-    paraview_version = paraview_hdf5_version()
 
-    if imas_version.version != paraview_version.version:
-        logger.warning(
-            "IMAS HDF5 version (%s) does not match ParaView HDF5 version (%s).\n"
-            "  IMAS HDF5: %s\n"
-            "  ParaView HDF5: %s\n"
-            "Using the IMAS version, which might break ParaView's native HDF5 "
-            "handling.",
-            imas_version.version,
-            paraview_version.version,
-            imas_version.path,
-            paraview_version.path,
-        )
-        return str(imas_version.path)
-
-    return None
+    logger.warning(
+        "IMAS HDF5 version (%s) might not match ParaView HDF5 version.\n"
+        "Using the IMAS version, which might break ParaView's native HDF5 "
+        "handling.",
+        imas_version.version,
+    )
+    return str(imas_version.path)
 
 
 def build_environment(env=None):
