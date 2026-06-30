@@ -11,11 +11,11 @@
 
 {{ entry.description }}
 
-**Data URI:**
-
-.. code-block:: text
+**Data URI(s):**
 
 {% for uri in entry.uris %}
+.. code-block:: text
+
    {{ uri }}
 {% endfor %}
 

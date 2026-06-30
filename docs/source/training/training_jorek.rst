@@ -4,7 +4,7 @@ JOREK Case
 ----------
 In this example, we will visualize a JOREK disruption case. A number of JOREK disruption cases are available on `this confluence page <https://confluence.iter.org/display/IMP/The+JOREK+disruption+cases>`_ (behind login wall). We will visualize the electron temperature from the ``plasma_profiles`` IDS and the corresponding current magnitude in the inner vacuum vessel of the ``wall`` IDS. We will create an animation to visualize how these change over time.
 
-You can download the ParaView state file for this example :download:`here <pv_states/jorek_state.pvsm>`. However, we recommend that you manually follow the steps outlined below.
+You can download the ParaView state file for this example :download:`here <../gallery/examples/JOREK_electron_temperature/jorek_state.pvsm>`. However, we recommend that you manually follow the steps outlined below.
 
 Loading the Electron Temperature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
