@@ -13,11 +13,9 @@ import os
 import shutil
 import sys
 import sysconfig
-from collections import namedtuple
 from pathlib import Path
 
 import imas_core
-from packaging.version import Version
 
 import imas_paraview
 
@@ -58,9 +56,6 @@ def plugin_path():
     return str(Path(imas_paraview.__path__[0]) / "plugins")
 
 
-HDF5Version = namedtuple("HDF5Version", ("path", "version"))
-
-
 class Dl_info(ctypes.Structure):
     _fields_ = [
         ("dli_fname", ctypes.c_char_p),
@@ -91,42 +86,23 @@ def get_function_origin(func):
         return None
 
 
-def get_hdf5_versions_for_elf(elf_path):
-    hdf5_lib = ctypes.CDLL(elf_path)
-    majnum = ctypes.c_uint()
-    minnum = ctypes.c_uint()
-    relnum = ctypes.c_uint()
+def hdf5_preload():
+    """Return the path to the HDF5 library bundled with imas_core for ``LD_PRELOAD``.
 
-    status = hdf5_lib.H5get_libversion(
-        ctypes.byref(majnum), ctypes.byref(minnum), ctypes.byref(relnum)
-    )
-    if status < 0:
-        raise RuntimeError("Failed to find HDF5 Version")
+    ParaView ships its own HDF5; preloading the one imas_core was linked against
+    keeps imas_core working when it is imported inside ParaView's interpreter.
 
-    return HDF5Version(
-        Path(get_function_origin(hdf5_lib.H5get_libversion)),
-        Version(f"{majnum.value}.{minnum.value}.{relnum.value}"),
-    )
-
-
-def imas_hdf5_version():
+    Returns ``None`` if the library cannot be located, in which case ``LD_PRELOAD``
+    is left unset.
+    """
     al_core_so = imas_core._al_lowlevel.__file__
-
-    return get_hdf5_versions_for_elf(al_core_so)
-
-
-def hdf5_preload(site_packages):
-    """Return the imas_core bundled HDF5 library to ``LD_PRELOAD``, or ``None``."""
-
-    imas_version = imas_hdf5_version()
-
+    hdf5_lib = ctypes.CDLL(al_core_so)
     logger.warning(
-        "IMAS HDF5 version (%s) might not match ParaView HDF5 version.\n"
+        "IMAS HDF5 version might not match ParaView HDF5 version.\n"
         "Using the IMAS version, which might break ParaView's native HDF5 "
         "handling.",
-        imas_version.version,
     )
-    return str(imas_version.path)
+    return get_function_origin(hdf5_lib.H5get_libversion)
 
 
 def build_environment(env=None):
@@ -135,16 +111,15 @@ def build_environment(env=None):
     Existing values are preserved by prepending the IMAS-ParaView entries.
     """
     env = dict(os.environ if env is None else env)
-    site_packages = sysconfig.get_path("purelib")
 
     def prepend(name, value):
         if value:
             existing = env.get(name)
             env[name] = os.pathsep.join(p for p in [value, existing] if p)
 
-    prepend("PYTHONPATH", site_packages)
+    prepend("PYTHONPATH", sysconfig.get_path("purelib"))
     prepend("PV_PLUGIN_PATH", plugin_path())
-    prepend("LD_PRELOAD", hdf5_preload(site_packages))
+    prepend("LD_PRELOAD", hdf5_preload())
     return env
 
 
