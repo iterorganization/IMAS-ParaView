@@ -65,7 +65,12 @@ class Dl_info(ctypes.Structure):
     ]
 
 
-def get_function_origin(func):
+def get_c_function_origin(func):
+    """Retrieve the path of the shared library containing the given C function.
+
+    It performs a bit of magic using the dynamic linker's ``dladdr`` function
+    to resolve the shared object file defining the specified C function pointer.
+    """
     lib_path = ctypes.util.find_library("dl") or ctypes.util.find_library("c")
     if not lib_path:
         raise OSError("Could not find the system library containing dladdr.")
@@ -102,7 +107,7 @@ def hdf5_preload():
         "Using the IMAS version, which might break ParaView's native HDF5 "
         "handling.",
     )
-    return get_function_origin(hdf5_lib.H5get_libversion)
+    return get_c_function_origin(hdf5_lib.H5get_libversion)
 
 
 def build_environment(env=None):
