@@ -122,6 +122,7 @@ def build_environment(env=None):
             existing = env.get(name)
             env[name] = os.pathsep.join(p for p in [value, existing] if p)
 
+    prepend("PYTHONPATH", str(Path(imas_paraview.__path__[0]).parent))
     prepend("PYTHONPATH", sysconfig.get_path("purelib"))
     prepend("PV_PLUGIN_PATH", plugin_path())
     prepend("LD_PRELOAD", hdf5_preload())
