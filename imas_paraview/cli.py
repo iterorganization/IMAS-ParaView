@@ -12,6 +12,7 @@ from rich.table import Table
 
 import imas_paraview
 from imas_paraview.convert import Converter
+from imas_paraview.launch import launch
 from imas_paraview.util import find_closest_indices, load_vtpc, load_vtu
 from imas_paraview.vtk2ggd import VTK2GGDConverter
 
@@ -65,6 +66,28 @@ def print_version():
     grid.add_section()
     grid.add_row("Access Layer core version:", ll_interface.get_al_version() or "N/A")
     console.Console().print(grid)
+
+
+@cli.command(
+    "gui",
+    context_settings={"ignore_unknown_options": True},
+)
+@click.argument("paraview_args", nargs=-1, type=click.UNPROCESSED)
+def gui(paraview_args):
+    """Launch ParaView with the IMAS-ParaView plugins loaded.
+
+    Sets PV_PLUGIN_PATH, PYTHONPATH and LD_PRELOAD automatically and starts ParaView,
+    so the environment does not need to be configured by hand.
+
+    The ParaView executable is located via the PARAVIEW_BINARY environment variable,
+    the interpreter's base prefix (e.g. when the virtual environment was created from
+    ParaView's bundled pvpython) or PATH.
+
+    Any additional arguments are passed through to ParaView, for example:
+
+        imas-paraview gui --state=my_state.pvsm
+    """
+    launch(paraview_args)
 
 
 @cli.command("ggd2vtk")
