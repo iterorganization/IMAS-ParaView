@@ -5,20 +5,21 @@ needs to discover the IMAS-ParaView plugins (``PV_PLUGIN_PATH``), to import the
 installed Python packages (``PYTHONPATH``) and to load data through the imas_core
 HDF5 backend (``LD_PRELOAD``), so users do not have to set them up by hand.
 """
-from packaging.version import Version
-from collections import namedtuple
 
 import logging
 import os
+import re
 import shutil
+import subprocess
 import sys
 import sysconfig
+from collections import namedtuple
 from pathlib import Path
 
-import imas_paraview
 import imas_core
-import subprocess
-import re
+from packaging.version import Version
+
+import imas_paraview
 
 logger = logging.getLogger("imas_paraview_launcher")
 
@@ -57,23 +58,23 @@ def plugin_path():
     return str(Path(imas_paraview.__path__[0]) / "plugins")
 
 
-HDF5Version = namedtuple('HDF5Version', ("path", "version"))
+HDF5Version = namedtuple("HDF5Version", ("path", "version"))
+
 
 def get_hdf5_versions_for_elf(elf_path):
-    result = subprocess.run(['ldd', str(elf_path)], capture_output=True, text=True, check=True)
+    result = subprocess.run(
+        ["ldd", str(elf_path)], capture_output=True, text=True, check=True
+    )
 
-    match = re.search(r'=> (.*libhdf5.*\.so\.([\d\.]+)) ', result.stdout)
-    
+    match = re.search(r"=> (.*libhdf5.*\.so\.([\d\.]+)) ", result.stdout)
+
     hdf5_version = "0.0.0"
     hdf5_path = Path()
     if match:
         hdf5_path = Path(match.group(1))
         hdf5_version = match.group(2)
-    
-    
 
     return HDF5Version(hdf5_path, Version(hdf5_version))
-
 
 
 def imas_hdf5_version():
@@ -87,7 +88,7 @@ def imas_hdf5_version():
 
 def paraview_hdf5_version():
     path = find_paraview_binary()
-    
+
     return get_hdf5_versions_for_elf(path.parent / "paraview-real")
 
 
@@ -102,18 +103,17 @@ def hdf5_preload(site_packages):
     paraview_version = paraview_hdf5_version()
 
     if imas_version.version != paraview_version.version:
-    
         logger.warning(
-                "IMAS HDF5 version (%s) does not match ParaView HDF5 version (%s).\n"
-                "  IMAS HDF5: %s\n"
-                "  ParaView HDF5: %s\n"
-                "Using the IMAS version, which might break ParaView's native HDF5 "
-                "handling.",
-                imas_version.version,
-                paraview_version.version,
-                imas_version.path,
-                paraview_version.path,
-            )
+            "IMAS HDF5 version (%s) does not match ParaView HDF5 version (%s).\n"
+            "  IMAS HDF5: %s\n"
+            "  ParaView HDF5: %s\n"
+            "Using the IMAS version, which might break ParaView's native HDF5 "
+            "handling.",
+            imas_version.version,
+            paraview_version.version,
+            imas_version.path,
+            paraview_version.path,
+        )
         return str(imas_version.path)
 
     return None
