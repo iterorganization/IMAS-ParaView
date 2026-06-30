@@ -44,22 +44,11 @@ installed into a virtual environment that uses ParaView's own Python interpreter
       uv venv -p ./bin/pvpython
       uv pip install imas-paraview
 
-4.  Activate the virtual environment and set the required environment variables.
+4.  Run ParaView:
 
     .. code-block:: bash
 
-      . .venv/bin/activate
-      export PYTHONPATH="$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')"
-      export PV_PLUGIN_PATH="$(python -c 'import imas_paraview; print(imas_paraview.__path__[0])')/plugins"
-      # This LD_PRELOAD is required when loading data with the imas_core HDF5 backend.
-      # Note that it may break any built-in ParaView HDF5 support...
-      export LD_PRELOAD="$(ls "$PYTHONPATH"/imas_core.libs/libhdf5-*.so.*)"
-
-5.  Run ParaView:
-
-    .. code-block:: bash
-
-      ./bin/paraview
+      uv run imas-paraview gui
       # Open the "Sources" tab in the top left, and ensure you see "IMAS Tools" in
       # the drop down menu.
 
@@ -85,49 +74,31 @@ IMAS-Paraview plugins on the ITER SDCC cluster.
   cd IMAS-ParaView
 
 
-* To run a plugin in Paraview, run the following at the root of the project directory.
+* To run the plugin in Paraview, run the following at the root of the project directory.
 
 .. code-block:: bash
 
   # Load compatible IMAS-Python and ParaView modules, like:
   module load IMAS-Python/2.3.0-foss-2023b ParaView/5.12.0-foss-2023b
-  # export environment variables, this assumes the current
-  # working directory is the root of the repository
-  export PV_PLUGIN_PATH=$PWD/imas_paraview/plugins:$PV_PLUGIN_PATH
-  export PYTHONPATH=$PWD:$PYTHONPATH
+  # Create a virtual environment
+  python -m venv --system-site-packages .venv
+  # and load it
+  . .venv/bin/activate
+  # Install the package (as editable)
+  pip install -e .[all]
   # Run paraview (add vglrun to enable hardware acceleration)
-  vglrun paraview
+  vglrun imas-paraview gui
   # Open the "Sources" tab in the top left, if you see "IMAS Tools" 
   # in the drop down, it is installed correctly.
 
-* To use the command-line interface, setup a python virtual environment and install python dependencies
-
-.. code-block:: bash
-
-  # Load compatible IMAS-Python and ParaView modules, like:
-  module load IMAS-Python/2.3.0-foss-2023b ParaView/5.12.0-foss-2023b
-  # create virtual environment and install dependencies
-  python3 -m venv ./venv
-  . venv/bin/activate
-  pip install --upgrade pip
-  pip install --upgrade wheel setuptools
-  # For development install in editable mode
-  pip install -e .[all]
-  # Run CLI with help information
-  imas-paraview --help
-  # If you see the help page of IMAS-ParaView, it is installed correctly.
-
-* Every time that a new session is started, ensure the correct modules are loaded, 
-  the python virtual environment is activated, and the environment variables are set.
+* Every time that a new session is started, ensure the correct modules are loaded 
+  and the python virtual environment is activated.
 
 .. code-block:: bash
 
   # Load the required modules
   module load IMAS-Python/2.3.0-foss-2023b ParaView/5.12.0-foss-2023b
-  # Export the environment variables
-  export PV_PLUGIN_PATH=$PWD/imas_paraview/plugins:$PV_PLUGIN_PATH
-  export PYTHONPATH=$PWD:$PYTHONPATH
-  # And activate the Python virtual environment
+  # activate the Python virtual environment
   . venv/bin/activate
   # Validate if it is working as intended
   imas-paraview --version
