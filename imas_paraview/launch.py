@@ -88,8 +88,10 @@ def imas_hdf5_version():
 
 def paraview_hdf5_version():
     path = find_paraview_binary()
-
-    return get_hdf5_versions_for_elf(path.parent / "paraview-real")
+    if path.with_name("paraview_real").exists():
+        return get_hdf5_versions_for_elf(path.with_name("paraview_real"))
+    else:
+        return get_hdf5_versions_for_elf(path)
 
 
 def hdf5_preload(site_packages):
