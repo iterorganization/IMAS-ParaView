@@ -145,9 +145,9 @@ class MagneticsReader(GGDVTKPluginBase):
             self._add_b_field_probe(name, probe, "pol")
 
         # Toroidal field probes were renamed in DD 3.42.0
-        b_field_phi_probes = (
-            getattr(self._ids, "b_field_phi_probe", None) or self._ids.b_field_tor_probe
-        )
+        b_field_phi_probes = getattr(self._ids, "b_field_phi_probe", None)
+        if b_field_phi_probes is None:
+            b_field_phi_probes = self._ids.b_field_tor_probe
 
         for i, probe in enumerate(b_field_phi_probes):
             name = self._create_name("Toroidal field probe", probe, i)
