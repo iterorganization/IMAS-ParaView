@@ -23,6 +23,9 @@ dependencies = [
 all = [
     "imas_paraview[docs,test,linting,benchmark]"
 ]
+standalone= [
+    "vtk >= 9.1.0",
+]
 docs = [
     "sphinx>=6.0.0,<7.0.0",
     "sphinx-autosummary-accessors>=0.1.2",
