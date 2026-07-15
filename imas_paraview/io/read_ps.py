@@ -342,10 +342,15 @@ class PlasmaStateReader:
             angle = components.get(angle_key)
 
             if r is not None and angle is not None:
-                components["x"], components["y"] = pol_to_cart(r, angle)
-                # Remove r and phi components after conversion so magnitude stays useful
+                x, y = pol_to_cart(r, angle)
+                z = components.pop("z", None)
                 components.pop("r")
                 components.pop(angle_key)
+
+                components["x"] = x
+                components["y"] = y
+                if z is not None:
+                    components["z"] = z
 
         vtk_arr = vtkDoubleArray()
         vtk_arr.SetName(name)
