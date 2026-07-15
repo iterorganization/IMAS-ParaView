@@ -55,7 +55,11 @@ Example ``description.yaml``:
    description: |
      A description of what the visualization shows.
      Can be multiple lines.
-   uri: imas:hdf5?path=/path/on/sdcc # May also be a list of URIs
+   uri: imas:hdf5?path=/path/to/data/entry 
+   # Also multiple URIs may be provided, e.g.
+   # uri:
+   #   - imas:hdf5?path=/path/to/data/entry
+   #   - imas:hdf5?path=/path/to/another/entry
    link: www.example.com # Optional link (e.g. to dataset on Zenodo)
    imas_paraview_version: 2.3.0
 
