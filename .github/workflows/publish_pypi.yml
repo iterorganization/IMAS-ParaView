@@ -3,6 +3,7 @@ name: build-wheel-and-publish-pypi
 on:
   push:
     branches: [main, develop]
+    tags: ["*"]
   pull_request:
     types: [opened, synchronize, reopened]
 
