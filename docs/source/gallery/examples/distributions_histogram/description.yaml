@@ -1,0 +1,11 @@
+title: 2D Histograms of Electron Marker Distributions
+author: S. Blokhuizen
+description: |
+  Two 2D histogram views of the electron marker distributions using the 
+  :ref:`Distributions Reader <using the Distributions Reader>`. 
+  The first shows phase-space density in normalised momentum versus pitch, 
+  the second shows the density in the R-Z poloidal plane. 
+  The data was provided by J. Artola.
+
+uri: imas:hdf5?user=artolaj;pulse=111111;run=1;database=markers;version=4
+imas_paraview_version: 2.4.0

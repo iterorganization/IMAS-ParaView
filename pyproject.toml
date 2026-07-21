@@ -16,19 +16,25 @@ dynamic = ["version"]
 requires-python = ">=3.8"
 dependencies = [
     "numpy >= 1.19.4",
-    "vtk >= 9.1.0",
-    "imas-python[netcdf] >= 2.0.0",
+    "imas-python[netcdf] >= 2.3.0",
 ]
 
 [project.optional-dependencies]
 all = [
     "imas_paraview[docs,test,linting,benchmark]"
 ]
+standalone= [
+    "vtk >= 9.1.0",
+]
 docs = [
     "sphinx>=6.0.0,<7.0.0",
     "sphinx-autosummary-accessors>=0.1.2",
     "sphinx_immaterial>=0.11.0,<0.12",
     "recommonmark>=0.6",
+    "sphinx-design",
+    "sphinxcontrib-images",
+    "sphinx-jinja",
+    "pyyaml>=6.0",
 ]
 linting = [
     "ruff",
@@ -51,6 +57,7 @@ vtk2ggd = "imas_paraview.cli:convert_vtk_to_ggd"
 
 [project.urls]
 homepage = "https://github.com/iterorganization/IMAS-ParaView"
+documentation = "https://imas-paraview.readthedocs.io/en/stable/"
 
 [tool.setuptools.packages.find]
 where = ["."]

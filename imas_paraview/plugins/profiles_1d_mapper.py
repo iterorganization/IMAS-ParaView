@@ -56,16 +56,38 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
         input1 = dsa.WrapDataObject(vtkTable.GetData(inInfoVec[1], 0))
 
         self._selectable = input1.RowData.keys()
-        psi = input0.PointData["Psi [Wb]"]
 
-        if isinstance(psi, dsa.VTKNoneArray):
+        # Auto-detect the Psi array
+        psi_array_name = None
+        for name in input0.PointData.ArrayNames:
+            if "Psi" in name:
+                psi_array_name = name
+                logger.info("Mapping the following Psi array: '%s'", psi_array_name)
+                break
+
+        if psi_array_name is None:
             logger.error(
-                "The GGD Reader should output a poloidal flux GGD. Please select 'Psi' "
-                "in the attribute selector window."
+                "Could not find a poloidal flux (Psi) array in the input point data."
             )
             return 1
+        psi = input0.PointData[psi_array_name]
         psi_grid = psi.GetArrays()[0]
-        psi_profiles = input1.RowData["Grid Psi"]
+
+        # Auto-detect the Psi grid. For example, in the core_sources IDS this appears as
+        # 'Sources (<type>) Grid Psi'
+        psi_grid_name = None
+        row_data_names = input1.RowData.keys()
+        for name in row_data_names:
+            if "Grid Psi" in name:
+                psi_grid_name = name
+                logger.info("Mapping the following Psi grid array: '%s'", psi_grid_name)
+                break
+
+        if psi_grid_name is None:
+            logger.error("Could not find a 'Grid Psi' field in the input row data.")
+            return 1
+
+        psi_profiles = input1.RowData[psi_grid_name]
 
         if isinstance(psi_profiles, dsa.VTKNoneArray) and self._selected:
             logger.error(

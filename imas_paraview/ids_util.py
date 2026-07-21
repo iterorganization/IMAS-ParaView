@@ -167,3 +167,29 @@ def create_name_recursive(node):
 
     name = name.strip()
     return name
+
+
+def cart_vector_has_value(vec):
+    """Check if a lazy-loaded cartesian IMAS vector quantity has data."""
+    try:
+        return vec.x.has_value and vec.y.has_value and vec.z.has_value
+    except AttributeError:
+        return False
+
+
+def cyl_vector_has_value(vec):
+    """Check if a lazy-loaded cylindrical IMAS vector quantity has data."""
+    try:
+        return vec.r.has_value and vec.phi.has_value and vec.z.has_value
+    except AttributeError:
+        return False
+
+
+def rz_vector_has_value(vec):
+    """
+    Check if a lazy-loaded cylindrical IMAS vector quantity has at least r and z set.
+    """
+    try:
+        return vec.r.has_value and vec.z.has_value
+    except AttributeError:
+        return False

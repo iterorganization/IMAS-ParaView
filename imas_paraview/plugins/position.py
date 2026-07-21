@@ -8,8 +8,9 @@ from paraview.util.vtkAlgorithm import smhint, smproxy
 from vtkmodules.vtkCommonCore import vtkPoints
 from vtkmodules.vtkCommonDataModel import vtkPolyData
 
+from imas_paraview.ids_util import rz_vector_has_value
 from imas_paraview.plugins.base_class import GGDVTKPluginBase
-from imas_paraview.util import pol_to_cart
+from imas_paraview.util import ensure_unique_name, pol_to_cart
 
 logger = logging.getLogger("imas_paraview")
 
@@ -74,7 +75,7 @@ class PositionReader(GGDVTKPluginBase):
             )
         for aos in aos_list:
             for i, structure in enumerate(aos):
-                name = structure.name
+                name = str(structure.name)
                 if name == "":
                     name = f"device {i}"
                     logger.warning(
@@ -86,8 +87,25 @@ class PositionReader(GGDVTKPluginBase):
                     if identifier != "":
                         name = f"{name} / {identifier}"
 
-                self.selectable_map[str(name)] = structure
+                pos = structure.position
+                if isinstance(pos, IDSStructArray):
+                    # Allow phi to be absent from the position vector, e.g. in the case
+                    # of 2D rotationally symmetric representations
+                    has_valid_position = any(rz_vector_has_value(p) for p in pos)
+                else:
+                    has_valid_position = rz_vector_has_value(pos)
+
+                if not has_valid_position:
+                    logger.warning("Skipping %s: no position set.", name)
+                    continue
+
+                name = ensure_unique_name(name, list(self.selectable_map.keys()))
+                self.selectable_map[name] = structure
         self._selectable = list(self.selectable_map)
+        if not self._selectable:
+            logger.error(
+                "No filled positions found in %s IDS.", self._ids.metadata.name
+            )
 
     def _load_position(self, output):
         """Go through the list of selected position structures, and load each of them
@@ -104,13 +122,12 @@ class PositionReader(GGDVTKPluginBase):
 
             if isinstance(pos, IDSStructArray):
                 for pos_struct in pos:
-                    pos_cart = (
-                        *pol_to_cart(pos_struct.r, pos_struct.phi),
-                        pos_struct.z,
-                    )
+                    phi = pos_struct.phi if pos_struct.phi.has_value else 0.0
+                    pos_cart = (*pol_to_cart(pos_struct.r, phi), pos_struct.z)
                     points.InsertNextPoint(*pos_cart)
             else:
-                pos_cart = (*pol_to_cart(pos.r, pos.phi), pos.z)
+                phi = pos.phi if pos.phi.has_value else 0.0
+                pos_cart = (*pol_to_cart(pos.r, phi), pos.z)
                 points.InsertNextPoint(*pos_cart)
 
         output.SetPoints(points)

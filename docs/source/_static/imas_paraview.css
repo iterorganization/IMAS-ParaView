@@ -4,3 +4,7 @@
 .tabbed-content {
     padding: 0 0.5rem;
 }
+img.fixed-150height {
+  height: 150px;
+  object-fit: cover;
+}

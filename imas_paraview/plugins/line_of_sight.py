@@ -11,6 +11,7 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPolyData,
 )
 
+from imas_paraview.ids_util import cyl_vector_has_value
 from imas_paraview.paraview_support.servermanager_tools import (
     doublevector,
     propertygroup,
@@ -162,11 +163,7 @@ class LineOfSightReader(GGDVTKPluginBase):
         has_reflection = False
         if hasattr(los, "third_point"):
             third_point = los.third_point
-            if (
-                third_point.r.has_value
-                and third_point.phi.has_value
-                and third_point.z.has_value
-            ):
+            if cyl_vector_has_value(third_point):
                 has_reflection = True
                 points[2] = third_point
 

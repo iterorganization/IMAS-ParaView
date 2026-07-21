@@ -4,7 +4,15 @@ import pytest
 import vtk
 from vtk.util.numpy_support import vtk_to_numpy
 
-from imas_paraview.util import find_closest_indices, get_grid_ggd, points_to_vtkpoly
+from imas_paraview.util import (
+    angles_to_vectors,
+    create_vtk_spheres,
+    ensure_unique_name,
+    find_closest_indices,
+    get_grid_ggd,
+    points_to_vtkpoly,
+    vel_pol_to_cart,
+)
 
 
 @pytest.fixture
@@ -75,6 +83,35 @@ def test_points_to_vtkpoly_filled_requires_closed(points):
         points_to_vtkpoly(points, is_closed=False, is_filled=True)
 
 
+def test_vel_pol_to_cart():
+    v_r = np.array([1.0, 1.0])
+    v_phi = np.array([0.0, 0.0])
+    v_z = np.array([2.0, 0.0])
+    phi = np.array([0.0, np.pi / 2])
+
+    result = vel_pol_to_cart(v_r, v_phi, v_z, phi)
+    expected = np.array([[1.0, 0.0, 2.0], [0.0, 1.0, 0.0]])
+    assert np.allclose(result, expected)
+
+
+def test_create_vtk_spheres():
+    p1 = [1.0, 2.0, 3.0]
+    p2 = [5.0, 4.0, 3.0]
+    r1 = 1.2
+    r2 = 3.4
+    positions = np.array([p1, p2])
+    radii = np.array([r1, r2])
+    spheres = create_vtk_spheres(positions, radii)
+    points = vtk_to_numpy(spheres.GetPoints().GetData())
+
+    n_per_sphere = points.shape[0] // 2
+    d1 = np.linalg.norm(points[:n_per_sphere] - p1, axis=1)
+    d2 = np.linalg.norm(points[n_per_sphere:] - p2, axis=1)
+
+    assert np.allclose(d1, r1)
+    assert np.allclose(d2, r2)
+
+
 def test_get_grid_ggd():
     dd_version = "4.0.0"
     ids = imas.IDSFactory(version=dd_version).new("edge_profiles")
@@ -115,3 +152,48 @@ def test_get_grid_ggd():
     ids.time = [0.0]
     ids.ids_properties.homogeneous_time = imas.ids_defs.IDS_TIME_MODE_HOMOGENEOUS
     assert get_grid_ggd(ids) is None
+
+
+def test_ensure_unique_name():
+    existing = ["coil1", "coil1 #1", "coil2", "coil3"]
+    assert ensure_unique_name("coil4", existing) == "coil4"
+    assert ensure_unique_name("coil2", existing) == "coil2 #1"
+    assert ensure_unique_name("coil1", existing) == "coil1 #2"
+
+
+def test_angles_to_vectors():
+    r, phi, z = 1.0, 0.0, 0.0
+    pol, tor = 0.0, 0.0
+    position, direction = angles_to_vectors(r, phi, z, pol, tor)
+    assert np.allclose(position, np.array([[1.0, 0.0, 0.0]]))
+    assert np.allclose(direction, np.array([[1.0, 0.0, 0.0]]))
+
+    r, phi, z = 2.0, np.pi / 2, 1.0
+    pol, tor = 0.0, 0.0
+    position, direction = angles_to_vectors(r, phi, z, pol, tor)
+    assert np.allclose(position, np.array([[0.0, 2.0, 1.0]]))
+    assert np.allclose(direction, np.array([[0.0, 1.0, 0.0]]))
+
+    r, phi, z = 1.0, 0.0, 0.0
+    pol, tor = np.pi / 2, 0.0
+    position, direction = angles_to_vectors(r, phi, z, pol, tor)
+    assert np.allclose(position, np.array([[1.0, 0.0, 0.0]]))
+    assert np.allclose(direction, np.array([[0.0, 0.0, -1.0]]))
+
+    r, phi, z = 5.0, np.pi, -1.0
+    pol, tor = np.pi / 2, 0.0
+    position, direction = angles_to_vectors(r, phi, z, pol, tor)
+    assert np.allclose(position, np.array([[-5.0, 0.0, -1.0]]))
+    assert np.allclose(direction, np.array([[0.0, 0.0, -1.0]]))
+
+    r, phi, z = 3.0, np.pi / 2, 1.5
+    pol, tor = 0.0, np.pi / 2
+    position, direction = angles_to_vectors(r, phi, z, pol, tor)
+    assert np.allclose(position, np.array([[0.0, 3.0, 1.5]]))
+    assert np.allclose(direction, np.array([[-1.0, 0.0, 0.0]]))
+
+    r, phi, z = 4.0, 3 * np.pi / 4, 5.0
+    pol, tor = np.pi / 4, np.pi / 4
+    position, direction = angles_to_vectors(r, phi, z, pol, tor)
+    assert np.allclose(position, np.array([[-2 * np.sqrt(2), 2 * np.sqrt(2), 5.0]]))
+    assert np.allclose(direction, np.array([[-np.sqrt(2) / 2, 0.0, -np.sqrt(2) / 2]]))

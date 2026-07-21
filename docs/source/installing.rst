@@ -17,105 +17,57 @@ steps below and simply load the module as follows:
   imas-paraview --help
 
 
-Installation on Ubuntu 24.04
-----------------------------
+Installation from PyPI
+----------------------
 
-.. caution::
-  The paraview package in the Ubuntu 24.04 apt repository has compatibility issues with
-  Python 3.12 (which is the Python version distributed with Ubuntu 24.04).
+IMAS-ParaView is published on `PyPI <https://pypi.org/project/imas-paraview/>`_ and can be
+installed into a virtual environment that uses ParaView's own Python interpreter
+(``pvpython``).
 
-  Instead, we will download and use the program from the ParaView website.
-
-1.  Download ParaView 5.13.3 from the Paraview website:
-    https://www.paraview.org/download/?version=v5.13&filter=Linux
-2.  Unzip the paraview package:
-
-    .. code-block:: bash
-    
-      tar -xzvf ParaView-5.13.3-MPI-Linux-Python3.10-x86_64.tar.gz
-
-3.  Install ``uv``:
-
-    .. code-block:: bash
-      
-      python -m venv uvvenv
-      . uvvenv/bin/activate
-      pip install uv
-
-4.  Use ``uv`` to create a virtual environment with Python 3.10 (which is the version
-    used by ParaView) and install the required packages.
-
-    Note: you will need the ``imas_core`` package to load IMAS data that is stored in
-    the HDF5 or MDSplus backends. Unfortunately, this component is not publicly
-    available, but can be installed provided you have access to its git repository.
-    See
-    https://sharepoint.iter.org/departments/POP/CM/IMDesign/Code%20Documentation/ACCESS-LAYER-doc/python/dev/building_installing.html#prerequisites
-    (behind login wall) for the prerequisites.
-
-    .. code-block:: bash
-
-      uv venv --python 3.10
-      uv pip install --python 3.10 imas-paraview
-      # Uninstall VTK, this would conflict with ParaView's built-in VTK module
-      uv pip uninstall --python 3.10 vtk
-      # Optional: install imas-core package from the ITER git:
-      git clone ssh://git@git.iter.org/imas/al-core.git -b main
-      uv pip install --python 3.10 ./al-core
-
-5.  Set required environment variables and run ParaView:
-
-    .. code-block:: bash
-
-      export PYTHONPATH="$PWD/.venv/lib/python3.10/site-packages/"
-      export PV_PLUGIN_PATH="$PWD/.venv/lib/python3.10/site-packages/imas_paraview/plugins"
-      # This LD_PRELOAD is required when loading data with the imas_core HDF5 backend.
-      # Note that it may break any built-in ParaView HDF5 support...
-      export LD_PRELOAD="/lib/x86_64-linux-gnu/libhdf5_serial.so.103"
-      ./ParaView-5.13.3-MPI-Linux-Python3.10-x86_64/bin/paraview
-
-
-Installation on Ubuntu 22.04
-----------------------------
-
-1.  Download ParaView 5.13.3 from the Paraview website:
+1.  Download ParaView 5.13.3 from the ParaView website:
     https://www.paraview.org/download/?version=v5.13&filter=Linux
 
-2.  Unzip the paraview package:
+2.  Unzip the ParaView package and enter the extracted directory:
 
     .. code-block:: bash
-    
+
       tar -xzvf ParaView-5.13.3-MPI-Linux-Python3.10-x86_64.tar.gz
+      cd ParaView-5.13.3-MPI-Linux-Python3.10-x86_64
 
-3.  Create a virtual environment and the install the required packages.
-
-    Note: you will need the ``imas_core`` package to load IMAS data that is stored in
-    the HDF5 or MDSplus backends. Unfortunately, this component is not publicly
-    available, but can be installed provided you have access to its git repository.
-    See
-    https://sharepoint.iter.org/departments/POP/CM/IMDesign/Code%20Documentation/ACCESS-LAYER-doc/python/dev/building_installing.html#prerequisites
-    (behind login wall) for the prerequisites.
+3.  Create a virtual environment using ParaView's bundled ``pvpython`` interpreter and
+    install IMAS-ParaView from PyPI. This example uses
+    `uv <https://docs.astral.sh/uv/>`_ (``pip install uv``), but ``python -m venv`` and
+    ``pip`` work too.
 
     .. code-block:: bash
 
-      python -m venv venv
-      . venv/bin/activate
-      pip install imas-paraview
-      # Uninstall VTK, this would conflict with ParaView's built-in VTK module
-      pip uninstall vtk
-      # Optional: install imas-core package from the ITER git:
-      git clone ssh://git@git.iter.org/imas/al-core.git -b main
-      pip install ./al-core
+      uv venv -p ./bin/pvpython
+      uv pip install imas-paraview
 
-4.  Set required environment variables and run ParaView:
+4.  Activate the virtual environment and set the required environment variables.
 
     .. code-block:: bash
 
-      export PYTHONPATH="$PWD/venv/lib/python3.10/site-packages/"
-      export PV_PLUGIN_PATH="$PWD/venv/lib/python3.10/site-packages/imas_paraview/plugins"
+      . .venv/bin/activate
+      export PYTHONPATH="$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')"
+      export PV_PLUGIN_PATH="$(python -c 'import imas_paraview; print(imas_paraview.__path__[0])')/plugins"
       # This LD_PRELOAD is required when loading data with the imas_core HDF5 backend.
       # Note that it may break any built-in ParaView HDF5 support...
-      export LD_PRELOAD="/lib/x86_64-linux-gnu/libhdf5_serial.so.103"
-      ./ParaView-5.13.3-MPI-Linux-Python3.10-x86_64/bin/paraview
+      export LD_PRELOAD="$(ls "$PYTHONPATH"/imas_core.libs/libhdf5-*.so.*)"
+
+5.  Run ParaView:
+
+    .. code-block:: bash
+
+      ./bin/paraview
+      # Open the "Sources" tab in the top left, and ensure you see "IMAS Tools" in
+      # the drop down menu.
+
+    The command-line interface is available in the activated environment as well:
+
+    .. code-block:: bash
+
+      imas-paraview --help
 
 Development installation on SDCC
 --------------------------------
@@ -137,9 +89,8 @@ IMAS-Paraview plugins on the ITER SDCC cluster.
 
 .. code-block:: bash
 
-  # Load compatible IMAS-Python, IMAS-Core and ParaView modules, like:
-  module load IMAS-AL-Core/5.4.3-foss-2023b IMAS-Python/2.0.0-foss-2023b \
-    ParaView/5.12.0-foss-2023b
+  # Load compatible IMAS-Python and ParaView modules, like:
+  module load IMAS-Python/2.3.0-foss-2023b ParaView/5.12.0-foss-2023b
   # export environment variables, this assumes the current
   # working directory is the root of the repository
   export PV_PLUGIN_PATH=$PWD/imas_paraview/plugins:$PV_PLUGIN_PATH
@@ -153,9 +104,8 @@ IMAS-Paraview plugins on the ITER SDCC cluster.
 
 .. code-block:: bash
 
-  # Load compatible IMAS-Python, IMAS-Core and ParaView modules, like:
-  module load IMAS-AL-Core/5.4.3-foss-2023b IMAS-Python/2.0.0-foss-2023b \
-    ParaView/5.12.0-foss-2023b
+  # Load compatible IMAS-Python and ParaView modules, like:
+  module load IMAS-Python/2.3.0-foss-2023b ParaView/5.12.0-foss-2023b
   # create virtual environment and install dependencies
   python3 -m venv ./venv
   . venv/bin/activate
@@ -173,8 +123,7 @@ IMAS-Paraview plugins on the ITER SDCC cluster.
 .. code-block:: bash
 
   # Load the required modules
-  module load IMAS-AL-Core/5.4.3-foss-2023b IMAS-Python/2.0.0-foss-2023b \
-    ParaView/5.12.0-foss-2023b
+  module load IMAS-Python/2.3.0-foss-2023b ParaView/5.12.0-foss-2023b
   # Export the environment variables
   export PV_PLUGIN_PATH=$PWD/imas_paraview/plugins:$PV_PLUGIN_PATH
   export PYTHONPATH=$PWD:$PYTHONPATH

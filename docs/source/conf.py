@@ -9,14 +9,15 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 import datetime
 import sys
 import types
+from importlib.metadata import version as get_version
+from pathlib import Path
 from urllib.parse import urljoin
 
 # Sphinx extention to format xarray/pandas summaries
 import sphinx_autosummary_accessors
+import yaml
 from jinja2.defaults import DEFAULT_FILTERS
 from packaging.version import Version
-
-import imas_paraview
 
 print("python exec:", sys.executable)
 print("sys.path:", sys.path)
@@ -58,7 +59,7 @@ extlinks = {
     "pypa": ("https://packaging.python.org/%s", None),
 }
 
-full_version = Version(imas_paraview.__version__)
+full_version = Version(get_version("imas-paraview"))
 
 # version: The major project version, used as the replacement for |version|.
 #   For example, for the Python documentation, this may be something like 2.6.
@@ -83,6 +84,9 @@ extensions = [
     "sphinx.ext.extlinks",  # For shortening internal links
     "sphinx.ext.mathjax",  # Render math as images
     "sphinx_immaterial",  # Sphinx immaterial theme
+    "sphinx_design",  # For rendering grids
+    "sphinxcontrib.images",  # For rendering images with lightbox
+    "sphinx_jinja",  # For generating gallery entries
 ]
 
 todo_include_todos = True
@@ -313,6 +317,98 @@ def escape_underscores(string):
     return string.replace("_", r"\_")
 
 
+def get_gallery_data():
+    """Load gallery example entries for Jinja rendering."""
+    gallery_dir = Path(__file__).parent / "gallery" / "examples"
+    entries = []
+
+    for example_dir in gallery_dir.iterdir():
+        if not example_dir.is_dir():
+            continue
+
+        image_path = next(
+            (
+                img
+                for img in example_dir.iterdir()
+                if img.suffix.lower() in {".gif", ".png", ".jpg", ".jpeg", ".webp"}
+            ),
+            None,
+        )
+        if not image_path:
+            raise RuntimeError(f"Example in {example_dir} does not have an image")
+
+        state_file = next(
+            (f for f in example_dir.iterdir() if f.suffix.lower() == ".pvsm"), None
+        )
+        description_path = example_dir / "description.yaml"
+        if not description_path.exists():
+            raise RuntimeError(f"Example in {example_dir} missing 'description.yaml'")
+
+        try:
+            with open(description_path) as f:
+                desc = yaml.safe_load(f)
+            title = desc["title"]
+            author = desc["author"]
+            description = desc["description"]
+            link = desc.get("link", "")
+
+            # Either a single URI or a list of URIs
+            uris = desc.get("uri", [])
+            if isinstance(uris, str):
+                uris = [uris]
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to parse description.yaml in {example_dir}. Please see the "
+                "the 'Contributing to the Gallery' section on the Gallery page for an "
+                "example on how to construct the YAML file."
+            ) from e
+
+        entries.append(
+            {
+                "name": example_dir.name.replace("_", "-").lower(),
+                "dir_name": example_dir.name,
+                "title": str(title),
+                "author": str(author),
+                "description": str(description),
+                "uris": uris,
+                "link": link,
+                "version": desc.get("imas_paraview_version", ""),
+                "image_name": image_path.name,
+                "state_file_name": state_file.name if state_file else None,
+            }
+        )
+
+    # Sort examples alphabetically
+    entries.sort(key=lambda e: e["title"].lower())
+    return entries
+
+
+jinja_contexts = {
+    "gallery_ctx": {
+        "entries": get_gallery_data(),
+    }
+}
+
+
+def generate_gallery_rst_files(app):
+    """Render gallery_example.rst template for each gallery example and write it to
+    example directory."""
+    from jinja2 import Environment, FileSystemLoader
+
+    templates_dir = Path(__file__).parent / "_templates"
+    gallery_dir = Path(__file__).parent / "gallery" / "examples"
+
+    env = Environment(loader=FileSystemLoader(str(templates_dir)))
+    template = env.get_template("gallery-example.rst")
+
+    for entry in get_gallery_data():
+        output_path = gallery_dir / entry["dir_name"] / "index.rst"
+        rendered = template.render(entry=entry)
+        output_path.write_text(rendered, encoding="utf-8")
+
+
 def setup(app):
     DEFAULT_FILTERS["escape_underscores"] = escape_underscores
     app.add_css_file("imas_paraview.css")
+    app.add_js_file("gallery-shuffle.js")
+    app.connect("builder-inited", generate_gallery_rst_files)

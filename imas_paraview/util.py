@@ -13,6 +13,8 @@ from vtkmodules.vtkCommonDataModel import (
     vtkPartitionedDataSetCollection,
     vtkPolyData,
 )
+from vtkmodules.vtkFiltersCore import vtkGlyph3D
+from vtkmodules.vtkFiltersSources import vtkArrowSource, vtkSphereSource
 from vtkmodules.vtkIOXML import (
     vtkXMLPartitionedDataSetCollectionReader,
     vtkXMLUnstructuredGridReader,
@@ -208,6 +210,26 @@ def find_closest_indices(values_to_extract, source_array):
     return list(indices[indices >= 0])
 
 
+def vel_pol_to_cart(
+    v_r: np.ndarray, v_phi: np.ndarray, v_z: np.ndarray, phi: np.ndarray
+) -> np.ndarray:
+    """Convert from polar (or cylindrical) velocity coordinates to cartesian.
+
+    Args:
+        v_r: The radial velocity component.
+        v_phi: The azimuthal velocity component.
+        v_z: The vertical velocity component.
+        phi: Azimuthal angle in radians.
+
+    Returns:
+        ND-Array containing Cartesian velocities.
+    """
+
+    vel_x = v_r * np.cos(phi) - v_phi * np.sin(phi)
+    vel_y = v_r * np.sin(phi) + v_phi * np.cos(phi)
+    return np.stack([vel_x, vel_y, v_z], axis=1)
+
+
 def pol_to_cart(rho, phi):
     """Convert from polar (or cylindrical) coordinates to cartesian.
 
@@ -365,3 +387,157 @@ def has_imas_core():
     except AttributeError:
         # imas-python >= v2.2.0 always has IMAS-Core installed
         return True
+
+
+def create_vtk_spheres(positions, radii, scaling_factor=1.0):
+    """Create a vtkPolyData of glyph spheres scaled by fragment radius.
+
+    Args:
+        positions: Array with Cartesian positions.
+        radii: Array with sphere radii.
+        scaling_factor: Scaling factor of the spheres.
+
+    Returns:
+        vtkGlyph3D containing all vtkSpheres.
+    """
+    pts = vtkPoints()
+    pts.SetData(numpy_to_vtk(positions))
+
+    src_poly = vtkPolyData()
+    src_poly.SetPoints(pts)
+
+    scale_array = numpy_to_vtk(radii)
+    scale_array.SetName("Radius [m]")
+    src_poly.GetPointData().SetScalars(scale_array)
+
+    sphere = vtkSphereSource()
+    sphere.SetRadius(1.0)
+    sphere.Update()
+
+    glyph = vtkGlyph3D()
+    # Apply sphere source to each point
+    glyph.SetInputData(src_poly)
+    glyph.SetSourceConnection(sphere.GetOutputPort())
+    glyph.SetScaleModeToScaleByScalar()
+    glyph.SetScaleFactor(scaling_factor)
+    glyph.Update()
+    return glyph.GetOutput()
+
+
+def create_vtk_arrows(positions, directions, scaling_factor=1.0):
+    """Create a vtkPolyData of glyph arrows.
+
+    Args:
+        positions: Array with Cartesian positions.
+        directions: Array with Cartesian directions.
+        scaling_factor: Scaling factor of the arrows.
+
+    Returns:
+        vtkGlyph3D containing all vtkArrows.
+    """
+
+    pts = vtkPoints()
+    pts.SetData(numpy_to_vtk(positions, deep=True))
+
+    poly = vtkPolyData()
+    poly.SetPoints(pts)
+
+    norm_arr = numpy_to_vtk(directions, deep=True)
+    poly.GetPointData().SetNormals(norm_arr)
+
+    # Scale arrow with velocity magnitude
+    magnitude = numpy_to_vtk(np.linalg.norm(directions, axis=1), deep=True)
+    magnitude.SetName("Velocity Magnitude [m/s]")
+    poly.GetPointData().SetScalars(magnitude)
+
+    arrow = vtkArrowSource()
+    arrow.Update()
+
+    glyph = vtkGlyph3D()
+    glyph.SetInputData(poly)
+    glyph.SetSourceConnection(arrow.GetOutputPort())
+    glyph.SetVectorModeToUseNormal()
+    glyph.SetScaleModeToScaleByScalar()
+    glyph.SetColorModeToColorByScalar()
+    glyph.SetScaleFactor(scaling_factor)
+    glyph.OrientOn()
+    glyph.Update()
+
+    return glyph.GetOutput()
+
+
+def ensure_unique_name(name, existing_names):
+    """Return a name unique in `existing_names`, appending `#<counter>` if necessary."""
+
+    if name not in existing_names:
+        return name
+    counter = 1
+    unique_name = f"{name} #{counter}"
+    while unique_name in existing_names:
+        counter += 1
+        unique_name = f"{name} #{counter}"
+    return unique_name
+
+
+def is_structured_grid(grid_ggd):
+    """Return True if grid_ggd is a 2D structured grid.
+
+    A grid is considered a supported 2D structured grid when:
+      - It has exactly two spaces.
+      - Every space has at least one objects_per_dimension entry.
+      - The first objects_per_dimension (0-D nodes) has objects with a
+        single scalar geometry value (i.e. a 1-D axis).
+
+    Args:
+        grid_ggd: A grid_ggd IDS node.
+
+    Returns:
+        True if the grid is a 2D structured grid, False otherwise.
+    """
+    if len(grid_ggd.space) != 2:
+        return False
+
+    for space in grid_ggd.space:
+        objects = space.objects_per_dimension
+        if len(objects) == 0:
+            return False
+        if len(objects[0].object) == 0:
+            return False
+        if len(objects[0].object[0].geometry) != 1:
+            return False
+
+    return True
+
+
+def angles_to_vectors(r, phi, z, poloidal_angle, toroidal_angle):
+    """Convert cylindrical position (r, phi, z) and toroidal/poloidal angles into a
+    3D Cartesian position and a corresponding unit direction vector.
+
+    Args:
+        r: Radial coordinate.
+        phi: Azimuthal angle in radians.
+        z: Vertical coordinate.
+        poloidal_angle: Poloidal angle in radians.
+        toroidal_angle: Toroidal angle in radians.
+
+    Returns:
+        Position and direction vectors
+    """
+
+    e_r = np.array([np.cos(phi), np.sin(phi), 0.0])
+    e_z = np.array([0.0, 0.0, 1.0])
+    e_phi = np.array([-np.sin(phi), np.cos(phi), 0.0])
+
+    n = (
+        np.cos(poloidal_angle) * np.cos(toroidal_angle) * e_r
+        - np.sin(poloidal_angle) * e_z
+        + np.cos(poloidal_angle) * np.sin(toroidal_angle) * e_phi
+    )
+
+    n /= np.linalg.norm(n)
+
+    x, y = pol_to_cart(r, phi)
+    position = np.array([[x, y, z]])
+    direction = n[None, :]
+
+    return position, direction
