@@ -145,7 +145,9 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         self.Modified()
 
     def _create_dist_name(self, dist):
-        """Generate a name based on the species of the distribution. Handles DD3 label and DD4 name.
+        """
+        Generate a name based on the species of the distribution. 
+        Handles DD3 label and DD4 name.
 
         Args:
             dist: distribution IDSStructure
