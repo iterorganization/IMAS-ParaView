@@ -113,13 +113,7 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         coord_names_seen = {self._NONE_LABEL}
 
         for i, dist in enumerate(self._ids.distribution):
-            try:
-                dist_name = self._create_dist_name(dist)
-            except AttributeError:
-                dist_name = None
-            if not dist_name: # handles None and ""
-                logger.warning("distribution %d has no valid species name, using default", i)
-                dist_name = f"distribution {i}"
+            dist_name = self._create_dist_name(dist) or f"distribution {i}"
 
             if len(dist.markers) == 0:
                 logger.warning("'%s' does not contain any markers, skipping", dist_name)
@@ -151,7 +145,7 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         self.Modified()
 
     def _create_dist_name(self, dist):
-        """Generate a name based on the species of the distribution.
+        """Generate a name based on the species of the distribution. Handles DD3 label and DD4 name.
 
         Args:
             dist: distribution IDSStructure
@@ -166,19 +160,31 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         base_name = species.type.name.capitalize()
 
         if type_index in [ref_id.ion.index, ref_id.ion_state.index]:
-            ion_name = species.ion.name
+            try:
+                ion_name = species.ion.name
+            except AttributeError: # DD3 has label instead of name
+                ion_name = species.ion.label
             result = f"Ion ({ion_name})"
 
             if type_index == ref_id.ion_state.index:
-                state_name = species.ion.state.name
+                try:
+                    state_name = species.ion.state.name
+                except AttributeError: # DD3 has label instead of name
+                    state_name = species.ion.state.label
                 result += f" State ({state_name})"
             return result
         elif type_index in [ref_id.neutral.index, ref_id.neutral_state.index]:
-            neutral_name = species.neutral.name
+            try:
+                neutral_name = species.neutral.name
+            except AttributeError: # DD3 has label instead of name
+                neutral_name = species.neutral.label
             result = f"Neutral ({neutral_name})"
 
             if type_index == ref_id.neutral_state.index:
-                state_name = species.neutral.state.name
+                try:
+                    state_name = species.neutral.state.name
+                except AttributeError: # DD3 has label instead of name
+                    state_name = species.neutral.state.label
                 result += f" State ({state_name})"
             return result
 
