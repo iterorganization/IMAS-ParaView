@@ -113,7 +113,15 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         coord_names_seen = {self._NONE_LABEL}
 
         for i, dist in enumerate(self._ids.distribution):
-            dist_name = self._create_dist_name(dist) or f"distribution {i}"
+            try:
+                dist_name = self._create_dist_name(dist)
+            except AttributeError:
+                dist_name = None
+            if not dist_name:  # handles None and ""
+                logger.warning(
+                    "distribution %d has no valid species name, using default", i
+                )
+                dist_name = f"distribution {i}"
 
             if len(dist.markers) == 0:
                 logger.warning("'%s' does not contain any markers, skipping", dist_name)
