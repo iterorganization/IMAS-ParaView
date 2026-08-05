@@ -116,6 +116,7 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
             try:
                 dist_name = self._create_dist_name(dist)
             except AttributeError:
+                logger.warning("distribution %d does not contain any names, using %d", i, i)
                 dist_name = f"distribution {i}"
 
             if len(dist.markers) == 0:
