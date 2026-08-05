@@ -113,7 +113,10 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         coord_names_seen = {self._NONE_LABEL}
 
         for i, dist in enumerate(self._ids.distribution):
-            dist_name = self._create_dist_name(dist) or f"distribution {i}"
+            try:
+                dist_name = self._create_dist_name(dist)
+            except AttributeError:
+                dist_name = f"distribution {i}"
 
             if len(dist.markers) == 0:
                 logger.warning("'%s' does not contain any markers, skipping", dist_name)
@@ -159,42 +162,20 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
 
         base_name = species.type.name.capitalize()
 
-        default_name_index = 0
-        
         if type_index in [ref_id.ion.index, ref_id.ion_state.index]:
-            try:
-                ion_name = species.ion.name
-            except AttributeError:
-                ion_name = str(default_name_index)
-                default_name_index += 1
-                logger.warning("'%s' does not contain an ion name, using '%s'", base_name, ion_name)
+            ion_name = species.ion.name
             result = f"Ion ({ion_name})"
 
             if type_index == ref_id.ion_state.index:
-                try:
-                    state_name = species.ion.state.name
-                except AttributeError:
-                    state_name = str(default_name_index)
-                    default_name_index += 1
-                    logger.warning("'%s' does not contain an state name, using '%s'", base_name, state_name)
+                state_name = species.ion.state.name
                 result += f" State ({state_name})"
             return result
         elif type_index in [ref_id.neutral.index, ref_id.neutral_state.index]:
-            try:
-                neutral_name = species.neutral.name
-            except AttributeError:
-                neutral_name = str(default_name_index)
-                default_name_index += 1
-                logger.warning("'%s' does not contain an neutral name, using '%s'", base_name, neutral_name)
+            neutral_name = species.neutral.name
             result = f"Neutral ({neutral_name})"
 
             if type_index == ref_id.neutral_state.index:
-                try:
-                    state_name = species.neutral.state.name
-                except AttributeError:
-                    state_name = str(default_name_index)
-                    default_name_index += 1
-                    logger.warning("'%s' does not contain an state name, using '%s'", base_name, state_name)
+                state_name = species.neutral.state.name
                 result += f" State ({state_name})"
             return result
 
