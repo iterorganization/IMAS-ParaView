@@ -155,6 +155,11 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         Returns:
             name of the distribution
         """
+
+        def get_name(obj):
+            # Return either DD4 'name' or fallback to DD3 'label'
+            return obj.name if hasattr(obj, "name") else obj.label
+            
         species = dist.species
         type_index = species.type.index
         ref_id = identifiers.species_reference_identifier
@@ -162,31 +167,20 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         base_name = species.type.name.capitalize()
 
         if type_index in [ref_id.ion.index, ref_id.ion_state.index]:
-            try:
-                ion_name = species.ion.name
-            except AttributeError: # DD3 has label instead of name
-                ion_name = species.ion.label
+            ion_name = get_name(species.ion)
             result = f"Ion ({ion_name})"
 
             if type_index == ref_id.ion_state.index:
-                try:
-                    state_name = species.ion.state.name
-                except AttributeError: # DD3 has label instead of name
-                    state_name = species.ion.state.label
+                state_name = get_name(species.ion.state)
                 result += f" State ({state_name})"
             return result
+        
         elif type_index in [ref_id.neutral.index, ref_id.neutral_state.index]:
-            try:
-                neutral_name = species.neutral.name
-            except AttributeError: # DD3 has label instead of name
-                neutral_name = species.neutral.label
+            neutral_name = get_name(species.neutral)
             result = f"Neutral ({neutral_name})"
 
             if type_index == ref_id.neutral_state.index:
-                try:
-                    state_name = species.neutral.state.name
-                except AttributeError: # DD3 has label instead of name
-                    state_name = species.neutral.state.label
+                state_name = get_name(species.neutral.state)
                 result += f" State ({state_name})"
             return result
 
