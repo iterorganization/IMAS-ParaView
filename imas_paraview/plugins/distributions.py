@@ -145,7 +145,9 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         self.Modified()
 
     def _create_dist_name(self, dist):
-        """Generate a name based on the species of the distribution.
+        """
+        Generate a name based on the species of the distribution.
+        Handles DD3 label and DD4 name.
 
         Args:
             dist: distribution IDSStructure
@@ -153,6 +155,11 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         Returns:
             name of the distribution
         """
+
+        def get_name(obj):
+            # Return either DD4 'name' or fallback to DD3 'label'
+            return obj.name if hasattr(obj, "name") else obj.label
+
         species = dist.species
         type_index = species.type.index
         ref_id = identifiers.species_reference_identifier
@@ -160,19 +167,20 @@ class DistributionsReader(GGDVTKPluginBase, is_time_dependent=True):
         base_name = species.type.name.capitalize()
 
         if type_index in [ref_id.ion.index, ref_id.ion_state.index]:
-            ion_name = species.ion.name
+            ion_name = get_name(species.ion)
             result = f"Ion ({ion_name})"
 
             if type_index == ref_id.ion_state.index:
-                state_name = species.ion.state.name
+                state_name = get_name(species.ion.state)
                 result += f" State ({state_name})"
             return result
+
         elif type_index in [ref_id.neutral.index, ref_id.neutral_state.index]:
-            neutral_name = species.neutral.name
+            neutral_name = get_name(species.neutral)
             result = f"Neutral ({neutral_name})"
 
             if type_index == ref_id.neutral_state.index:
-                state_name = species.neutral.state.name
+                state_name = get_name(species.neutral.state)
                 result += f" State ({state_name})"
             return result
 
