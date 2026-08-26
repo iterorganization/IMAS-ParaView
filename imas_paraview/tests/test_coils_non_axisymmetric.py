@@ -7,26 +7,23 @@ from imas_paraview.plugins.coils_non_axisymmetric import CoilsNonAxisymmetricRea
 
 
 @pytest.fixture
-def elements():
-    """Returns a elements IDS node of a coils_non_axisymmetric IDS"""
-    ids = imas.IDSFactory(version=DD_VERSION).new("coils_non_axisymmetric")
-    ids.coil.resize(1)
-    ids.coil[0].conductor.resize(1)
-    return ids.coil[0].conductor[0].elements
-
-
-@pytest.fixture
-def reader():
-    return CoilsNonAxisymmetricReader()
-
-
-@pytest.fixture
 def conductor():
     """Returns a conductor IDS node of a coils_non_axisymmetric IDS."""
     ids = imas.IDSFactory(version=DD_VERSION).new("coils_non_axisymmetric")
     ids.coil.resize(1)
     ids.coil[0].conductor.resize(1)
     return ids.coil[0].conductor[0]
+
+
+@pytest.fixture
+def elements(conductor):
+    """Returns a elements IDS node of a coils_non_axisymmetric conductor"""
+    return conductor.elements
+
+
+@pytest.fixture
+def reader():
+    return CoilsNonAxisymmetricReader()
 
 
 def test_create_line_frame_with_intermediate_point(elements, reader):

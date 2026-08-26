@@ -5,6 +5,9 @@ Non-Axisymmetric Coils Reader
 
 .. versionadded:: 2.3.0
 
+.. versionadded:: 2.5.0
+   Support for polygon cross-sections (``geometry_type`` index 1).
+
 This page explains how to use the Non-Axisymmetric Coils Reader to visualize the 
 Non-axisymmetric active coil systems.
 
@@ -52,9 +55,6 @@ with the following supported values:
      - 5
      - Annular cross-section, with an outer diameter given by ``width`` and an inner
        radius given by ``radius_inner``.
-
-.. versionadded:: 2.5.0
-   Support for polygon cross-sections (``geometry_type`` index 1).
 
 Any other cross-section type is not supported and the conductor centreline is shown
 instead, without any cross-section.

@@ -1,4 +1,5 @@
-"""Plugin to visualize coil conductors geometries from the coils_non_axisymmetric IDS"""
+"""Plugin to visualize coil conductor geometries from the coils_non_axisymmetric
+and tf IDSs"""
 
 import logging
 
@@ -166,20 +167,19 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         prev_frame = None
 
         for elem_idx, elem_type in enumerate(elements.types):
-            is_closed = False
+            is_closed = elem_type == 3
             line_frame = None
             circ_frame = None
             if elem_type == 1:  # Line segment
                 elem_points = self._create_line_segment(elements, elem_idx)
-            elif elem_type == 2:  # Arc of a circle
-                elem_points = self._create_circular_geometry(
-                    elements, elem_idx, is_full_circle=False
+            elif elem_type in (2, 3):  # Arc of a circle or full circle
+                circular_result = self._circular_points_and_frames(
+                    elements, elem_idx, is_full_circle=is_closed
                 )
-            elif elem_type == 3:  # Full circle
-                elem_points = self._create_circular_geometry(
-                    elements, elem_idx, is_full_circle=True
-                )
-                is_closed = True
+                if circular_result is None:
+                    elem_points = None
+                else:
+                    elem_points, *circ_frame = circular_result
             else:
                 logger.warning(
                     "Element %d of '%s' has unsupported element type %d, skipping",
@@ -196,9 +196,6 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
                 line_frame = self._create_line_frame(elements, elem_idx, prev_frame)
                 frame = None if line_frame is None else line_frame[:2]
             else:
-                circ_frame = self._create_circular_frames(
-                    elements, elem_idx, is_full_circle=is_closed
-                )
                 frame = None if circ_frame is None else circ_frame[:2]
 
             vtk_conductor = points_to_vtkpoly(elem_points)
@@ -297,6 +294,37 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         t = np.linspace(0, max_angle, resolution)[:, None]
         return p_centre, radius, v_start, tangent, binormal, t
 
+    def _circular_points_and_frames(self, elements, idx, is_full_circle):
+        """Compute path points and (normal, binormal, tangent) orientation frames
+        for a circular conductor element, computing the shared
+        :meth:`_circular_arc_params` only once.
+
+        Per the Data Dictionary convention, the binormal is constant along the arc
+        (the rotation axis of the circle), while the normal and tangent rotate
+        together with the point position (normal = centre - point on curve).
+
+        Args:
+            elements: Element container with start, intermediate, and center points.
+            idx: Index of the element.
+            is_full_circle: True if full circle, False if arc of circle.
+
+        Returns:
+            Tuple of (points, normals, binormals, tangents), where points is an
+            array of 3D points representing the circular geometry, and normals,
+            binormals, tangents are arrays with one unit 3-vector per path point.
+            Returns None if the circular element is invalid.
+        """
+        params = self._circular_arc_params(elements, idx, is_full_circle)
+        if params is None:
+            return None
+        p_centre, radius, v_start, tangent_start, binormal, t = params
+        radial_dir = np.cos(t) * v_start + np.sin(t) * tangent_start
+        points = p_centre + radius * radial_dir
+        normals = -radial_dir
+        tangents = -np.sin(t) * v_start + np.cos(t) * tangent_start
+        binormals = np.broadcast_to(binormal, normals.shape)
+        return points, normals, binormals, tangents
+
     def _create_circular_geometry(self, elements, idx, is_full_circle):
         """Create points for circular conductor elements.
 
@@ -309,20 +337,13 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             Array of points representing the circular geometry, or None if
             the circular element is invalid.
         """
-        params = self._circular_arc_params(elements, idx, is_full_circle)
-        if params is None:
-            return None
-        p_centre, radius, v_start, tangent, _binormal, t = params
-        return p_centre + radius * (np.cos(t) * v_start + np.sin(t) * tangent)
+        result = self._circular_points_and_frames(elements, idx, is_full_circle)
+        return None if result is None else result[0]
 
     def _create_circular_frames(self, elements, idx, is_full_circle):
         """Compute the (normal, binormal, tangent) cross-section orientation frame
         at every point returned by :meth:`_create_circular_geometry` for the same
         element.
-
-        Per the Data Dictionary convention, the binormal is constant along the arc
-        (the rotation axis of the circle), while the normal and tangent rotate
-        together with the point position (normal = centre - point on curve).
 
         Args:
             elements: Element container with start, intermediate, and center points.
@@ -333,15 +354,8 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
             Tuple of (normals, binormals, tangents) arrays with one unit 3-vector
             per path point, or None if the element is invalid.
         """
-        params = self._circular_arc_params(elements, idx, is_full_circle)
-        if params is None:
-            return None
-        _p_centre, _radius, v_start, tangent_start, binormal, t = params
-        radial_dir = np.cos(t) * v_start + np.sin(t) * tangent_start
-        normals = -radial_dir
-        tangents = -np.sin(t) * v_start + np.cos(t) * tangent_start
-        binormals = np.broadcast_to(binormal, normals.shape)
-        return normals, binormals, tangents
+        result = self._circular_points_and_frames(elements, idx, is_full_circle)
+        return None if result is None else result[1:]
 
     def _create_line_frame(self, elements, idx, prev_frame):
         """Compute the (normal, binormal, tangent) cross-section orientation frame
@@ -581,10 +595,11 @@ class CoilsNonAxisymmetricReader(GGDVTKPluginBase):
         n_coords = np.asarray(outline.normal)
         b_coords = np.asarray(outline.binormal)
         n_ring = len(n_coords)
-        if n_ring < 3:
+        if n_ring < 3 or len(b_coords) != n_ring:
             logger.warning(
                 "Polygon cross-section of '%s' must have at least 3 outline points, "
-                "it will be represented as a line instead",
+                "with matching outline.normal/outline.binormal array lengths, it "
+                "will be represented as a line instead",
                 imas.util.get_full_path(cross_section),
             )
             return None
