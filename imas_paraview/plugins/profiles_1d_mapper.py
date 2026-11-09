@@ -106,6 +106,8 @@ class Profiles1DMapper(VTKPythonAlgorithmBase):
             profile = input1.RowData[profile_name]
 
             xp = vtk_to_numpy(psi_profiles)
+            # shift psi on axis to be 0 to match the equilibrium psi on axis
+            xp -= xp[0]
             fp = vtk_to_numpy(profile)
 
             # numpy's interp requires xp to be strictly increasing, and the DD does not
