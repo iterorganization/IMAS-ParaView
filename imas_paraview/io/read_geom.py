@@ -93,7 +93,7 @@ def fill_vtk_points(
     # correctly, setting the points in r,phi-coordinates instead of r,z. For this case
     # we overwrite the coordinate identifiers.
     # This issue has been fixed in the following commit:
-    # https://github.com/iterorganization/GGD/commit/23af2f113e550fa6e8d05c982ddae53bf29c1cf1 # noqa: E501
+    # https://github.com/iterorganization/GGD/commit/23af2f113e550fa6e8d05c982ddae53bf29c1cf1
     if grid_ggd.space[space_idx].geometry_type.name == "Poloidal" and coord_indices == [
         R,
         PHI,
